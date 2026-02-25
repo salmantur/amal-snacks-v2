@@ -1,0 +1,114 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 15%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 15%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 15%;
+    --primary: 350 89% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 45 93% 80%;
+    --secondary-foreground: 0 0% 15%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
+    --accent: 45 93% 80%;
+    --accent-foreground: 0 0% 15%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 350 89% 60%;
+    --radius: 1rem;
+    
+    /* Custom Amal Snacks colors */
+    --amal-pink: 350 89% 73%;
+    --amal-pink-light: 350 100% 95%;
+    --amal-yellow: 45 93% 70%;
+    --amal-yellow-light: 45 100% 90%;
+    --amal-grey: 0 0% 96%;
+    --amal-grey-dark: 0 0% 45%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+    /* Remove blue tap flash on Android Chrome */
+    -webkit-tap-highlight-color: transparent;
+    /* Prevent text size adjustment on orientation change (iOS) */
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-background text-foreground;
+    /* Momentum scrolling on iOS */
+    -webkit-overflow-scrolling: touch;
+    /* Prevent pull-to-refresh interfering with scroll */
+    overscroll-behavior-y: contain;
+    /* Safe area insets for iPhone notch / Dynamic Island */
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  /* Prevent long-press context menu on images */
+  img {
+    -webkit-touch-callout: none;
+    user-select: none;
+  }
+  /* Prevent text selection on buttons */
+  button {
+    -webkit-touch-callout: none;
+    user-select: none;
+    touch-action: manipulation;
+  }
+  /* Smooth scrolling everywhere */
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Fixed bottom bars — account for iPhone home indicator */
+.fixed-bottom {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+/* Custom scrollbar for RTL */
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--primary) / 0.3);
+  border-radius: 4px;
+}
+
+/* Smooth animations */
+.drawer-enter {
+  transform: translateY(100%);
+}
+
+.drawer-enter-active {
+  transform: translateY(0);
+  transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.drawer-exit {
+  transform: translateY(0);
+}
+
+.drawer-exit-active {
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+}

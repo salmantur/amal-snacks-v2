@@ -8,7 +8,7 @@ export async function fetchMenuItems(): Promise<{ data: MenuItem[]; error: strin
   try {
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
-    const { data, error } = await supabase.from("menu").select("*")
+    const { data, error } = await supabase.from("menu").select("*").eq("in_stock", true)
 
     if (error) {
       return { error: `${error.code}: ${error.message}`, data: [] }
@@ -48,6 +48,7 @@ export async function fetchMenuItems(): Promise<{ data: MenuItem[]; error: strin
         category: String(item.category || ""),
         ingredients,
         limit: Number(item.limit) || 0,
+        inStock: item.in_stock !== false,
       }
     })
 

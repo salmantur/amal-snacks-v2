@@ -3,12 +3,12 @@
 import { useEffect, useState, Suspense } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import Link from "next/link"
-import { CheckCircle, Clock, MapPin, ShoppingBag } from "lucide-react"
+import { CheckCircle, Clock, MapPin, ShoppingBag, MessageCircle } from "lucide-react"
 
 function ConfirmationContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
-  const [countdown, setCountdown] = useState(10)
+  const [countdown, setCountdown] = useState(15)
 
   const name = searchParams.get("name") || ""
   const area = searchParams.get("area") || ""
@@ -17,7 +17,6 @@ function ConfirmationContent() {
   const time = searchParams.get("time") || "في أقرب وقت"
   const isPickup = type === "pickup"
 
-  // Auto redirect to home after 10 seconds
   useEffect(() => {
     if (countdown <= 0) {
       router.push("/")
@@ -28,24 +27,38 @@ function ConfirmationContent() {
   }, [countdown, router])
 
   return (
-    <main className="min-h-screen bg-[#f5f5f5] flex flex-col items-center justify-center p-6 text-center" dir="rtl">
+    <main className="min-h-screen bg-[#f5f5f5] flex flex-col items-center justify-start p-6 pt-12 text-center" dir="rtl">
+
       {/* Success icon */}
-      <div className="relative mb-6">
+      <div className="relative mb-5">
         <div className="w-24 h-24 rounded-full bg-[#1e5631]/10 flex items-center justify-center">
           <CheckCircle className="h-12 w-12 text-[#1e5631]" strokeWidth={1.5} />
         </div>
-        <div className="absolute -top-1 -right-1 w-7 h-7 rounded-full bg-[#25D366] flex items-center justify-center">
-          <span className="text-white text-xs font-bold">✓</span>
+        <div className="absolute -top-1 -right-1 w-8 h-8 rounded-full bg-[#25D366] flex items-center justify-center">
+          <CheckCircle className="h-4 w-4 text-white" strokeWidth={2.5} />
         </div>
       </div>
 
-      <h1 className="text-3xl font-bold text-foreground mb-2">تم إرسال طلبك!</h1>
-      <p className="text-muted-foreground mb-8">
-        تم فتح واتساب لإتمام الطلب. سنتواصل معك قريباً.
-      </p>
+      <h1 className="text-2xl font-bold text-foreground mb-1">تم تأكيد طلبك!</h1>
+      <p className="text-muted-foreground text-sm mb-5">طلبك في الطريق إلى المطبخ</p>
 
-      {/* Order summary card */}
-      <div className="w-full max-w-sm bg-white rounded-3xl p-6 shadow-sm mb-6 text-right space-y-4">
+      {/* WhatsApp sent confirmation — the main answer to "did they receive it?" */}
+      <div className="w-full max-w-sm bg-[#25D366]/10 border border-[#25D366]/25 rounded-2xl p-4 mb-4 text-right">
+        <div className="flex items-center gap-3">
+          <div className="w-11 h-11 rounded-full bg-[#25D366] flex items-center justify-center flex-shrink-0">
+            <MessageCircle className="h-5 w-5 text-white fill-white" />
+          </div>
+          <div>
+            <p className="font-bold text-[#1e5631] text-sm">✓ رسالة واتساب أُرسلت للمتجر</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              استُلم طلبك — سيتواصل معك المتجر قريباً
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Order summary */}
+      <div className="w-full max-w-sm bg-white rounded-3xl p-5 shadow-sm mb-5 text-right space-y-3.5">
         {name && (
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-amal-grey flex items-center justify-center flex-shrink-0">
@@ -65,7 +78,7 @@ function ConfirmationContent() {
           <div>
             <p className="text-xs text-muted-foreground">نوع الطلب</p>
             <p className="font-semibold text-foreground">
-              {isPickup ? "استلام من المحل" : `توصيل إلى ${area}`}
+              {isPickup ? "🏪 استلام من المحل" : `🚚 توصيل إلى ${area}`}
             </p>
           </div>
         </div>
@@ -90,10 +103,9 @@ function ConfirmationContent() {
         )}
       </div>
 
-      {/* Actions */}
       <Link
         href="/"
-        className="w-full max-w-sm py-4 bg-foreground text-background rounded-full font-bold text-lg text-center block mb-3"
+        className="w-full max-w-sm py-4 bg-foreground text-background rounded-full font-bold text-lg text-center block mb-4"
       >
         العودة للقائمة
       </Link>

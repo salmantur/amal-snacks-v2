@@ -9,13 +9,26 @@ function ConfirmationContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [countdown, setCountdown] = useState(15)
+  const [whatsappOpened, setWhatsappOpened] = useState(false)
 
   const name = searchParams.get("name") || ""
   const area = searchParams.get("area") || ""
   const total = searchParams.get("total") || ""
   const type = searchParams.get("type") || "delivery"
   const time = searchParams.get("time") || "في أقرب وقت"
+  const wa = searchParams.get("wa") || ""
   const isPickup = type === "pickup"
+
+  // Open WhatsApp as soon as page loads — this is now the "user action" context
+  useEffect(() => {
+    if (wa && !whatsappOpened) {
+      setWhatsappOpened(true)
+      // Small delay so page renders first, then redirect to WhatsApp
+      setTimeout(() => {
+        window.location.href = wa
+      }, 300)
+    }
+  }, [wa, whatsappOpened])
 
   useEffect(() => {
     if (countdown <= 0) {
@@ -40,22 +53,33 @@ function ConfirmationContent() {
       </div>
 
       <h1 className="text-2xl font-bold text-foreground mb-1">تم تأكيد طلبك!</h1>
-      <p className="text-muted-foreground text-sm mb-5">طلبك في الطريق إلى المطبخ</p>
+      <p className="text-muted-foreground text-sm mb-5">سيفتح واتساب تلقائياً لإتمام الطلب</p>
 
-      {/* WhatsApp sent confirmation — the main answer to "did they receive it?" */}
+      {/* WhatsApp status */}
       <div className="w-full max-w-sm bg-[#25D366]/10 border border-[#25D366]/25 rounded-2xl p-4 mb-4 text-right">
         <div className="flex items-center gap-3">
           <div className="w-11 h-11 rounded-full bg-[#25D366] flex items-center justify-center flex-shrink-0">
             <MessageCircle className="h-5 w-5 text-white fill-white" />
           </div>
-          <div>
-            <p className="font-bold text-[#1e5631] text-sm">✓ رسالة واتساب أُرسلت للمتجر</p>
+          <div className="flex-1">
+            <p className="font-bold text-[#1e5631] text-sm">✓ جاري فتح واتساب...</p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              استُلم طلبك — سيتواصل معك المتجر قريباً
+              سيتم إرسال تفاصيل طلبك للمتجر
             </p>
           </div>
         </div>
       </div>
+
+      {/* Manual open button in case auto-open is blocked */}
+      {wa && (
+        <a
+          href={wa}
+          className="w-full max-w-sm py-3.5 bg-[#25D366] text-white rounded-full font-bold text-base text-center block mb-5 flex items-center justify-center gap-2"
+        >
+          <MessageCircle className="h-5 w-5 fill-white" />
+          افتح واتساب يدوياً
+        </a>
+      )}
 
       {/* Order summary */}
       <div className="w-full max-w-sm bg-white rounded-3xl p-5 shadow-sm mb-5 text-right space-y-3.5">

@@ -35,16 +35,27 @@ export function MenuGrid() {
   const [debouncedSearch, setDebouncedSearch] = useState("")
   const [selectedProduct, setSelectedProduct] = useState<MenuItem | null>(null)
 
+  // When categories load from Supabase, ensure selected category is valid
+  // Fixes: first category appears empty until you switch away and back
+  useEffect(() => {
+    if (categories.length > 0) {
+      const exists = categories.find(c => c.id === selectedCategory)
+      if (!exists) {
+        setSelectedCategory(categories[0].id)
+      }
+    }
+  }, [categories]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Debounce search input
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(searchQuery), 300)
     return () => clearTimeout(timer)
   }, [searchQuery])
 
-  // Get current category config
+  // Get current category config — categories in deps fixes stale closure
   const categoryConfig = useMemo(
     () => categories.find(c => c.id === selectedCategory),
-    [selectedCategory]
+    [selectedCategory, categories]
   )
   const dbCategories = categoryConfig?.dbCategories || []
   const sections = categoryConfig?.sections

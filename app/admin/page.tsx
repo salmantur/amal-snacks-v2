@@ -20,6 +20,22 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true)
   const [soundEnabled, setSoundEnabled] = useState(true)
 
+  const [filter, setFilter] = useState<Order["status"] | "all">("all")
+  const [activeTab, setActiveTab] = useState<"orders" | "banner" | "stock" | "categories" | "sales">("orders")
+  const [newOrderAlert, setNewOrderAlert] = useState(false)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const orderCountRef = useRef(orders.length)
+
+  // Play notification sound
+  const playNotificationSound = useCallback(() => {
+    if (soundEnabled && audioRef.current) {
+      audioRef.current.currentTime = 0
+      audioRef.current.play().catch(() => {
+        // Audio play failed, likely due to autoplay policy
+      })
+    }
+  }, [soundEnabled])
+
   const handleLogout = async () => {
     const supabase = createClient()
     await supabase.auth.signOut()
@@ -36,36 +52,27 @@ export default function AdminPage() {
 
   // Subscribe to realtime updates
   useEffect(() => {
-    const unsubscribe = subscribeToOrders(
-      (newOrder) => {
-        setOrders((prev) => [newOrder, ...prev])
-        setNewOrderAlert(true)
-        playNotificationSound()
-        setTimeout(() => setNewOrderAlert(false), 3000)
-      },
-      (id, status) => {
-        setOrders((prev) =>
-          prev.map((o) => (o.id === id ? { ...o, status } : o))
-        )
-      }
-    )
-    return unsubscribe
-  }, [playNotificationSound])
-  const [filter, setFilter] = useState<Order["status"] | "all">("all")
-  const [activeTab, setActiveTab] = useState<"orders" | "banner" | "stock" | "categories" | "sales">("orders")
-  const [newOrderAlert, setNewOrderAlert] = useState(false)
-  const audioRef = useRef<HTMLAudioElement | null>(null)
-  const orderCountRef = useRef(orders.length)
+    let cleanup: (() => void) | null = null
 
-  // Play notification sound
-  const playNotificationSound = useCallback(() => {
-    if (soundEnabled && audioRef.current) {
-      audioRef.current.currentTime = 0
-      audioRef.current.play().catch(() => {
-        // Audio play failed, likely due to autoplay policy
-      })
+    const setup = () => {
+      cleanup = subscribeToOrders(
+        (newOrder) => {
+          setOrders((prev) => [newOrder, ...prev])
+          setNewOrderAlert(true)
+          playNotificationSound()
+          setTimeout(() => setNewOrderAlert(false), 3000)
+        },
+        (id, status) => {
+          setOrders((prev) =>
+            prev.map((o) => (o.id === id ? { ...o, status } : o))
+          )
+        }
+      )
     }
-  }, [soundEnabled])
+
+    setup()
+    return () => { cleanup?.() }
+  }, [playNotificationSound])
 
   // Update order count ref for sound
   useEffect(() => {
@@ -156,7 +163,7 @@ export default function AdminPage() {
             <span className="text-sm font-medium">{preparingCount} قيد التحضير</span>
           </div>
           <button
-            onClick={() => setOrders([...mockOrders])}
+            onClick={() => fetchRecentOrders().then(setOrders)}
             className="flex items-center gap-2 px-4 py-2 bg-muted rounded-full text-sm font-medium hover:bg-muted/80"
           >
             <RefreshCw className="h-4 w-4" />
@@ -283,19 +290,19 @@ export default function AdminPage() {
       {/* Orders Grid */}
       {activeTab === "orders" && (
       <div className="p-4">
-        {filteredOrders.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="w-16 h-16 rounded-full bg-muted mx-auto mb-4 flex items-center justify-center">
-              <RefreshCw className="h-8 w-8 text-muted-foreground" />
-            </div>
-            <p className="text-muted-foreground">لا توجد طلبات حالياً</p>
-          </div>
-        ) : loading ? (
+        {loading ? (
           <div className="text-center py-12">
             <div className="w-16 h-16 rounded-full bg-muted mx-auto mb-4 flex items-center justify-center animate-pulse">
               <RefreshCw className="h-8 w-8 text-muted-foreground" />
             </div>
             <p className="text-muted-foreground">جاري تحميل الطلبات...</p>
+          </div>
+        ) : filteredOrders.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="w-16 h-16 rounded-full bg-muted mx-auto mb-4 flex items-center justify-center">
+              <RefreshCw className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <p className="text-muted-foreground">لا توجد طلبات حالياً</p>
           </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

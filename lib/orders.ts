@@ -92,7 +92,7 @@ export function subscribeToOrders(
     )
     .subscribe()
 
-  return () => supabase.removeChannel(channel)
+  return () => { supabase.removeChannel(channel) }
 }
 
 function dbRowToOrder(row: any): Order {

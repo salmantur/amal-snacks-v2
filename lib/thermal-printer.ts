@@ -1,18 +1,5 @@
-/**
- * Epson TM-M30II printer via ePOS SDK over WiFi
- * Works on iPhone Safari, Android Chrome, desktop — any browser on the same network
- *
- * How it works:
- * - TM-M30II has a built-in HTTP server at its IP address
- * - We POST an XML/SOAP print job to http://PRINTER_IP/cgi-bin/epos/service.cgi
- * - No Bluetooth, no app, no driver needed
- *
- * ⚠️  iPhone must be on the SAME WiFi as the printer
- * ⚠️  Mixed content: if your site is HTTPS, the browser will block HTTP printer requests.
- * Fix: enable SSL on the printer via Epson TM Utility app, then use https://PRINTER_IP
- */
-
 import type { Order } from "@/lib/data"
+import arabicReshaper from 'arabic-reshaper'
 
 // Printer IP — change if it moves (self-test print shows current IP)
 let PRINTER_IP = "192.168.100.205"
@@ -31,7 +18,20 @@ export function setPrinterIp(ip: string): void {
   }
 }
 
-// ── XML helpers ────────────────────────────────────────────────────────────
+// ── Arabic Reshaping Helper ────────────────────────────────────────────────
+
+function formatArabic(text: string): string {
+  if (!text) return "";
+  // Check if text contains Arabic characters
+  const arabicPattern = /[\u0600-\u06FF]/;
+  if (!arabicPattern.test(text)) return text;
+
+  // 1. Reshape joins the letters (e.g., م + ط + ع + م becomes مطعم)
+  const reshaped = arabicReshaper.reshape(text);
+  
+  // 2. Reverse the string because the printer prints LTR by default
+  return reshaped.split('').reverse().join('');
+}
 
 function x(str: string): string {
   return str
@@ -51,9 +51,10 @@ function buildXml(order: Order): string {
   const lines: string[] = []
 
   const t = (text: string, em = false, dw = false, dh = false) => {
+    const formattedText = formatArabic(text);
     const attrs = [em && 'em="true"', dw && 'dw="true"', dh && 'dh="true"']
       .filter(Boolean).join(" ")
-    lines.push(`<text ${attrs}>${x(text)}\n</text>`)
+    lines.push(`<text ${attrs}>${x(formattedText)}\n</text>`)
   }
 
   const sep = (c = "-") => lines.push(`<text>${x(c.repeat(32))}\n</text>`)
@@ -82,31 +83,31 @@ function buildXml(order: Order): string {
   // Items
   t("الطلبات:", true)
   for (const item of order.items) {
-    const left = `${item.quantity}x ${item.name}`
+    // We shape the name separately to keep the quantity/price on the correct sides
+    const shapedName = formatArabic(item.name);
+    const left = `${item.quantity}x ${shapedName}`
     const right = `${item.price * item.quantity} ر.س`
-    const pad = Math.max(1, 32 - left.length - right.length)
-    t(left + " ".repeat(pad) + right)
+    const pad = Math.max(1, 32 - (item.quantity.toString().length + 2 + shapedName.length) - right.length)
     
-    // --- THIS IS THE FIXED PART ---
+    // For items, we send the raw line because t() would reverse the whole thing including numbers
+    lines.push(`<text>${x(left + " ".repeat(pad) + right)}\n</text>`)
+    
     const ingredients = (item as any).selectedIngredients;
     if (ingredients?.length) {
       t(`  (${ingredients.join("، ")})`)
     }
-    // ------------------------------
   }
   sep()
 
   // Total
   t(`الإجمالي: ${order.total} ر.س`, true, false, true)
 
-  // Notes
   if (order.notes) {
     sep()
     t("ملاحظات:", true)
     t(order.notes)
   }
 
-  // Footer
   sep("=")
   lines.push(`<text align="center"/>`)
   t("شكراً لطلبكم! 🌟")
@@ -123,11 +124,9 @@ function buildXml(order: Order): string {
 </s:Envelope>`
 }
 
-// ── Main print function ────────────────────────────────────────────────────
-
 export async function printOrder(order: Order): Promise<void> {
   const ip = getPrinterIp()
-const url = `https://${ip}/cgi-bin/epos/service.cgi?devid=local_printer&timeout=10000`
+  const url = `https://${ip}/cgi-bin/epos/service.cgi?devid=local_printer&timeout=10000`
   const xml = buildXml(order)
 
   let response: Response
@@ -143,19 +142,7 @@ const url = `https://${ip}/cgi-bin/epos/service.cgi?devid=local_printer&timeout=
     })
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
-    const isTimeout = err instanceof Error &&
-      (err.name === "AbortError" || err.name === "TimeoutError")
-
-    if (isTimeout || msg.includes("fetch")) {
-      throw new Error(
-        `تعذر الاتصال بالطابعة (${ip})\n\n` +
-        `تأكد من:\n` +
-        `• الطابعة شغالة ومتصلة بالواي فاي\n` +
-        `• الآيفون على نفس شبكة الواي فاي\n` +
-        `• إذا الموقع HTTPS: فعّل SSL على الطابعة من تطبيق Epson TM Utility`
-      )
-    }
-    throw new Error(`خطأ: ${msg}`)
+    throw new Error(`تعذر الاتصال بالطابعة: ${msg}`)
   }
 
   if (!response.ok) {
@@ -164,6 +151,6 @@ const url = `https://${ip}/cgi-bin/epos/service.cgi?devid=local_printer&timeout=
 
   const body = await response.text()
   if (body.includes("SchemaError") || body.includes("DeviceNotFound")) {
-    throw new Error("خطأ في إعدادات الطابعة — تأكد من تفعيل ePOS على الطابعة")
+    throw new Error("خطأ في إعدادات الطابعة — تأكد من تفعيل ePOS")
   }
 }

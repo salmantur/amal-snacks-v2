@@ -75,21 +75,14 @@ function CheckoutContent() {
 
     const cartItems = items.map((item) => ({
       name: item.name,
+      nameEn: (item as { nameEn?: string }).nameEn || "",
       quantity: item.quantity,
       price: item.price,
       selectedIngredients: item.selectedIngredients,
     }))
 
-    // Build WhatsApp message BEFORE any async work
-    // Safari on iPhone blocks window.open if called after await — must be synchronous
-    const message = isPickup
-      ? generatePickupWhatsAppMessage(cartItems, totalPrice, deliveryInfo)
-      : generateWhatsAppMessage(cartItems, totalPrice, deliveryInfo)
-
-    const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${message}`
-
-    // Save to Supabase in background — don't await, it would break Safari
-    saveOrder({
+    // Save order to Supabase
+    await saveOrder({
       customerName: deliveryInfo.name,
       customerPhone: deliveryInfo.phone,
       customerArea: isPickup ? "استلام من المحل" : deliveryInfo.area,
@@ -102,16 +95,22 @@ function CheckoutContent() {
       scheduledTime: deliveryInfo.scheduledTime,
     })
 
+    const message = isPickup
+      ? generatePickupWhatsAppMessage(cartItems, totalPrice, deliveryInfo)
+      : generateWhatsAppMessage(cartItems, totalPrice, deliveryInfo)
+
+    const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${message}`
+    window.open(whatsappUrl, "_blank")
+
     clearCart()
 
-    // Navigate to confirmation first, WhatsApp opens after
+    // Redirect to confirmation page with order summary
     const params = new URLSearchParams({
       name: deliveryInfo.name,
       area: isPickup ? "" : deliveryInfo.area,
       total: String(grandTotal),
       type: isPickup ? "pickup" : "delivery",
       time: deliveryInfo.scheduledTime ?? "في أقرب وقت",
-      wa: whatsappUrl,
     })
     router.push(`/confirmation?${params.toString()}`)
   }

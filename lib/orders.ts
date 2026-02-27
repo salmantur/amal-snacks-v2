@@ -6,7 +6,7 @@ export interface NewOrderPayload {
   customerPhone: string
   customerArea: string
   orderType: "delivery" | "pickup"
-  items: { name: string; quantity: number; price: number; selectedIngredients?: string[] }[]
+  items: { name: string; nameEn?: string; quantity: number; price: number; selectedIngredients?: string[] }[]
   subtotal: number
   deliveryFee: number
   total: number
@@ -50,17 +50,17 @@ export async function updateOrderStatus(id: string, status: Order["status"]): Pr
   await supabase.from("orders").update({ status }).eq("id", id)
 }
 
-// Fetch recent orders — last 7 days, up to 200 orders
+// Fetch recent orders (last 50, last 24h)
 export async function fetchRecentOrders(): Promise<Order[]> {
   const supabase = createClient()
-  const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
 
   const { data, error } = await supabase
     .from("orders")
     .select("*")
     .gte("created_at", since)
     .order("created_at", { ascending: false })
-    .limit(200)
+    .limit(50)
 
   if (error || !data) return []
 

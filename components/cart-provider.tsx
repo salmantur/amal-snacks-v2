@@ -13,6 +13,7 @@ import {
 export interface MenuItem {
   id: string
   name: string
+  nameEn?: string
   description: string
   price: number
   image: string

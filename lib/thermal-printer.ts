@@ -1,4 +1,5 @@
 import type { Order } from "@/lib/data"
+import arabicReshaper from 'arabic-reshaper'
 
 // Printer IP — change if it moves (self-test print shows current IP)
 let PRINTER_IP = "192.168.100.205"
@@ -17,7 +18,34 @@ export function setPrinterIp(ip: string): void {
   }
 }
 
-// ── XML Escaping Helper ────────────────────────────────────────────────
+// ── Arabic Reshaping Helper ────────────────────────────────────────────────
+
+function formatArabic(text: string): string {
+  if (!text) return "";
+  const arabicPattern = /[\u0600-\u06FF]/;
+  // If no Arabic is found, return as-is
+  if (!arabicPattern.test(text)) return text;
+
+  try {
+    let reshaped = text;
+    
+    // Safely handle different versions of the arabic-reshaper package
+    if (typeof (arabicReshaper as any).convertArabic === 'function') {
+      reshaped = (arabicReshaper as any).convertArabic(text);
+    } else if (typeof (arabicReshaper as any).reshape === 'function') {
+      reshaped = (arabicReshaper as any).reshape(text);
+    } else if (typeof arabicReshaper === 'function') {
+      reshaped = (arabicReshaper as unknown as Function)(text);
+    }
+
+    // Reverse the joined unicode characters for the Left-to-Right printer
+    return reshaped.split('').reverse().join('');
+  } catch (err) {
+    console.error("Arabic reshaping failed:", err);
+    // Fallback: just reverse it so it's at least readable right-to-left
+    return text.split('').reverse().join('');
+  }
+}
 
 function x(str: string): string {
   return str
@@ -36,16 +64,12 @@ function buildXml(order: Order): string {
 
   const lines: string[] = []
 
-  // Helper updated to use native Arabic processing
   const t = (text: string, em = false, dw = false, dh = false) => {
-    const attrs = [
-      'lang="ar"', // This tells the TM-m30II to handle shaping and RTL layout natively
-      em && 'em="true"', 
-      dw && 'dw="true"', 
-      dh && 'dh="true"'
-    ].filter(Boolean).join(" ")
-    
-    lines.push(`<text ${attrs}>${x(text)}\n</text>`)
+    // We reshape ONLY the Arabic text, keeping everything else normal
+    const formattedText = formatArabic(text);
+    const attrs = [em && 'em="true"', dw && 'dw="true"', dh && 'dh="true"']
+      .filter(Boolean).join(" ")
+    lines.push(`<text ${attrs}>${x(formattedText)}\n</text>`)
   }
 
   const sep = (c = "-") => lines.push(`<text>${x(c.repeat(32))}\n</text>`)
@@ -55,7 +79,7 @@ function buildXml(order: Order): string {
   lines.push(`<text align="center"/>`)
   t("أمل سناك", true, true, true)
   t("تذكرة المطبخ")
-  lines.push(`<text align="left"/>`)
+  lines.push(`<text align="left"/>`) // Ensure we reset to left for column alignment
   sep("=")
 
   // Order Info
@@ -74,15 +98,19 @@ function buildXml(order: Order): string {
   // Items
   t("الطلبات:", true)
   for (const item of order.items) {
+    const shapedName = formatArabic(item.name);
     const qty = `${item.quantity}x`;
     const price = `${item.price * item.quantity} SR`; 
     
-    // We construct the string logically (Name -> Spaces -> Price).
-    // The printer will automatically flip it visually because of lang="ar".
-    const currentLine = `${qty} ${item.name}`;
-    const padCount = Math.max(1, 32 - currentLine.length - price.length);
+    // Calculate padding based on original length to keep columns perfect
+    const rawLineLength = qty.length + 1 + item.name.length; 
+    const padCount = Math.max(1, 32 - rawLineLength - price.length);
     
-    lines.push(`<text lang="ar">${x(currentLine + " ".repeat(padCount) + price)}\n</text>`);
+    // We manually assemble the line so the printer prints it exactly how we want Left-to-Right
+    // Format: [Price] [Spaces] [Reversed Arabic Name] [Qty]
+    const currentLine = `${price}${" ".repeat(padCount)}${shapedName} ${qty}`;
+    
+    lines.push(`<text>${x(currentLine)}\n</text>`);
     
     const ingredients = (item as any).selectedIngredients;
     if (ingredients?.length) {

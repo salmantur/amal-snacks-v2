@@ -1,10 +1,6 @@
 /**
- * Epson TM-M30II ePOS Print — Arabic via Canvas Image
- *
- * The printer's built-in font has NO Arabic support — this is a hardware limitation.
- * Solution: render the full ticket on an HTML Canvas using the device's Arabic font,
- * convert to 1-bit monochrome bitmap, send as <image> in ePOS XML.
- * Result: perfect Arabic on every printout, from iPhone Safari or laptop Chrome.
+ * Epson TM-M30II ePOS Print — Canvas Image method
+ * Ticket: English labels, item names shown in both Arabic + English
  */
 
 import type { Order } from "@/lib/data"
@@ -25,59 +21,76 @@ export function setPrinterIp(ip: string): void {
   }
 }
 
-// TM-M30II paper = 80mm = 576 dots at 203dpi
-const PAPER_WIDTH = 576
+const PAPER_WIDTH = 576 // TM-M30II 80mm = 576 dots at 203dpi
 
-// ── Ticket content definition ─────────────────────────────────────────────
+// ── Ticket lines ──────────────────────────────────────────────────────────
 
 type Line = {
   text: string
   bold?: boolean
   size?: number
   align?: "center" | "right" | "left"
+  dir?: "ltr" | "rtl"
 }
 
 function buildLines(order: Order): Line[] {
-  const d = new Date(order.createdAt)
-  const day  = d.toLocaleDateString("ar-SA", { weekday: "long" })
-  const date = d.toLocaleDateString("ar-SA", { year: "numeric", month: "long", day: "numeric" })
-  const time = d.toLocaleTimeString("ar-SA", { hour: "2-digit", minute: "2-digit" })
+  const d    = new Date(order.createdAt)
+  const days = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"]
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+  const day  = days[d.getDay()]
+  const date = `${day}, ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`
+  const time = d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true })
 
   const L: Line[] = []
-  const sep = () => L.push({ text: "─".repeat(32), size: 20, align: "center" })
-  const gap = () => L.push({ text: "", size: 14 })
+  const sep  = () => L.push({ text: "─".repeat(32), size: 20, align: "center", dir: "ltr" })
+  const gap  = () => L.push({ text: "", size: 12 })
 
   // Header
-  L.push({ text: "أمل سناك",     bold: true,  size: 44, align: "center" })
-  L.push({ text: "تذكرة المطبخ", bold: false, size: 28, align: "center" })
+  L.push({ text: "Amal Snack",      bold: true,  size: 44, align: "center", dir: "ltr" })
+  L.push({ text: "Kitchen Ticket",  bold: false, size: 26, align: "center", dir: "ltr" })
   sep()
 
-  // Order number — big and centred
-  L.push({ text: `# ${order.orderNumber}`, bold: true, size: 40, align: "center" })
+  // Order number
+  L.push({ text: `Order #${order.orderNumber}`, bold: true, size: 40, align: "center", dir: "ltr" })
   gap()
 
   // Date & time
-  L.push({ text: day,                    size: 26, align: "right" })
-  L.push({ text: date,                   size: 26, align: "right" })
-  L.push({ text: `الوقت: ${time}`,       size: 26, align: "right" })
+  L.push({ text: date, size: 24, align: "left", dir: "ltr" })
+  L.push({ text: `Time: ${time}`, size: 24, align: "left", dir: "ltr" })
   sep()
 
   // Customer
-  L.push({ text: `الاسم: ${order.customerName}`, bold: true, size: 30, align: "right" })
+  L.push({ text: `Name: ${order.customerName}`, bold: true, size: 28, align: "left", dir: "ltr" })
   if (order.scheduledTime) {
-    L.push({ text: `الموعد: ${order.scheduledTime}`, bold: true, size: 28, align: "right" })
+    L.push({ text: `Due: ${order.scheduledTime}`, bold: true, size: 28, align: "left", dir: "ltr" })
   }
   sep()
 
-  // Items — name + quantity, NO prices
-  L.push({ text: "الطلبات:", bold: true, size: 28, align: "right" })
+  // Items
+  L.push({ text: "ITEMS:", bold: true, size: 28, align: "left", dir: "ltr" })
   gap()
 
   for (const item of order.items) {
-    L.push({ text: `${item.name}   ×${item.quantity}`, bold: true, size: 30, align: "right" })
+    const nameEn = (item as { nameEn?: string }).nameEn
+    const qty    = item.quantity
+
+    // English name (large, bold)
+    if (nameEn) {
+      L.push({ text: `${qty}x  ${nameEn}`, bold: true, size: 30, align: "left", dir: "ltr" })
+    }
+    // Arabic name (smaller, right-aligned)
+    L.push({
+      text: nameEn ? `      ${item.name}` : `${qty}x  ${item.name}`,
+      bold: !nameEn,
+      size: nameEn ? 24 : 30,
+      align: "right",
+      dir: "rtl"
+    })
+
+    // Selected options
     const ing = (item as { selectedIngredients?: string[] }).selectedIngredients
     if (ing?.length) {
-      L.push({ text: `    ${ing.join("  ،  ")}`, size: 24, align: "right" })
+      L.push({ text: `    → ${ing.join(", ")}`, size: 22, align: "left", dir: "ltr" })
     }
     gap()
   }
@@ -85,8 +98,8 @@ function buildLines(order: Order): Line[] {
   // Notes
   if (order.notes) {
     sep()
-    L.push({ text: "ملاحظات:", bold: true, size: 28, align: "right" })
-    L.push({ text: order.notes, size: 26, align: "right" })
+    L.push({ text: "Notes:", bold: true, size: 26, align: "left", dir: "ltr" })
+    L.push({ text: order.notes, size: 24, align: "left", dir: "ltr" })
   }
 
   sep()
@@ -95,14 +108,13 @@ function buildLines(order: Order): Line[] {
   return L
 }
 
-// ── Render lines to HTML Canvas ───────────────────────────────────────────
+// ── Canvas renderer ───────────────────────────────────────────────────────
 
 function renderCanvas(lines: Line[]): HTMLCanvasElement {
   const canvas = document.createElement("canvas")
-  const ctx = canvas.getContext("2d")!
-  const PAD = 24
+  const ctx    = canvas.getContext("2d")!
+  const PAD    = 24
 
-  // Measure total height first
   let totalH = PAD
   const measured = lines.map(l => {
     const size = l.size ?? 28
@@ -115,23 +127,22 @@ function renderCanvas(lines: Line[]): HTMLCanvasElement {
   canvas.width  = PAPER_WIDTH
   canvas.height = totalH
 
-  // White background
   ctx.fillStyle = "#ffffff"
   ctx.fillRect(0, 0, canvas.width, canvas.height)
-
-  // Draw each line
-  ctx.fillStyle  = "#000000"
-  ctx.direction  = "rtl"
+  ctx.fillStyle    = "#000000"
   ctx.textBaseline = "top"
 
   let y = PAD
   for (const l of measured) {
-    ctx.font = `${l.bold ? "bold " : ""}${l.size}px Arial, sans-serif`
-    const align = l.align ?? "right"
-    ctx.textAlign = align === "center" ? "center" : align === "left" ? "left" : "right"
+    ctx.font      = `${l.bold ? "bold " : ""}${l.size}px Arial, sans-serif`
+    ctx.direction = l.dir ?? "ltr"
+
+    const align = l.align ?? "left"
+    ctx.textAlign = align === "center" ? "center" : align === "right" ? "right" : "left"
     const x = align === "center" ? PAPER_WIDTH / 2
-             : align === "left"  ? PAD
-             : PAPER_WIDTH - PAD
+             : align === "right"  ? PAPER_WIDTH - PAD
+             : PAD
+
     if (l.text) ctx.fillText(l.text, x, y)
     y += l.lh
   }
@@ -139,10 +150,10 @@ function renderCanvas(lines: Line[]): HTMLCanvasElement {
   return canvas
 }
 
-// ── Canvas → 1-bit monochrome base64 (required by ePOS) ──────────────────
+// ── Canvas → 1-bit monochrome base64 ─────────────────────────────────────
 
 function canvasToMono(canvas: HTMLCanvasElement): { w: number; h: number; b64: string } {
-  const ctx = canvas.getContext("2d")!
+  const ctx  = canvas.getContext("2d")!
   const { data, width: w, height: h } = ctx.getImageData(0, 0, canvas.width, canvas.height)
 
   const rowBytes = Math.ceil(w / 8)
@@ -152,9 +163,7 @@ function canvasToMono(canvas: HTMLCanvasElement): { w: number; h: number; b64: s
     for (let x = 0; x < w; x++) {
       const i    = (y * w + x) * 4
       const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]
-      if (gray < 128) {
-        mono[y * rowBytes + Math.floor(x / 8)] |= (1 << (7 - x % 8))
-      }
+      if (gray < 128) mono[y * rowBytes + Math.floor(x / 8)] |= (1 << (7 - x % 8))
     }
   }
 
@@ -163,11 +172,11 @@ function canvasToMono(canvas: HTMLCanvasElement): { w: number; h: number; b64: s
   return { w, h, b64: btoa(bin) }
 }
 
-// ── Build ePOS SOAP XML ───────────────────────────────────────────────────
+// ── Build ePOS XML ────────────────────────────────────────────────────────
 
 async function buildXml(order: Order): Promise<string> {
-  const lines  = buildLines(order)
-  const canvas = renderCanvas(lines)
+  const lines        = buildLines(order)
+  const canvas       = renderCanvas(lines)
   const { w, h, b64 } = canvasToMono(canvas)
 
   return `<?xml version="1.0" encoding="utf-8"?>
@@ -201,27 +210,26 @@ export async function printOrder(order: Order): Promise<void> {
       signal: AbortSignal.timeout(15000),
     })
   } catch (err) {
-    const msg      = err instanceof Error ? err.message : String(err)
+    const msg       = err instanceof Error ? err.message : String(err)
     const isTimeout = err instanceof Error &&
       (err.name === "AbortError" || err.name === "TimeoutError")
-
     if (isTimeout || msg.includes("fetch")) {
       throw new Error(
-        `تعذر الاتصال بالطابعة (${ip})\n` +
-        `• تأكد أن الطابعة شغالة\n` +
-        `• الجهاز على نفس الشبكة\n` +
-        `• SSL مفعّل على الطابعة`
+        `Cannot reach printer (${ip})\n` +
+        `• Make sure printer is on\n` +
+        `• Device must be on same WiFi\n` +
+        `• SSL must be enabled on printer`
       )
     }
-    throw new Error(`خطأ: ${msg}`)
+    throw new Error(`Error: ${msg}`)
   }
 
   if (!response.ok) {
-    throw new Error(`رفضت الطابعة الطلب (${response.status})`)
+    throw new Error(`Printer rejected request (${response.status})`)
   }
 
   const body = await response.text()
   if (body.includes("SchemaError") || body.includes("DeviceNotFound")) {
-    throw new Error("تأكد من تفعيل ePOS-Print على الطابعة")
+    throw new Error("Make sure ePOS-Print is enabled on the printer")
   }
 }

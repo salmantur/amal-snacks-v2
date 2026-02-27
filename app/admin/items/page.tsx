@@ -9,32 +9,26 @@ import {
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { categories } from "@/lib/data"
-import { cn } from "@/lib/utils"
-
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface MenuItem {
   id: string
   name: string
+  nameEn: string
   description: string
   price: number
   image: string
   category: string
   ingredients: string
   limit: number
+  inStock: boolean
 }
 
 const EMPTY_ITEM: Omit<MenuItem, "id"> = {
-  name: "",
-  description: "",
-  price: 0,
-  image: "",
-  category: "",
-  ingredients: "",
-  limit: 0,
+  name: "", nameEn: "", description: "",
+  price: 0, image: "", category: "",
+  ingredients: "", limit: 0, inStock: true,
 }
 
-// Flat list of all DB categories with their display labels
 const ALL_CATEGORIES = categories.flatMap((cat) =>
   cat.sections
     ? cat.sections.map((s) => ({ value: s.dbCategory, label: `${cat.label} — ${s.label}` }))
@@ -42,8 +36,6 @@ const ALL_CATEGORIES = categories.flatMap((cat) =>
 )
 
 const SUPABASE_URL = "https://eejlqdydoilbjpegxvbq.supabase.co"
-
-// ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function ItemsPage() {
   const [items, setItems] = useState<MenuItem[]>([])
@@ -58,14 +50,11 @@ export default function ItemsPage() {
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
   const [imageUploading, setImageUploading] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
+  const [ingredientInput, setIngredientInput] = useState("")
   const fileInputRef = useRef<HTMLInputElement>(null)
-
   const supabase = createClient()
 
-  // ── Load items ──
-  useEffect(() => {
-    loadItems()
-  }, [])
+  useEffect(() => { loadItems() }, [])
 
   async function loadItems() {
     setLoading(true)
@@ -81,6 +70,7 @@ export default function ItemsPage() {
     return {
       id: String(raw.id),
       name: String(raw.name || ""),
+      nameEn: String(raw.name_en || ""),
       description: String(raw.description || ""),
       price: Number(raw.price) || 0,
       image: img,
@@ -89,6 +79,7 @@ export default function ItemsPage() {
         ? raw.ingredients.join(", ")
         : String(raw.ingredients || ""),
       limit: Number(raw.limit) || 0,
+      inStock: raw.in_stock !== false,
     }
   }
 
@@ -97,7 +88,20 @@ export default function ItemsPage() {
     setTimeout(() => setSuccessMsg(null), 3000)
   }
 
-  // ── Image upload to Supabase Storage ──
+  function openModal(item: Partial<MenuItem>, isNewItem: boolean) {
+    setModalItem(item)
+    setIsNew(isNewItem)
+    setError(null)
+    setIngredientInput("")
+    // Prevent body scroll on iPhone
+    document.body.style.overflow = "hidden"
+  }
+
+  function closeModal() {
+    setModalItem(null)
+    document.body.style.overflow = ""
+  }
+
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file || !modalItem) return
@@ -114,39 +118,36 @@ export default function ItemsPage() {
     setImageUploading(false)
   }
 
-  // ── Save (create or update) ──
   async function handleSave() {
     if (!modalItem) return
     if (!modalItem.name?.trim()) { setError("الاسم مطلوب"); return }
     if (!modalItem.category) { setError("الفئة مطلوبة"); return }
     if (!modalItem.price || modalItem.price <= 0) { setError("السعر يجب أن يكون أكبر من صفر"); return }
-
     setSaving(true)
     setError(null)
-
     const payload = {
       name: modalItem.name,
+      name_en: modalItem.nameEn || "",
       description: modalItem.description || "",
       price: modalItem.price,
       image: modalItem.image || "",
       category: modalItem.category,
       ingredients: modalItem.ingredients || "",
       limit: modalItem.limit || 0,
+      in_stock: modalItem.inStock !== false,
     }
-
     if (isNew) {
       const { error } = await supabase.from("menu").insert(payload)
       if (error) setError(error.message)
-      else { flash("تم إضافة العنصر ✓"); setModalItem(null); loadItems() }
+      else { flash("تم الإضافة ✓"); closeModal(); loadItems() }
     } else {
       const { error } = await supabase.from("menu").update(payload).eq("id", modalItem.id)
       if (error) setError(error.message)
-      else { flash("تم الحفظ ✓"); setModalItem(null); loadItems() }
+      else { flash("تم الحفظ ✓"); closeModal(); loadItems() }
     }
     setSaving(false)
   }
 
-  // ── Delete ──
   async function handleDelete(id: string) {
     setDeleting(id)
     const { error } = await supabase.from("menu").delete().eq("id", id)
@@ -156,135 +157,159 @@ export default function ItemsPage() {
     setDeleteConfirm(null)
   }
 
-  // ── Filtered items ──
-  const filtered = items.filter((item) => {
-    const matchSearch = item.name.includes(search) || item.description.includes(search)
+  function addIngredient(val: string) {
+    const trimmed = val.trim()
+    if (!trimmed) return
+    const current = (modalItem?.ingredients || "").split(",").map(t => t.trim()).filter(Boolean)
+    if (!current.includes(trimmed)) {
+      setModalItem(p => ({ ...p, ingredients: [...current, trimmed].join(", ") }))
+    }
+    setIngredientInput("")
+  }
+
+  const filtered = items.filter(item => {
+    const matchSearch = item.name.includes(search) || item.nameEn.toLowerCase().includes(search.toLowerCase())
     const matchCat = filterCategory === "all" || item.category === filterCategory
     return matchSearch && matchCat
   })
 
-  const getCategoryLabel = (val: string) =>
-    ALL_CATEGORIES.find((c) => c.value === val)?.label || val
-
-  // ── Image display ──
   function getDisplayImage(img: string) {
     if (!img) return null
     if (img.startsWith("http")) return img
     return `${SUPABASE_URL}/storage/v1/object/public/Menu/${img}`
   }
 
-  return (
-    <main className="min-h-screen bg-amal-grey" dir="rtl">
+  const getCategoryLabel = (val: string) =>
+    ALL_CATEGORIES.find(c => c.value === val)?.label || val
 
-      {/* ── Header ── */}
-      <header className="sticky top-0 z-50 bg-background border-b border-border">
+  const tags = (modalItem?.ingredients || "").split(",").map(t => t.trim()).filter(Boolean)
+
+  return (
+    <main className="min-h-screen bg-[#f5f5f5]" dir="rtl">
+
+      {/* Header */}
+      <header
+        className="sticky top-0 z-40 bg-white border-b border-gray-100"
+        style={{ transform: "translateZ(0)" }}
+      >
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
-            <Link href="/admin" className="w-10 h-10 rounded-full bg-amal-grey flex items-center justify-center">
+            <Link
+              href="/admin"
+              className="w-11 h-11 rounded-full bg-[#f5f5f5] flex items-center justify-center active:scale-95 transition-transform"
+            >
               <ArrowRight className="h-5 w-5" />
             </Link>
             <div>
-              <h1 className="text-xl font-bold">إدارة الأصناف</h1>
-              <p className="text-xs text-muted-foreground">{items.length} صنف</p>
+              <h1 className="text-lg font-bold">إدارة الأصناف</h1>
+              <p className="text-xs text-gray-400">{items.length} صنف</p>
             </div>
           </div>
           <button
-            onClick={() => { setIsNew(true); setModalItem({ ...EMPTY_ITEM }); setError(null) }}
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-full font-medium text-sm hover:bg-primary/90 transition-colors"
+            onClick={() => openModal({ ...EMPTY_ITEM }, true)}
+            className="flex items-center gap-1.5 px-4 py-2.5 bg-black text-white rounded-full font-medium text-sm active:scale-95 transition-transform"
           >
             <Plus className="h-4 w-4" />
-            إضافة صنف
+            إضافة
           </button>
         </div>
 
         {/* Search + filter */}
         <div className="flex gap-2 px-4 pb-3">
           <div className="relative flex-1">
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={e => setSearch(e.target.value)}
               placeholder="بحث..."
-              className="w-full pr-9 pl-3 py-2 rounded-xl bg-amal-grey text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+              className="w-full pr-9 pl-3 py-2.5 rounded-xl bg-[#f5f5f5] text-sm focus:outline-none"
             />
           </div>
           <div className="relative">
             <select
               value={filterCategory}
-              onChange={(e) => setFilterCategory(e.target.value)}
-              className="appearance-none pr-3 pl-8 py-2 rounded-xl bg-amal-grey text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer"
+              onChange={e => setFilterCategory(e.target.value)}
+              className="appearance-none pr-3 pl-8 py-2.5 rounded-xl bg-[#f5f5f5] text-sm focus:outline-none cursor-pointer"
             >
-              <option value="all">كل الفئات</option>
-              {ALL_CATEGORIES.map((c) => (
+              <option value="all">الكل</option>
+              {ALL_CATEGORIES.map(c => (
                 <option key={c.value} value={c.value}>{c.label}</option>
               ))}
             </select>
-            <ChevronDown className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+            <ChevronDown className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
           </div>
         </div>
       </header>
 
-      {/* ── Toast messages ── */}
+      {/* Toast */}
       {successMsg && (
-        <div className="fixed top-4 left-4 right-4 z-50 p-4 bg-[#1e5631] text-white rounded-2xl shadow-xl flex items-center gap-2 animate-slide-up">
-          <Check className="h-5 w-5" />
+        <div className="fixed top-4 left-4 right-4 z-50 p-4 bg-green-700 text-white rounded-2xl shadow-xl flex items-center gap-2">
+          <Check className="h-5 w-5 flex-shrink-0" />
           <span className="font-medium">{successMsg}</span>
         </div>
       )}
 
-      {/* ── Items list ── */}
-      <div className="p-4">
+      {/* Items list */}
+      <div className="p-4 pb-32">
         {loading ? (
           <div className="grid gap-3">
-            {[1,2,3,4].map((i) => (
-              <div key={i} className="bg-card rounded-2xl p-4 flex gap-3 animate-pulse">
-                <div className="w-16 h-16 rounded-xl bg-gray-200 flex-shrink-0" />
-                <div className="flex-1 space-y-2">
-                  <div className="h-4 bg-gray-200 rounded w-1/2" />
-                  <div className="h-3 bg-gray-200 rounded w-3/4" />
-                  <div className="h-3 bg-gray-200 rounded w-1/4" />
+            {[1,2,3,4].map(i => (
+              <div key={i} className="bg-white rounded-2xl p-4 flex gap-3 animate-pulse">
+                <div className="w-16 h-16 rounded-xl bg-gray-100 flex-shrink-0" />
+                <div className="flex-1 space-y-2 py-1">
+                  <div className="h-4 bg-gray-100 rounded w-1/2" />
+                  <div className="h-3 bg-gray-100 rounded w-3/4" />
+                  <div className="h-3 bg-gray-100 rounded w-1/4" />
                 </div>
               </div>
             ))}
           </div>
         ) : filtered.length === 0 ? (
-          <div className="text-center py-16 text-muted-foreground">
+          <div className="text-center py-20 text-gray-400">
             <ImageIcon className="h-12 w-12 mx-auto mb-3 opacity-30" />
             <p>لا توجد أصناف</p>
           </div>
         ) : (
           <div className="grid gap-3">
-            {filtered.map((item) => {
+            {filtered.map(item => {
               const imgSrc = getDisplayImage(item.image)
               return (
-                <div key={item.id} className="bg-card rounded-2xl p-4 flex items-center gap-3 shadow-sm">
+                <div
+                  key={item.id}
+                  className="bg-white rounded-2xl p-4 flex items-center gap-3 shadow-sm"
+                >
                   {/* Image */}
-                  <div className="w-16 h-16 rounded-xl bg-amal-grey overflow-hidden flex-shrink-0 flex items-center justify-center">
-                    {imgSrc ? (
-                      <Image src={imgSrc} alt={item.name} width={64} height={64} className="object-cover w-full h-full" />
-                    ) : (
-                      <ImageIcon className="h-6 w-6 text-muted-foreground" />
-                    )}
+                  <div className="w-16 h-16 rounded-xl bg-[#f5f5f5] overflow-hidden flex-shrink-0 flex items-center justify-center">
+                    {imgSrc
+                      ? <Image src={imgSrc} alt={item.name} width={64} height={64} className="object-cover w-full h-full" />
+                      : <ImageIcon className="h-6 w-6 text-gray-300" />
+                    }
                   </div>
 
                   {/* Info */}
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-foreground truncate">{item.name}</p>
-                    <p className="text-xs text-muted-foreground truncate">{getCategoryLabel(item.category)}</p>
-                    <p className="text-sm font-bold text-primary mt-0.5">{item.price} ر.س</p>
+                    <p className="font-bold truncate">{item.name}</p>
+                    {item.nameEn && <p className="text-xs text-gray-400 truncate">{item.nameEn}</p>}
+                    <p className="text-xs text-gray-400">{getCategoryLabel(item.category)}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <p className="text-sm font-bold text-black">{item.price} ر.س</p>
+                      {!item.inStock && (
+                        <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">نفذ</span>
+                      )}
+                    </div>
                   </div>
 
                   {/* Actions */}
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <button
-                      onClick={() => { setIsNew(false); setModalItem({ ...item }); setError(null) }}
-                      className="w-9 h-9 rounded-xl bg-amal-grey flex items-center justify-center hover:bg-primary/10 transition-colors"
+                      onClick={() => openModal({ ...item }, false)}
+                      className="w-11 h-11 rounded-xl bg-[#f5f5f5] flex items-center justify-center active:scale-95 transition-transform"
                     >
-                      <Pencil className="h-4 w-4 text-foreground" />
+                      <Pencil className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => setDeleteConfirm(item.id)}
-                      className="w-9 h-9 rounded-xl bg-amal-grey flex items-center justify-center hover:bg-red-100 transition-colors"
+                      className="w-11 h-11 rounded-xl bg-[#f5f5f5] flex items-center justify-center active:scale-95 transition-transform"
                     >
                       {deleting === item.id
                         ? <Loader2 className="h-4 w-4 animate-spin text-red-500" />
@@ -299,24 +324,24 @@ export default function ItemsPage() {
         )}
       </div>
 
-      {/* ── Delete confirmation ── */}
+      {/* Delete confirmation */}
       {deleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4">
-          <div className="w-full max-w-sm bg-background rounded-3xl p-6">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4">
+          <div className="w-full max-w-sm bg-white rounded-3xl p-6 mb-safe">
             <h3 className="text-lg font-bold text-center mb-2">تأكيد الحذف</h3>
-            <p className="text-sm text-muted-foreground text-center mb-6">
-              هل أنت متأكد من حذف هذا الصنف؟ لا يمكن التراجع.
+            <p className="text-sm text-gray-500 text-center mb-6">
+              هل أنت متأكد من حذف هذا الصنف؟
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setDeleteConfirm(null)}
-                className="flex-1 py-3 rounded-xl bg-amal-grey font-medium"
+                className="flex-1 py-3.5 rounded-2xl bg-[#f5f5f5] font-medium active:scale-95 transition-transform"
               >
                 إلغاء
               </button>
               <button
                 onClick={() => handleDelete(deleteConfirm)}
-                className="flex-1 py-3 rounded-xl bg-red-500 text-white font-medium hover:bg-red-600 transition-colors"
+                className="flex-1 py-3.5 rounded-2xl bg-red-500 text-white font-medium active:scale-95 transition-transform"
               >
                 حذف
               </button>
@@ -325,55 +350,59 @@ export default function ItemsPage() {
         </div>
       )}
 
-      {/* ── Add / Edit Modal ── */}
+      {/* Edit / Add Modal */}
       {modalItem && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40">
-          <div className="w-full max-w-lg bg-background rounded-t-3xl max-h-[92vh] flex flex-col">
-
-            {/* Modal header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-border flex-shrink-0">
-              <button onClick={() => setModalItem(null)} className="w-9 h-9 rounded-full bg-amal-grey flex items-center justify-center">
+        <div
+          className="fixed inset-0 z-50 bg-black/50"
+          style={{ WebkitOverflowScrolling: "touch" }}
+        >
+          <div
+            className="absolute inset-x-0 bottom-0 bg-white rounded-t-3xl flex flex-col"
+            style={{ maxHeight: "94svh", height: "94svh" }}
+          >
+            {/* Modal header — fixed */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 flex-shrink-0">
+              <button
+                onClick={closeModal}
+                className="w-11 h-11 rounded-full bg-[#f5f5f5] flex items-center justify-center active:scale-95 transition-transform"
+              >
                 <X className="h-5 w-5" />
               </button>
-              <h2 className="text-lg font-bold">{isNew ? "إضافة صنف جديد" : "تعديل الصنف"}</h2>
+              <h2 className="text-base font-bold">{isNew ? "إضافة صنف" : "تعديل الصنف"}</h2>
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-full text-sm font-medium disabled:opacity-60"
+                className="flex items-center gap-2 px-5 py-2.5 bg-black text-white rounded-full text-sm font-medium disabled:opacity-50 active:scale-95 transition-transform"
               >
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                 حفظ
               </button>
             </div>
 
-            {/* Modal body */}
-            <div className="overflow-y-auto flex-1 px-6 py-4 space-y-4">
-
+            {/* Modal body — scrollable */}
+            <div
+              className="flex-1 overflow-y-auto px-5 py-4 space-y-5"
+              style={{ WebkitOverflowScrolling: "touch", overscrollBehavior: "contain" }}
+            >
               {error && (
                 <div className="p-3 bg-red-50 text-red-600 text-sm rounded-xl text-center">{error}</div>
               )}
 
               {/* Image */}
               <div>
-                <label className="block text-sm font-medium mb-2">الصورة</label>
+                <label className="block text-sm font-semibold mb-2">الصورة</label>
                 <div className="flex items-center gap-3">
-                  <div className="w-20 h-20 rounded-xl bg-amal-grey flex items-center justify-center overflow-hidden flex-shrink-0">
-                    {modalItem.image ? (
-                      <Image
-                        src={getDisplayImage(modalItem.image) || modalItem.image}
-                        alt="preview"
-                        width={80} height={80}
-                        className="object-cover w-full h-full"
-                      />
-                    ) : (
-                      <ImageIcon className="h-7 w-7 text-muted-foreground" />
-                    )}
+                  <div className="w-20 h-20 rounded-2xl bg-[#f5f5f5] flex items-center justify-center overflow-hidden flex-shrink-0">
+                    {modalItem.image
+                      ? <Image src={getDisplayImage(modalItem.image) || modalItem.image} alt="preview" width={80} height={80} className="object-cover w-full h-full" />
+                      : <ImageIcon className="h-7 w-7 text-gray-300" />
+                    }
                   </div>
                   <div className="flex-1 space-y-2">
                     <button
                       onClick={() => fileInputRef.current?.click()}
                       disabled={imageUploading}
-                      className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-dashed border-border hover:border-primary/50 transition-colors text-sm"
+                      className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-dashed border-gray-200 text-sm active:scale-95 transition-transform"
                     >
                       {imageUploading
                         ? <><Loader2 className="h-4 w-4 animate-spin" /> جاري الرفع...</>
@@ -382,96 +411,166 @@ export default function ItemsPage() {
                     </button>
                     <input
                       value={modalItem.image || ""}
-                      onChange={(e) => setModalItem((p) => ({ ...p, image: e.target.value }))}
-                      placeholder="أو أدخل رابط الصورة"
-                      className="w-full px-3 py-2 rounded-xl bg-amal-grey text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 text-right"
+                      onChange={e => setModalItem(p => ({ ...p, image: e.target.value }))}
+                      placeholder="أو رابط الصورة"
+                      className="w-full px-3 py-2.5 rounded-xl bg-[#f5f5f5] text-sm focus:outline-none text-right"
                     />
                   </div>
                 </div>
                 <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
               </div>
 
-              {/* Name */}
+              {/* Arabic Name */}
               <div>
-                <label className="block text-sm font-medium mb-1.5">الاسم <span className="text-red-500">*</span></label>
+                <label className="block text-sm font-semibold mb-1.5">
+                  الاسم بالعربي <span className="text-red-500">*</span>
+                </label>
                 <input
                   value={modalItem.name || ""}
-                  onChange={(e) => setModalItem((p) => ({ ...p, name: e.target.value }))}
-                  placeholder="اسم الصنف"
-                  className="w-full px-4 py-3 rounded-xl bg-amal-grey focus:outline-none focus:ring-2 focus:ring-primary/20 text-right"
+                  onChange={e => setModalItem(p => ({ ...p, name: e.target.value }))}
+                  placeholder="مثال: سمبوسة جبن"
+                  className="w-full px-4 py-3.5 rounded-2xl bg-[#f5f5f5] focus:outline-none text-right text-base"
+                  dir="rtl"
+                />
+              </div>
+
+              {/* English Name */}
+              <div>
+                <label className="block text-sm font-semibold mb-1.5">الاسم بالإنجليزي</label>
+                <input
+                  value={modalItem.nameEn || ""}
+                  onChange={e => setModalItem(p => ({ ...p, nameEn: e.target.value }))}
+                  placeholder="e.g. Cheese Samboosa"
+                  className="w-full px-4 py-3.5 rounded-2xl bg-[#f5f5f5] focus:outline-none text-left text-base"
+                  dir="ltr"
                 />
               </div>
 
               {/* Description */}
               <div>
-                <label className="block text-sm font-medium mb-1.5">الوصف</label>
+                <label className="block text-sm font-semibold mb-1.5">الوصف</label>
                 <textarea
                   value={modalItem.description || ""}
-                  onChange={(e) => setModalItem((p) => ({ ...p, description: e.target.value }))}
+                  onChange={e => setModalItem(p => ({ ...p, description: e.target.value }))}
                   placeholder="وصف الصنف"
-                  rows={3}
-                  className="w-full px-4 py-3 rounded-xl bg-amal-grey focus:outline-none focus:ring-2 focus:ring-primary/20 text-right resize-none"
+                  rows={2}
+                  className="w-full px-4 py-3.5 rounded-2xl bg-[#f5f5f5] focus:outline-none text-right resize-none text-base"
                 />
               </div>
 
-              {/* Price + Limit row */}
+              {/* Price + Limit */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium mb-1.5">السعر (ر.س) <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-semibold mb-1.5">
+                    السعر (ر.س) <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="number"
+                    inputMode="decimal"
                     min={0}
                     value={modalItem.price || ""}
-                    onChange={(e) => setModalItem((p) => ({ ...p, price: Number(e.target.value) }))}
+                    onChange={e => setModalItem(p => ({ ...p, price: Number(e.target.value) }))}
                     placeholder="0"
-                    className="w-full px-4 py-3 rounded-xl bg-amal-grey focus:outline-none focus:ring-2 focus:ring-primary/20 text-right"
+                    className="w-full px-4 py-3.5 rounded-2xl bg-[#f5f5f5] focus:outline-none text-right text-base"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1.5">حد الاختيار</label>
+                  <label className="block text-sm font-semibold mb-1.5">حد الاختيار</label>
                   <input
                     type="number"
+                    inputMode="numeric"
                     min={0}
                     value={modalItem.limit || ""}
-                    onChange={(e) => setModalItem((p) => ({ ...p, limit: Number(e.target.value) }))}
+                    onChange={e => setModalItem(p => ({ ...p, limit: Number(e.target.value) }))}
                     placeholder="0"
-                    className="w-full px-4 py-3 rounded-xl bg-amal-grey focus:outline-none focus:ring-2 focus:ring-primary/20 text-right"
+                    className="w-full px-4 py-3.5 rounded-2xl bg-[#f5f5f5] focus:outline-none text-right text-base"
                   />
                 </div>
               </div>
 
               {/* Category */}
               <div>
-                <label className="block text-sm font-medium mb-1.5">الفئة <span className="text-red-500">*</span></label>
+                <label className="block text-sm font-semibold mb-1.5">
+                  الفئة <span className="text-red-500">*</span>
+                </label>
                 <div className="relative">
                   <select
                     value={modalItem.category || ""}
-                    onChange={(e) => setModalItem((p) => ({ ...p, category: e.target.value }))}
-                    className="w-full appearance-none px-4 py-3 rounded-xl bg-amal-grey focus:outline-none focus:ring-2 focus:ring-primary/20 text-right cursor-pointer"
+                    onChange={e => setModalItem(p => ({ ...p, category: e.target.value }))}
+                    className="w-full appearance-none px-4 py-3.5 rounded-2xl bg-[#f5f5f5] focus:outline-none text-right cursor-pointer text-base"
                   >
                     <option value="">اختر الفئة</option>
-                    {ALL_CATEGORIES.map((c) => (
+                    {ALL_CATEGORIES.map(c => (
                       <option key={c.value} value={c.value}>{c.label}</option>
                     ))}
                   </select>
-                  <ChevronDown className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                  <ChevronDown className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
                 </div>
               </div>
 
-              {/* Ingredients */}
-              <div>
-                <label className="block text-sm font-medium mb-1.5">المكونات / الخيارات</label>
-                <textarea
-                  value={modalItem.ingredients || ""}
-                  onChange={(e) => setModalItem((p) => ({ ...p, ingredients: e.target.value }))}
-                  placeholder="افصل بين المكونات بفاصلة — مثال: جبن, زعتر, بيض"
-                  rows={3}
-                  className="w-full px-4 py-3 rounded-xl bg-amal-grey focus:outline-none focus:ring-2 focus:ring-primary/20 text-right resize-none text-sm"
-                />
-                <p className="text-xs text-muted-foreground mt-1">مكونات مفصولة بفاصلة</p>
+              {/* In Stock toggle */}
+              <div className="flex items-center justify-between p-4 bg-[#f5f5f5] rounded-2xl">
+                <div>
+                  <p className="font-semibold text-sm">متوفر في المخزون</p>
+                  <p className="text-xs text-gray-400 mt-0.5">إيقاف يخفي الصنف من القائمة</p>
+                </div>
+                <button
+                  onClick={() => setModalItem(p => ({ ...p, inStock: !p?.inStock }))}
+                  className={`w-14 h-8 rounded-full transition-colors relative flex-shrink-0 ${
+                    modalItem.inStock !== false ? "bg-black" : "bg-gray-300"
+                  }`}
+                >
+                  <span className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow transition-transform ${
+                    modalItem.inStock !== false ? "translate-x-1" : "right-1"
+                  }`} />
+                </button>
               </div>
 
-              <div className="h-4" />
+              {/* Options / Ingredients — tag editor */}
+              <div>
+                <label className="block text-sm font-semibold mb-1.5">الخيارات / المكونات</label>
+
+                {tags.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-3 p-3 bg-[#f5f5f5] rounded-2xl">
+                    {tags.map((tag, i) => (
+                      <span key={i} className="flex items-center gap-1.5 px-3 py-1.5 bg-white rounded-full text-sm border border-gray-100 shadow-sm">
+                        {tag}
+                        <button
+                          onClick={() => {
+                            const newTags = tags.filter((_, idx) => idx !== i)
+                            setModalItem(p => ({ ...p, ingredients: newTags.join(", ") }))
+                          }}
+                          className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center active:bg-red-100"
+                        >
+                          <X className="h-3 w-3 text-gray-500" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  <input
+                    value={ingredientInput}
+                    onChange={e => setIngredientInput(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === "Enter") { e.preventDefault(); addIngredient(ingredientInput) }
+                    }}
+                    placeholder="مثال: جبن، لحم، دجاج..."
+                    className="flex-1 px-4 py-3.5 rounded-2xl bg-[#f5f5f5] focus:outline-none text-right text-base"
+                  />
+                  <button
+                    onClick={() => addIngredient(ingredientInput)}
+                    className="w-12 h-12 rounded-2xl bg-black text-white flex items-center justify-center flex-shrink-0 active:scale-95 transition-transform"
+                  >
+                    <Plus className="h-5 w-5" />
+                  </button>
+                </div>
+                <p className="text-xs text-gray-400 mt-1.5">اكتب الخيار واضغط Enter أو +</p>
+              </div>
+
+              {/* Bottom padding for safe area */}
+              <div className="h-8" />
             </div>
           </div>
         </div>

@@ -121,7 +121,7 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
                 src={product.image}
                 alt={product.name}
                 fill
-                className="object-contain p-3"
+                className="object-cover"
                 crossOrigin="anonymous"
                 priority
               />

@@ -1,5 +1,4 @@
 import type { Order } from "@/lib/data"
-import arabicReshaper from 'arabic-reshaper'
 
 // Printer IP — change if it moves (self-test print shows current IP)
 let PRINTER_IP = "192.168.100.205"
@@ -18,19 +17,7 @@ export function setPrinterIp(ip: string): void {
   }
 }
 
-// ── Arabic Reshaping Helper ────────────────────────────────────────────────
-
-function formatArabic(text: string): string {
-  if (!text) return "";
-  const arabicPattern = /[\u0600-\u06FF]/;
-  if (!arabicPattern.test(text)) return text;
-
-  // 1. Reshape joins the letters
-  const reshaped = arabicReshaper.reshape(text);
-  
-  // 2. Reverse the string for RTL printing
-  return reshaped.split('').reverse().join('');
-}
+// ── XML Escaping Helper ────────────────────────────────────────────────
 
 function x(str: string): string {
   return str
@@ -49,11 +36,16 @@ function buildXml(order: Order): string {
 
   const lines: string[] = []
 
+  // Helper updated to use native Arabic processing
   const t = (text: string, em = false, dw = false, dh = false) => {
-    const formattedText = formatArabic(text);
-    const attrs = [em && 'em="true"', dw && 'dw="true"', dh && 'dh="true"']
-      .filter(Boolean).join(" ")
-    lines.push(`<text ${attrs}>${x(formattedText)}\n</text>`)
+    const attrs = [
+      'lang="ar"', // This tells the TM-m30II to handle shaping and RTL layout natively
+      em && 'em="true"', 
+      dw && 'dw="true"', 
+      dh && 'dh="true"'
+    ].filter(Boolean).join(" ")
+    
+    lines.push(`<text ${attrs}>${x(text)}\n</text>`)
   }
 
   const sep = (c = "-") => lines.push(`<text>${x(c.repeat(32))}\n</text>`)
@@ -82,16 +74,15 @@ function buildXml(order: Order): string {
   // Items
   t("الطلبات:", true)
   for (const item of order.items) {
-    const shapedName = formatArabic(item.name);
     const qty = `${item.quantity}x`;
-    const price = `${item.price * item.quantity} SR`; // Using SR to avoid Arabic reversal issues with numbers
+    const price = `${item.price * item.quantity} SR`; 
     
-    // We calculate padding based on standard 32-character width
-    const currentLine = `${qty} ${shapedName}`;
+    // We construct the string logically (Name -> Spaces -> Price).
+    // The printer will automatically flip it visually because of lang="ar".
+    const currentLine = `${qty} ${item.name}`;
     const padCount = Math.max(1, 32 - currentLine.length - price.length);
     
-    // Manual line build to keep numbers and text in their correct "columns"
-    lines.push(`<text>${x(price + " ".repeat(padCount) + currentLine)}\n</text>`);
+    lines.push(`<text lang="ar">${x(currentLine + " ".repeat(padCount) + price)}\n</text>`);
     
     const ingredients = (item as any).selectedIngredients;
     if (ingredients?.length) {
@@ -127,7 +118,6 @@ function buildXml(order: Order): string {
 
 export async function printOrder(order: Order): Promise<void> {
   const ip = getPrinterIp()
-  // Updated with devid and timeout
   const url = `https://${ip}/cgi-bin/epos/service.cgi?devid=local_printer&timeout=10000`
   const xml = buildXml(order)
 

@@ -12,7 +12,7 @@ export const categories = [
   },
   { id: "heaters", label: "سخانات", dbCategories: ["heaters"] },
   { id: "trays", label: "صواني تقديمات", dbCategories: ["trays"] },
-  { id: "stuffed_dates", label: "تمر محشي", dbCategories: ["dates"] },
+  { id: "dates", label: "تمر محشي", dbCategories: ["dates"] },
   { id: "salads", label: "سلطات", dbCategories: ["salads"] },
   { id: "appetizers", label: "مقبلات", dbCategories: ["appetizers"] },
   { id: "sandwiches", label: "ساندوتشات", dbCategories: ["sandwiches"] },

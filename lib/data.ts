@@ -12,7 +12,7 @@ export const categories = [
   },
   { id: "heaters", label: "سخانات", dbCategories: ["heaters"] },
   { id: "trays", label: "صواني تقديمات", dbCategories: ["trays"] },
-  { id: "dates", label: "تمر محشي", dbCategories: ["dates"] },
+  { id: "stuffed_dates", label: "تمر محشي", dbCategories: ["stuffed_dates"] },
   { id: "salads", label: "سلطات", dbCategories: ["salads"] },
   { id: "appetizers", label: "مقبلات", dbCategories: ["appetizers"] },
   { id: "sandwiches", label: "ساندوتشات", dbCategories: ["sandwiches"] },
@@ -28,7 +28,7 @@ export interface Order {
   customerName: string
   customerPhone: string
   customerAddress: string
-  items: { name: string; quantity: number; price: number }[]
+  items: { name: string; nameEn?: string; quantity: number; price: number; selectedIngredients?: string[] }[]
   total: number
   status: "pending" | "preparing" | "ready" | "delivered"
   notes: string

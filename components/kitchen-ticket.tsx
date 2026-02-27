@@ -4,7 +4,7 @@ import { Clock, Phone, MapPin, ChefHat, CheckCircle, Truck, Printer } from "luci
 import { useState } from "react"
 import { cn } from "@/lib/utils"
 import type { Order } from "@/lib/data"
-import { printOrder } from "@/lib/thermal-printer"
+import { printOrder, getPrinterIp, setPrinterIp } from "@/lib/thermal-printer"
 
 interface KitchenTicketProps {
   order: Order
@@ -40,17 +40,31 @@ export function KitchenTicket({ order, onStatusChange }: KitchenTicketProps) {
   const timeAgo = getTimeAgo(order.createdAt)
   const [printing, setPrinting] = useState(false)
   const [printError, setPrintError] = useState<string | null>(null)
+  const [printSuccess, setPrintSuccess] = useState(false)
+  const [showIpEdit, setShowIpEdit] = useState(false)
+  const [printerIp, setPrinterIpState] = useState(() =>
+    typeof window !== "undefined" ? (localStorage.getItem("printer_ip") || "192.168.100.205") : "192.168.100.205"
+  )
 
   const handlePrint = async () => {
     setPrinting(true)
     setPrintError(null)
+    setPrintSuccess(false)
     try {
       await printOrder(order)
+      setPrintSuccess(true)
+      setTimeout(() => setPrintSuccess(false), 3000)
     } catch (err) {
       setPrintError(err instanceof Error ? err.message : "فشل الاتصال بالطابعة")
     } finally {
       setPrinting(false)
     }
+  }
+
+  const handleSaveIp = (ip: string) => {
+    setPrinterIpState(ip)
+    setPrinterIp(ip)
+    setShowIpEdit(false)
   }
 
   const nextStatus: Record<Order["status"], Order["status"] | null> = {
@@ -165,17 +179,56 @@ export function KitchenTicket({ order, onStatusChange }: KitchenTicketProps) {
         <button
           onClick={handlePrint}
           disabled={printing}
-          className="w-full py-3 rounded-xl font-medium border-2 border-border flex items-center justify-center gap-2 hover:bg-amal-grey transition-colors disabled:opacity-50"
+          className={cn(
+            "w-full py-3 rounded-xl font-medium border-2 flex items-center justify-center gap-2 transition-colors disabled:opacity-50",
+            printSuccess
+              ? "border-green-500 bg-green-50 text-green-700"
+              : "border-border hover:bg-amal-grey"
+          )}
         >
           <Printer className="h-4 w-4" />
-          {printing ? "جاري الطباعة..." : "طباعة التذكرة"}
+          {printing ? "جاري الطباعة..." : printSuccess ? "✓ تمت الطباعة" : "طباعة التذكرة"}
         </button>
+
+        {/* Printer IP setting */}
+        <div className="flex items-center justify-between">
+          <button
+            onClick={() => setShowIpEdit(!showIpEdit)}
+            className="text-xs text-muted-foreground underline"
+          >
+            IP الطابعة: {printerIp}
+          </button>
+        </div>
+
+        {showIpEdit && (
+          <div className="flex gap-2">
+            <input
+              type="text"
+              defaultValue={printerIp}
+              placeholder="192.168.100.205"
+              className="flex-1 px-3 py-1.5 text-sm rounded-lg bg-amal-grey focus:outline-none focus:ring-2 focus:ring-primary/20"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleSaveIp((e.target as HTMLInputElement).value)
+              }}
+              id="printer-ip-input"
+            />
+            <button
+              onClick={() => {
+                const input = document.getElementById("printer-ip-input") as HTMLInputElement
+                if (input) handleSaveIp(input.value)
+              }}
+              className="px-3 py-1.5 text-sm bg-primary text-primary-foreground rounded-lg"
+            >
+              حفظ
+            </button>
+          </div>
+        )}
 
         {/* Print Error */}
         {printError && (
-          <p className="text-xs text-red-500 text-center bg-red-50 py-2 px-3 rounded-lg">
+          <div className="text-xs text-red-600 bg-red-50 py-2 px-3 rounded-lg whitespace-pre-line text-right">
             {printError}
-          </p>
+          </div>
         )}
       </div>
     </div>

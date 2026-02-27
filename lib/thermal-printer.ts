@@ -1,253 +1,165 @@
 /**
- * Epson Thermal Printer via Web Bluetooth (ESC/POS)
- * Supports 80mm paper width
+ * Epson TM-M30II printer via ePOS SDK over WiFi
+ * Works on iPhone Safari, Android Chrome, desktop — any browser on the same network
+ *
+ * How it works:
+ * - TM-M30II has a built-in HTTP server at its IP address
+ * - We POST an XML/SOAP print job to http://PRINTER_IP/cgi-bin/epos/service.cgi
+ * - No Bluetooth, no app, no driver needed
+ *
+ * ⚠️  iPhone must be on the SAME WiFi as the printer
+ * ⚠️  Mixed content: if your site is HTTPS, the browser will block HTTP printer requests.
+ *     Fix: enable SSL on the printer via Epson TM Utility app, then use https://PRINTER_IP
  */
 
 import type { Order } from "@/lib/data"
 
-// ESC/POS commands
-const ESC = 0x1b
-const GS = 0x1d
+// Printer IP — change if it moves (self-test print shows current IP)
+let PRINTER_IP = "192.168.100.205"
 
-const CMD = {
-  INIT: [ESC, 0x40],
-  ALIGN_CENTER: [ESC, 0x61, 0x01],
-  ALIGN_RIGHT: [ESC, 0x61, 0x02],
-  ALIGN_LEFT: [ESC, 0x61, 0x00],
-  BOLD_ON: [ESC, 0x45, 0x01],
-  BOLD_OFF: [ESC, 0x45, 0x00],
-  DOUBLE_HEIGHT_ON: [ESC, 0x21, 0x10],
-  DOUBLE_SIZE_ON: [ESC, 0x21, 0x30],
-  DOUBLE_SIZE_OFF: [ESC, 0x21, 0x00],
-  CUT: [GS, 0x56, 0x42, 0x00],
-  LINE_FEED: [0x0a],
-  FEED_3: [ESC, 0x64, 0x03],
-}
-
-// Encode Arabic + Latin text to bytes
-function encodeText(text: string): Uint8Array {
-  return new TextEncoder().encode(text)
-}
-
-function bytes(...args: (number[] | Uint8Array)[]): Uint8Array {
-  const total = args.reduce((n, a) => n + a.length, 0)
-  const result = new Uint8Array(total)
-  let offset = 0
-  for (const a of args) {
-    result.set(a, offset)
-    offset += a.length
+export function getPrinterIp(): string {
+  if (typeof window !== "undefined") {
+    return localStorage.getItem("printer_ip") || PRINTER_IP
   }
-  return result
+  return PRINTER_IP
 }
 
-function cmd(...commands: number[][]): Uint8Array {
-  return new Uint8Array(commands.flat())
+export function setPrinterIp(ip: string): void {
+  PRINTER_IP = ip
+  if (typeof window !== "undefined") {
+    localStorage.setItem("printer_ip", ip)
+  }
 }
 
-function line(text: string): Uint8Array {
-  return bytes(encodeText(text), new Uint8Array([0x0a]))
+// ── XML helpers ────────────────────────────────────────────────────────────
+
+function x(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
 }
 
-function divider(char = "-", width = 48): Uint8Array {
-  return line(char.repeat(width))
-}
+// ── Build ePOS SOAP envelope ───────────────────────────────────────────────
 
-// Build the full ESC/POS receipt for an order
-export function buildReceipt(order: Order): Uint8Array {
-  const createdAt = new Date(order.createdAt)
-  const timeStr = createdAt.toLocaleTimeString("ar-SA", { hour: "2-digit", minute: "2-digit" })
-  const dateStr = createdAt.toLocaleDateString("ar-SA")
+function buildXml(order: Order): string {
+  const d = new Date(order.createdAt)
+  const time = d.toLocaleTimeString("ar-SA", { hour: "2-digit", minute: "2-digit" })
+  const date = d.toLocaleDateString("ar-SA")
 
-  const parts: Uint8Array[] = [
-    // Init printer
-    cmd(CMD.INIT),
+  const lines: string[] = []
 
-    // Header - Shop name
-    cmd(CMD.ALIGN_CENTER),
-    cmd(CMD.DOUBLE_SIZE_ON),
-    cmd(CMD.BOLD_ON),
-    line("أمل سناك"),
-    cmd(CMD.DOUBLE_SIZE_OFF),
-    cmd(CMD.BOLD_OFF),
+  const t = (text: string, em = false, dw = false, dh = false) => {
+    const attrs = [em && 'em="true"', dw && 'dw="true"', dh && 'dh="true"']
+      .filter(Boolean).join(" ")
+    lines.push(`<text ${attrs}>${x(text)}\n</text>`)
+  }
 
-    line("تذكرة المطبخ"),
-    cmd(CMD.ALIGN_LEFT),
-    divider("="),
+  const sep = (c = "-") => lines.push(`<text>${x(c.repeat(32))}\n</text>`)
+  const br = (n = 1) => lines.push(`<feed line="${n}"/>`)
 
-    // Order number
-    cmd(CMD.BOLD_ON),
-    cmd(CMD.DOUBLE_HEIGHT_ON),
-    line(`# طلب رقم: ${order.orderNumber}`),
-    cmd(CMD.DOUBLE_SIZE_OFF),
-    cmd(CMD.BOLD_OFF),
+  // Header
+  lines.push(`<text align="center"/>`)
+  t("أمل سناك", true, true, true)
+  t("تذكرة المطبخ")
+  lines.push(`<text align="left"/>`)
+  sep("=")
 
-    // Date & Time
-    line(`التاريخ: ${dateStr}  الوقت: ${timeStr}`),
-    divider(),
+  // Order number + time
+  t(`طلب رقم: #${order.orderNumber}`, true, false, true)
+  t(`${date}  ${time}`)
+  sep()
 
-    // Customer info
-    cmd(CMD.BOLD_ON),
-    line("معلومات العميل:"),
-    cmd(CMD.BOLD_OFF),
-    line(`الاسم: ${order.customerName}`),
-    line(`الهاتف: ${order.customerPhone}`),
-    line(`العنوان: ${order.customerAddress}`),
+  // Customer
+  t("معلومات العميل:", true)
+  t(`الاسم: ${order.customerName}`)
+  if (order.customerPhone) t(`الهاتف: ${order.customerPhone}`)
+  if (order.customerAddress) t(`العنوان: ${order.customerAddress}`)
+  if (order.scheduledTime) t(`الموعد: ${order.scheduledTime}`, true)
+  sep()
 
-    // Scheduled time
-    ...(order.scheduledTime
-      ? [
-          cmd(CMD.BOLD_ON),
-          line(`موعد التسليم: ${order.scheduledTime}`),
-          cmd(CMD.BOLD_OFF),
-        ]
-      : []),
-
-    divider(),
-
-    // Items
-    cmd(CMD.BOLD_ON),
-    line("الطلبات:"),
-    cmd(CMD.BOLD_OFF),
-  ]
-
-  // Each item
+  // Items
+  t("الطلبات:", true)
   for (const item of order.items) {
-    const qty = `${item.quantity}x`
-    const price = `${item.price * item.quantity} ر.س`
-    // Pad to align price on right (48 chars wide)
-    const nameCol = `${qty} ${item.name}`
-    const padding = Math.max(1, 48 - nameCol.length - price.length)
-    parts.push(line(`${nameCol}${" ".repeat(padding)}${price}`))
+    const left = `${item.quantity}x ${item.name}`
+    const right = `${item.price * item.quantity} ر.س`
+    const pad = Math.max(1, 32 - left.length - right.length)
+    t(left + " ".repeat(pad) + right)
+    if (item.selectedIngredients?.length) {
+      t(`  (${item.selectedIngredients.join("، ")})`)
+    }
   }
+  sep()
 
-  parts.push(
-    divider(),
-
-    // Total
-    cmd(CMD.BOLD_ON),
-    cmd(CMD.DOUBLE_HEIGHT_ON),
-    line(`الإجمالي: ${order.total} ر.س`),
-    cmd(CMD.DOUBLE_SIZE_OFF),
-    cmd(CMD.BOLD_OFF),
-  )
+  // Total
+  t(`الإجمالي: ${order.total} ر.س`, true, false, true)
 
   // Notes
   if (order.notes) {
-    parts.push(
-      divider(),
-      cmd(CMD.BOLD_ON),
-      line("ملاحظات:"),
-      cmd(CMD.BOLD_OFF),
-      line(order.notes),
-    )
+    sep()
+    t("ملاحظات:", true)
+    t(order.notes)
   }
 
-  parts.push(
-    divider("="),
-    cmd(CMD.ALIGN_CENTER),
-    line("شكراً لطلبكم!"),
-    cmd(CMD.FEED_3),
-    cmd(CMD.CUT),
-  )
+  // Footer
+  sep("=")
+  lines.push(`<text align="center"/>`)
+  t("شكراً لطلبكم! 🌟")
+  br(4)
+  lines.push(`<cut type="feed"/>`)
 
-  // Concatenate all parts
-  const totalLen = parts.reduce((n, p) => n + p.length, 0)
-  const result = new Uint8Array(totalLen)
-  let offset = 0
-  for (const p of parts) {
-    result.set(p, offset)
-    offset += p.length
-  }
-  return result
+  return `<?xml version="1.0" encoding="utf-8"?>
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
+  <s:Body>
+    <epos-print xmlns="http://www.epson-pos.com/schemas/2011/03/epos-print">
+      ${lines.join("\n      ")}
+    </epos-print>
+  </s:Body>
+</s:Envelope>`
 }
 
-// Bluetooth printer service UUIDs (Epson & generic thermal printers)
-const PRINTER_SERVICE_UUIDS = [
-  "000018f0-0000-1000-8000-00805f9b34fb", // Generic serial (most common)
-  "00001101-0000-1000-8000-00805f9b34fb", // SPP
-  "e7810a71-73ae-499d-8c15-faa9aef0c3f2", // Epson ePOS
-]
-
-const PRINTER_CHAR_UUIDS = [
-  "00002af1-0000-1000-8000-00805f9b34fb",
-  "00002af0-0000-1000-8000-00805f9b34fb",
-  "00002ab1-0000-1000-8000-00805f9b34fb",
-]
-
-let cachedDevice: BluetoothDevice | null = null
-let cachedCharacteristic: BluetoothRemoteGATTCharacteristic | null = null
-
-async function getCharacteristic(): Promise<BluetoothRemoteGATTCharacteristic> {
-  // Try cached connection first
-  if (cachedDevice?.gatt?.connected && cachedCharacteristic) {
-    return cachedCharacteristic
-  }
-
-  // Request printer device
-  const device = await navigator.bluetooth.requestDevice({
-    acceptAllDevices: true,
-    optionalServices: PRINTER_SERVICE_UUIDS,
-  })
-
-  const server = await device.gatt!.connect()
-  cachedDevice = device
-
-  // Try each service UUID
-  for (const serviceUuid of PRINTER_SERVICE_UUIDS) {
-    try {
-      const service = await server.getPrimaryService(serviceUuid)
-      const characteristics = await service.getCharacteristics()
-
-      // Find a writable characteristic
-      for (const char of characteristics) {
-        if (
-          char.properties.write ||
-          char.properties.writeWithoutResponse
-        ) {
-          cachedCharacteristic = char
-          return char
-        }
-      }
-    } catch {
-      // Service not found, try next
-    }
-  }
-
-  throw new Error("لم يتم العثور على خاصية الطباعة في الطابعة")
-}
-
-// Send data in chunks (BLE max ~512 bytes per write)
-async function writeChunked(
-  characteristic: BluetoothRemoteGATTCharacteristic,
-  data: Uint8Array,
-  chunkSize = 200
-): Promise<void> {
-  for (let i = 0; i < data.length; i += chunkSize) {
-    const chunk = data.slice(i, i + chunkSize)
-    if (characteristic.properties.writeWithoutResponse) {
-      await characteristic.writeValueWithoutResponse(chunk)
-    } else {
-      await characteristic.writeValue(chunk)
-    }
-    // Small delay between chunks
-    await new Promise((r) => setTimeout(r, 50))
-  }
-}
+// ── Main print function ────────────────────────────────────────────────────
 
 export async function printOrder(order: Order): Promise<void> {
-  if (!navigator.bluetooth) {
-    throw new Error("المتصفح لا يدعم Bluetooth. استخدم Chrome على Android أو الكمبيوتر.")
+  const ip = getPrinterIp()
+  const url = `http://${ip}/cgi-bin/epos/service.cgi`
+  const xml = buildXml(order)
+
+  let response: Response
+  try {
+    response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "text/xml; charset=utf-8",
+        "SOAPAction": '""',
+      },
+      body: xml,
+      signal: AbortSignal.timeout(8000),
+    })
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    const isTimeout = err instanceof Error &&
+      (err.name === "AbortError" || err.name === "TimeoutError")
+
+    if (isTimeout || msg.includes("fetch")) {
+      throw new Error(
+        `تعذر الاتصال بالطابعة (${ip})\n\n` +
+        `تأكد من:\n` +
+        `• الطابعة شغالة ومتصلة بالواي فاي\n` +
+        `• الآيفون على نفس شبكة الواي فاي\n` +
+        `• إذا الموقع HTTPS: فعّل SSL على الطابعة من تطبيق Epson TM Utility`
+      )
+    }
+    throw new Error(`خطأ: ${msg}`)
   }
 
-  const characteristic = await getCharacteristic()
-  const receipt = buildReceipt(order)
-  await writeChunked(characteristic, receipt)
-}
-
-export function disconnectPrinter(): void {
-  if (cachedDevice?.gatt?.connected) {
-    cachedDevice.gatt.disconnect()
+  if (!response.ok) {
+    throw new Error(`رفضت الطابعة الطلب (${response.status})`)
   }
-  cachedDevice = null
-  cachedCharacteristic = null
+
+  const body = await response.text()
+  if (body.includes("SchemaError") || body.includes("DeviceNotFound")) {
+    throw new Error("خطأ في إعدادات الطابعة — تأكد من تفعيل ePOS على الطابعة")
+  }
 }

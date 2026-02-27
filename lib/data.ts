@@ -12,7 +12,7 @@ export const categories = [
   },
   { id: "heaters", label: "سخانات", dbCategories: ["heaters"] },
   { id: "trays", label: "صواني تقديمات", dbCategories: ["trays"] },
-  { id: "stuffed_dates", label: "تمر محشي", dbCategories: ["stuffed_dates"] },
+  { id: "stuffed_dates", label: "تمر محشي", dbCategories: ["dates"] },
   { id: "salads", label: "سلطات", dbCategories: ["salads"] },
   { id: "appetizers", label: "مقبلات", dbCategories: ["appetizers"] },
   { id: "sandwiches", label: "ساندوتشات", dbCategories: ["sandwiches"] },
@@ -158,7 +158,7 @@ export function generateWhatsAppMessage(
 }
 
 // WhatsApp number for the business (Saudi format: 966 + number without leading 0)
-export const WHATSAPP_NUMBER = "966500645799"
+export const WHATSAPP_NUMBER = "966567512699"
 
 // WhatsApp message for pickup orders
 export function generatePickupWhatsAppMessage(

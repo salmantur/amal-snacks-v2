@@ -22,14 +22,13 @@ export function setPrinterIp(ip: string): void {
 
 function formatArabic(text: string): string {
   if (!text) return "";
-  // Check if text contains Arabic characters
   const arabicPattern = /[\u0600-\u06FF]/;
   if (!arabicPattern.test(text)) return text;
 
-  // 1. Reshape joins the letters (e.g., م + ط + ع + م becomes مطعم)
+  // 1. Reshape joins the letters
   const reshaped = arabicReshaper.reshape(text);
   
-  // 2. Reverse the string because the printer prints LTR by default
+  // 2. Reverse the string for RTL printing
   return reshaped.split('').reverse().join('');
 }
 
@@ -67,7 +66,7 @@ function buildXml(order: Order): string {
   lines.push(`<text align="left"/>`)
   sep("=")
 
-  // Order number + time
+  // Order Info
   t(`طلب رقم: #${order.orderNumber}`, true, false, true)
   t(`${date}  ${time}`)
   sep()
@@ -83,14 +82,16 @@ function buildXml(order: Order): string {
   // Items
   t("الطلبات:", true)
   for (const item of order.items) {
-    // We shape the name separately to keep the quantity/price on the correct sides
     const shapedName = formatArabic(item.name);
-    const left = `${item.quantity}x ${shapedName}`
-    const right = `${item.price * item.quantity} ر.س`
-    const pad = Math.max(1, 32 - (item.quantity.toString().length + 2 + shapedName.length) - right.length)
+    const qty = `${item.quantity}x`;
+    const price = `${item.price * item.quantity} SR`; // Using SR to avoid Arabic reversal issues with numbers
     
-    // For items, we send the raw line because t() would reverse the whole thing including numbers
-    lines.push(`<text>${x(left + " ".repeat(pad) + right)}\n</text>`)
+    // We calculate padding based on standard 32-character width
+    const currentLine = `${qty} ${shapedName}`;
+    const padCount = Math.max(1, 32 - currentLine.length - price.length);
+    
+    // Manual line build to keep numbers and text in their correct "columns"
+    lines.push(`<text>${x(price + " ".repeat(padCount) + currentLine)}\n</text>`);
     
     const ingredients = (item as any).selectedIngredients;
     if (ingredients?.length) {
@@ -126,6 +127,7 @@ function buildXml(order: Order): string {
 
 export async function printOrder(order: Order): Promise<void> {
   const ip = getPrinterIp()
+  // Updated with devid and timeout
   const url = `https://${ip}/cgi-bin/epos/service.cgi?devid=local_printer&timeout=10000`
   const xml = buildXml(order)
 

@@ -1,9 +1,11 @@
+/**
+ * Epson TM-M30II ePOS Print over WiFi/Ethernet
+ * Works on iPhone Safari when SSL is enabled on the printer
+ * Ticket: name, day, date, time, items (no prices)
+ */
+
 import type { Order } from "@/lib/data"
 
-// @ts-expect-error - arabic-reshaper lacks TS definitions, bypassing to fix build error
-import arabicReshaper from 'arabic-reshaper'
-
-// Printer IP — change if it moves (self-test print shows current IP)
 let PRINTER_IP = "192.168.100.205"
 
 export function getPrinterIp(): string {
@@ -20,127 +22,82 @@ export function setPrinterIp(ip: string): void {
   }
 }
 
-// ── Arabic Reshaping Helper ────────────────────────────────────────────────
-
-function formatArabic(text: string): string {
-  if (!text) return "";
-  const arabicPattern = /[\u0600-\u06FF]/;
-  // If no Arabic is found, return as-is
-  if (!arabicPattern.test(text)) return text;
-
-  try {
-    let reshaped = text;
-    
-    // Safely handle different versions of the arabic-reshaper package
-    if (typeof arabicReshaper.convertArabic === 'function') {
-      reshaped = arabicReshaper.convertArabic(text);
-    } else if (typeof arabicReshaper.reshape === 'function') {
-      reshaped = arabicReshaper.reshape(text);
-    } else if (typeof arabicReshaper === 'function') {
-      reshaped = (arabicReshaper as any)(text);
-    }
-
-    // Reverse the joined unicode characters for the Left-to-Right printer
-    return reshaped.split('').reverse().join('');
-  } catch (err) {
-    console.error("Arabic reshaping failed:", err);
-    // Fallback: just reverse it so it's at least readable right-to-left
-    return text.split('').reverse().join('');
-  }
-}
-
 function x(str: string): string {
-  return str
+  return String(str)
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
 }
 
-// ── Build ePOS SOAP envelope ───────────────────────────────────────────────
-
 function buildXml(order: Order): string {
   const d = new Date(order.createdAt)
-  const time = d.toLocaleTimeString("ar-SA", { hour: "2-digit", minute: "2-digit" })
-  const date = d.toLocaleDateString("ar-SA")
+  const dayName = d.toLocaleDateString("ar-SA", { weekday: "long" })
+  const dateStr = d.toLocaleDateString("ar-SA", { year: "numeric", month: "long", day: "numeric" })
+  const timeStr = d.toLocaleTimeString("ar-SA", { hour: "2-digit", minute: "2-digit" })
 
-  const lines: string[] = []
+  const L: string[] = []
 
-  const t = (text: string, em = false, dw = false, dh = false) => {
-    // We reshape ONLY the Arabic text, keeping everything else normal
-    const formattedText = formatArabic(text);
-    const attrs = [em && 'em="true"', dw && 'dw="true"', dh && 'dh="true"']
-      .filter(Boolean).join(" ")
-    lines.push(`<text ${attrs}>${x(formattedText)}\n</text>`)
-  }
+  const line = (text: string, em = false, dh = false, align = "left") =>
+    L.push(`<text align="${align}" em="${em}" dh="${dh}">${x(text)}&#10;</text>`)
 
-  const sep = (c = "-") => lines.push(`<text>${x(c.repeat(32))}\n</text>`)
-  const br = (n = 1) => lines.push(`<feed line="${n}"/>`)
+  const sep  = () => L.push(`<text>--------------------------------&#10;</text>`)
+  const sep2 = () => L.push(`<text>================================&#10;</text>`)
+  const feed = (n = 1) => L.push(`<feed line="${n}"/>`)
 
   // Header
-  lines.push(`<text align="center"/>`)
-  t("أمل سناك", true, true, true)
-  t("تذكرة المطبخ")
-  lines.push(`<text align="left"/>`) // Ensure we reset to left for column alignment
-  sep("=")
+  sep2()
+  line("أمل سناك", true, true, "center")
+  line("تذكرة المطبخ", false, false, "center")
+  sep2()
 
-  // Order Info
-  t(`طلب رقم: #${order.orderNumber}`, true, false, true)
-  t(`${date}  ${time}`)
+  // Order number
+  line(`#${order.orderNumber}`, true, true, "center")
+  feed()
+
+  // Date & time in Arabic
+  line(`${dayName}`)
+  line(`${dateStr}`)
+  line(`${timeStr}`)
   sep()
 
-  // Customer
-  t("معلومات العميل:", true)
-  t(`الاسم: ${order.customerName}`)
-  if (order.customerPhone) t(`الهاتف: ${order.customerPhone}`)
-  if (order.customerAddress) t(`العنوان: ${order.customerAddress}`)
-  if (order.scheduledTime) t(`الموعد: ${order.scheduledTime}`, true)
-  sep()
+  // Customer name
+  line(`الاسم: ${order.customerName}`, true)
 
-  // Items
-  t("الطلبات:", true)
-  for (const item of order.items) {
-    const shapedName = formatArabic(item.name);
-    const qty = `${item.quantity}x`;
-    const price = `${item.price * item.quantity} SR`; 
-    
-    // Calculate padding based on original length to keep columns perfect
-    const rawLineLength = qty.length + 1 + item.name.length; 
-    const padCount = Math.max(1, 32 - rawLineLength - price.length);
-    
-    // We manually assemble the line so the printer prints it exactly how we want Left-to-Right
-    // Format: [Price] [Spaces] [Reversed Arabic Name] [Qty]
-    const currentLine = `${price}${" ".repeat(padCount)}${shapedName} ${qty}`;
-    
-    lines.push(`<text>${x(currentLine)}\n</text>`);
-    
-    const ingredients = (item as any).selectedIngredients;
-    if (ingredients?.length) {
-      t(`  (${ingredients.join("، ")})`)
-    }
+  // Scheduled time if any
+  if (order.scheduledTime) {
+    line(`الموعد: ${order.scheduledTime}`, true)
   }
   sep()
 
-  // Total
-  t(`الإجمالي: ${order.total} ر.س`, true, false, true)
+  // Items — name + quantity only, no prices
+  line("الطلبات:", true)
+  feed()
+  for (const item of order.items) {
+    line(`${item.quantity}x  ${item.name}`, true)
+    const ing = (item as { selectedIngredients?: string[] }).selectedIngredients
+    if (ing?.length) {
+      line(`    ${ing.join(" - ")}`)
+    }
+    feed()
+  }
 
+  // Notes
   if (order.notes) {
     sep()
-    t("ملاحظات:", true)
-    t(order.notes)
+    line("ملاحظات:", true)
+    line(order.notes)
   }
 
-  sep("=")
-  lines.push(`<text align="center"/>`)
-  t("شكراً لطلبكم! 🌟")
-  br(4)
-  lines.push(`<cut type="feed"/>`)
+  sep2()
+  feed(5)
+  L.push(`<cut type="feed"/>`)
 
   return `<?xml version="1.0" encoding="utf-8"?>
 <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
   <s:Body>
     <epos-print xmlns="http://www.epson-pos.com/schemas/2011/03/epos-print">
-      ${lines.join("\n      ")}
+      ${L.join("\n      ")}
     </epos-print>
   </s:Body>
 </s:Envelope>`
@@ -164,7 +121,17 @@ export async function printOrder(order: Order): Promise<void> {
     })
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
-    throw new Error(`تعذر الاتصال بالطابعة: ${msg}`)
+    const isTimeout = err instanceof Error &&
+      (err.name === "AbortError" || err.name === "TimeoutError")
+    if (isTimeout || msg.includes("fetch")) {
+      throw new Error(
+        `تعذر الاتصال بالطابعة (${ip})\n` +
+        `• تأكد أن الطابعة شغالة\n` +
+        `• الآيفون على نفس الشبكة\n` +
+        `• SSL مفعّل على الطابعة`
+      )
+    }
+    throw new Error(`خطأ: ${msg}`)
   }
 
   if (!response.ok) {
@@ -173,6 +140,6 @@ export async function printOrder(order: Order): Promise<void> {
 
   const body = await response.text()
   if (body.includes("SchemaError") || body.includes("DeviceNotFound")) {
-    throw new Error("خطأ في إعدادات الطابعة — تأكد من تفعيل ePOS")
+    throw new Error("تأكد من تفعيل ePOS-Print على الطابعة")
   }
 }

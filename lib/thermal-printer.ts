@@ -9,7 +9,7 @@
  *
  * ⚠️  iPhone must be on the SAME WiFi as the printer
  * ⚠️  Mixed content: if your site is HTTPS, the browser will block HTTP printer requests.
- *     Fix: enable SSL on the printer via Epson TM Utility app, then use https://PRINTER_IP
+ * Fix: enable SSL on the printer via Epson TM Utility app, then use https://PRINTER_IP
  */
 
 import type { Order } from "@/lib/data"
@@ -86,9 +86,13 @@ function buildXml(order: Order): string {
     const right = `${item.price * item.quantity} ر.س`
     const pad = Math.max(1, 32 - left.length - right.length)
     t(left + " ".repeat(pad) + right)
-    if (item.selectedIngredients?.length) {
-      t(`  (${item.selectedIngredients.join("، ")})`)
+    
+    // --- THIS IS THE FIXED PART ---
+    const ingredients = (item as any).selectedIngredients;
+    if (ingredients?.length) {
+      t(`  (${ingredients.join("، ")})`)
     }
+    // ------------------------------
   }
   sep()
 

@@ -93,7 +93,6 @@ export default function ItemsPage() {
     setIsNew(isNewItem)
     setError(null)
     setIngredientInput("")
-    // Prevent body scroll on iPhone
     document.body.style.overflow = "hidden"
   }
 
@@ -185,36 +184,34 @@ export default function ItemsPage() {
   const tags = (modalItem?.ingredients || "").split(",").map(t => t.trim()).filter(Boolean)
 
   return (
-    <main className="min-h-screen bg-[#f5f5f5]" dir="rtl">
+    /* NO dir="rtl" on main — we control direction per element */
+    <main className="min-h-screen bg-[#f5f5f5]">
 
       {/* Header */}
-      <header
-        className="sticky top-0 z-40 bg-white border-b border-gray-100"
-        style={{ transform: "translateZ(0)" }}
-      >
+      <header className="sticky top-0 z-40 bg-white border-b border-gray-100" style={{ transform: "translateZ(0)" }}>
+        {/* Title row — LTR so back arrow is on left, add button on right */}
         <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-3">
-            <Link
-              href="/admin"
-              className="w-11 h-11 rounded-full bg-[#f5f5f5] flex items-center justify-center active:scale-95 transition-transform"
-            >
-              <ArrowRight className="h-5 w-5" />
-            </Link>
-            <div>
-              <h1 className="text-lg font-bold">إدارة الأصناف</h1>
-              <p className="text-xs text-gray-400">{items.length} صنف</p>
-            </div>
+          <Link
+            href="/admin"
+            className="w-11 h-11 rounded-full bg-[#f5f5f5] flex items-center justify-center active:scale-95 transition-transform flex-shrink-0"
+          >
+            <ArrowRight className="h-5 w-5" />
+          </Link>
+          {/* Title centred, Arabic */}
+          <div className="text-center">
+            <h1 className="text-lg font-bold" dir="rtl">إدارة الأصناف</h1>
+            <p className="text-xs text-gray-400">{items.length} صنف</p>
           </div>
           <button
             onClick={() => openModal({ ...EMPTY_ITEM }, true)}
-            className="flex items-center gap-1.5 px-4 py-2.5 bg-black text-white rounded-full font-medium text-sm active:scale-95 transition-transform"
+            className="flex items-center gap-1.5 px-4 py-2.5 bg-black text-white rounded-full font-medium text-sm active:scale-95 transition-transform flex-shrink-0"
           >
             <Plus className="h-4 w-4" />
-            إضافة
+            <span dir="rtl">إضافة</span>
           </button>
         </div>
 
-        {/* Search + filter */}
+        {/* Search + filter row — LTR container, inputs RTL */}
         <div className="flex gap-2 px-4 pb-3">
           <div className="relative flex-1">
             <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -222,21 +219,23 @@ export default function ItemsPage() {
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="بحث..."
+              dir="rtl"
               className="w-full pr-9 pl-3 py-2.5 rounded-xl bg-[#f5f5f5] text-sm focus:outline-none"
             />
           </div>
-          <div className="relative">
+          <div className="relative flex-shrink-0">
             <select
               value={filterCategory}
               onChange={e => setFilterCategory(e.target.value)}
-              className="appearance-none pr-3 pl-8 py-2.5 rounded-xl bg-[#f5f5f5] text-sm focus:outline-none cursor-pointer"
+              dir="rtl"
+              className="appearance-none pr-3 pl-7 py-2.5 rounded-xl bg-[#f5f5f5] text-sm focus:outline-none cursor-pointer max-w-[120px]"
             >
               <option value="all">الكل</option>
               {ALL_CATEGORIES.map(c => (
                 <option key={c.value} value={c.value}>{c.label}</option>
               ))}
             </select>
-            <ChevronDown className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+            <ChevronDown className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 pointer-events-none" />
           </div>
         </div>
       </header>
@@ -245,7 +244,7 @@ export default function ItemsPage() {
       {successMsg && (
         <div className="fixed top-4 left-4 right-4 z-50 p-4 bg-green-700 text-white rounded-2xl shadow-xl flex items-center gap-2">
           <Check className="h-5 w-5 flex-shrink-0" />
-          <span className="font-medium">{successMsg}</span>
+          <span className="font-medium" dir="rtl">{successMsg}</span>
         </div>
       )}
 
@@ -259,7 +258,6 @@ export default function ItemsPage() {
                 <div className="flex-1 space-y-2 py-1">
                   <div className="h-4 bg-gray-100 rounded w-1/2" />
                   <div className="h-3 bg-gray-100 rounded w-3/4" />
-                  <div className="h-3 bg-gray-100 rounded w-1/4" />
                 </div>
               </div>
             ))}
@@ -267,49 +265,46 @@ export default function ItemsPage() {
         ) : filtered.length === 0 ? (
           <div className="text-center py-20 text-gray-400">
             <ImageIcon className="h-12 w-12 mx-auto mb-3 opacity-30" />
-            <p>لا توجد أصناف</p>
+            <p dir="rtl">لا توجد أصناف</p>
           </div>
         ) : (
           <div className="grid gap-3">
             {filtered.map(item => {
               const imgSrc = getDisplayImage(item.image)
               return (
-                <div
-                  key={item.id}
-                  className="bg-white rounded-2xl p-4 flex items-center gap-3 shadow-sm"
-                >
-                  {/* Image */}
-                  <div className="w-16 h-16 rounded-xl bg-[#f5f5f5] overflow-hidden flex-shrink-0 flex items-center justify-center">
+                <div key={item.id} className="bg-white rounded-2xl p-3 flex items-center gap-3 shadow-sm w-full overflow-hidden">
+
+                  {/* Image — leftmost */}
+                  <div className="w-14 h-14 rounded-xl bg-[#f5f5f5] overflow-hidden flex-shrink-0 flex items-center justify-center">
                     {imgSrc
-                      ? <Image src={imgSrc} alt={item.name} width={64} height={64} className="object-cover w-full h-full" />
-                      : <ImageIcon className="h-6 w-6 text-gray-300" />
+                      ? <Image src={imgSrc} alt={item.name} width={56} height={56} className="object-cover w-full h-full" />
+                      : <ImageIcon className="h-5 w-5 text-gray-300" />
                     }
                   </div>
 
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold truncate">{item.name}</p>
+                  {/* Info — RTL, fills remaining space */}
+                  <div className="flex-1 min-w-0 text-right" dir="rtl">
+                    <p className="font-bold text-sm truncate">{item.name}</p>
                     {item.nameEn && <p className="text-xs text-gray-400 truncate">{item.nameEn}</p>}
-                    <p className="text-xs text-gray-400">{getCategoryLabel(item.category)}</p>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <p className="text-sm font-bold text-black">{item.price} ر.س</p>
+                    <div className="flex items-center gap-2 justify-end mt-0.5">
+                      <p className="text-sm font-bold">{item.price} ر.س</p>
                       {!item.inStock && (
                         <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">نفذ</span>
                       )}
                     </div>
                   </div>
 
-                  {/* Actions */}
+                  {/* Actions — rightmost */}
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <button
                       onClick={() => openModal({ ...item }, false)}
-                      className="w-11 h-11 rounded-xl bg-[#f5f5f5] flex items-center justify-center active:scale-95 transition-transform"
+                      className="w-10 h-10 rounded-xl bg-[#f5f5f5] flex items-center justify-center active:scale-95 transition-transform"
                     >
-                      <Pencil className="h-4 w-4" />
+                      <Pencil className="h-4 w-4 text-gray-600" />
                     </button>
                     <button
                       onClick={() => setDeleteConfirm(item.id)}
-                      className="w-11 h-11 rounded-xl bg-[#f5f5f5] flex items-center justify-center active:scale-95 transition-transform"
+                      className="w-10 h-10 rounded-xl bg-[#f5f5f5] flex items-center justify-center active:scale-95 transition-transform"
                     >
                       {deleting === item.id
                         ? <Loader2 className="h-4 w-4 animate-spin text-red-500" />
@@ -317,6 +312,7 @@ export default function ItemsPage() {
                       }
                     </button>
                   </div>
+
                 </div>
               )
             })}
@@ -327,24 +323,12 @@ export default function ItemsPage() {
       {/* Delete confirmation */}
       {deleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4">
-          <div className="w-full max-w-sm bg-white rounded-3xl p-6 mb-safe">
+          <div className="w-full max-w-sm bg-white rounded-3xl p-6" dir="rtl">
             <h3 className="text-lg font-bold text-center mb-2">تأكيد الحذف</h3>
-            <p className="text-sm text-gray-500 text-center mb-6">
-              هل أنت متأكد من حذف هذا الصنف؟
-            </p>
+            <p className="text-sm text-gray-500 text-center mb-6">هل أنت متأكد من حذف هذا الصنف؟</p>
             <div className="flex gap-3">
-              <button
-                onClick={() => setDeleteConfirm(null)}
-                className="flex-1 py-3.5 rounded-2xl bg-[#f5f5f5] font-medium active:scale-95 transition-transform"
-              >
-                إلغاء
-              </button>
-              <button
-                onClick={() => handleDelete(deleteConfirm)}
-                className="flex-1 py-3.5 rounded-2xl bg-red-500 text-white font-medium active:scale-95 transition-transform"
-              >
-                حذف
-              </button>
+              <button onClick={() => setDeleteConfirm(null)} className="flex-1 py-3.5 rounded-2xl bg-[#f5f5f5] font-medium active:scale-95 transition-transform">إلغاء</button>
+              <button onClick={() => handleDelete(deleteConfirm)} className="flex-1 py-3.5 rounded-2xl bg-red-500 text-white font-medium active:scale-95 transition-transform">حذف</button>
             </div>
           </div>
         </div>
@@ -352,30 +336,24 @@ export default function ItemsPage() {
 
       {/* Edit / Add Modal */}
       {modalItem && (
-        <div
-          className="fixed inset-0 z-50 bg-black/50"
-          style={{ WebkitOverflowScrolling: "touch" }}
-        >
+        <div className="fixed inset-0 z-50 bg-black/50">
           <div
             className="absolute inset-x-0 bottom-0 bg-white rounded-t-3xl flex flex-col"
-            style={{ maxHeight: "94svh", height: "94svh" }}
+            style={{ height: "94svh" }}
           >
-            {/* Modal header — fixed */}
+            {/* Modal header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 flex-shrink-0">
-              <button
-                onClick={closeModal}
-                className="w-11 h-11 rounded-full bg-[#f5f5f5] flex items-center justify-center active:scale-95 transition-transform"
-              >
+              <button onClick={closeModal} className="w-11 h-11 rounded-full bg-[#f5f5f5] flex items-center justify-center active:scale-95 transition-transform flex-shrink-0">
                 <X className="h-5 w-5" />
               </button>
-              <h2 className="text-base font-bold">{isNew ? "إضافة صنف" : "تعديل الصنف"}</h2>
+              <h2 className="text-base font-bold" dir="rtl">{isNew ? "إضافة صنف" : "تعديل الصنف"}</h2>
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="flex items-center gap-2 px-5 py-2.5 bg-black text-white rounded-full text-sm font-medium disabled:opacity-50 active:scale-95 transition-transform"
+                className="flex items-center gap-2 px-5 py-2.5 bg-black text-white rounded-full text-sm font-medium disabled:opacity-50 active:scale-95 transition-transform flex-shrink-0"
               >
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                حفظ
+                <span dir="rtl">حفظ</span>
               </button>
             </div>
 
@@ -385,12 +363,12 @@ export default function ItemsPage() {
               style={{ WebkitOverflowScrolling: "touch", overscrollBehavior: "contain" }}
             >
               {error && (
-                <div className="p-3 bg-red-50 text-red-600 text-sm rounded-xl text-center">{error}</div>
+                <div className="p-3 bg-red-50 text-red-600 text-sm rounded-xl text-center" dir="rtl">{error}</div>
               )}
 
               {/* Image */}
               <div>
-                <label className="block text-sm font-semibold mb-2">الصورة</label>
+                <label className="block text-sm font-semibold mb-2 text-right" dir="rtl">الصورة</label>
                 <div className="flex items-center gap-3">
                   <div className="w-20 h-20 rounded-2xl bg-[#f5f5f5] flex items-center justify-center overflow-hidden flex-shrink-0">
                     {modalItem.image
@@ -404,16 +382,14 @@ export default function ItemsPage() {
                       disabled={imageUploading}
                       className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-dashed border-gray-200 text-sm active:scale-95 transition-transform"
                     >
-                      {imageUploading
-                        ? <><Loader2 className="h-4 w-4 animate-spin" /> جاري الرفع...</>
-                        : <><Upload className="h-4 w-4" /> رفع صورة</>
-                      }
+                      {imageUploading ? <><Loader2 className="h-4 w-4 animate-spin" /> جاري الرفع...</> : <><Upload className="h-4 w-4" /> رفع صورة</>}
                     </button>
                     <input
                       value={modalItem.image || ""}
                       onChange={e => setModalItem(p => ({ ...p, image: e.target.value }))}
                       placeholder="أو رابط الصورة"
-                      className="w-full px-3 py-2.5 rounded-xl bg-[#f5f5f5] text-sm focus:outline-none text-right"
+                      dir="ltr"
+                      className="w-full px-3 py-2.5 rounded-xl bg-[#f5f5f5] text-sm focus:outline-none text-left"
                     />
                   </div>
                 </div>
@@ -422,38 +398,37 @@ export default function ItemsPage() {
 
               {/* Arabic Name */}
               <div>
-                <label className="block text-sm font-semibold mb-1.5">
-                  الاسم بالعربي <span className="text-red-500">*</span>
-                </label>
+                <label className="block text-sm font-semibold mb-1.5 text-right" dir="rtl">الاسم بالعربي <span className="text-red-500">*</span></label>
                 <input
                   value={modalItem.name || ""}
                   onChange={e => setModalItem(p => ({ ...p, name: e.target.value }))}
                   placeholder="مثال: سمبوسة جبن"
-                  className="w-full px-4 py-3.5 rounded-2xl bg-[#f5f5f5] focus:outline-none text-right text-base"
                   dir="rtl"
+                  className="w-full px-4 py-3.5 rounded-2xl bg-[#f5f5f5] focus:outline-none text-right text-base"
                 />
               </div>
 
               {/* English Name */}
               <div>
-                <label className="block text-sm font-semibold mb-1.5">الاسم بالإنجليزي</label>
+                <label className="block text-sm font-semibold mb-1.5">English Name</label>
                 <input
                   value={modalItem.nameEn || ""}
                   onChange={e => setModalItem(p => ({ ...p, nameEn: e.target.value }))}
                   placeholder="e.g. Cheese Samboosa"
-                  className="w-full px-4 py-3.5 rounded-2xl bg-[#f5f5f5] focus:outline-none text-left text-base"
                   dir="ltr"
+                  className="w-full px-4 py-3.5 rounded-2xl bg-[#f5f5f5] focus:outline-none text-left text-base"
                 />
               </div>
 
               {/* Description */}
               <div>
-                <label className="block text-sm font-semibold mb-1.5">الوصف</label>
+                <label className="block text-sm font-semibold mb-1.5 text-right" dir="rtl">الوصف</label>
                 <textarea
                   value={modalItem.description || ""}
                   onChange={e => setModalItem(p => ({ ...p, description: e.target.value }))}
                   placeholder="وصف الصنف"
                   rows={2}
+                  dir="rtl"
                   className="w-full px-4 py-3.5 rounded-2xl bg-[#f5f5f5] focus:outline-none text-right resize-none text-base"
                 />
               </div>
@@ -461,9 +436,7 @@ export default function ItemsPage() {
               {/* Price + Limit */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-semibold mb-1.5">
-                    السعر (ر.س) <span className="text-red-500">*</span>
-                  </label>
+                  <label className="block text-sm font-semibold mb-1.5 text-right" dir="rtl">السعر (ر.س) <span className="text-red-500">*</span></label>
                   <input
                     type="number"
                     inputMode="decimal"
@@ -471,11 +444,11 @@ export default function ItemsPage() {
                     value={modalItem.price || ""}
                     onChange={e => setModalItem(p => ({ ...p, price: Number(e.target.value) }))}
                     placeholder="0"
-                    className="w-full px-4 py-3.5 rounded-2xl bg-[#f5f5f5] focus:outline-none text-right text-base"
+                    className="w-full px-4 py-3.5 rounded-2xl bg-[#f5f5f5] focus:outline-none text-center text-base"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold mb-1.5">حد الاختيار</label>
+                  <label className="block text-sm font-semibold mb-1.5 text-right" dir="rtl">حد الاختيار</label>
                   <input
                     type="number"
                     inputMode="numeric"
@@ -483,20 +456,19 @@ export default function ItemsPage() {
                     value={modalItem.limit || ""}
                     onChange={e => setModalItem(p => ({ ...p, limit: Number(e.target.value) }))}
                     placeholder="0"
-                    className="w-full px-4 py-3.5 rounded-2xl bg-[#f5f5f5] focus:outline-none text-right text-base"
+                    className="w-full px-4 py-3.5 rounded-2xl bg-[#f5f5f5] focus:outline-none text-center text-base"
                   />
                 </div>
               </div>
 
               {/* Category */}
               <div>
-                <label className="block text-sm font-semibold mb-1.5">
-                  الفئة <span className="text-red-500">*</span>
-                </label>
+                <label className="block text-sm font-semibold mb-1.5 text-right" dir="rtl">الفئة <span className="text-red-500">*</span></label>
                 <div className="relative">
                   <select
                     value={modalItem.category || ""}
                     onChange={e => setModalItem(p => ({ ...p, category: e.target.value }))}
+                    dir="rtl"
                     className="w-full appearance-none px-4 py-3.5 rounded-2xl bg-[#f5f5f5] focus:outline-none text-right cursor-pointer text-base"
                   >
                     <option value="">اختر الفئة</option>
@@ -510,37 +482,32 @@ export default function ItemsPage() {
 
               {/* In Stock toggle */}
               <div className="flex items-center justify-between p-4 bg-[#f5f5f5] rounded-2xl">
-                <div>
+                <div dir="rtl">
                   <p className="font-semibold text-sm">متوفر في المخزون</p>
                   <p className="text-xs text-gray-400 mt-0.5">إيقاف يخفي الصنف من القائمة</p>
                 </div>
                 <button
                   onClick={() => setModalItem(p => ({ ...p, inStock: !p?.inStock }))}
-                  className={`w-14 h-8 rounded-full transition-colors relative flex-shrink-0 ${
-                    modalItem.inStock !== false ? "bg-black" : "bg-gray-300"
-                  }`}
+                  className={`w-14 h-8 rounded-full transition-colors relative flex-shrink-0 ml-3 ${modalItem.inStock !== false ? "bg-black" : "bg-gray-300"}`}
                 >
-                  <span className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow transition-transform ${
-                    modalItem.inStock !== false ? "translate-x-1" : "right-1"
-                  }`} />
+                  <span className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow transition-all duration-200 ${modalItem.inStock !== false ? "left-7" : "left-1"}`} />
                 </button>
               </div>
 
-              {/* Options / Ingredients — tag editor */}
+              {/* Options / Ingredients */}
               <div>
-                <label className="block text-sm font-semibold mb-1.5">الخيارات / المكونات</label>
-
+                <label className="block text-sm font-semibold mb-1.5 text-right" dir="rtl">الخيارات / المكونات</label>
                 {tags.length > 0 && (
                   <div className="flex flex-wrap gap-2 mb-3 p-3 bg-[#f5f5f5] rounded-2xl">
                     {tags.map((tag, i) => (
-                      <span key={i} className="flex items-center gap-1.5 px-3 py-1.5 bg-white rounded-full text-sm border border-gray-100 shadow-sm">
+                      <span key={i} className="flex items-center gap-1.5 px-3 py-1.5 bg-white rounded-full text-sm border border-gray-100 shadow-sm" dir="rtl">
                         {tag}
                         <button
                           onClick={() => {
                             const newTags = tags.filter((_, idx) => idx !== i)
                             setModalItem(p => ({ ...p, ingredients: newTags.join(", ") }))
                           }}
-                          className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center active:bg-red-100"
+                          className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center active:bg-red-100 flex-shrink-0"
                         >
                           <X className="h-3 w-3 text-gray-500" />
                         </button>
@@ -548,15 +515,13 @@ export default function ItemsPage() {
                     ))}
                   </div>
                 )}
-
                 <div className="flex gap-2">
                   <input
                     value={ingredientInput}
                     onChange={e => setIngredientInput(e.target.value)}
-                    onKeyDown={e => {
-                      if (e.key === "Enter") { e.preventDefault(); addIngredient(ingredientInput) }
-                    }}
-                    placeholder="مثال: جبن، لحم، دجاج..."
+                    onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addIngredient(ingredientInput) } }}
+                    placeholder="مثال: جبن، لحم..."
+                    dir="rtl"
                     className="flex-1 px-4 py-3.5 rounded-2xl bg-[#f5f5f5] focus:outline-none text-right text-base"
                   />
                   <button
@@ -566,10 +531,9 @@ export default function ItemsPage() {
                     <Plus className="h-5 w-5" />
                   </button>
                 </div>
-                <p className="text-xs text-gray-400 mt-1.5">اكتب الخيار واضغط Enter أو +</p>
+                <p className="text-xs text-gray-400 mt-1.5 text-right" dir="rtl">اكتب الخيار واضغط Enter أو +</p>
               </div>
 
-              {/* Bottom padding for safe area */}
               <div className="h-8" />
             </div>
           </div>

@@ -1,4 +1,6 @@
 import type { Order } from "@/lib/data"
+
+// @ts-expect-error - arabic-reshaper lacks TS definitions, bypassing to fix build error
 import arabicReshaper from 'arabic-reshaper'
 
 // Printer IP — change if it moves (self-test print shows current IP)
@@ -30,12 +32,12 @@ function formatArabic(text: string): string {
     let reshaped = text;
     
     // Safely handle different versions of the arabic-reshaper package
-    if (typeof (arabicReshaper as any).convertArabic === 'function') {
-      reshaped = (arabicReshaper as any).convertArabic(text);
-    } else if (typeof (arabicReshaper as any).reshape === 'function') {
-      reshaped = (arabicReshaper as any).reshape(text);
+    if (typeof arabicReshaper.convertArabic === 'function') {
+      reshaped = arabicReshaper.convertArabic(text);
+    } else if (typeof arabicReshaper.reshape === 'function') {
+      reshaped = arabicReshaper.reshape(text);
     } else if (typeof arabicReshaper === 'function') {
-      reshaped = (arabicReshaper as unknown as Function)(text);
+      reshaped = (arabicReshaper as any)(text);
     }
 
     // Reverse the joined unicode characters for the Left-to-Right printer

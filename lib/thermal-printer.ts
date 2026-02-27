@@ -123,7 +123,7 @@ function buildXml(order: Order): string {
 
 export async function printOrder(order: Order): Promise<void> {
   const ip = getPrinterIp()
-  const url = `http://${ip}/cgi-bin/epos/service.cgi`
+  const url = `https://${ip}/cgi-bin/epos/service.cgi`
   const xml = buildXml(order)
 
   let response: Response

@@ -278,10 +278,10 @@ export default function ItemsPage() {
                 <div key={item.id} className="bg-white rounded-2xl p-3 flex items-center gap-3 shadow-sm w-full overflow-hidden">
 
                   {/* Image — leftmost */}
-                  <div className="w-20 h-20 rounded-2xl bg-[#f5f5f5] overflow-hidden flex-shrink-0 relative">
+                  <div className="w-20 h-20 rounded-2xl bg-[#f5f5f5] overflow-hidden flex-shrink-0">
                     {imgSrc
-                      ? <Image src={imgSrc} alt={item.name} fill className="object-cover" sizes="80px" />
-                      : <div className="absolute inset-0 flex items-center justify-center"><ImageIcon className="h-6 w-6 text-gray-300" /></div>
+                      ? <img src={imgSrc} alt={item.name} className="w-full h-full object-cover" />
+                      : <div className="w-full h-full flex items-center justify-center"><ImageIcon className="h-6 w-6 text-gray-300" /></div>
                     }
                   </div>
 
@@ -373,9 +373,9 @@ export default function ItemsPage() {
               <div>
                 <label className="block text-sm font-semibold mb-2 text-right" dir="rtl">الصورة</label>
                 <div className="flex items-center gap-3">
-                  <div className="w-24 h-24 rounded-2xl bg-[#f5f5f5] flex items-center justify-center overflow-hidden flex-shrink-0 relative">
+                  <div className="w-24 h-24 rounded-2xl bg-[#f5f5f5] flex items-center justify-center overflow-hidden flex-shrink-0">
                     {modalItem.image
-                      ? <Image src={getDisplayImage(modalItem.image) || modalItem.image} alt="preview" fill className="object-cover" sizes="96px" />
+                      ? <img src={getDisplayImage(modalItem.image) || modalItem.image} alt="preview" className="w-full h-full object-cover" />
                       : <ImageIcon className="h-7 w-7 text-gray-300" />
                     }
                   </div>

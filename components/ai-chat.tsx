@@ -1,53 +1,147 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { MessageCircle, X, Send, Bot, Loader2 } from "lucide-react"
+import { MessageCircle, X, Send, Bot, Loader2, ShoppingBag, Plus, Star } from "lucide-react"
+import Image from "next/image"
+import useSWR from "swr"
 import { useCart } from "@/components/cart-provider"
+import type { MenuItem } from "@/components/cart-provider"
 
-interface Message {
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface TextMessage {
   role: "user" | "assistant"
+  type: "text"
   content: string
 }
+interface ItemsMessage {
+  role: "assistant"
+  type: "items"
+  content: string
+  items: MenuItem[]
+}
+type Message = TextMessage | ItemsMessage
 
-const SYSTEM_PROMPT = `أنت مساعد ذكي لمتجر "أمل سناك" — متجر طعام سعودي متخصص في الوجبات المثلجة والساخنة في المنطقة الشرقية.
+// ─── Fetcher ──────────────────────────────────────────────────────────────────
 
-معلومات المتجر:
-- الاسم: أمل سناك
-- التوصيل متاح للمناطق: الخبر (50 ر.س)، الدمام (50 ر.س)، الظهران (50 ر.س)، القطيف (60 ر.س)، سيهات (55 ر.س)، الجبيل (80 ر.س)
-- يمكن الاستلام من المحل مجاناً
-- التواصل عبر واتساب: 0500645799
+const fetcher = (url: string) => fetch(url).then(r => r.json())
 
-قواعد مهمة:
-- تكلم بالعربية دائماً إذا تكلم العميل بالعربية، وبالإنجليزية إذا تكلم بالإنجليزية
-- كن ودوداً وخفيفاً في ردودك
-- إذا سأل عن صنف معين أخبره بالسعر والمكونات إن وجدت
-- إذا أراد الطلب وجهه لاستخدام الموقع مباشرة
-- لا تخترع معلومات غير موجودة
-- الردود قصيرة وواضحة (3-4 جمل كحد أقصى)
+// ─── System prompt (injected with live menu) ──────────────────────────────────
 
-المنيو الكامل:
-PLATTERS: شيز بلاتر (400 ر.س) - فواكه وأجبان ومخبوزات، بلاتر الفلافل (240 ر.س)
-BREAKFAST: فول (160)، فاصوليا (160)، بيض تركي (180)، شكشوكة (180)، فلافل سبيشل (180)، حمسة باذنجان (180)، حمسة حلوم بالزيتون (220)، شعيرية/بلاليط (150)
-HEATERS: رز صيني مع ايدام (280)، كشري (260)، مسقعه (240)، مسقعه بالجبن (250)، كرات البطاطس (240)، فوتتشيني (240)، باستا بالدجاج (240)، مكرونة البيتزا (250)، مكرونة الباشميل (240)، لازانيا (260)، برياني (300)، جريش (200)، هريس (280)، رولات الباذنجان (240)، محشي مشكل (280)
-SALADS: تبولة (140)، تبولة كينوا (150)، تبولة شمندر (140)، سلطة سيزر (140)، سلطة جرجير ورمان (120)، سلطة يونانية (140)، سلطة مكرونة (140)، سلطة البافلو (140)، فتة باذنجان (150)، سلطة كينوا (150)، سلطة كريسبي (170)، سلطة الزعتر (140)، سلطة المنجا (160)
-APPETIZERS: متبل (130)، حمص (120)، فتوش (140)، ملفوف (90)، ورق عنب (90)، مسخن (95)، سبرنق رولز (3 ر.س/حبة)، كبه (3 ر.س/حبة)، سمبوسه بف (3 ر.س/حبة - لحم/دجاج/جبن)، سمبوسه شرائح (3 ر.س/حبة)
-SANDWICHES: برجر لحم (100/20حبة)، دجاج طازج (100/20حبة)، مسخن (110/40حبة)، تورتلا (4 ر.س)، شاورما (4 ر.س)، مطبق مغلف (4 ر.س)، ميني ساندوتش (100/25قطعة)، كلوب ساندوتش (18 ر.س)
-SWEETS: ليمون بوبز كيك (100)، ميني تارت بيكان (150)، مكعبات قرص عقيل (120)، لقيمات (120)
-DATES: تمر محشي سكري (200)، تمر وتين محشي (280)، تمر محشى فاخر (390)، صينية تمور ملكي (500)، علبه سكري-عجوة-تين (140)
-PASTRIES: فطاير مشكل (130/40قطعة)، 25 ميني كروسان (100)
-TRAYS: صينية كبيرة (500/140قطعة)، صينية وسط (380/105قطعة)، صينية صغير (300/84قطعة)
-FROZEN: سبرنق رولز مجمد (50/20حبة)، كبة برغل لحم مجمد (60/20حبة)، سمبوسة بف دجاج-لحم مجمد (60/20حبة)، سمبوسة بف خضروات-أجبان مجمد (50/25حبة)، سمبوسة لف دجاج-لحم مجمد (60/20حبة)، سمبوسة لف خضروات-بطاطس-أجبان مجمد (50/25حبة)، مسخن مجمد (50/20حبة)`
+function buildSystemPrompt(menuItems: MenuItem[]): string {
+  const menuByCategory: Record<string, string[]> = {}
+  for (const item of menuItems) {
+    if (!menuByCategory[item.category]) menuByCategory[item.category] = []
+    const ingStr = item.ingredients?.length ? ` [${item.ingredients.join("، ")}]` : ""
+    menuByCategory[item.category].push(`${item.name}${item.nameEn ? ` (${item.nameEn})` : ""} - ${item.price} ر.س${ingStr}`)
+  }
+  const menuText = Object.entries(menuByCategory)
+    .map(([cat, items]) => `${cat.toUpperCase()}:\n${items.map(i => `  • ${i}`).join("\n")}`)
+    .join("\n\n")
+
+  return `أنت مساعد ذكي لمتجر "أمل سناك" — متجر طعام سعودي في المنطقة الشرقية متخصص في الوجبات المثلجة والساخنة.
+
+══ أوقات العمل ══
+يومياً كل أيام الأسبوع من الساعة 8 صباحاً حتى 2 فجراً.
+
+══ التوصيل ══
+- الخبر، الدمام، الظهران: 50 ر.س
+- سيهات: 55 ر.س
+- القطيف: 60 ر.س
+- الجبيل: 80 ر.س
+- الاستلام من المحل: مجاناً
+
+══ الطلبات المسبقة ══
+- الطلبات الكبيرة مثل البوفيه، البلاترز، وطلبات الإفطار الكبيرة تحتاج حجز قبل يوم كامل على الأقل.
+- الطلبات العادية تُقبل في نفس اليوم خلال أوقات العمل.
+- للمناسبات والكميات الكبيرة، وجّه العميل للواتساب.
+
+══ الشكاوى والمشاكل ══
+إذا كان لدى العميل مشكلة (تأخير، صنف ناقص، جودة غير مناسبة)، قل له:
+"نأسف على هذا! تواصل معنا مباشرة على واتساب وسنحل المشكلة فوراً 🙏 https://wa.me/966500645799"
+لا تعد بتعويض محدد، فقط وجّه للواتساب.
+
+══ الطلبات الخاصة ══
+يمكن تخصيص الطلبات (تغيير مكونات، كميات مختلفة، بدون أصناف معينة).
+للطلبات الخاصة والمناسبات قل: "تواصل معنا على واتساب وسنرتب لك كل شيء 😊 https://wa.me/966500645799"
+
+══ التواصل ══
+واتساب: https://wa.me/966500645799
+
+══ قواعد الرد ══
+- تكلم بنفس لغة العميل (عربي أو إنجليزي)
+- كن ودوداً وخفيفاً، استخدم إيموجي أحياناً
+- ردودك قصيرة وواضحة (3-4 جمل فقط)
+- لا تخترع معلومات — إذا ما تعرف، وجّه للواتساب
+- عندما يسأل عن صنف أو فئة أو يطلب توصية، أضف في نهاية ردك بالضبط:
+  %%%ITEMS:[اسم1,اسم2,اسم3]%%%
+  (أسماء عربية بالضبط كما في المنيو، 2-4 أصناف)
+- لا تستخدم %%%ITEMS:[]%%% في ردود التحية والأسعار والتوصيل والشكاوى
+
+══ المنيو الكامل ══
+${menuText}`
+}
+
+// ─── Item Card ────────────────────────────────────────────────────────────────
+
+function ItemCard({ item }: { item: MenuItem }) {
+  const { addItem } = useCart()
+  const [added, setAdded] = useState(false)
+
+  function handleAdd() {
+    addItem(item, 1)
+    setAdded(true)
+    setTimeout(() => setAdded(false), 1500)
+  }
+
+  return (
+    <div className="flex-shrink-0 w-36 bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
+      <div className="relative w-full bg-gray-50" style={{ aspectRatio: "4/3" }}>
+        {item.image
+          ? <Image src={item.image} alt={item.name} fill className="object-cover" unoptimized />
+          : <div className="absolute inset-0 flex items-center justify-center"><ShoppingBag className="h-7 w-7 text-gray-200" /></div>
+        }
+        {item.isFeatured && (
+          <span className="absolute top-1.5 right-1.5 bg-yellow-400 text-yellow-900 text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+            <Star className="h-2 w-2 fill-yellow-900" />الأكثر
+          </span>
+        )}
+      </div>
+      <div className="p-2" dir="rtl">
+        <p className="font-bold text-xs leading-tight line-clamp-2">{item.name}</p>
+        <p className="text-xs text-primary font-bold mt-1">{item.price} ر.س</p>
+        <button
+          onClick={handleAdd}
+          className={`mt-2 w-full py-1.5 rounded-xl text-xs font-bold transition-all active:scale-95 flex items-center justify-center gap-1 ${
+            added ? "bg-green-500 text-white" : "bg-foreground text-background"
+          }`}
+        >
+          {added ? "✓ أضيف!" : <><Plus className="h-3 w-3" /> أضف للسلة</>}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
+
+const QUICK_QUESTIONS = ["أيش عندكم؟", "كم رسوم التوصيل؟", "وش تنصحني؟", "ما هي أوقات العمل؟"]
 
 export function AIChat() {
+  const { data: result } = useSWR<{ data: MenuItem[] }>("/api/menu", fetcher, {
+    revalidateOnFocus: false, dedupingInterval: 300000,
+  })
+  const menuItems = result?.data || []
+
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([
-    { role: "assistant", content: "أهلاً! أنا مساعد أمل سناك 👋 كيف أقدر أساعدك اليوم؟" }
+    { role: "assistant", type: "text", content: "أهلاً! أنا مساعد أمل سناك 👋\nكيف أقدر أساعدك؟" }
   ])
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  const { items } = useCart()
+  const { items: cartItems } = useCart()
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -57,79 +151,97 @@ export function AIChat() {
     if (open) setTimeout(() => inputRef.current?.focus(), 300)
   }, [open])
 
-  async function sendMessage() {
-    const text = input.trim()
-    if (!text || loading) return
+  function parseReply(raw: string): { text: string; items: MenuItem[] } {
+    const match = raw.match(/%%%ITEMS:\[([^\]]*)\]%%%/)
+    let text = raw.replace(/%%%ITEMS:\[[^\]]*\]%%%/g, "").trim()
+    let items: MenuItem[] = []
+    if (match && match[1]) {
+      const names = match[1].split(",").map(n => n.trim()).filter(Boolean)
+      items = names
+        .map(n => menuItems.find(m => m.name === n || m.nameEn === n))
+        .filter((m): m is MenuItem => !!m)
+    }
+    return { text, items }
+  }
 
-    const userMsg: Message = { role: "user", content: text }
+  async function sendMessage(text?: string) {
+    const msg = (text ?? input).trim()
+    if (!msg || loading) return
+
+    const userMsg: TextMessage = { role: "user", type: "text", content: msg }
     setMessages(prev => [...prev, userMsg])
     setInput("")
     setLoading(true)
 
     try {
-      // Build cart context if items exist
-      const cartContext = items.length > 0
-        ? `\n\nسلة العميل الحالية: ${items.map(i => `${i.name} x${i.quantity}`).join(", ")}`
+      const cartContext = cartItems.length > 0
+        ? `\n\nسلة العميل: ${cartItems.map(i => `${i.name} x${i.quantity}`).join("، ")}`
         : ""
+
+      const apiMessages = [...messages, userMsg]
+        .filter(m => m.type === "text")
+        .map(m => ({ role: m.role, content: m.content }))
 
       const response = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514",
-          max_tokens: 400,
-          system: SYSTEM_PROMPT + cartContext,
-          messages: [...messages, userMsg].map(m => ({
-            role: m.role,
-            content: m.content
-          }))
+          max_tokens: 500,
+          system: buildSystemPrompt(menuItems) + cartContext,
+          messages: apiMessages,
         })
       })
 
       const data = await response.json()
-      const reply = data.content?.[0]?.text || "عذراً، حدث خطأ. حاول مرة ثانية."
-      setMessages(prev => [...prev, { role: "assistant", content: reply }])
+      const raw = data.content?.[0]?.text || "عذراً، حدث خطأ. حاول مرة ثانية."
+      const { text: replyText, items } = parseReply(raw)
+
+      if (items.length > 0) {
+        const itemMsg: ItemsMessage = { role: "assistant", type: "items", content: replyText, items }
+        setMessages(prev => [...prev, itemMsg])
+      } else {
+        setMessages(prev => [...prev, { role: "assistant", type: "text", content: replyText }])
+      }
     } catch {
-      setMessages(prev => [...prev, { role: "assistant", content: "عذراً، حدث خطأ في الاتصال. حاول مرة ثانية." }])
+      setMessages(prev => [...prev, { role: "assistant", type: "text", content: "عذراً، حدث خطأ في الاتصال." }])
     }
     setLoading(false)
   }
 
+  const unread = !open && messages.length > 1
+
   return (
     <>
       {/* Floating button */}
-      <button
-        onClick={() => setOpen(true)}
-        className="fixed bottom-24 left-4 z-50 w-14 h-14 rounded-full bg-foreground text-background shadow-xl flex items-center justify-center active:scale-95 transition-transform"
-        style={{ display: open ? "none" : "flex" }}
-      >
-        <MessageCircle className="h-6 w-6" />
-        <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary animate-pulse" />
-      </button>
+      {!open && (
+        <button
+          onClick={() => setOpen(true)}
+          className="fixed bottom-24 left-4 z-50 w-14 h-14 rounded-full bg-foreground text-background shadow-xl flex items-center justify-center active:scale-95 transition-transform"
+        >
+          <MessageCircle className="h-6 w-6" />
+          {unread && <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary animate-pulse" />}
+        </button>
+      )}
 
       {/* Chat window */}
       {open && (
-        <div className="fixed bottom-0 left-0 right-0 z-50 flex flex-col bg-white rounded-t-3xl shadow-2xl" style={{ height: "70svh" }}>
+        <div className="fixed inset-0 z-50 flex flex-col bg-[#f0f2f5]" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
 
           {/* Header */}
-          <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-100 flex-shrink-0">
-            <div className="w-10 h-10 rounded-full bg-foreground flex items-center justify-center flex-shrink-0">
-              <Bot className="h-5 w-5 text-background" />
-            </div>
-            <div className="flex-1" dir="rtl">
-              <p className="font-bold text-sm">مساعد أمل سناك</p>
-              <p className="text-xs text-green-500 font-medium">● متصل الآن</p>
-            </div>
-            <button
-              onClick={() => setOpen(false)}
-              className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center active:scale-95 transition-transform"
-            >
+          <div className="flex items-center gap-3 px-4 py-3 bg-white border-b border-gray-100 flex-shrink-0">
+            <button onClick={() => setOpen(false)} className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center active:scale-95">
               <X className="h-4 w-4" />
             </button>
+            <div className="flex-1 text-center">
+              <p className="font-bold text-sm">مساعد أمل سناك 🤖</p>
+              <p className="text-xs text-green-500">● متصل الآن</p>
+            </div>
+            <div className="w-9 h-9" />
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3" style={{ WebkitOverflowScrolling: "touch" }}>
+          <div className="flex-1 overflow-y-auto px-3 py-4 space-y-3">
             {messages.map((msg, i) => (
               <div key={i} className={`flex items-end gap-2 ${msg.role === "user" ? "flex-row-reverse" : "flex-row"}`}>
                 {msg.role === "assistant" && (
@@ -137,25 +249,37 @@ export function AIChat() {
                     <Bot className="h-3.5 w-3.5 text-background" />
                   </div>
                 )}
-                <div
-                  className={`max-w-[78%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
-                    msg.role === "user"
-                      ? "bg-foreground text-background rounded-br-sm"
-                      : "bg-gray-100 text-foreground rounded-bl-sm"
-                  }`}
-                  dir="auto"
-                >
-                  {msg.content}
+                <div className={`flex flex-col gap-2 max-w-[82%] ${msg.role === "user" ? "items-end" : "items-start"}`}>
+                  {/* Text bubble */}
+                  {msg.content && (
+                    <div
+                      className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-line ${
+                        msg.role === "user"
+                          ? "bg-foreground text-background rounded-br-sm"
+                          : "bg-white text-foreground rounded-bl-sm shadow-sm"
+                      }`}
+                      dir="auto"
+                    >
+                      {msg.content}
+                    </div>
+                  )}
+                  {/* Item cards */}
+                  {msg.type === "items" && msg.items.length > 0 && (
+                    <div className="flex gap-2 overflow-x-auto pb-1 max-w-[85vw]" style={{ scrollbarWidth: "none" }}>
+                      {msg.items.map(item => <ItemCard key={item.id} item={item} />)}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
 
+            {/* Loading */}
             {loading && (
               <div className="flex items-end gap-2">
                 <div className="w-7 h-7 rounded-full bg-foreground flex items-center justify-center flex-shrink-0">
                   <Bot className="h-3.5 w-3.5 text-background" />
                 </div>
-                <div className="bg-gray-100 px-4 py-3 rounded-2xl rounded-bl-sm flex items-center gap-1.5">
+                <div className="bg-white px-4 py-3 rounded-2xl rounded-bl-sm shadow-sm flex items-center gap-1.5">
                   <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: "0ms" }} />
                   <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: "150ms" }} />
                   <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: "300ms" }} />
@@ -165,14 +289,14 @@ export function AIChat() {
             <div ref={bottomRef} />
           </div>
 
-          {/* Quick suggestions */}
+          {/* Quick suggestions — only at start */}
           {messages.length === 1 && (
-            <div className="px-4 pb-2 flex gap-2 overflow-x-auto flex-shrink-0" dir="rtl">
-              {["ما هي الأصناف المتاحة؟", "كم رسوم التوصيل؟", "أيش تنصحني؟"].map(q => (
+            <div className="px-3 pb-2 flex gap-2 overflow-x-auto flex-shrink-0" style={{ scrollbarWidth: "none" }}>
+              {QUICK_QUESTIONS.map(q => (
                 <button
                   key={q}
-                  onClick={() => { setInput(q); setTimeout(() => inputRef.current?.focus(), 50) }}
-                  className="flex-shrink-0 px-3 py-1.5 bg-gray-100 rounded-full text-xs font-medium active:bg-gray-200 transition-colors whitespace-nowrap"
+                  onClick={() => sendMessage(q)}
+                  className="flex-shrink-0 px-3 py-2 bg-white rounded-full text-xs font-medium shadow-sm active:scale-95 transition-transform whitespace-nowrap border border-gray-100"
                 >
                   {q}
                 </button>
@@ -181,9 +305,9 @@ export function AIChat() {
           )}
 
           {/* Input */}
-          <div className="px-4 py-3 border-t border-gray-100 flex gap-2 flex-shrink-0" style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}>
+          <div className="px-3 py-3 bg-white border-t border-gray-100 flex gap-2 flex-shrink-0">
             <button
-              onClick={sendMessage}
+              onClick={() => sendMessage()}
               disabled={!input.trim() || loading}
               className="w-11 h-11 rounded-full bg-foreground text-background flex items-center justify-center flex-shrink-0 active:scale-95 transition-transform disabled:opacity-40"
             >
@@ -196,7 +320,7 @@ export function AIChat() {
               onKeyDown={e => e.key === "Enter" && sendMessage()}
               placeholder="اسألني عن أي شيء..."
               dir="auto"
-              className="flex-1 px-4 py-2.5 bg-gray-100 rounded-full text-sm focus:outline-none"
+              className="flex-1 px-4 py-2.5 bg-[#f0f2f5] rounded-full text-sm focus:outline-none"
             />
           </div>
         </div>

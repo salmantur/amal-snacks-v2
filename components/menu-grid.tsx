@@ -77,7 +77,7 @@ export function MenuGrid() {
   }), [menuItems, dbCategories, debouncedSearch])
 
   return (
-    <div className="min-h-screen bg-[#f5f5f5]">
+    <div className="min-h-screen bg-background">
       {error && (
         <div className="mx-4 mt-4 p-4 bg-red-500 text-white rounded-lg font-medium">
           <p className="text-sm">{error}</p>

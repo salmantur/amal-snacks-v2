@@ -22,6 +22,15 @@ const GREEN_PRESETS = [
   { label: "أسود", color: "#1a1a1a" },
 ]
 
+const BACKGROUND_PRESETS = [
+  { label: "أبيض", color: "#ffffff" },
+  { label: "أبيض مكسر", color: "#fafafa" },
+  { label: "رمادي فاتح", color: "#f5f5f5" },
+  { label: "كريمي", color: "#fef9f0" },
+  { label: "وردي فاتح", color: "#fff5f5" },
+  { label: "أزرق فاتح", color: "#f0f7ff" },
+]
+
 export function ThemeEditor() {
   const { config, loading, saveConfig } = useThemeConfig()
   const [draft, setDraft] = useState<ThemeConfig | null>(null)
@@ -145,6 +154,37 @@ export function ThemeEditor() {
           <div>
             <p className="text-sm font-medium">لون مخصص</p>
             <p className="text-xs text-muted-foreground">{current.checkout_green}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Background color */}
+      <div>
+        <p className="text-sm font-semibold mb-3">🎨 لون خلفية الصفحة</p>
+        <div className="grid grid-cols-6 gap-2 mb-3">
+          {BACKGROUND_PRESETS.map(p => (
+            <button
+              key={p.color}
+              onClick={() => update({ background: p.color })}
+              title={p.label}
+              className="h-11 rounded-xl border-2 transition-all active:scale-95"
+              style={{
+                backgroundColor: p.color,
+                borderColor: (current.background ?? "#ffffff") === p.color ? "#000" : "#e5e7eb",
+              }}
+            />
+          ))}
+        </div>
+        <div className="flex items-center gap-3 p-3 bg-amal-grey rounded-xl">
+          <input
+            type="color"
+            value={current.background ?? "#ffffff"}
+            onChange={e => update({ background: e.target.value })}
+            className="w-12 h-10 rounded-lg cursor-pointer border-0 bg-transparent flex-shrink-0"
+          />
+          <div>
+            <p className="text-sm font-medium">لون مخصص</p>
+            <p className="text-xs text-muted-foreground">{current.background ?? "#ffffff"}</p>
           </div>
         </div>
       </div>

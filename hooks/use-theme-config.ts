@@ -7,12 +7,14 @@ export interface ThemeConfig {
   primary: string          // cart button, badges (pink)
   primary_foreground: string  // text on primary
   checkout_green: string   // order type modal green
+  background: string       // page background color
 }
 
 export const DEFAULT_THEME: ThemeConfig = {
   primary: "#f0526a",       // current pink
   primary_foreground: "#ffffff",
   checkout_green: "#1e5631",
+  background: "#ffffff",    // default white
 }
 
 const TABLE = "app_settings"
@@ -43,6 +45,11 @@ export function applyTheme(config: ThemeConfig) {
   root.style.setProperty("--ring", hexToHsl(config.primary))
   // Store checkout green as CSS variable
   root.style.setProperty("--checkout-green", config.checkout_green)
+  // Set background color
+  if (config.background) {
+    root.style.setProperty("--background", hexToHsl(config.background))
+    root.style.setProperty("--card", hexToHsl(config.background))
+  }
 }
 
 export function useThemeConfig() {

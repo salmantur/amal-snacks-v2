@@ -169,7 +169,7 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
                   const isDisabled = !isSelected && traySelections.length >= TRAY_REQUIRED
                   return (
                     <button
-                      key={item}
+                      key={key}
                       onClick={() => toggleTrayItem(item)}
                       disabled={isDisabled}
                       className={cn(
@@ -180,7 +180,7 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
                         isDisabled && "opacity-40 cursor-not-allowed"
                       )}
                     >
-                      <span className="flex-1">{item}</span>
+                      <span className="flex-1">{item.ar}</span>
                       {isSelected && <Check className="h-4 w-4 flex-shrink-0 mr-1" />}
                     </button>
                   )

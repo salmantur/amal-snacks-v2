@@ -53,19 +53,33 @@ export function HeroBannerEditor() {
 
     setUploading(true)
     const supabase = createClient()
-    const filename = `banner/${Date.now()}_${file.name}`
+    const filename = `banner_${Date.now()}.${file.name.split(".").pop()}`
 
-    const { data, error } = await supabase.storage
-      .from("app-assets")
+    // Try "Menu" bucket first (known to work), fallback to "app-assets"
+    let uploadData = null
+    let bucket = "Menu"
+    const { data: d1, error: e1 } = await supabase.storage
+      .from("Menu")
       .upload(filename, file, { upsert: true })
 
-    if (!error && data) {
-      const { data: urlData } = supabase.storage
+    if (e1) {
+      const { data: d2, error: e2 } = await supabase.storage
         .from("app-assets")
-        .getPublicUrl(data.path)
+        .upload(filename, file, { upsert: true })
+      if (!e2) { uploadData = d2; bucket = "app-assets" }
+    } else {
+      uploadData = d1
+    }
+
+    if (uploadData) {
+      const { data: urlData } = supabase.storage
+        .from(bucket)
+        .getPublicUrl(uploadData.path)
       update({ image_url: urlData.publicUrl })
     }
     setUploading(false)
+    // Reset input so same file can be re-uploaded
+    e.target.value = ""
   }
 
   if (loading) {
@@ -204,37 +218,53 @@ export function HeroBannerEditor() {
       {/* Image */}
       <div className="space-y-3">
         <h3 className="font-bold text-[#1e293b]">صورة خلفية (اختياري)</h3>
-        <div className="flex gap-2">
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
-            className="flex items-center gap-2 px-4 py-3 rounded-xl bg-amal-grey hover:bg-amal-grey/80 transition-colors flex-1 justify-center font-medium disabled:opacity-50"
-          >
-            {uploading ? (
-              <span className="text-sm">جاري الرفع...</span>
-            ) : (
-              <>
-                <Upload className="h-4 w-4" />
-                <span className="text-sm">رفع صورة</span>
-              </>
-            )}
-          </button>
-          {current.image_url && (
-            <button
-              onClick={() => update({ image_url: null })}
-              className="w-12 h-12 rounded-xl bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-100 transition-colors"
-            >
-              <X className="h-4 w-4" />
-            </button>
+
+        {/* Upload area */}
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploading}
+          className="w-full relative rounded-2xl border-2 border-dashed border-gray-200 overflow-hidden transition-all hover:border-primary/50 active:scale-[0.99] disabled:opacity-60"
+          style={{ minHeight: 120 }}
+        >
+          {current.image_url ? (
+            <div className="relative w-full" style={{ aspectRatio: "16/7" }}>
+              <Image src={current.image_url} alt="banner preview" fill className="object-cover" />
+              <div className="absolute inset-0 bg-black/30 flex flex-col items-center justify-center gap-1">
+                <Upload className="h-6 w-6 text-white" />
+                <span className="text-white text-sm font-medium">استبدال الصورة</span>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center gap-2 py-8">
+              {uploading ? (
+                <>
+                  <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  <span className="text-sm text-muted-foreground">جاري الرفع...</span>
+                </>
+              ) : (
+                <>
+                  <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+                    <Upload className="h-6 w-6 text-primary" />
+                  </div>
+                  <span className="text-sm font-medium">اضغط لرفع صورة</span>
+                  <span className="text-xs text-muted-foreground">PNG, JPG, WEBP</span>
+                </>
+              )}
+            </div>
           )}
-        </div>
+        </button>
+
+        {/* Remove image */}
         {current.image_url && (
-          <div className="flex items-center gap-2 p-2 bg-amal-grey rounded-xl">
-            <ImageIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-            <span className="text-xs text-muted-foreground truncate">تم رفع الصورة</span>
-            <Check className="h-4 w-4 text-[#1e5631] flex-shrink-0" />
-          </div>
+          <button
+            onClick={() => update({ image_url: null })}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-red-50 text-red-500 text-sm hover:bg-red-100 transition-colors w-full justify-center"
+          >
+            <X className="h-4 w-4" />
+            حذف الصورة
+          </button>
         )}
+
         <input
           ref={fileInputRef}
           type="file"
@@ -242,7 +272,7 @@ export function HeroBannerEditor() {
           onChange={handleImageUpload}
           className="hidden"
         />
-        <p className="text-xs text-muted-foreground">الصورة ستظهر بشفافية خلف النص</p>
+        <p className="text-xs text-muted-foreground text-center">الصورة ستظهر بشفافية خلف النص</p>
       </div>
 
       {/* Actions */}

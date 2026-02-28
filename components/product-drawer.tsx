@@ -114,25 +114,20 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
         </div>
 
         {/* Image */}
-        <div className="mx-6 mb-4 p-4 bg-[#f5f5f5] rounded-2xl flex-shrink-0">
-          <div className="flex justify-center">
-            {product.image ? (
+        {product.image && (
+          <div className="mx-6 mb-4 flex-shrink-0">
+            <div className="relative w-full rounded-2xl overflow-hidden" style={{ aspectRatio: "4/3" }}>
               <Image
                 src={product.image}
                 alt={product.name}
-                width={200}
-                height={200}
-                className="object-cover rounded-xl"
+                fill
+                className="object-cover"
                 crossOrigin="anonymous"
                 priority
               />
-            ) : (
-              <div className="w-48 h-48 bg-gray-200 rounded-xl flex items-center justify-center text-gray-400">
-                لا توجد صورة
-              </div>
-            )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Scrollable middle */}
         <div className="overflow-y-auto flex-1 px-6">

@@ -27,7 +27,7 @@ interface MenuItem {
 const EMPTY_ITEM: Omit<MenuItem, "id"> = {
   name: "", nameEn: "", description: "",
   price: 0, image: "", category: "",
-  ingredients: "", limit: 0, inStock: true,
+  ingredients: "", limit: 0, inStock: true, makingTime: 0,
 }
 
 const ALL_CATEGORIES = categories.flatMap((cat) =>

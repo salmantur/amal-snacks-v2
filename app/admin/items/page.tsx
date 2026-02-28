@@ -27,7 +27,7 @@ interface MenuItem {
 const EMPTY_ITEM: Omit<MenuItem, "id"> = {
   name: "", nameEn: "", description: "",
   price: 0, image: "", category: "",
-  ingredients: "", limit: 0, inStock: true, makingTime: 0,
+  ingredients: "", limit: 0, inStock: true,
 }
 
 const ALL_CATEGORIES = categories.flatMap((cat) =>
@@ -278,10 +278,10 @@ export default function ItemsPage() {
                 <div key={item.id} className="bg-white rounded-2xl p-3 flex items-center gap-3 shadow-sm w-full overflow-hidden">
 
                   {/* Image — leftmost */}
-                  <div className="w-14 h-14 rounded-xl bg-[#f5f5f5] overflow-hidden flex-shrink-0 flex items-center justify-center">
+                  <div className="w-20 h-20 rounded-2xl bg-[#f5f5f5] overflow-hidden flex-shrink-0 relative">
                     {imgSrc
-                      ? <Image src={imgSrc} alt={item.name} width={56} height={56} className="object-cover w-full h-full" />
-                      : <ImageIcon className="h-5 w-5 text-gray-300" />
+                      ? <Image src={imgSrc} alt={item.name} fill className="object-cover" sizes="80px" />
+                      : <div className="absolute inset-0 flex items-center justify-center"><ImageIcon className="h-6 w-6 text-gray-300" /></div>
                     }
                   </div>
 
@@ -373,9 +373,9 @@ export default function ItemsPage() {
               <div>
                 <label className="block text-sm font-semibold mb-2 text-right" dir="rtl">الصورة</label>
                 <div className="flex items-center gap-3">
-                  <div className="w-20 h-20 rounded-2xl bg-[#f5f5f5] flex items-center justify-center overflow-hidden flex-shrink-0">
+                  <div className="w-24 h-24 rounded-2xl bg-[#f5f5f5] flex items-center justify-center overflow-hidden flex-shrink-0 relative">
                     {modalItem.image
-                      ? <Image src={getDisplayImage(modalItem.image) || modalItem.image} alt="preview" width={80} height={80} className="object-cover w-full h-full" />
+                      ? <Image src={getDisplayImage(modalItem.image) || modalItem.image} alt="preview" fill className="object-cover" sizes="96px" />
                       : <ImageIcon className="h-7 w-7 text-gray-300" />
                     }
                   </div>

@@ -51,6 +51,7 @@ export async function fetchMenuItems(): Promise<{ data: MenuItem[]; error: strin
         limit: Number(item.limit) || 0,
         inStock: item.in_stock !== false,
         makingTime: Number(item.making_time) || 0,
+        isFeatured: item.is_featured === true,
       }
     })
 

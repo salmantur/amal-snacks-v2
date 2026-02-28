@@ -22,12 +22,13 @@ interface MenuItem {
   limit: number
   inStock: boolean
   makingTime: number
+  isFeatured: boolean
 }
 
 const EMPTY_ITEM: Omit<MenuItem, "id"> = {
   name: "", nameEn: "", description: "",
   price: 0, image: "", category: "",
-  ingredients: "", limit: 0, inStock: true, makingTime: 0,
+  ingredients: "", limit: 0, inStock: true, makingTime: 0, isFeatured: false,
 }
 
 const ALL_CATEGORIES = categories.flatMap((cat) =>
@@ -82,6 +83,7 @@ export default function ItemsPage() {
       limit: Number(raw.limit) || 0,
       inStock: raw.in_stock !== false,
       makingTime: Number(raw.making_time) || 0,
+      isFeatured: raw.is_featured === true,
     }
   }
 
@@ -137,6 +139,7 @@ export default function ItemsPage() {
       limit: modalItem.limit || 0,
       in_stock: modalItem.inStock !== false,
       making_time: modalItem.makingTime || 0,
+      is_featured: modalItem.isFeatured === true,
     }
     if (isNew) {
       const { error } = await supabase.from("menu").insert(payload)

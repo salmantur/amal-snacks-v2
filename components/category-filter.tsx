@@ -10,7 +10,7 @@ interface CategoryFilterProps {
 
 export function CategoryFilter({ selectedCategory, onSelectCategory, categories }: CategoryFilterProps) {
   return (
-    <div className="flex gap-4 md:gap-8 px-4 py-4 md:py-6 overflow-x-auto scrollbar-hide bg-[#f5f5f5] md:justify-center">
+    <div className="flex gap-4 md:gap-8 px-4 py-4 md:py-6 overflow-x-auto scrollbar-hide md:justify-center" style={{ backgroundColor: "var(--bar-background, #f5f5f5)" }}>
       {categories.map((category) => (
         <button
           key={category.id}

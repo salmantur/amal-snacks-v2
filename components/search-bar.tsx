@@ -17,7 +17,8 @@ export function SearchBar({ value, onChange }: SearchBarProps) {
           placeholder="ابحث عن وجبتك المفضلة..."
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full py-3 px-4 pr-4 pl-12 rounded-full bg-amal-grey text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+          className="w-full py-3 px-4 pr-4 pl-12 rounded-full text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+          style={{ backgroundColor: "var(--bar-background, #f5f5f5)" }}
         />
       </div>
     </div>

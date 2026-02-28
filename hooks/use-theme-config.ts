@@ -8,6 +8,7 @@ export interface ThemeConfig {
   primary_foreground: string  // text on primary
   checkout_green: string   // order type modal green
   background: string       // page background color
+  bar_background: string   // category filter bar + search bar background
 }
 
 export const DEFAULT_THEME: ThemeConfig = {
@@ -15,6 +16,7 @@ export const DEFAULT_THEME: ThemeConfig = {
   primary_foreground: "#ffffff",
   checkout_green: "#1e5631",
   background: "#ffffff",    // default white
+  bar_background: "#f5f5f5", // default light grey bars
 }
 
 const TABLE = "app_settings"
@@ -43,12 +45,15 @@ export function applyTheme(config: ThemeConfig) {
   root.style.setProperty("--primary", hexToHsl(config.primary))
   root.style.setProperty("--primary-foreground", hexToHsl(config.primary_foreground))
   root.style.setProperty("--ring", hexToHsl(config.primary))
-  // Store checkout green as CSS variable
   root.style.setProperty("--checkout-green", config.checkout_green)
-  // Set background color
   if (config.background) {
     root.style.setProperty("--background", hexToHsl(config.background))
     root.style.setProperty("--card", hexToHsl(config.background))
+  }
+  if (config.bar_background) {
+    root.style.setProperty("--bar-background", config.bar_background)
+    root.style.setProperty("--muted", hexToHsl(config.bar_background))
+    root.style.setProperty("--amal-grey", hexToHsl(config.bar_background))
   }
 }
 

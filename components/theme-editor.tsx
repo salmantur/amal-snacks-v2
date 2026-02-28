@@ -169,6 +169,9 @@ export function ThemeEditor() {
             <span className="text-sm font-bold text-white">✅ استلام</span>
           </div>
         </div>
+        <div className="h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: current.bar_background ?? "#f5f5f5" }}>
+          <span className="text-xs text-gray-500">شريط الفئات والبحث</span>
+        </div>
         <div className="h-8 rounded-lg border border-dashed border-gray-300 flex items-center justify-center">
           <span className="text-xs text-gray-400">خلفية الصفحة</span>
         </div>
@@ -215,7 +218,9 @@ export function ThemeEditor() {
             <Copy className="h-4 w-4" />
             تطبيق اللون الحالي على كل الخلفيات
           </button>
-          <ColorSection title="🖼 لون الخلفية" value={bg} palette={BG_PALETTE} onChange={c => update({ background: c })} />
+          <ColorSection title="🖼 لون الخلفية الرئيسية" value={bg} palette={BG_PALETTE} onChange={c => update({ background: c })} />
+          <div className="border-t border-gray-100" />
+          <ColorSection title="📊 لون شريط الفئات وخانة البحث" value={current.bar_background ?? "#f5f5f5"} palette={BG_PALETTE} onChange={c => update({ bar_background: c })} />
         </div>
       )}
 

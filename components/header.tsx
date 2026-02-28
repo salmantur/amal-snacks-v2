@@ -6,14 +6,24 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { useCart } from "@/components/cart-provider"
+import { OrderTypeModal } from "@/components/order-type-modal"
+import { useRouter } from "next/navigation"
 
 export function Header() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [cartOpen, setCartOpen] = useState(false)
+  const [orderModalOpen, setOrderModalOpen] = useState(false)
+  const router = useRouter()
   const [mounted, setMounted] = useState(false)
   const { items, totalItems, totalPrice, removeItem } = useCart()
 
   useEffect(() => { setMounted(true) }, [])
+
+  const handleOrderSelect = (type: "pickup" | "delivery") => {
+    setOrderModalOpen(false)
+    setCartOpen(false)
+    router.push(`/checkout?type=${type}`)
+  }
 
   return (
     <>
@@ -129,18 +139,29 @@ export function Header() {
 
             {/* Footer */}
             {items.length > 0 && (
-              <div className="px-4 py-3 border-t border-border/50">
+              <div className="px-4 py-3 border-t border-border/50 flex gap-3">
                 <button
                   onClick={() => setCartOpen(false)}
-                  className="w-full py-3.5 rounded-2xl bg-foreground text-background font-bold active:scale-95 transition-transform"
+                  className="flex-1 py-3.5 rounded-2xl bg-amal-grey text-foreground font-medium active:scale-95 transition-transform text-sm"
                 >
                   متابعة التسوق
+                </button>
+                <button
+                  onClick={() => { setCartOpen(false); setOrderModalOpen(true) }}
+                  className="flex-1 py-3.5 rounded-2xl bg-foreground text-background font-bold active:scale-95 transition-transform text-sm"
+                >
+                  تأكيد الطلب ✓
                 </button>
               </div>
             )}
           </div>
         </div>
       )}
+      <OrderTypeModal
+        open={orderModalOpen}
+        onSelect={handleOrderSelect}
+        onClose={() => setOrderModalOpen(false)}
+      />
     </>
   )
 }

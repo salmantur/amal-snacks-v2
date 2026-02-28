@@ -79,14 +79,24 @@ function CheckoutContent() {
 
     const cartItems = items.map((item) => ({
       name: item.name,
+      nameEn: (item as { nameEn?: string }).nameEn || "",
       quantity: item.quantity,
       price: item.price,
       selectedIngredients: item.selectedIngredients,
+      makingTime: (item as { makingTime?: number }).makingTime || 0,
     }))
 
-    // Save order to Supabase
+    // Build message FIRST — before any await
+    const message = isPickup
+      ? generatePickupWhatsAppMessage(cartItems, totalPrice, deliveryInfo)
+      : generateWhatsAppMessage(cartItems, totalPrice, deliveryInfo)
+
+    const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${message}`
+
+    // Open WhatsApp BEFORE await — Safari blocks window.open after async calls
     window.open(whatsappUrl, "_blank")
 
+    // Save order to Supabase
     await saveOrder({
       customerName: deliveryInfo.name,
       customerPhone: deliveryInfo.phone,
@@ -100,14 +110,9 @@ function CheckoutContent() {
       scheduledTime: deliveryInfo.scheduledTime,
     })
 
-    const message = isPickup
-      ? generatePickupWhatsAppMessage(cartItems, totalPrice, deliveryInfo)
-      : generateWhatsAppMessage(cartItems, totalPrice, deliveryInfo)
-
-    const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${message}`
     clearCart()
 
-    // Redirect to confirmation page with order summary
+    // Redirect to confirmation page
     const params = new URLSearchParams({
       name: deliveryInfo.name,
       area: isPickup ? "" : deliveryInfo.area,

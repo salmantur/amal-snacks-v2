@@ -58,6 +58,12 @@ function CheckoutContent() {
   const deliveryFee = isPickup ? 0 : (selectedArea?.price || 0)
   const grandTotal = totalPrice + deliveryFee
 
+  // Calculate the longest preparation time across all cart items
+  const maxMakingTime = items.reduce((max, item) => {
+    const t = (item as { makingTime?: number }).makingTime || 0
+    return Math.max(max, t)
+  }, 0)
+
   const handleWhatsAppCheckout = async () => {
     if (isPickup) {
       if (!deliveryInfo.name || !deliveryInfo.phone) {
@@ -187,8 +193,22 @@ function CheckoutContent() {
 
         {/* Time Picker */}
         <section>
-          <h2 className="text-lg font-bold mb-4">{isPickup ? "وقت الاستلام" : "موعد التوصيل"}</h2>
-          <TimePicker value={deliveryInfo.scheduledTime} onChange={handleScheduleChange} required={isPickup} />
+          <h2 className="text-lg font-bold mb-2">{isPickup ? "وقت الاستلام" : "موعد التوصيل"}</h2>
+          {maxMakingTime > 0 && (
+            <div className="mb-3 p-3 bg-amal-yellow/20 rounded-xl flex items-center gap-2 text-right">
+              <span className="text-xl">⏱️</span>
+              <p className="text-sm text-foreground">
+                بعض الأصناف تحتاج وقت تحضير{" "}
+                <span className="font-bold">
+                  {maxMakingTime >= 60
+                    ? `${Math.floor(maxMakingTime / 60)} ساعة${maxMakingTime % 60 > 0 ? ` و${maxMakingTime % 60} دقيقة` : ""}`
+                    : `${maxMakingTime} دقيقة`}
+                </span>
+                {" "}— المواعيد المتاحة تبدأ بعد انتهاء التحضير.
+              </p>
+            </div>
+          )}
+          <TimePicker value={deliveryInfo.scheduledTime} onChange={handleScheduleChange} minMinutes={maxMakingTime} required={isPickup} />
         </section>
 
         {/* Info Form */}

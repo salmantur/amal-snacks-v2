@@ -20,6 +20,7 @@ export interface MenuItem {
   category: string
   ingredients?: string[]
   limit?: number
+  makingTime?: number  // preparation time in minutes
 }
 
 export interface CartItem extends MenuItem {

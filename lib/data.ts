@@ -73,32 +73,37 @@ export const mockOrders: Order[] = [
 // Generate available time slots for scheduling
 export function getAvailableTimeSlots(minMinutes = 0): { date: string; slots: string[] }[] {
   const slots: { date: string; slots: string[] }[] = []
-  const today = new Date()
-  
+  const now = new Date()
+  // Earliest bookable moment = now + minMinutes + 30min buffer
+  const earliest = new Date(now.getTime() + (minMinutes + 30) * 60 * 1000)
+
   for (let i = 0; i < 7; i++) {
-    const date = new Date(today)
-    date.setDate(today.getDate() + i)
-    
+    const date = new Date(now)
+    date.setDate(now.getDate() + i)
+
     const daySlots: string[] = []
-    const earliestTime = new Date(Date.now() + minMinutes * 60 * 1000)
-    const startHour = i === 0 ? Math.max(10, earliestTime.getHours() + (earliestTime.getMinutes() > 0 ? 1 : 0)) : 10
-    
-    for (let hour = startHour; hour <= 21; hour++) {
-      daySlots.push(`${hour.toString().padStart(2, "0")}:00`)
-      if (hour < 21) {
-        daySlots.push(`${hour.toString().padStart(2, "0")}:30`)
+
+    for (let hour = 10; hour <= 21; hour++) {
+      for (const min of [0, 30]) {
+        if (hour === 21 && min === 30) continue
+        const slotTime = new Date(date)
+        slotTime.setHours(hour, min, 0, 0)
+        // Only include slot if it's after the earliest allowed time
+        if (slotTime > earliest) {
+          daySlots.push(`${hour.toString().padStart(2, "0")}:${min.toString().padStart(2, "0")}`)
+        }
       }
     }
-    
+
     const dayNames = ["الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"]
     const dayName = dayNames[date.getDay()]
     const dateStr = `${dayName} ${date.getDate()}/${date.getMonth() + 1}`
-    
+
     if (daySlots.length > 0) {
       slots.push({ date: dateStr, slots: daySlots })
     }
   }
-  
+
   return slots
 }
 

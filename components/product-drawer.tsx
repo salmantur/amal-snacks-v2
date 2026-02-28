@@ -120,10 +120,10 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
             <img
               src={product.image}
               alt={product.name}
-              className="w-full h-56 object-cover"
+              className="w-full aspect-square object-cover"
             />
           ) : (
-            <div className="w-full h-56 flex items-center justify-center text-gray-400">
+            <div className="w-full aspect-square flex items-center justify-center text-gray-400">
               لا توجد صورة
             </div>
           )}

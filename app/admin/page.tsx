@@ -12,6 +12,7 @@ import { HeroBannerEditor } from "@/components/hero-banner-editor"
 import { StockManager } from "@/components/stock-manager"
 import { CategoryManager } from "@/components/category-manager"
 import { SalesDashboard } from "@/components/sales-dashboard"
+import { ThemeEditor } from "@/components/theme-editor"
 import { cn } from "@/lib/utils"
 
 export default function AdminPage() {
@@ -21,7 +22,7 @@ export default function AdminPage() {
   const [soundEnabled, setSoundEnabled] = useState(true)
 
   const [filter, setFilter] = useState<Order["status"] | "all">("all")
-  const [activeTab, setActiveTab] = useState<"orders" | "banner" | "stock" | "categories" | "sales">("orders")
+  const [activeTab, setActiveTab] = useState<"orders" | "banner" | "stock" | "categories" | "sales" | "colors">("orders")
   const [newOrderAlert, setNewOrderAlert] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const orderCountRef = useRef(orders.length)
@@ -105,7 +106,7 @@ export default function AdminPage() {
       </audio>
 
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-background border-b border-border" style={{ transform: "translateZ(0)", WebkitTransform: "translateZ(0)" }}>
+      <header className="sticky top-0 z-50 bg-background border-b border-border">
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-4">
             <Link href="/" className="w-10 h-10 rounded-full bg-amal-grey flex items-center justify-center">
@@ -153,7 +154,7 @@ export default function AdminPage() {
         </div>
 
         {/* Stats Bar */}
-        <div className="flex gap-2 px-4 py-2 overflow-x-auto overscroll-x-contain" style={{ WebkitOverflowScrolling: "touch" }}>
+        <div className="flex gap-2 px-4 py-2 overflow-x-auto">
           <div className="flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full">
             <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
             <span className="text-sm font-medium">{pendingCount} طلب جديد</span>
@@ -172,10 +173,10 @@ export default function AdminPage() {
         </div>
 
         {/* Main Tabs */}
-        <div className="flex gap-2 px-4 py-3 border-t border-border/50 overflow-x-auto overscroll-x-contain" style={{ WebkitOverflowScrolling: "touch" }}>
+        <div className="flex gap-2 px-4 py-3 border-t border-border/50">
           <button
             onClick={() => setActiveTab("orders")}
-            className={cn("px-4 py-2.5 rounded-full text-sm font-medium whitespace-nowrap flex-shrink-0 transition-colors",
+            className={cn("px-4 py-2 rounded-full text-sm font-medium transition-colors",
               activeTab === "orders" ? "bg-foreground text-background" : "bg-card hover:bg-card/80"
             )}
           >
@@ -183,7 +184,7 @@ export default function AdminPage() {
           </button>
           <button
             onClick={() => setActiveTab("banner")}
-            className={cn("px-4 py-2.5 rounded-full text-sm font-medium whitespace-nowrap flex-shrink-0 transition-colors",
+            className={cn("px-4 py-2 rounded-full text-sm font-medium transition-colors",
               activeTab === "banner" ? "bg-foreground text-background" : "bg-card hover:bg-card/80"
             )}
           >
@@ -191,7 +192,7 @@ export default function AdminPage() {
           </button>
           <button
             onClick={() => setActiveTab("stock")}
-            className={cn("px-4 py-2.5 rounded-full text-sm font-medium whitespace-nowrap flex-shrink-0 transition-colors",
+            className={cn("px-4 py-2 rounded-full text-sm font-medium transition-colors",
               activeTab === "stock" ? "bg-foreground text-background" : "bg-card hover:bg-card/80"
             )}
           >
@@ -199,7 +200,7 @@ export default function AdminPage() {
           </button>
           <button
             onClick={() => setActiveTab("categories")}
-            className={cn("px-4 py-2.5 rounded-full text-sm font-medium whitespace-nowrap flex-shrink-0 transition-colors",
+            className={cn("px-4 py-2 rounded-full text-sm font-medium transition-colors",
               activeTab === "categories" ? "bg-foreground text-background" : "bg-card hover:bg-card/80"
             )}
           >
@@ -207,7 +208,7 @@ export default function AdminPage() {
           </button>
           <button
             onClick={() => setActiveTab("sales")}
-            className={cn("px-4 py-2.5 rounded-full text-sm font-medium whitespace-nowrap flex-shrink-0 transition-colors",
+            className={cn("px-4 py-2 rounded-full text-sm font-medium transition-colors",
               activeTab === "sales" ? "bg-foreground text-background" : "bg-card hover:bg-card/80"
             )}
           >
@@ -217,7 +218,7 @@ export default function AdminPage() {
 
         {/* Filter Tabs — only show for orders tab */}
         {activeTab === "orders" && (
-        <div className="flex gap-2 px-4 py-3 border-t border-border/50 overflow-x-auto overscroll-x-contain" style={{ WebkitOverflowScrolling: "touch" }}>
+        <div className="flex gap-2 px-4 py-3 border-t border-border/50 overflow-x-auto">
           {[
             { value: "all", label: "الكل" },
             { value: "pending", label: "جديد" },

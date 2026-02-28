@@ -17,7 +17,7 @@ export function OrderTypeModal({ open, onSelect, onClose }: OrderTypeModalProps)
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-sm p-0 border-0 rounded-3xl overflow-hidden gap-0">
         {/* Green header area */}
-        <div className="relative bg-gradient-to-b from-[#1e5631] to-[#2d7a47] pt-10 pb-12 px-6 text-center">
+        <div className="relative bg-gradient-to-b from-[var(--checkout-green)] to-[var(--checkout-green)] pt-10 pb-12 px-6 text-center">
           <button
             onClick={onClose}
             className="absolute top-4 left-4 w-8 h-8 rounded-full bg-white/20 flex items-center justify-center"
@@ -45,7 +45,7 @@ export function OrderTypeModal({ open, onSelect, onClose }: OrderTypeModalProps)
           {/* Pickup button */}
           <button
             onClick={() => onSelect("pickup")}
-            className="w-full flex items-center justify-center gap-3 py-4 px-6 rounded-2xl border-2 border-[#1e5631] text-[#1e5631] font-bold text-lg hover:bg-[#1e5631]/5 transition-colors"
+            className="w-full flex items-center justify-center gap-3 py-4 px-6 rounded-2xl border-2 border-[var(--checkout-green)] text-[var(--checkout-green)] font-bold text-lg hover:bg-[var(--checkout-green)]/5 transition-colors"
           >
             <ShoppingBag className="h-5 w-5" />
             استلام من المحل
@@ -56,7 +56,7 @@ export function OrderTypeModal({ open, onSelect, onClose }: OrderTypeModalProps)
             href={SHOP_MAPS_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 px-2 py-1 text-sm text-muted-foreground hover:text-[#1e5631] transition-colors"
+            className="flex items-center gap-2 px-2 py-1 text-sm text-muted-foreground hover:text-[var(--checkout-green)] transition-colors"
           >
             <MapPin className="h-4 w-4 flex-shrink-0" />
             <span className="text-right">{SHOP_ADDRESS}</span>
@@ -65,7 +65,7 @@ export function OrderTypeModal({ open, onSelect, onClose }: OrderTypeModalProps)
           {/* Delivery button */}
           <button
             onClick={() => onSelect("delivery")}
-            className="w-full flex items-center justify-center gap-3 py-4 px-6 rounded-2xl bg-[#1e5631] text-white font-bold text-lg hover:bg-[#174425] transition-colors"
+            className="w-full flex items-center justify-center gap-3 py-4 px-6 rounded-2xl bg-[var(--checkout-green)] text-white font-bold text-lg hover:bg-[var(--checkout-green)] transition-colors"
           >
             <Truck className="h-5 w-5" />
             توصيل للمنزل

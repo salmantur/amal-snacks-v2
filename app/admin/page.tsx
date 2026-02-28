@@ -214,6 +214,14 @@ export default function AdminPage() {
           >
             📊 المبيعات
           </button>
+          <button
+            onClick={() => setActiveTab("colors")}
+            className={cn("px-4 py-2 rounded-full text-sm font-medium transition-colors",
+              activeTab === "colors" ? "bg-foreground text-background" : "bg-card hover:bg-card/80"
+            )}
+          >
+            🎨 المظهر
+          </button>
         </div>
 
         {/* Filter Tabs — only show for orders tab */}
@@ -277,6 +285,14 @@ export default function AdminPage() {
         <div className="p-4 max-w-lg mx-auto">
           <h2 className="text-lg font-bold mb-4">إدارة التصنيفات</h2>
           <CategoryManager />
+        </div>
+      )}
+
+      {/* Theme / Colors Tab */}
+      {activeTab === "colors" && (
+        <div className="p-4 max-w-lg mx-auto">
+          <h2 className="text-lg font-bold mb-4">🎨 تخصيص المظهر</h2>
+          <ThemeEditor />
         </div>
       )}
 

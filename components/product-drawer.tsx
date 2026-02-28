@@ -59,7 +59,7 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
 
   // Platters customization (existing logic)
   const isPlatters = product.category === "platters"
-  const hasIngredients = isPlatters && product.ingredients && product.ingredients.length > 0
+  const hasIngredients = !isTray && product.ingredients && product.ingredients.length > 0
   const maxSelections = product.limit || 0
 
   const toggleIngredient = (ingredient: string) => {
@@ -113,21 +113,26 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
           </div>
         </div>
 
-        {/* Image — full width, proper fit, no cropping */}
-        {product.image ? (
-          <div className="mx-5 mb-3 flex-shrink-0">
-            <div className="relative w-full rounded-2xl overflow-hidden bg-[#f5f5f5]" style={{ aspectRatio: "4/3" }}>
+        {/* Image */}
+        <div className="mx-6 mb-4 p-4 bg-[#f5f5f5] rounded-2xl flex-shrink-0">
+          <div className="flex justify-center">
+            {product.image ? (
               <Image
                 src={product.image}
                 alt={product.name}
-                fill
-                className="object-cover"
+                width={200}
+                height={200}
+                className="object-cover rounded-xl"
                 crossOrigin="anonymous"
                 priority
               />
-            </div>
+            ) : (
+              <div className="w-48 h-48 bg-gray-200 rounded-xl flex items-center justify-center text-gray-400">
+                لا توجد صورة
+              </div>
+            )}
           </div>
-        ) : null}
+        </div>
 
         {/* Scrollable middle */}
         <div className="overflow-y-auto flex-1 px-6">
@@ -189,7 +194,7 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
                 <span className="text-sm text-gray-500">
                   {maxSelections > 0 && `(${selectedIngredients.length}/${maxSelections})`}
                 </span>
-                <h3 className="font-bold text-[#1e293b]">تخصيص الطلب</h3>
+                <h3 className="font-bold text-[#1e293b]">اختر:</h3>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 {product.ingredients?.map((ingredient) => {
@@ -217,12 +222,7 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
             </div>
           )}
 
-          {/* Ingredients text for non-customizable items */}
-          {!isTray && !hasIngredients && product.ingredients && product.ingredients.length > 0 && (
-            <p className="text-gray-600 text-sm mb-4 text-right leading-relaxed">
-              {product.ingredients.join("، ")}
-            </p>
-          )}
+
         </div>
 
         {/* Fixed bottom */}

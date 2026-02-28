@@ -60,8 +60,12 @@ function CheckoutContent() {
 
   const handleWhatsAppCheckout = async () => {
     if (isPickup) {
-      if (!deliveryInfo.name) {
-        alert("الرجاء إدخال الاسم")
+      if (!deliveryInfo.name || !deliveryInfo.phone) {
+        alert("الرجاء إدخال الاسم ورقم الهاتف")
+        return
+      }
+      if (!deliveryInfo.scheduledTime) {
+        alert("الرجاء اختيار وقت الاستلام")
         return
       }
     } else {
@@ -75,24 +79,12 @@ function CheckoutContent() {
 
     const cartItems = items.map((item) => ({
       name: item.name,
-      nameEn: (item as { nameEn?: string }).nameEn || "",
       quantity: item.quantity,
       price: item.price,
       selectedIngredients: item.selectedIngredients,
-      makingTime: (item as { makingTime?: number }).makingTime || 0,
     }))
 
-    // Build WhatsApp message
-    const message = isPickup
-      ? generatePickupWhatsAppMessage(cartItems, totalPrice, deliveryInfo)
-      : generateWhatsAppMessage(cartItems, totalPrice, deliveryInfo)
-
-    const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${message}`
-
-    // ⚠️ Open WhatsApp BEFORE any await — Safari blocks window.open after async calls
-    window.open(whatsappUrl, "_blank")
-
-    // Save order to Supabase (after opening WhatsApp so Safari doesn't block it)
+    // Save order to Supabase
     await saveOrder({
       customerName: deliveryInfo.name,
       customerPhone: deliveryInfo.phone,
@@ -105,6 +97,13 @@ function CheckoutContent() {
       notes: deliveryInfo.notes,
       scheduledTime: deliveryInfo.scheduledTime,
     })
+
+    const message = isPickup
+      ? generatePickupWhatsAppMessage(cartItems, totalPrice, deliveryInfo)
+      : generateWhatsAppMessage(cartItems, totalPrice, deliveryInfo)
+
+    const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${message}`
+    window.open(whatsappUrl, "_blank")
 
     clearCart()
 
@@ -184,7 +183,7 @@ function CheckoutContent() {
         {/* Time Picker */}
         <section>
           <h2 className="text-lg font-bold mb-4">{isPickup ? "وقت الاستلام" : "موعد التوصيل"}</h2>
-          <TimePicker value={deliveryInfo.scheduledTime} onChange={handleScheduleChange} />
+          <TimePicker value={deliveryInfo.scheduledTime} onChange={handleScheduleChange} required={isPickup} />
         </section>
 
         {/* Info Form */}
@@ -202,19 +201,21 @@ function CheckoutContent() {
               />
             </div>
 
+            <div className="relative">
+              <Phone className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <input
+                type="tel"
+                inputMode="tel"
+                placeholder="رقم الهاتف *"
+                value={deliveryInfo.phone}
+                onChange={(e) => handleInputChange("phone", e.target.value)}
+                className="w-full py-4 px-4 pr-12 rounded-2xl bg-amal-grey text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+                dir="ltr"
+              />
+            </div>
+
             {!isPickup && (
               <>
-                <div className="relative">
-                  <Phone className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                  <input
-                    type="tel"
-                    placeholder="رقم الهاتف *"
-                    value={deliveryInfo.phone}
-                    onChange={(e) => handleInputChange("phone", e.target.value)}
-                    className="w-full py-4 px-4 pr-12 rounded-2xl bg-amal-grey text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
-                    dir="ltr"
-                  />
-                </div>
                 <div className="relative">
                   <MapPin className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                   <ChevronDown className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />

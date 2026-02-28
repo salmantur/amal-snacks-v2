@@ -15,12 +15,14 @@ import {
 interface TimePickerProps {
   value: string | null
   onChange: (value: string | null) => void
+  minMinutes?: number
+  required?: boolean  // if true, hides "أقرب وقت" option
 }
 
-export function TimePicker({ value, onChange }: TimePickerProps) {
+export function TimePicker({ value, onChange, minMinutes = 0, required = false }: TimePickerProps) {
   const [open, setOpen] = useState(false)
   const [selectedDay, setSelectedDay] = useState(0)
-  const timeSlots = getAvailableTimeSlots()
+  const timeSlots = getAvailableTimeSlots(minMinutes)
 
   const handleSelectTime = (time: string, dayIndex: number) => {
     const day = timeSlots[dayIndex]
@@ -56,7 +58,7 @@ export function TimePicker({ value, onChange }: TimePickerProps) {
           <SheetTitle className="text-xl">اختر وقت التوصيل</SheetTitle>
         </SheetHeader>
 
-        <button
+        {!required && <button
           onClick={handleSelectNow}
           className={cn(
             "w-full p-4 rounded-2xl mb-4 text-right transition-colors",
@@ -66,8 +68,12 @@ export function TimePicker({ value, onChange }: TimePickerProps) {
           )}
         >
           <p className="font-medium">في أقرب وقت ممكن</p>
-          <p className="text-sm opacity-80">سيتم توصيل طلبك خلال 30-60 دقيقة</p>
-        </button>
+          <p className="text-sm opacity-80">
+              {minMinutes > 0
+                ? `وقت التحضير ${minMinutes >= 60 ? `${Math.floor(minMinutes/60)} ساعة${minMinutes % 60 > 0 ? ` و${minMinutes % 60} دقيقة` : ""}` : `${minMinutes} دقيقة`}`
+                : "سيتم توصيل طلبك خلال 30-60 دقيقة"}
+            </p>
+        </button>}
 
         {/* Day selector */}
         <div className="flex gap-2 overflow-x-auto pb-3 mb-4">

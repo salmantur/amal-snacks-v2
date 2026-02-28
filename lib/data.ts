@@ -28,7 +28,7 @@ export interface Order {
   customerName: string
   customerPhone: string
   customerAddress: string
-  items: { name: string; nameEn?: string; quantity: number; price: number; selectedIngredients?: string[] }[]
+  items: { name: string; quantity: number; price: number }[]
   total: number
   status: "pending" | "preparing" | "ready" | "delivered"
   notes: string
@@ -158,7 +158,7 @@ export function generateWhatsAppMessage(
 }
 
 // WhatsApp number for the business (Saudi format: 966 + number without leading 0)
-export const WHATSAPP_NUMBER = "966567512699"
+export const WHATSAPP_NUMBER = "966500645799"
 
 // WhatsApp message for pickup orders
 export function generatePickupWhatsAppMessage(

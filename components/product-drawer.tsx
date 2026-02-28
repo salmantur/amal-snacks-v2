@@ -13,28 +13,28 @@ interface ProductDrawerProps {
   onClose: () => void
 }
 
-// Fixed list of tray items — all trays share this list
-const TRAY_ITEMS = [
-  "كبه",
-  "سبرنق رول",
-  "سمبوسة بطاطس",
-  "معجنات جبن",
-  "ميني ساندوتش حلومي",
-  "ميني شاورما",
-  "ورق عنب",
-  "مطبق مغلف",
-  "معجنات زعتر",
-  "ميني ساندوتش لبنه",
-  "مسخن",
-  "ميني برجر",
-  "ميني تورتلا",
-  "معجنات بيتزا",
-  "ميني ساندوتش ديك رومي",
-  "بف لحم",
-  "بف دجاج",
-  "سمبوسة جبن",
-  "معجنات لبنه",
-  "ميني ساندوتش فلافل",
+// Fixed list of tray items — Arabic + English
+const TRAY_ITEMS: { ar: string; en: string }[] = [
+  { ar: "كبه",                      en: "Kibbeh" },
+  { ar: "سبرنق رول",                en: "Spring Roll" },
+  { ar: "سمبوسة بطاطس",            en: "Potato Samosa" },
+  { ar: "معجنات جبن",               en: "Cheese Pastry" },
+  { ar: "ميني ساندوتش حلومي",       en: "Mini Halloumi Sandwich" },
+  { ar: "ميني شاورما",              en: "Mini Shawarma" },
+  { ar: "ورق عنب",                  en: "Grape Leaves" },
+  { ar: "مطبق مغلف",               en: "Wrapped Matazeez" },
+  { ar: "معجنات زعتر",              en: "Zaatar Pastry" },
+  { ar: "ميني ساندوتش لبنه",        en: "Mini Labneh Sandwich" },
+  { ar: "مسخن",                    en: "Musakhan" },
+  { ar: "ميني برجر",               en: "Mini Burger" },
+  { ar: "ميني تورتلا",             en: "Mini Tortilla" },
+  { ar: "معجنات بيتزا",            en: "Pizza Pastry" },
+  { ar: "ميني ساندوتش ديك رومي",   en: "Mini Turkey Sandwich" },
+  { ar: "بف لحم",                  en: "Beef Puff" },
+  { ar: "بف دجاج",                 en: "Chicken Puff" },
+  { ar: "سمبوسة جبن",              en: "Cheese Samosa" },
+  { ar: "معجنات لبنه",             en: "Labneh Pastry" },
+  { ar: "ميني ساندوتش فلافل",      en: "Mini Falafel Sandwich" },
 ]
 
 const TRAY_REQUIRED = 7
@@ -59,7 +59,7 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
 
   // Platters customization (existing logic)
   const isPlatters = product.category === "platters"
-  const hasIngredients = !isTray && product.ingredients && product.ingredients.length > 0
+  const hasIngredients = isPlatters && product.ingredients && product.ingredients.length > 0
   const maxSelections = product.limit || 0
 
   const toggleIngredient = (ingredient: string) => {
@@ -70,11 +70,12 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
     })
   }
 
-  const toggleTrayItem = (item: string) => {
+  const toggleTrayItem = (item: { ar: string; en: string }) => {
+    const key = `${item.ar}||${item.en}`
     setTraySelections((prev) => {
-      if (prev.includes(item)) return prev.filter((i) => i !== item)
+      if (prev.includes(key)) return prev.filter((i) => i !== key)
       if (prev.length >= TRAY_REQUIRED) return prev
-      return [...prev, item]
+      return [...prev, key]
     })
   }
 
@@ -114,20 +115,25 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
         </div>
 
         {/* Image */}
-        {product.image && (
-          <div className="mx-6 mb-4 flex-shrink-0">
-            <div className="relative w-full rounded-2xl overflow-hidden" style={{ aspectRatio: "4/3" }}>
+        <div className="mx-6 mb-4 p-4 bg-[#f5f5f5] rounded-2xl flex-shrink-0">
+          <div className="flex justify-center">
+            {product.image ? (
               <Image
                 src={product.image}
                 alt={product.name}
-                fill
-                className="object-cover"
+                width={200}
+                height={200}
+                className="object-cover rounded-xl"
                 crossOrigin="anonymous"
                 priority
               />
-            </div>
+            ) : (
+              <div className="w-48 h-48 bg-gray-200 rounded-xl flex items-center justify-center text-gray-400">
+                لا توجد صورة
+              </div>
+            )}
           </div>
-        )}
+        </div>
 
         {/* Scrollable middle */}
         <div className="overflow-y-auto flex-1 px-6">
@@ -158,7 +164,8 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
 
               <div className="grid grid-cols-2 gap-2">
                 {TRAY_ITEMS.map((item) => {
-                  const isSelected = traySelections.includes(item)
+                  const key = `${item.ar}||${item.en}`
+                  const isSelected = traySelections.includes(key)
                   const isDisabled = !isSelected && traySelections.length >= TRAY_REQUIRED
                   return (
                     <button
@@ -189,7 +196,7 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
                 <span className="text-sm text-gray-500">
                   {maxSelections > 0 && `(${selectedIngredients.length}/${maxSelections})`}
                 </span>
-                <h3 className="font-bold text-[#1e293b]">اختر:</h3>
+                <h3 className="font-bold text-[#1e293b]">تخصيص الطلب</h3>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 {product.ingredients?.map((ingredient) => {
@@ -217,7 +224,12 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
             </div>
           )}
 
-
+          {/* Ingredients text for non-customizable items */}
+          {!isTray && !hasIngredients && product.ingredients && product.ingredients.length > 0 && (
+            <p className="text-gray-600 text-sm mb-4 text-right leading-relaxed">
+              {product.ingredients.join("، ")}
+            </p>
+          )}
         </div>
 
         {/* Fixed bottom */}

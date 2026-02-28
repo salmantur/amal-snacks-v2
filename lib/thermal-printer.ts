@@ -87,10 +87,26 @@ function buildLines(order: Order): Line[] {
       dir: "rtl"
     })
 
-    // Selected options
+    // Selected options / tray items — handle bilingual "ar||en" format
     const ing = (item as { selectedIngredients?: string[] }).selectedIngredients
     if (ing?.length) {
-      L.push({ text: `    → ${ing.join(", ")}`, size: 22, align: "left", dir: "ltr" })
+      const enNames: string[] = []
+      const arNames: string[] = []
+      for (const s of ing) {
+        if (s.includes("||")) {
+          const [ar, en] = s.split("||")
+          arNames.push(ar)
+          enNames.push(en)
+        } else {
+          arNames.push(s)
+        }
+      }
+      // Print English selections if available
+      if (enNames.length > 0) {
+        L.push({ text: `  → ${enNames.join(", ")}`, size: 22, align: "left", dir: "ltr" })
+      }
+      // Print Arabic selections
+      L.push({ text: `  → ${arNames.join("، ")}`, size: 22, align: "right", dir: "rtl" })
     }
     gap()
   }

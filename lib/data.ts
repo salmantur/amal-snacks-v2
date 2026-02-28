@@ -71,7 +71,7 @@ export const mockOrders: Order[] = [
 ]
 
 // Generate available time slots for scheduling
-export function getAvailableTimeSlots(): { date: string; slots: string[] }[] {
+export function getAvailableTimeSlots(minMinutes = 0): { date: string; slots: string[] }[] {
   const slots: { date: string; slots: string[] }[] = []
   const today = new Date()
   
@@ -80,7 +80,8 @@ export function getAvailableTimeSlots(): { date: string; slots: string[] }[] {
     date.setDate(today.getDate() + i)
     
     const daySlots: string[] = []
-    const startHour = i === 0 ? Math.max(10, new Date().getHours() + 1) : 10
+    const earliestTime = new Date(Date.now() + minMinutes * 60 * 1000)
+    const startHour = i === 0 ? Math.max(10, earliestTime.getHours() + (earliestTime.getMinutes() > 0 ? 1 : 0)) : 10
     
     for (let hour = startHour; hour <= 21; hour++) {
       daySlots.push(`${hour.toString().padStart(2, "0")}:00`)

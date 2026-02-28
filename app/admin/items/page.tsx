@@ -21,6 +21,7 @@ interface MenuItem {
   ingredients: string
   limit: number
   inStock: boolean
+  makingTime: number
 }
 
 const EMPTY_ITEM: Omit<MenuItem, "id"> = {
@@ -80,6 +81,7 @@ export default function ItemsPage() {
         : String(raw.ingredients || ""),
       limit: Number(raw.limit) || 0,
       inStock: raw.in_stock !== false,
+      makingTime: Number(raw.making_time) || 0,
     }
   }
 
@@ -134,6 +136,7 @@ export default function ItemsPage() {
       ingredients: modalItem.ingredients || "",
       limit: modalItem.limit || 0,
       in_stock: modalItem.inStock !== false,
+      making_time: modalItem.makingTime || 0,
     }
     if (isNew) {
       const { error } = await supabase.from("menu").insert(payload)
@@ -492,6 +495,29 @@ export default function ItemsPage() {
                 >
                   <span className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow transition-all duration-200 ${modalItem.inStock !== false ? "left-7" : "left-1"}`} />
                 </button>
+              </div>
+
+              {/* Making Time */}
+              <div>
+                <label className="block text-sm font-semibold mb-1.5 text-right" dir="rtl">⏱️ وقت التحضير</label>
+                <select
+                  value={modalItem.makingTime || 0}
+                  onChange={(e) => setModalItem((p) => ({ ...p, makingTime: Number(e.target.value) }))}
+                  className="w-full px-4 py-3.5 rounded-2xl bg-[#f5f5f5] focus:outline-none text-right text-base cursor-pointer"
+                  dir="rtl"
+                >
+                  <option value={0}>بدون وقت تحضير (فوري)</option>
+                  <option value={30}>30 دقيقة</option>
+                  <option value={60}>1 ساعة</option>
+                  <option value={90}>1.5 ساعة</option>
+                  <option value={120}>2 ساعة</option>
+                  <option value={180}>3 ساعات</option>
+                  <option value={240}>4 ساعات</option>
+                  <option value={360}>6 ساعات</option>
+                  <option value={720}>12 ساعة</option>
+                  <option value={1440}>24 ساعة (يوم كامل)</option>
+                </select>
+                <p className="text-xs text-gray-400 mt-1 text-right" dir="rtl">يحدد أقرب موعد توصيل متاح للعميل</p>
               </div>
 
               {/* Options / Ingredients */}

@@ -85,6 +85,8 @@ function CheckoutContent() {
     }))
 
     // Save order to Supabase
+    window.open(whatsappUrl, "_blank")
+
     await saveOrder({
       customerName: deliveryInfo.name,
       customerPhone: deliveryInfo.phone,
@@ -103,8 +105,6 @@ function CheckoutContent() {
       : generateWhatsAppMessage(cartItems, totalPrice, deliveryInfo)
 
     const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${message}`
-    window.open(whatsappUrl, "_blank")
-
     clearCart()
 
     // Redirect to confirmation page with order summary

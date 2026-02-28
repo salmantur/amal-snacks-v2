@@ -53,14 +53,14 @@ export async function updateOrderStatus(id: string, status: Order["status"]): Pr
 // Fetch recent orders (last 50, last 24h)
 export async function fetchRecentOrders(): Promise<Order[]> {
   const supabase = createClient()
-  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+  const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days
 
   const { data, error } = await supabase
     .from("orders")
     .select("*")
     .gte("created_at", since)
     .order("created_at", { ascending: false })
-    .limit(50)
+    .limit(500)
 
   if (error || !data) return []
 

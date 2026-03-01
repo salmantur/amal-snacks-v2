@@ -56,25 +56,29 @@ export function MenuGrid() {
   const dbCategories = categoryConfig?.dbCategories || []
   const sections = categoryConfig?.sections
 
-  // Memoize filtered items using debounced search
-  const getItemsForCategory = useCallback((dbCategory: string) => {
-    return menuItems.filter((item) => {
-      const matchesCategory = item.category === dbCategory
-      const matchesSearch = debouncedSearch
-        ? item.name.includes(debouncedSearch) || item.description.includes(debouncedSearch)
-        : true
-      return matchesCategory && matchesSearch
-    })
+  // Global search — searches ALL items across ALL categories
+  const globalSearchResults = useMemo(() => {
+    if (!debouncedSearch) return []
+    const q = debouncedSearch.toLowerCase()
+    return menuItems.filter(item =>
+      item.name.toLowerCase().includes(q) ||
+      (item.nameEn || "").toLowerCase().includes(q) ||
+      (item.description || "").toLowerCase().includes(q) ||
+      (item.ingredients || []).some(ing => ing.toLowerCase().includes(q))
+    )
   }, [menuItems, debouncedSearch])
 
-  // Memoize flat filtered items for categories without sections
+  const isSearching = debouncedSearch.length > 0
+
+  // Per-category filtered items (used when not searching)
+  const getItemsForCategory = useCallback((dbCategory: string) => {
+    return menuItems.filter((item) => item.category === dbCategory)
+  }, [menuItems])
+
+  // Flat filtered items for categories without sections (used when not searching)
   const filteredItems = useMemo(() => menuItems.filter((item) => {
-    const matchesCategory = dbCategories.includes(item.category)
-    const matchesSearch = debouncedSearch
-      ? item.name.includes(debouncedSearch) || item.description.includes(debouncedSearch)
-      : true
-    return matchesCategory && matchesSearch
-  }), [menuItems, dbCategories, debouncedSearch])
+    return dbCategories.includes(item.category)
+  }), [menuItems, dbCategories])
 
   return (
     <div className="min-h-screen bg-background">
@@ -103,24 +107,43 @@ export function MenuGrid() {
               </div>
             ))}
           </div>
+        ) : isSearching ? (
+          // Global search results across ALL categories
+          globalSearchResults.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center" dir="rtl">
+              <p className="text-4xl mb-3">🔍</p>
+              <p className="font-bold text-lg">لا توجد نتائج</p>
+              <p className="text-muted-foreground text-sm mt-1">جرّب كلمة بحث مختلفة</p>
+            </div>
+          ) : (
+            <div>
+              <p className="text-sm text-muted-foreground mb-4 text-right" dir="rtl">
+                {globalSearchResults.length} نتيجة لـ "{debouncedSearch}"
+              </p>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8">
+                {globalSearchResults.map((item, idx) => (
+                  <ProductCard
+                    key={item.id}
+                    item={item}
+                    onSelect={setSelectedProduct}
+                    priority={idx < 4}
+                  />
+                ))}
+              </div>
+            </div>
+          )
         ) : sections ? (
           // Render with sub-sections (like platters_breakfast)
           <div className="space-y-10 md:space-y-16">
             {sections.map((section) => {
               const sectionItems = getItemsForCategory(section.dbCategory)
               if (sectionItems.length === 0) return null
-              
               return (
                 <div key={section.dbCategory}>
                   <h2 className="text-xl md:text-2xl font-bold text-[#1e293b] text-right mb-4 md:mb-8">{section.label}</h2>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8">
                     {sectionItems.map((item, idx) => (
-                      <ProductCard
-                        key={item.id}
-                        item={item}
-                        onSelect={setSelectedProduct}
-                        priority={idx < 4}
-                      />
+                      <ProductCard key={item.id} item={item} onSelect={setSelectedProduct} priority={idx < 4} />
                     ))}
                   </div>
                 </div>
@@ -131,12 +154,7 @@ export function MenuGrid() {
           // Render as flat grid for other categories
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8">
             {filteredItems.map((item, idx) => (
-              <ProductCard
-                key={item.id}
-                item={item}
-                onSelect={setSelectedProduct}
-                priority={idx < 4}
-              />
+              <ProductCard key={item.id} item={item} onSelect={setSelectedProduct} priority={idx < 4} />
             ))}
           </div>
         )}

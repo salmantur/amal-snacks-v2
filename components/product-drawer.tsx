@@ -59,9 +59,11 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
 
   if (!product) return null
 
-  // Platters customization (existing logic)
+  // Show selectable options for ANY item with ingredients
+  // If limit > 0: user must choose up to limit (e.g. beef or chicken)
+  // If limit = 0 with ingredients: just show as info text
   const isPlatters = product.category === "platters"
-  const hasIngredients = isPlatters && product.ingredients && product.ingredients.length > 0
+  const hasIngredients = product.ingredients && product.ingredients.length > 0
   const maxSelections = product.limit || 0
 
   const toggleIngredient = (ingredient: string) => {
@@ -229,7 +231,7 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
             </div>
           )}
 
-          {/* ── PLATTERS CUSTOMIZATION ── */}
+          {/* ── OPTIONS / CUSTOMIZATION (any item with ingredients) ── */}
           {hasIngredients && (
             <div className="pb-4">
               <div className="flex items-center justify-between mb-3">

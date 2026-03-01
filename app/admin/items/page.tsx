@@ -5,7 +5,7 @@ import Link from "next/link"
 import Image from "next/image"
 import {
   ArrowRight, Plus, Pencil, Trash2, Search, X, Check,
-  Upload, Loader2, ChevronDown, ImageIcon
+  Upload, Loader2, ChevronDown, ImageIcon, Star
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { categories } from "@/lib/data"
@@ -119,7 +119,7 @@ export default function ItemsPage() {
       setError("فشل رفع الصورة: " + error.message)
     } else {
       const url = `${SUPABASE_URL}/storage/v1/object/public/Menu/${filename}`
-      setModalItem((prev) => ({ ...prev, image: url }))
+      setModalItem((prev) => prev ? { ...prev, image: url } : prev)
     }
     setImageUploading(false)
   }
@@ -188,7 +188,7 @@ export default function ItemsPage() {
     if (!trimmed) return
     const current = (modalItem?.ingredients || "").split(",").map(t => t.trim()).filter(Boolean)
     if (!current.includes(trimmed)) {
-      setModalItem(p => ({ ...p, ingredients: [...current, trimmed].join(", ") }))
+      setModalItem(p => p ? { ...p, ingredients: [...current, trimmed].join(", ") } : p)
     }
     setIngredientInput("")
   }
@@ -205,18 +205,13 @@ export default function ItemsPage() {
     return `${SUPABASE_URL}/storage/v1/object/public/Menu/${img}`
   }
 
-  const getCategoryLabel = (val: string) =>
-    ALL_CATEGORIES.find(c => c.value === val)?.label || val
-
   const tags = (modalItem?.ingredients || "").split(",").map(t => t.trim()).filter(Boolean)
 
   return (
-    /* NO dir="rtl" on main — we control direction per element */
     <main className="min-h-screen bg-[#f5f5f5]">
 
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-white border-b border-gray-100" style={{ transform: "translateZ(0)" }}>
-        {/* Title row — LTR so back arrow is on left, add button on right */}
+      <header className="sticky top-0 z-40 bg-white border-b border-gray-100">
         <div className="flex items-center justify-between px-4 py-3">
           <Link
             href="/admin"
@@ -224,7 +219,6 @@ export default function ItemsPage() {
           >
             <ArrowRight className="h-5 w-5" />
           </Link>
-          {/* Title centred, Arabic */}
           <div className="text-center">
             <h1 className="text-lg font-bold" dir="rtl">إدارة الأصناف</h1>
             <p className="text-xs text-gray-400">{items.length} صنف</p>
@@ -238,7 +232,7 @@ export default function ItemsPage() {
           </button>
         </div>
 
-        {/* Search + filter row — LTR container, inputs RTL */}
+        {/* Search + filter */}
         <div className="flex gap-2 px-4 pb-3">
           <div className="relative flex-1">
             <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -299,29 +293,35 @@ export default function ItemsPage() {
             {filtered.map(item => {
               const imgSrc = getDisplayImage(item.image)
               return (
-                <div key={item.id} className="bg-white rounded-2xl p-3 flex items-center gap-3 shadow-sm w-full overflow-hidden">
+                <div key={item.id} className="bg-white rounded-2xl p-3 flex items-center gap-3 shadow-sm">
 
-                  {/* Image — leftmost */}
-                  <div className="w-20 h-20 rounded-2xl bg-[#f5f5f5] overflow-hidden flex-shrink-0">
+                  {/* Image */}
+                  <div className="relative w-20 h-20 rounded-2xl bg-[#f5f5f5] overflow-hidden flex-shrink-0">
                     {imgSrc
                       ? <Image src={imgSrc} alt={item.name} fill className="object-cover" unoptimized />
-                      : <div className="w-full h-full flex items-center justify-center"><ImageIcon className="h-6 w-6 text-gray-300" /></div>
+                      : <div className="absolute inset-0 flex items-center justify-center"><ImageIcon className="h-6 w-6 text-gray-300" /></div>
                     }
+                    {item.isFeatured && (
+                      <div className="absolute top-1 right-1 w-5 h-5 bg-yellow-400 rounded-full flex items-center justify-center">
+                        <Star className="h-2.5 w-2.5 fill-yellow-900 text-yellow-900" />
+                      </div>
+                    )}
+                    {!item.inStock && (
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center rounded-2xl">
+                        <span className="text-white text-[9px] font-bold">نفذ</span>
+                      </div>
+                    )}
                   </div>
 
-                  {/* Info — RTL, fills remaining space */}
+                  {/* Info */}
                   <div className="flex-1 min-w-0 text-right" dir="rtl">
                     <p className="font-bold text-sm truncate">{item.name}</p>
                     {item.nameEn && <p className="text-xs text-gray-400 truncate">{item.nameEn}</p>}
-                    <div className="flex items-center gap-2 justify-end mt-0.5">
-                      <p className="text-sm font-bold">{item.price} ر.س</p>
-                      {!item.inStock && (
-                        <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">نفذ</span>
-                      )}
-                    </div>
+                    <p className="text-sm font-bold mt-0.5">{item.price} ر.س</p>
+                    <p className="text-xs text-gray-400 truncate">{ALL_CATEGORIES.find(c => c.value === item.category)?.label || item.category}</p>
                   </div>
 
-                  {/* Actions — rightmost */}
+                  {/* Actions */}
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <button
                       onClick={() => openModal({ ...item }, false)}
@@ -370,21 +370,21 @@ export default function ItemsPage() {
           >
             {/* Modal header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 flex-shrink-0">
-              <button onClick={closeModal} className="w-11 h-11 rounded-full bg-[#f5f5f5] flex items-center justify-center active:scale-95 transition-transform flex-shrink-0">
+              <button onClick={closeModal} className="w-11 h-11 rounded-full bg-[#f5f5f5] flex items-center justify-center active:scale-95 transition-transform">
                 <X className="h-5 w-5" />
               </button>
               <h2 className="text-base font-bold" dir="rtl">{isNew ? "إضافة صنف" : "تعديل الصنف"}</h2>
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="flex items-center gap-2 px-5 py-2.5 bg-black text-white rounded-full text-sm font-medium disabled:opacity-50 active:scale-95 transition-transform flex-shrink-0"
+                className="flex items-center gap-2 px-5 py-2.5 bg-black text-white rounded-full text-sm font-medium disabled:opacity-50 active:scale-95 transition-transform"
               >
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                 <span dir="rtl">حفظ</span>
               </button>
             </div>
 
-            {/* Modal body — scrollable */}
+            {/* Modal body */}
             <div
               className="flex-1 overflow-y-auto px-5 py-4 space-y-5"
               style={{ WebkitOverflowScrolling: "touch", overscrollBehavior: "contain" }}
@@ -393,11 +393,11 @@ export default function ItemsPage() {
                 <div className="p-3 bg-red-50 text-red-600 text-sm rounded-xl text-center" dir="rtl">{error}</div>
               )}
 
-              {/* Image */}
+              {/* Main Image */}
               <div>
-                <label className="block text-sm font-semibold mb-2 text-right" dir="rtl">الصورة</label>
+                <label className="block text-sm font-semibold mb-2 text-right" dir="rtl">الصورة الرئيسية</label>
                 <div className="flex items-center gap-3">
-                  <div className="w-24 h-24 rounded-2xl bg-[#f5f5f5] flex items-center justify-center overflow-hidden flex-shrink-0">
+                  <div className="relative w-24 h-24 rounded-2xl bg-[#f5f5f5] flex items-center justify-center overflow-hidden flex-shrink-0">
                     {modalItem.image
                       ? <Image src={getDisplayImage(modalItem.image) || modalItem.image || ""} alt="preview" fill className="object-cover" unoptimized />
                       : <ImageIcon className="h-7 w-7 text-gray-300" />
@@ -409,12 +409,15 @@ export default function ItemsPage() {
                       disabled={imageUploading}
                       className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-dashed border-gray-200 text-sm active:scale-95 transition-transform"
                     >
-                      {imageUploading ? <><Loader2 className="h-4 w-4 animate-spin" /> جاري الرفع...</> : <><Upload className="h-4 w-4" /> رفع صورة</>}
+                      {imageUploading
+                        ? <><Loader2 className="h-4 w-4 animate-spin" /> جاري الرفع...</>
+                        : <><Upload className="h-4 w-4" /> رفع صورة</>
+                      }
                     </button>
                     <input
                       value={modalItem.image || ""}
-                      onChange={e => setModalItem(p => ({ ...p, image: e.target.value }))}
-                      placeholder="أو رابط الصورة"
+                      onChange={e => setModalItem(p => p ? { ...p, image: e.target.value } : p)}
+                      placeholder="أو الصق رابط الصورة"
                       dir="ltr"
                       className="w-full px-3 py-2.5 rounded-xl bg-[#f5f5f5] text-sm focus:outline-none text-left"
                     />
@@ -428,7 +431,7 @@ export default function ItemsPage() {
                 <label className="block text-sm font-semibold mb-1.5 text-right" dir="rtl">الاسم بالعربي <span className="text-red-500">*</span></label>
                 <input
                   value={modalItem.name || ""}
-                  onChange={e => setModalItem(p => ({ ...p, name: e.target.value }))}
+                  onChange={e => setModalItem(p => p ? { ...p, name: e.target.value } : p)}
                   placeholder="مثال: سمبوسة جبن"
                   dir="rtl"
                   className="w-full px-4 py-3.5 rounded-2xl bg-[#f5f5f5] focus:outline-none text-right text-base"
@@ -440,7 +443,7 @@ export default function ItemsPage() {
                 <label className="block text-sm font-semibold mb-1.5">English Name</label>
                 <input
                   value={modalItem.nameEn || ""}
-                  onChange={e => setModalItem(p => ({ ...p, nameEn: e.target.value }))}
+                  onChange={e => setModalItem(p => p ? { ...p, nameEn: e.target.value } : p)}
                   placeholder="e.g. Cheese Samboosa"
                   dir="ltr"
                   className="w-full px-4 py-3.5 rounded-2xl bg-[#f5f5f5] focus:outline-none text-left text-base"
@@ -452,7 +455,7 @@ export default function ItemsPage() {
                 <label className="block text-sm font-semibold mb-1.5 text-right" dir="rtl">الوصف</label>
                 <textarea
                   value={modalItem.description || ""}
-                  onChange={e => setModalItem(p => ({ ...p, description: e.target.value }))}
+                  onChange={e => setModalItem(p => p ? { ...p, description: e.target.value } : p)}
                   placeholder="وصف الصنف"
                   rows={2}
                   dir="rtl"
@@ -469,7 +472,7 @@ export default function ItemsPage() {
                     inputMode="decimal"
                     min={0}
                     value={modalItem.price || ""}
-                    onChange={e => setModalItem(p => ({ ...p, price: Number(e.target.value) }))}
+                    onChange={e => setModalItem(p => p ? { ...p, price: Number(e.target.value) } : p)}
                     placeholder="0"
                     className="w-full px-4 py-3.5 rounded-2xl bg-[#f5f5f5] focus:outline-none text-center text-base"
                   />
@@ -481,7 +484,7 @@ export default function ItemsPage() {
                     inputMode="numeric"
                     min={0}
                     value={modalItem.limit || ""}
-                    onChange={e => setModalItem(p => ({ ...p, limit: Number(e.target.value) }))}
+                    onChange={e => setModalItem(p => p ? { ...p, limit: Number(e.target.value) } : p)}
                     placeholder="0"
                     className="w-full px-4 py-3.5 rounded-2xl bg-[#f5f5f5] focus:outline-none text-center text-base"
                   />
@@ -494,7 +497,7 @@ export default function ItemsPage() {
                 <div className="relative">
                   <select
                     value={modalItem.category || ""}
-                    onChange={e => setModalItem(p => ({ ...p, category: e.target.value }))}
+                    onChange={e => setModalItem(p => p ? { ...p, category: e.target.value } : p)}
                     dir="rtl"
                     className="w-full appearance-none px-4 py-3.5 rounded-2xl bg-[#f5f5f5] focus:outline-none text-right cursor-pointer text-base"
                   >
@@ -507,18 +510,61 @@ export default function ItemsPage() {
                 </div>
               </div>
 
-              {/* In Stock toggle */}
-              <div className="flex items-center justify-between p-4 bg-[#f5f5f5] rounded-2xl">
-                <div dir="rtl">
-                  <p className="font-semibold text-sm">متوفر في المخزون</p>
-                  <p className="text-xs text-gray-400 mt-0.5">إيقاف يخفي الصنف من القائمة</p>
+              {/* Toggles row: In Stock + Best Seller */}
+              <div className="space-y-3">
+                {/* In Stock */}
+                <div className="flex items-center justify-between p-4 bg-[#f5f5f5] rounded-2xl">
+                  <div dir="rtl">
+                    <p className="font-semibold text-sm">متوفر في المخزون</p>
+                    <p className="text-xs text-gray-400 mt-0.5">إيقاف يخفي الصنف من القائمة</p>
+                  </div>
+                  <button
+                    onClick={() => setModalItem(p => p ? { ...p, inStock: p.inStock === false } : p)}
+                    className={`w-14 h-8 rounded-full transition-colors relative flex-shrink-0 ml-3 ${modalItem.inStock !== false ? "bg-black" : "bg-gray-300"}`}
+                  >
+                    <span className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow transition-all duration-200 ${modalItem.inStock !== false ? "left-7" : "left-1"}`} />
+                  </button>
                 </div>
-                <button
-                  onClick={() => setModalItem(p => ({ ...p, inStock: !p?.inStock }))}
-                  className={`w-14 h-8 rounded-full transition-colors relative flex-shrink-0 ml-3 ${modalItem.inStock !== false ? "bg-black" : "bg-gray-300"}`}
-                >
-                  <span className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow transition-all duration-200 ${modalItem.inStock !== false ? "left-7" : "left-1"}`} />
-                </button>
+
+                {/* Best Seller */}
+                <div className="flex items-center justify-between p-4 bg-[#f5f5f5] rounded-2xl">
+                  <div dir="rtl">
+                    <p className="font-semibold text-sm">⭐ الأكثر طلباً</p>
+                    <p className="text-xs text-gray-400 mt-0.5">يظهر في قسم الأكثر طلباً وشريط الجديد</p>
+                  </div>
+                  <button
+                    onClick={() => setModalItem(p => p ? { ...p, isFeatured: !p.isFeatured } : p)}
+                    className={`w-14 h-8 rounded-full transition-colors relative flex-shrink-0 ml-3 ${modalItem.isFeatured ? "bg-yellow-400" : "bg-gray-300"}`}
+                  >
+                    <span className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow transition-all duration-200 ${modalItem.isFeatured ? "left-7" : "left-1"}`} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Making Time */}
+              <div>
+                <label className="block text-sm font-semibold mb-1.5 text-right" dir="rtl">⏱️ وقت التحضير</label>
+                <div className="relative">
+                  <select
+                    value={modalItem.makingTime || 0}
+                    onChange={(e) => setModalItem((p) => p ? { ...p, makingTime: Number(e.target.value) } : p)}
+                    className="w-full appearance-none px-4 py-3.5 rounded-2xl bg-[#f5f5f5] focus:outline-none text-right text-base cursor-pointer"
+                    dir="rtl"
+                  >
+                    <option value={0}>بدون وقت تحضير (فوري)</option>
+                    <option value={30}>30 دقيقة</option>
+                    <option value={60}>1 ساعة</option>
+                    <option value={90}>1.5 ساعة</option>
+                    <option value={120}>2 ساعة</option>
+                    <option value={180}>3 ساعات</option>
+                    <option value={240}>4 ساعات</option>
+                    <option value={360}>6 ساعات</option>
+                    <option value={720}>12 ساعة</option>
+                    <option value={1440}>24 ساعة (يوم كامل)</option>
+                  </select>
+                  <ChevronDown className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                </div>
+                <p className="text-xs text-gray-400 mt-1 text-right" dir="rtl">يحدد أقرب موعد توصيل متاح للعميل</p>
               </div>
 
               {/* Gallery Images */}
@@ -536,38 +582,15 @@ export default function ItemsPage() {
                       </button>
                     </div>
                   ))}
-                  <label className="w-16 h-16 rounded-xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors flex-shrink-0">
+                  <label className="w-16 h-16 rounded-xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:border-gray-400 transition-colors flex-shrink-0">
                     {galleryUploading
-                      ? <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                      : <><Upload className="h-4 w-4 text-muted-foreground" /><span className="text-[10px] text-muted-foreground mt-0.5">إضافة</span></>
+                      ? <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+                      : <><Upload className="h-4 w-4 text-gray-400" /><span className="text-[10px] text-gray-400 mt-0.5">إضافة</span></>
                     }
                     <input type="file" accept="image/*" multiple onChange={handleGalleryUpload} className="hidden" />
                   </label>
                 </div>
-                <p className="text-xs text-muted-foreground">يمكنك إضافة أكثر من صورة — ستظهر كصور إضافية في صفحة المنتج</p>
-              </div>
-
-              {/* Making Time */}
-              <div>
-                <label className="block text-sm font-semibold mb-1.5 text-right" dir="rtl">⏱️ وقت التحضير</label>
-                <select
-                  value={modalItem.makingTime || 0}
-                  onChange={(e) => setModalItem((p) => ({ ...p, makingTime: Number(e.target.value) }))}
-                  className="w-full px-4 py-3.5 rounded-2xl bg-[#f5f5f5] focus:outline-none text-right text-base cursor-pointer"
-                  dir="rtl"
-                >
-                  <option value={0}>بدون وقت تحضير (فوري)</option>
-                  <option value={30}>30 دقيقة</option>
-                  <option value={60}>1 ساعة</option>
-                  <option value={90}>1.5 ساعة</option>
-                  <option value={120}>2 ساعة</option>
-                  <option value={180}>3 ساعات</option>
-                  <option value={240}>4 ساعات</option>
-                  <option value={360}>6 ساعات</option>
-                  <option value={720}>12 ساعة</option>
-                  <option value={1440}>24 ساعة (يوم كامل)</option>
-                </select>
-                <p className="text-xs text-gray-400 mt-1 text-right" dir="rtl">يحدد أقرب موعد توصيل متاح للعميل</p>
+                <p className="text-xs text-gray-400">يمكنك إضافة أكثر من صورة — ستظهر في معرض المنتج</p>
               </div>
 
               {/* Options / Ingredients */}
@@ -581,7 +604,7 @@ export default function ItemsPage() {
                         <button
                           onClick={() => {
                             const newTags = tags.filter((_, idx) => idx !== i)
-                            setModalItem(p => ({ ...p, ingredients: newTags.join(", ") }))
+                            setModalItem(p => p ? { ...p, ingredients: newTags.join(", ") } : p)
                           }}
                           className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center active:bg-red-100 flex-shrink-0"
                         >

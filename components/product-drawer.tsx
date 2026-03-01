@@ -110,7 +110,7 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
               {product.makingTime && product.makingTime > 0 ? (
                 <p className="text-xs text-gray-400 mt-1 flex items-center gap-1 justify-end">
                   <span>⏱</span>
-                  <span>وقت التحضير: {product.makingTime} دقيقة</span>
+                  <span>وقت التحضير: {product.makingTime < 60 ? `${product.makingTime} دقيقة` : product.makingTime % 60 === 0 ? `${product.makingTime / 60} ساعة` : `${Math.floor(product.makingTime / 60)} ساعة و${product.makingTime % 60} دقيقة`}</span>
                 </p>
               ) : null}
             </div>

@@ -202,7 +202,7 @@ function CheckoutContent() {
                 بعض الأصناف تحتاج وقت تحضير{" "}
                 <span className="font-bold">
                   {maxMakingTime >= 60
-                    ? `${Math.floor(maxMakingTime / 60)} ساعة${maxMakingTime % 60 > 0 ? ` و${maxMakingTime % 60} دقيقة` : ""}`
+                    ? `${maxMakingTime % 60 === 0 ? maxMakingTime / 60 : `${Math.floor(maxMakingTime / 60)} ساعة و${maxMakingTime % 60}`} ساعة`
                     : `${maxMakingTime} دقيقة`}
                 </span>
                 {" "}— المواعيد المتاحة تبدأ بعد انتهاء التحضير.

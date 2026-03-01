@@ -10,11 +10,13 @@ import type { MenuItem } from "@/components/cart-provider"
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface TextMessage {
+  id: string
   role: "user" | "assistant"
   type: "text"
   content: string
 }
 interface ItemsMessage {
+  id: string
   role: "assistant"
   type: "items"
   content: string

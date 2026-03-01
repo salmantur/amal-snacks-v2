@@ -133,7 +133,7 @@ export function AIChat() {
 
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([
-    { role: "assistant", type: "text", content: "أهلاً! أنا مساعد أمل سناك 👋\nكيف أقدر أساعدك؟" }
+    { id: "init", role: "assistant", type: "text", content: "أهلاً! أنا مساعد أمل سناك 👋\nكيف أقدر أساعدك؟" }
   ])
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
@@ -166,7 +166,7 @@ export function AIChat() {
     const msg = (text ?? input).trim()
     if (!msg || loading) return
 
-    const userMsg: TextMessage = { role: "user", type: "text", content: msg }
+    const userMsg: TextMessage = { id: `u-${Date.now()}`, role: "user", type: "text", content: msg }
     setMessages(prev => [...prev, userMsg])
     setInput("")
     setLoading(true)
@@ -196,13 +196,13 @@ export function AIChat() {
       const { text: replyText, items } = parseReply(raw)
 
       if (items.length > 0) {
-        const itemMsg: ItemsMessage = { role: "assistant", type: "items", content: replyText, items }
+        const itemMsg: ItemsMessage = { id: `items-${Date.now()}`, role: "assistant", type: "items", content: replyText, items }
         setMessages(prev => [...prev, itemMsg])
       } else {
-        setMessages(prev => [...prev, { role: "assistant", type: "text", content: replyText }])
+        setMessages(prev => [...prev, { id: `a-${Date.now()}`, role: "assistant", type: "text", content: replyText }])
       }
     } catch {
-      setMessages(prev => [...prev, { role: "assistant", type: "text", content: "عذراً، حدث خطأ في الاتصال." }])
+      setMessages(prev => [...prev, { id: `err-${Date.now()}`, role: "assistant", type: "text", content: "عذراً، حدث خطأ في الاتصال." }])
     }
     setLoading(false)
   }

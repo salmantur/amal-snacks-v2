@@ -12,6 +12,8 @@ export interface BannerConfig {
   bg_to: string
   show_badge: boolean
   show_subtitle: boolean
+  featured_product_id: string | null   // item id to feature on banner
+  featured_product_label: string       // e.g. "جديد 🔥" or "عرض اليوم"
 }
 
 export const DEFAULT_BANNER: BannerConfig = {
@@ -23,6 +25,8 @@ export const DEFAULT_BANNER: BannerConfig = {
   bg_to: "#f8bbd0",
   show_badge: true,
   show_subtitle: true,
+  featured_product_id: null,
+  featured_product_label: "جديد 🔥",
 }
 
 const TABLE = "app_settings"
@@ -34,29 +38,18 @@ export function useBannerConfig() {
 
   useEffect(() => {
     const supabase = createClient()
-
     async function load() {
-      const { data } = await supabase
-        .from(TABLE)
-        .select("value")
-        .eq("key", KEY)
-        .single()
-
-      if (data?.value) {
-        setConfig({ ...DEFAULT_BANNER, ...data.value })
-      }
+      const { data } = await supabase.from(TABLE).select("value").eq("key", KEY).single()
+      if (data?.value) setConfig({ ...DEFAULT_BANNER, ...data.value })
       setLoading(false)
     }
-
     load()
   }, [])
 
   async function saveConfig(updated: BannerConfig) {
     setConfig(updated)
     const supabase = createClient()
-    await supabase
-      .from(TABLE)
-      .upsert({ key: KEY, value: updated }, { onConflict: "key" })
+    await supabase.from(TABLE).upsert({ key: KEY, value: updated }, { onConflict: "key" })
   }
 
   return { config, loading, saveConfig }

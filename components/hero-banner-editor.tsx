@@ -1,5 +1,6 @@
 "use client"
 
+import useSWR from "swr"
 import { useState, useRef } from "react"
 import Image from "next/image"
 import { Check, Upload, X, Eye, EyeOff, ImageIcon } from "lucide-react"
@@ -18,8 +19,14 @@ const PRESET_GRADIENTS = [
   { label: "داكن", from: "#1e293b", to: "#334155" },
 ]
 
+const fetcher = (url: string) => fetch(url).then(r => r.json())
+
 export function HeroBannerEditor() {
   const { config, loading, saveConfig } = useBannerConfig()
+  const { data: menuResult } = useSWR<{ data: { id: string; name: string; nameEn?: string }[] }>("/api/menu", fetcher, {
+    revalidateOnFocus: false, dedupingInterval: 300000,
+  })
+  const menuItems = menuResult?.data || []
   const [draft, setDraft] = useState<BannerConfig | null>(null)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -273,6 +280,40 @@ export function HeroBannerEditor() {
           className="hidden"
         />
         <p className="text-xs text-muted-foreground text-center">الصورة ستظهر بشفافية خلف النص</p>
+      </div>
+
+      {/* Featured Product on Banner */}
+      <div className="space-y-3 pt-2 border-t border-border/50">
+        <div dir="rtl">
+          <p className="font-semibold text-sm">🌟 منتج مميز على البانر</p>
+          <p className="text-xs text-muted-foreground mt-0.5">يظهر على البانر الرئيسي مع زر "اطلب الآن"</p>
+        </div>
+        <select
+          value={current.featured_product_id || ""}
+          onChange={e => update({ featured_product_id: e.target.value || null })}
+          className="w-full px-4 py-3 rounded-xl bg-amal-grey focus:outline-none text-sm text-right cursor-pointer"
+          dir="rtl"
+        >
+          <option value="">— بدون منتج مميز (البانر العادي) —</option>
+          {menuItems.map(item => (
+            <option key={item.id} value={item.id}>
+              {item.name}{item.nameEn ? ` — ${item.nameEn}` : ""}
+            </option>
+          ))}
+        </select>
+        {current.featured_product_id && (
+          <div>
+            <label className="block text-xs text-muted-foreground mb-1.5" dir="rtl">نص الشارة (مثال: جديد 🔥 أو عرض اليوم)</label>
+            <input
+              type="text"
+              value={current.featured_product_label || ""}
+              onChange={e => update({ featured_product_label: e.target.value })}
+              placeholder="جديد 🔥"
+              className="w-full px-4 py-3 rounded-xl bg-amal-grey focus:outline-none text-sm text-right"
+              dir="rtl"
+            />
+          </div>
+        )}
       </div>
 
       {/* Actions */}

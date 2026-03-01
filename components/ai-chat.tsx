@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react"
 import { MessageCircle, X, Send, Bot, Loader2, ShoppingBag, Plus, Star } from "lucide-react"
 import Image from "next/image"
-import useSWR from "swr"
+import { useMenu } from "@/hooks/use-menu"
 import { useCart } from "@/components/cart-provider"
 import type { MenuItem } from "@/components/cart-provider"
 
@@ -24,7 +24,6 @@ type Message = TextMessage | ItemsMessage
 
 // ─── Fetcher ──────────────────────────────────────────────────────────────────
 
-const fetcher = (url: string) => fetch(url).then(r => r.json())
 
 // ─── System prompt (injected with live menu) ──────────────────────────────────
 
@@ -128,10 +127,7 @@ function ItemCard({ item }: { item: MenuItem }) {
 const QUICK_QUESTIONS = ["أيش عندكم؟", "كم رسوم التوصيل؟", "وش تنصحني؟", "ما هي أوقات العمل؟"]
 
 export function AIChat() {
-  const { data: result } = useSWR<{ data: MenuItem[] }>("/api/menu", fetcher, {
-    revalidateOnFocus: false, dedupingInterval: 300000,
-  })
-  const menuItems = result?.data || []
+  const { menuItems } = useMenu()
 
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([

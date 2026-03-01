@@ -6,10 +6,9 @@ import Link from "next/link"
 import { useCart } from "@/components/cart-provider"
 import { OrderTypeModal } from "@/components/order-type-modal"
 import { useRouter } from "next/navigation"
-import useSWR from "swr"
+import { useMenu } from "@/hooks/use-menu"
 import type { MenuItem } from "@/components/cart-provider"
 
-const fetcher = (url: string) => fetch(url).then(r => r.json())
 
 // ─── New Products Ticker ──────────────────────────────────────────────────────
 function NewProductsTicker({ items }: { items: MenuItem[] }) {
@@ -29,7 +28,7 @@ function NewProductsTicker({ items }: { items: MenuItem[] }) {
         }}
       >
         {doubled.map((item, i) => (
-          <span key={i} className="text-primary-foreground text-xs font-medium flex items-center gap-1.5 flex-shrink-0">
+          <span key={`${item.id}-${i}`} className="text-primary-foreground text-xs font-medium flex items-center gap-1.5 flex-shrink-0">
             <Sparkles className="h-3 w-3 flex-shrink-0" />
             {item.name}
             <span className="opacity-70 mr-1">— {item.price} ر.س</span>
@@ -56,10 +55,7 @@ export function Header() {
   const router = useRouter()
   const { items, totalItems, totalPrice, removeItem, updateQuantity } = useCart()
 
-  const { data: result } = useSWR<{ data: MenuItem[] }>("/api/menu", fetcher, {
-    revalidateOnFocus: false, dedupingInterval: 300000,
-  })
-  const menuItems = result?.data || []
+  const { menuItems } = useMenu()
 
   // Scroll shadow
   useEffect(() => {

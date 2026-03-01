@@ -5,18 +5,14 @@ import { useBannerConfig } from "@/hooks/use-banner-config"
 import { useState } from "react"
 import { ProductDrawer } from "@/components/product-drawer"
 import { useCart } from "@/components/cart-provider"
-import useSWR from "swr"
+import { useMenu } from "@/hooks/use-menu"
 import type { MenuItem } from "@/components/cart-provider"
 import { ShoppingBag, Sparkles } from "lucide-react"
 
-const fetcher = (url: string) => fetch(url).then(r => r.json())
 
 export function HeroBanner() {
   const { config, loading } = useBannerConfig()
-  const { data: result } = useSWR<{ data: MenuItem[] }>("/api/menu", fetcher, {
-    revalidateOnFocus: false, dedupingInterval: 300000,
-  })
-  const menuItems = result?.data || []
+  const { menuItems } = useMenu()
   const [drawerOpen, setDrawerOpen] = useState(false)
   const { addItem } = useCart()
   const [added, setAdded] = useState(false)

@@ -180,18 +180,17 @@ export function AIChat() {
         .filter(m => m.type === "text")
         .map(m => ({ role: m.role, content: m.content }))
 
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
+      const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 500,
           system: buildSystemPrompt(menuItems) + cartContext,
           messages: apiMessages,
         })
       })
 
       const data = await response.json()
+      if (!response.ok) throw new Error(data.error || "Server error")
       const raw = data.content?.[0]?.text || "عذراً، حدث خطأ. حاول مرة ثانية."
       const { text: replyText, items } = parseReply(raw)
 

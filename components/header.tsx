@@ -1,6 +1,6 @@
 "use client"
 
-import { ShoppingBag, X, Sparkles, Bell, Menu } from "lucide-react"
+import { ShoppingBag, X, Sparkles, Bell, ChevronLeft } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import { useCart } from "@/components/cart-provider"

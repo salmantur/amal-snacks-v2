@@ -1,326 +1,313 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
-import { MessageCircle, X, Send, Bot, Loader2, ShoppingBag, Plus, Star } from "lucide-react"
+import { Minus, Plus, X, Check, ChevronLeft, ChevronRight } from "lucide-react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
-import { useMenu } from "@/hooks/use-menu"
-import { useCart } from "@/components/cart-provider"
-import type { MenuItem } from "@/components/cart-provider"
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import { useCart, type MenuItem } from "@/components/cart-provider"
+import { cn } from "@/lib/utils"
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-interface TextMessage {
-  role: "user" | "assistant"
-  type: "text"
-  content: string
-}
-interface ItemsMessage {
-  role: "assistant"
-  type: "items"
-  content: string
-  items: MenuItem[]
-}
-type Message = TextMessage | ItemsMessage
-
-// ─── Fetcher ──────────────────────────────────────────────────────────────────
-
-
-// ─── System prompt (injected with live menu) ──────────────────────────────────
-
-function buildSystemPrompt(menuItems: MenuItem[]): string {
-  const menuByCategory: Record<string, string[]> = {}
-  for (const item of menuItems) {
-    if (!menuByCategory[item.category]) menuByCategory[item.category] = []
-    const ingStr = item.ingredients?.length ? ` [${item.ingredients.join("، ")}]` : ""
-    menuByCategory[item.category].push(`${item.name}${item.nameEn ? ` (${item.nameEn})` : ""} - ${item.price} ر.س${ingStr}`)
-  }
-  const menuText = Object.entries(menuByCategory)
-    .map(([cat, items]) => `${cat.toUpperCase()}:\n${items.map(i => `  • ${i}`).join("\n")}`)
-    .join("\n\n")
-
-  return `أنت مساعد ذكي لمتجر "أمل سناك" — متجر طعام سعودي في المنطقة الشرقية متخصص في الوجبات المثلجة والساخنة.
-
-══ أوقات العمل ══
-يومياً كل أيام الأسبوع من الساعة 8 صباحاً حتى 2 فجراً.
-
-══ التوصيل ══
-- الخبر، الدمام، الظهران: 50 ر.س
-- سيهات: 55 ر.س
-- القطيف: 60 ر.س
-- الجبيل: 80 ر.س
-- الاستلام من المحل: مجاناً
-
-══ الطلبات المسبقة ══
-- الطلبات الكبيرة مثل البوفيه، البلاترز، وطلبات الإفطار الكبيرة تحتاج حجز قبل يوم كامل على الأقل.
-- الطلبات العادية تُقبل في نفس اليوم خلال أوقات العمل.
-- للمناسبات والكميات الكبيرة، وجّه العميل للواتساب.
-
-══ الشكاوى والمشاكل ══
-إذا كان لدى العميل مشكلة (تأخير، صنف ناقص، جودة غير مناسبة)، قل له:
-"نأسف على هذا! تواصل معنا مباشرة على واتساب وسنحل المشكلة فوراً 🙏 https://wa.me/966500645799"
-لا تعد بتعويض محدد، فقط وجّه للواتساب.
-
-══ الطلبات الخاصة ══
-يمكن تخصيص الطلبات (تغيير مكونات، كميات مختلفة، بدون أصناف معينة).
-للطلبات الخاصة والمناسبات قل: "تواصل معنا على واتساب وسنرتب لك كل شيء 😊 https://wa.me/966500645799"
-
-══ التواصل ══
-واتساب: https://wa.me/966500645799
-
-══ قواعد الرد ══
-- تكلم بنفس لغة العميل (عربي أو إنجليزي)
-- كن ودوداً وخفيفاً، استخدم إيموجي أحياناً
-- ردودك قصيرة وواضحة (3-4 جمل فقط)
-- لا تخترع معلومات — إذا ما تعرف، وجّه للواتساب
-- عندما يسأل عن صنف أو فئة أو يطلب توصية، أضف في نهاية ردك بالضبط:
-  %%%ITEMS:[اسم1,اسم2,اسم3]%%%
-  (أسماء عربية بالضبط كما في المنيو، 2-4 أصناف)
-- لا تستخدم %%%ITEMS:[]%%% في ردود التحية والأسعار والتوصيل والشكاوى
-
-══ المنيو الكامل ══
-${menuText}`
+interface ProductDrawerProps {
+  product: MenuItem | null
+  open: boolean
+  onClose: () => void
 }
 
-// ─── Item Card ────────────────────────────────────────────────────────────────
+// Fixed list of tray items — Arabic + English
+const TRAY_ITEMS: { ar: string; en: string }[] = [
+  { ar: "كبه",                      en: "Kibbeh" },
+  { ar: "سبرنق رول",                en: "Spring Roll" },
+  { ar: "سمبوسة بطاطس",            en: "Potato Samosa" },
+  { ar: "معجنات جبن",               en: "Cheese Pastry" },
+  { ar: "ميني ساندوتش حلومي",       en: "Mini Halloumi Sandwich" },
+  { ar: "ميني شاورما",              en: "Mini Shawarma" },
+  { ar: "ورق عنب",                  en: "Grape Leaves" },
+  { ar: "مطبق مغلف",               en: "Wrapped Matazeez" },
+  { ar: "معجنات زعتر",              en: "Zaatar Pastry" },
+  { ar: "ميني ساندوتش لبنه",        en: "Mini Labneh Sandwich" },
+  { ar: "مسخن",                    en: "Musakhan" },
+  { ar: "ميني برجر",               en: "Mini Burger" },
+  { ar: "ميني تورتلا",             en: "Mini Tortilla" },
+  { ar: "معجنات بيتزا",            en: "Pizza Pastry" },
+  { ar: "ميني ساندوتش ديك رومي",   en: "Mini Turkey Sandwich" },
+  { ar: "بف لحم",                  en: "Beef Puff" },
+  { ar: "بف دجاج",                 en: "Chicken Puff" },
+  { ar: "سمبوسة جبن",              en: "Cheese Samosa" },
+  { ar: "معجنات لبنه",             en: "Labneh Pastry" },
+  { ar: "ميني ساندوتش فلافل",      en: "Mini Falafel Sandwich" },
+]
 
-function ItemCard({ item }: { item: MenuItem }) {
+const TRAY_REQUIRED = 7
+
+export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
+  const [quantity, setQuantity] = useState(1)
+  const [selectedIngredients, setSelectedIngredients] = useState<string[]>([])
+  const [traySelections, setTraySelections] = useState<string[]>([])
+  const [imgIndex, setImgIndex] = useState(0)
   const { addItem } = useCart()
-  const [added, setAdded] = useState(false)
 
-  function handleAdd() {
-    addItem(item, 1)
-    setAdded(true)
-    setTimeout(() => setAdded(false), 1500)
-  }
-
-  return (
-    <div className="flex-shrink-0 w-36 bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
-      <div className="relative w-full bg-gray-50" style={{ aspectRatio: "4/3" }}>
-        {item.image
-          ? <Image src={item.image} alt={item.name} fill className="object-cover" unoptimized />
-          : <div className="absolute inset-0 flex items-center justify-center"><ShoppingBag className="h-7 w-7 text-gray-200" /></div>
-        }
-        {item.isFeatured && (
-          <span className="absolute top-1.5 right-1.5 bg-yellow-400 text-yellow-900 text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
-            <Star className="h-2 w-2 fill-yellow-900" />الأكثر
-          </span>
-        )}
-      </div>
-      <div className="p-2" dir="rtl">
-        <p className="font-bold text-xs leading-tight line-clamp-2">{item.name}</p>
-        <p className="text-xs text-primary font-bold mt-1">{item.price} ر.س</p>
-        <button
-          onClick={handleAdd}
-          className={`mt-2 w-full py-1.5 rounded-xl text-xs font-bold transition-all active:scale-95 flex items-center justify-center gap-1 ${
-            added ? "bg-green-500 text-white" : "bg-foreground text-background"
-          }`}
-        >
-          {added ? "✓ أضيف!" : <><Plus className="h-3 w-3" /> أضف للسلة</>}
-        </button>
-      </div>
-    </div>
-  )
-}
-
-// ─── Main Component ───────────────────────────────────────────────────────────
-
-const QUICK_QUESTIONS = ["أيش عندكم؟", "كم رسوم التوصيل؟", "وش تنصحني؟", "ما هي أوقات العمل؟"]
-
-export function AIChat() {
-  const { menuItems } = useMenu()
-
-  const [open, setOpen] = useState(false)
-  const [messages, setMessages] = useState<Message[]>([
-    { role: "assistant", type: "text", content: "أهلاً! أنا مساعد أمل سناك 👋\nكيف أقدر أساعدك؟" }
-  ])
-  const [input, setInput] = useState("")
-  const [loading, setLoading] = useState(false)
-  const bottomRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
-  const { items: cartItems } = useCart()
+  const isTray = product?.category === "trays"
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messages])
-
-  useEffect(() => {
-    if (open) setTimeout(() => inputRef.current?.focus(), 300)
+    if (open) {
+      setQuantity(1)
+      setSelectedIngredients([])
+      setTraySelections([])
+      setImgIndex(0)
+    }
   }, [open])
 
-  function parseReply(raw: string): { text: string; items: MenuItem[] } {
-    const match = raw.match(/%%%ITEMS:\[([^\]]*)\]%%%/)
-    let text = raw.replace(/%%%ITEMS:\[[^\]]*\]%%%/g, "").trim()
-    let items: MenuItem[] = []
-    if (match && match[1]) {
-      const names = match[1].split(",").map(n => n.trim()).filter(Boolean)
-      items = names
-        .map(n => menuItems.find(m => m.name === n || m.nameEn === n))
-        .filter((m): m is MenuItem => !!m)
-    }
-    return { text, items }
+  if (!product) return null
+
+  // Platters customization (existing logic)
+  const isPlatters = product.category === "platters"
+  const hasIngredients = isPlatters && product.ingredients && product.ingredients.length > 0
+  const maxSelections = product.limit || 0
+
+  const toggleIngredient = (ingredient: string) => {
+    setSelectedIngredients((prev) => {
+      if (prev.includes(ingredient)) return prev.filter((i) => i !== ingredient)
+      if (maxSelections > 0 && prev.length >= maxSelections) return prev
+      return [...prev, ingredient]
+    })
   }
 
-  async function sendMessage(text?: string) {
-    const msg = (text ?? input).trim()
-    if (!msg || loading) return
-
-    const userMsg: TextMessage = { role: "user", type: "text", content: msg }
-    setMessages(prev => [...prev, userMsg])
-    setInput("")
-    setLoading(true)
-
-    try {
-      const cartContext = cartItems.length > 0
-        ? `\n\nسلة العميل: ${cartItems.map(i => `${i.name} x${i.quantity}`).join("، ")}`
-        : ""
-
-      const apiMessages = [...messages, userMsg]
-        .filter(m => m.type === "text")
-        .map(m => ({ role: m.role, content: m.content }))
-
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 500,
-          system: buildSystemPrompt(menuItems) + cartContext,
-          messages: apiMessages,
-        })
-      })
-
-      const data = await response.json()
-      const raw = data.content?.[0]?.text || "عذراً، حدث خطأ. حاول مرة ثانية."
-      const { text: replyText, items } = parseReply(raw)
-
-      if (items.length > 0) {
-        const itemMsg: ItemsMessage = { role: "assistant", type: "items", content: replyText, items }
-        setMessages(prev => [...prev, itemMsg])
-      } else {
-        setMessages(prev => [...prev, { role: "assistant", type: "text", content: replyText }])
-      }
-    } catch {
-      setMessages(prev => [...prev, { role: "assistant", type: "text", content: "عذراً، حدث خطأ في الاتصال." }])
-    }
-    setLoading(false)
+  const toggleTrayItem = (item: { ar: string; en: string }) => {
+    const key = `${item.ar}||${item.en}`
+    setTraySelections((prev) => {
+      if (prev.includes(key)) return prev.filter((i) => i !== key)
+      if (prev.length >= TRAY_REQUIRED) return prev
+      return [...prev, key]
+    })
   }
 
-  const unread = !open && messages.length > 1
+  const trayComplete = traySelections.length === TRAY_REQUIRED
+
+  const handleAddToCart = () => {
+    const selections = isTray
+      ? traySelections
+      : selectedIngredients.length > 0
+      ? selectedIngredients
+      : undefined
+    addItem(product, quantity, selections)
+    onClose()
+  }
 
   return (
-    <>
-      {/* Floating button */}
-      {!open && (
-        <button
-          onClick={() => setOpen(true)}
-          className="fixed bottom-24 left-4 z-50 w-14 h-14 rounded-full bg-foreground text-background shadow-xl flex items-center justify-center active:scale-95 transition-transform"
-        >
-          <MessageCircle className="h-6 w-6" />
-          {unread && <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary animate-pulse" />}
-        </button>
-      )}
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
+      <DialogContent className="max-w-lg p-0 rounded-2xl overflow-hidden border-0 gap-0 max-h-[90vh] flex flex-col">
 
-      {/* Chat window */}
-      {open && (
-        <div className="fixed inset-0 z-50 flex flex-col bg-[#f0f2f5]" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
-
-          {/* Header */}
-          <div className="flex items-center gap-3 px-4 py-3 bg-white border-b border-gray-100 flex-shrink-0">
-            <button onClick={() => setOpen(false)} className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center active:scale-95">
-              <X className="h-4 w-4" />
-            </button>
-            <div className="flex-1 text-center">
-              <p className="font-bold text-sm">مساعد أمل سناك 🤖</p>
-              <p className="text-xs text-green-500">● متصل الآن</p>
+        {/* Header */}
+        <div className="p-6 pb-4 flex-shrink-0">
+          <div className="flex items-start justify-between">
+            <div className="flex-1 text-right pr-4">
+              <DialogTitle className="text-2xl font-bold text-[#1e293b]">
+                {product.name}
+              </DialogTitle>
+              <DialogDescription className="text-gray-500 mt-1">{product.description}</DialogDescription>
             </div>
-            <div className="w-9 h-9" />
+            <button
+              onClick={onClose}
+              className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors flex-shrink-0"
+              aria-label="إغلاق"
+            >
+              <X className="h-5 w-5 text-gray-600" />
+            </button>
           </div>
+        </div>
 
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto px-3 py-4 space-y-3">
-            {messages.map((msg, i) => (
-              <div key={i} className={`flex items-end gap-2 ${msg.role === "user" ? "flex-row-reverse" : "flex-row"}`}>
-                {msg.role === "assistant" && (
-                  <div className="w-7 h-7 rounded-full bg-foreground flex items-center justify-center flex-shrink-0 mb-1">
-                    <Bot className="h-3.5 w-3.5 text-background" />
+        {/* Image Gallery */}
+        {(() => {
+          const allImgs = [product.image, ...(product.images || [])].filter(Boolean) as string[]
+          const current = allImgs[imgIndex] || null
+          return (
+            <div className="mx-6 mb-4 rounded-2xl overflow-hidden flex-shrink-0 bg-[#f5f5f5] relative">
+              {current ? (
+                <div className="relative w-full aspect-square"><Image src={current} alt={product.name} fill className="object-cover" unoptimized /></div>
+              ) : (
+                <div className="w-full aspect-square flex items-center justify-center text-gray-400">
+                  لا توجد صورة
+                </div>
+              )}
+              {/* Prev/Next arrows */}
+              {allImgs.length > 1 && (
+                <>
+                  <button
+                    onClick={() => setImgIndex(i => (i + 1) % allImgs.length)}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/30 text-white flex items-center justify-center backdrop-blur-sm active:scale-95"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => setImgIndex(i => (i - 1 + allImgs.length) % allImgs.length)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/30 text-white flex items-center justify-center backdrop-blur-sm active:scale-95"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                  {/* Dots */}
+                  <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1.5">
+                    {allImgs.map((_, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setImgIndex(i)}
+                        className="rounded-full transition-all"
+                        style={{
+                          width: i === imgIndex ? 16 : 6,
+                          height: 6,
+                          background: i === imgIndex ? "white" : "rgba(255,255,255,0.5)"
+                        }}
+                      />
+                    ))}
                   </div>
-                )}
-                <div className={`flex flex-col gap-2 max-w-[82%] ${msg.role === "user" ? "items-end" : "items-start"}`}>
-                  {/* Text bubble */}
-                  {msg.content && (
-                    <div
-                      className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-line ${
-                        msg.role === "user"
-                          ? "bg-foreground text-background rounded-br-sm"
-                          : "bg-white text-foreground rounded-bl-sm shadow-sm"
-                      }`}
-                      dir="auto"
+                  {/* Counter */}
+                  <div className="absolute top-2 left-2 bg-black/30 text-white text-xs px-2 py-0.5 rounded-full backdrop-blur-sm">
+                    {imgIndex + 1}/{allImgs.length}
+                  </div>
+                </>
+              )}
+            </div>
+          )
+        })()}
+
+        {/* Scrollable middle */}
+        <div className="overflow-y-auto flex-1 px-6">
+
+          {/* ── TRAY SELECTION ── */}
+          {isTray && (
+            <div className="pb-4">
+              <div className="flex items-center justify-between mb-3">
+                <span className={cn(
+                  "text-sm font-medium px-3 py-1 rounded-full",
+                  trayComplete ? "bg-[#1e5631]/10 text-[#1e5631]" : "bg-amal-yellow/20 text-foreground"
+                )}>
+                  {traySelections.length} / {TRAY_REQUIRED}
+                </span>
+                <h3 className="font-bold text-[#1e293b]">اختر {TRAY_REQUIRED} أصناف</h3>
+              </div>
+
+              {/* Progress bar */}
+              <div className="w-full h-2 bg-gray-200 rounded-full mb-4">
+                <div
+                  className={cn(
+                    "h-2 rounded-full transition-all duration-300",
+                    trayComplete ? "bg-[#1e5631]" : "bg-amal-yellow"
+                  )}
+                  style={{ width: `${(traySelections.length / TRAY_REQUIRED) * 100}%` }}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                {TRAY_ITEMS.map((item) => {
+                  const key = `${item.ar}||${item.en}`
+                  const isSelected = traySelections.includes(key)
+                  const isDisabled = !isSelected && traySelections.length >= TRAY_REQUIRED
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => toggleTrayItem(item)}
+                      disabled={isDisabled}
+                      className={cn(
+                        "flex items-center justify-between p-3 rounded-xl border-2 transition-all text-sm text-right",
+                        isSelected
+                          ? "border-[#1e5631] bg-[#1e5631]/10 text-[#1e5631]"
+                          : "border-gray-200 bg-white text-[#1e293b]",
+                        isDisabled && "opacity-40 cursor-not-allowed"
+                      )}
                     >
-                      {msg.content}
-                    </div>
-                  )}
-                  {/* Item cards */}
-                  {msg.type === "items" && msg.items.length > 0 && (
-                    <div className="flex gap-2 overflow-x-auto pb-1 max-w-[85vw]" style={{ scrollbarWidth: "none" }}>
-                      {msg.items.map(item => <ItemCard key={item.id} item={item} />)}
-                    </div>
-                  )}
-                </div>
+                      <span className="flex-1">{item.ar}</span>
+                      {isSelected && <Check className="h-4 w-4 flex-shrink-0 mr-1" />}
+                    </button>
+                  )
+                })}
               </div>
-            ))}
-
-            {/* Loading */}
-            {loading && (
-              <div className="flex items-end gap-2">
-                <div className="w-7 h-7 rounded-full bg-foreground flex items-center justify-center flex-shrink-0">
-                  <Bot className="h-3.5 w-3.5 text-background" />
-                </div>
-                <div className="bg-white px-4 py-3 rounded-2xl rounded-bl-sm shadow-sm flex items-center gap-1.5">
-                  <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: "0ms" }} />
-                  <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: "150ms" }} />
-                  <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: "300ms" }} />
-                </div>
-              </div>
-            )}
-            <div ref={bottomRef} />
-          </div>
-
-          {/* Quick suggestions — only at start */}
-          {messages.length === 1 && (
-            <div className="px-3 pb-2 flex gap-2 overflow-x-auto flex-shrink-0" style={{ scrollbarWidth: "none" }}>
-              {QUICK_QUESTIONS.map(q => (
-                <button
-                  key={q}
-                  onClick={() => sendMessage(q)}
-                  className="flex-shrink-0 px-3 py-2 bg-white rounded-full text-xs font-medium shadow-sm active:scale-95 transition-transform whitespace-nowrap border border-gray-100"
-                >
-                  {q}
-                </button>
-              ))}
             </div>
           )}
 
-          {/* Input */}
-          <div className="px-3 py-3 bg-white border-t border-gray-100 flex gap-2 flex-shrink-0">
-            <button
-              onClick={() => sendMessage()}
-              disabled={!input.trim() || loading}
-              className="w-11 h-11 rounded-full bg-foreground text-background flex items-center justify-center flex-shrink-0 active:scale-95 transition-transform disabled:opacity-40"
-            >
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-            </button>
-            <input
-              ref={inputRef}
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && sendMessage()}
-              placeholder="اسألني عن أي شيء..."
-              dir="auto"
-              className="flex-1 px-4 py-2.5 bg-[#f0f2f5] rounded-full text-sm focus:outline-none"
-            />
-          </div>
+          {/* ── PLATTERS CUSTOMIZATION ── */}
+          {hasIngredients && (
+            <div className="pb-4">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm text-gray-500">
+                  {maxSelections > 0 && `(${selectedIngredients.length}/${maxSelections})`}
+                </span>
+                <h3 className="font-bold text-[#1e293b]">تخصيص الطلب</h3>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {product.ingredients?.map((ingredient) => {
+                  const isSelected = selectedIngredients.includes(ingredient)
+                  const isDisabled = !isSelected && maxSelections > 0 && selectedIngredients.length >= maxSelections
+                  return (
+                    <button
+                      key={ingredient}
+                      onClick={() => toggleIngredient(ingredient)}
+                      disabled={isDisabled}
+                      className={cn(
+                        "flex items-center justify-between p-3 rounded-xl border-2 transition-all text-sm",
+                        isSelected
+                          ? "border-[#1e5631] bg-[#1e5631]/10 text-[#1e5631]"
+                          : "border-gray-200 bg-white text-[#1e293b]",
+                        isDisabled && "opacity-50 cursor-not-allowed"
+                      )}
+                    >
+                      {isSelected && <Check className="h-4 w-4 flex-shrink-0" />}
+                      <span className="flex-1 text-right">{ingredient}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Ingredients text for non-customizable items */}
+          {!isTray && !hasIngredients && product.ingredients && product.ingredients.length > 0 && (
+            <p className="text-gray-600 text-sm mb-4 text-right leading-relaxed">
+              {product.ingredients.join("، ")}
+            </p>
+          )}
         </div>
-      )}
-    </>
+
+        {/* Fixed bottom */}
+        <div className="px-6 pb-6 pt-3 border-t border-gray-100 flex-shrink-0">
+          {/* Quantity */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
+                aria-label="تقليل الكمية"
+              >
+                <Minus className="h-4 w-4" />
+              </button>
+              <span className="text-xl font-bold w-8 text-center">{quantity}</span>
+              <button
+                onClick={() => setQuantity(quantity + 1)}
+                className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
+                aria-label="زيادة الكمية"
+              >
+                <Plus className="h-4 w-4" />
+              </button>
+            </div>
+            <span className="text-xl font-bold text-[#1e293b]">{product.price * quantity} ر.س</span>
+          </div>
+
+          {/* Order button */}
+          <button
+            onClick={handleAddToCart}
+            disabled={isTray && !trayComplete}
+            className={cn(
+              "w-full py-4 rounded-full text-lg font-medium transition-colors",
+              isTray && !trayComplete
+                ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                : "bg-[#1e5631] text-white hover:bg-[#174425]"
+            )}
+          >
+            {isTray && !trayComplete
+              ? `اختر ${TRAY_REQUIRED - traySelections.length} أصناف أخرى`
+              : "اطلب الآن"}
+          </button>
+        </div>
+
+      </DialogContent>
+    </Dialog>
   )
 }

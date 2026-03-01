@@ -125,6 +125,7 @@ function CheckoutContent() {
       total: String(grandTotal),
       type: isPickup ? "pickup" : "delivery",
       time: deliveryInfo.scheduledTime ?? "في أقرب وقت",
+      wa: whatsappUrl,
     })
     router.push(`/confirmation?${params.toString()}`)
   }

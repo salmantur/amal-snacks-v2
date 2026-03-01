@@ -15,7 +15,7 @@ export function Header() {
   const [orderModalOpen, setOrderModalOpen] = useState(false)
   const router = useRouter()
   const [mounted, setMounted] = useState(false)
-  const { items, totalItems, totalPrice, removeItem } = useCart()
+  const { items, totalItems, totalPrice, removeItem, updateQuantity } = useCart()
 
   useEffect(() => { setMounted(true) }, [])
 

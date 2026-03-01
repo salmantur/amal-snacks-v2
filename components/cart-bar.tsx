@@ -7,7 +7,7 @@ import { useCart } from "@/components/cart-provider"
 import { OrderTypeModal } from "@/components/order-type-modal"
 
 export function CartBar() {
-  const { items, totalItems, totalPrice, removeItem } = useCart()
+  const { items, totalItems, totalPrice, removeItem, updateQuantity } = useCart()
   const [modalOpen, setModalOpen] = useState(false)
   const [cartOpen, setCartOpen] = useState(false)
   const router = useRouter()
@@ -78,12 +78,18 @@ export function CartBar() {
                     <p className="text-sm font-bold text-primary mt-0.5">{item.price * item.quantity} ر.س</p>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    <span className="text-sm font-medium bg-background px-2 py-0.5 rounded-full">×{item.quantity}</span>
                     <button
-                      onClick={() => removeItem(item.cartKey)}
-                      className="w-9 h-9 rounded-full bg-red-100 text-red-500 flex items-center justify-center active:scale-95 transition-transform"
+                      onClick={() => item.quantity === 1 ? removeItem(item.cartKey) : updateQuantity(item.cartKey, item.quantity - 1)}
+                      className="w-8 h-8 rounded-full bg-gray-200 text-gray-700 flex items-center justify-center active:scale-95 transition-transform text-lg font-bold"
                     >
-                      <X className="h-4 w-4" />
+                      {item.quantity === 1 ? <X className="h-3.5 w-3.5 text-red-500" /> : "−"}
+                    </button>
+                    <span className="text-sm font-bold w-5 text-center">{item.quantity}</span>
+                    <button
+                      onClick={() => updateQuantity(item.cartKey, item.quantity + 1)}
+                      className="w-8 h-8 rounded-full bg-foreground text-background flex items-center justify-center active:scale-95 transition-transform text-lg font-bold"
+                    >
+                      +
                     </button>
                   </div>
                 </div>

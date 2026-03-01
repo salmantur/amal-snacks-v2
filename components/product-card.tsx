@@ -2,7 +2,7 @@
 
 import React, { memo, useState } from "react"
 import Image from "next/image"
-import { ShoppingBag } from "lucide-react"
+import { ShoppingBag, Star } from "lucide-react"
 import { type MenuItem } from "@/components/cart-provider"
 
 interface ProductCardProps {
@@ -40,6 +40,12 @@ export const ProductCard = memo(function ProductCard({ item, onSelect, priority 
         ) : (
           <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
             <ShoppingBag className="h-8 w-8" />
+          </div>
+        )}
+        {item.isFeatured && (
+          <div className="absolute top-2 right-2 bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-0.5">
+            <Star className="h-2.5 w-2.5 fill-yellow-900" />
+            الأكثر
           </div>
         )}
       </div>

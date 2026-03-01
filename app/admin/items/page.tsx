@@ -529,7 +529,7 @@ export default function ItemsPage() {
                     <div key={idx} className="relative w-16 h-16 rounded-xl overflow-hidden bg-[#f5f5f5] flex-shrink-0">
                       <Image src={url} alt="" fill className="object-cover" unoptimized />
                       <button
-                        onClick={() => setModalItem(prev => ({ ...prev, images: (prev.images || []).filter((_, i) => i !== idx) }))}
+                        onClick={() => setModalItem(prev => prev ? ({ ...prev, images: (prev.images || []).filter((_, i) => i !== idx) }) : prev)}
                         className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-xs"
                       >
                         ×

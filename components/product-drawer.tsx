@@ -128,12 +128,16 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
         {(() => {
           const allImgs = [product.image, ...(product.images || [])].filter(Boolean) as string[]
           const current = allImgs[imgIndex] || null
+          // Use compact image for trays (many options need scroll space) or items with lots of ingredients
+          const hasLongOptions = isTray || (product.ingredients && product.ingredients.length > 4)
           return (
             <div className="mx-6 mb-4 rounded-2xl overflow-hidden flex-shrink-0 bg-[#f5f5f5] relative">
               {current ? (
-                <div className="relative w-full aspect-square"><Image src={current} alt={product.name} fill className="object-cover" unoptimized /></div>
+                <div className={`relative w-full ${hasLongOptions ? "aspect-[3/1]" : "aspect-square"}`}>
+                  <Image src={current} alt={product.name} fill className="object-cover" unoptimized />
+                </div>
               ) : (
-                <div className="w-full aspect-square flex items-center justify-center text-gray-400">
+                <div className={`w-full ${hasLongOptions ? "aspect-[3/1]" : "aspect-square"} flex items-center justify-center text-gray-400`}>
                   لا توجد صورة
                 </div>
               )}

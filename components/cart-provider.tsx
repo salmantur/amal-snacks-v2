@@ -22,6 +22,7 @@ export interface MenuItem {
   limit?: number
   makingTime?: number  // preparation time in minutes
   isFeatured?: boolean  // best seller
+  images?: string[]      // additional gallery images
 }
 
 export interface CartItem extends MenuItem {

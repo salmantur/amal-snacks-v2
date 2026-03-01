@@ -52,6 +52,7 @@ export async function fetchMenuItems(): Promise<{ data: MenuItem[]; error: strin
         inStock: item.in_stock !== false,
         makingTime: Number(item.making_time) || 0,
         isFeatured: item.is_featured === true,
+        images: Array.isArray(item.images) ? item.images : [],
       }
     })
 

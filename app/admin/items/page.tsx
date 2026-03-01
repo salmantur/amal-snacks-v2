@@ -23,12 +23,13 @@ interface MenuItem {
   inStock: boolean
   makingTime: number
   isFeatured: boolean
+  images: string[]
 }
 
 const EMPTY_ITEM: Omit<MenuItem, "id"> = {
   name: "", nameEn: "", description: "",
   price: 0, image: "", category: "",
-  ingredients: "", limit: 0, inStock: true, makingTime: 0, isFeatured: false,
+  ingredients: "", limit: 0, inStock: true, makingTime: 0, isFeatured: false, images: [],
 }
 
 const ALL_CATEGORIES = categories.flatMap((cat) =>
@@ -51,6 +52,7 @@ export default function ItemsPage() {
   const [error, setError] = useState<string | null>(null)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
   const [imageUploading, setImageUploading] = useState(false)
+  const [galleryUploading, setGalleryUploading] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
   const [ingredientInput, setIngredientInput] = useState("")
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -84,6 +86,7 @@ export default function ItemsPage() {
       inStock: raw.in_stock !== false,
       makingTime: Number(raw.making_time) || 0,
       isFeatured: raw.is_featured === true,
+      images: Array.isArray(raw.images) ? raw.images : [],
     }
   }
 
@@ -121,6 +124,23 @@ export default function ItemsPage() {
     setImageUploading(false)
   }
 
+  async function handleGalleryUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files || [])
+    if (!files.length || !modalItem) return
+    setGalleryUploading(true)
+    const uploaded: string[] = []
+    for (const file of files) {
+      const filename = `gallery_${Date.now()}_${Math.random().toString(36).slice(2)}_${file.name.replace(/[^a-zA-Z0-9.]/g, "_")}`
+      const { error } = await supabase.storage.from("Menu").upload(filename, file, { upsert: true })
+      if (!error) {
+        uploaded.push(`${SUPABASE_URL}/storage/v1/object/public/Menu/${filename}`)
+      }
+    }
+    setModalItem(prev => ({ ...prev, images: [...(prev.images || []), ...uploaded] }))
+    setGalleryUploading(false)
+    e.target.value = ""
+  }
+
   async function handleSave() {
     if (!modalItem) return
     if (!modalItem.name?.trim()) { setError("الاسم مطلوب"); return }
@@ -140,6 +160,7 @@ export default function ItemsPage() {
       in_stock: modalItem.inStock !== false,
       making_time: modalItem.makingTime || 0,
       is_featured: modalItem.isFeatured === true,
+      images: modalItem.images || [],
     }
     if (isNew) {
       const { error } = await supabase.from("menu").insert(payload)
@@ -498,6 +519,32 @@ export default function ItemsPage() {
                 >
                   <span className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow transition-all duration-200 ${modalItem.inStock !== false ? "left-7" : "left-1"}`} />
                 </button>
+              </div>
+
+              {/* Gallery Images */}
+              <div dir="rtl">
+                <p className="font-semibold text-sm mb-2">🖼️ صور إضافية (جاليري)</p>
+                <div className="flex gap-2 flex-wrap mb-2">
+                  {(modalItem.images || []).map((url, idx) => (
+                    <div key={idx} className="relative w-16 h-16 rounded-xl overflow-hidden bg-[#f5f5f5] flex-shrink-0">
+                      <img src={url} alt="" className="w-full h-full object-cover" />
+                      <button
+                        onClick={() => setModalItem(prev => ({ ...prev, images: (prev.images || []).filter((_, i) => i !== idx) }))}
+                        className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-xs"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                  <label className="w-16 h-16 rounded-xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors flex-shrink-0">
+                    {galleryUploading
+                      ? <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                      : <><Upload className="h-4 w-4 text-muted-foreground" /><span className="text-[10px] text-muted-foreground mt-0.5">إضافة</span></>
+                    }
+                    <input type="file" accept="image/*" multiple onChange={handleGalleryUpload} className="hidden" />
+                  </label>
+                </div>
+                <p className="text-xs text-muted-foreground">يمكنك إضافة أكثر من صورة — ستظهر كصور إضافية في صفحة المنتج</p>
               </div>
 
               {/* Making Time */}

@@ -1,6 +1,6 @@
 "use client"
 
-import { Minus, Plus, X, Check } from "lucide-react"
+import { Minus, Plus, X, Check, ChevronLeft, ChevronRight } from "lucide-react"
 import { useState, useEffect } from "react"
 import Image from "next/image"
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog"
@@ -43,6 +43,7 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
   const [quantity, setQuantity] = useState(1)
   const [selectedIngredients, setSelectedIngredients] = useState<string[]>([])
   const [traySelections, setTraySelections] = useState<string[]>([])
+  const [imgIndex, setImgIndex] = useState(0)
   const { addItem } = useCart()
 
   const isTray = product?.category === "trays"
@@ -52,6 +53,7 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
       setQuantity(1)
       setSelectedIngredients([])
       setTraySelections([])
+      setImgIndex(0)
     }
   }, [open])
 
@@ -114,20 +116,58 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
           </div>
         </div>
 
-        {/* Image */}
-        <div className="mx-6 mb-4 rounded-2xl overflow-hidden flex-shrink-0 bg-[#f5f5f5]">
-          {product.image ? (
-            <img
-              src={product.image}
-              alt={product.name}
-              className="w-full aspect-square object-cover"
-            />
-          ) : (
-            <div className="w-full aspect-square flex items-center justify-center text-gray-400">
-              لا توجد صورة
+        {/* Image Gallery */}
+        {(() => {
+          const allImgs = [product.image, ...(product.images || [])].filter(Boolean) as string[]
+          const current = allImgs[imgIndex] || null
+          return (
+            <div className="mx-6 mb-4 rounded-2xl overflow-hidden flex-shrink-0 bg-[#f5f5f5] relative">
+              {current ? (
+                <img src={current} alt={product.name} className="w-full aspect-square object-cover" />
+              ) : (
+                <div className="w-full aspect-square flex items-center justify-center text-gray-400">
+                  لا توجد صورة
+                </div>
+              )}
+              {/* Prev/Next arrows */}
+              {allImgs.length > 1 && (
+                <>
+                  <button
+                    onClick={() => setImgIndex(i => (i + 1) % allImgs.length)}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/30 text-white flex items-center justify-center backdrop-blur-sm active:scale-95"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => setImgIndex(i => (i - 1 + allImgs.length) % allImgs.length)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/30 text-white flex items-center justify-center backdrop-blur-sm active:scale-95"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                  {/* Dots */}
+                  <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1.5">
+                    {allImgs.map((_, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setImgIndex(i)}
+                        className="rounded-full transition-all"
+                        style={{
+                          width: i === imgIndex ? 16 : 6,
+                          height: 6,
+                          background: i === imgIndex ? "white" : "rgba(255,255,255,0.5)"
+                        }}
+                      />
+                    ))}
+                  </div>
+                  {/* Counter */}
+                  <div className="absolute top-2 left-2 bg-black/30 text-white text-xs px-2 py-0.5 rounded-full backdrop-blur-sm">
+                    {imgIndex + 1}/{allImgs.length}
+                  </div>
+                </>
+              )}
             </div>
-          )}
-        </div>
+          )
+        })()}
 
         {/* Scrollable middle */}
         <div className="overflow-y-auto flex-1 px-6">

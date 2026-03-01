@@ -136,7 +136,7 @@ export default function ItemsPage() {
         uploaded.push(`${SUPABASE_URL}/storage/v1/object/public/Menu/${filename}`)
       }
     }
-    setModalItem(prev => ({ ...prev, images: [...(prev.images || []), ...uploaded] }))
+    setModalItem(prev => prev ? ({ ...prev, images: [...(prev.images || []), ...uploaded] }) : prev)
     setGalleryUploading(false)
     e.target.value = ""
   }

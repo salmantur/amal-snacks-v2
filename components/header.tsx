@@ -1,6 +1,6 @@
 "use client"
 
-import { ShoppingBag, X, Sparkles, ChevronLeft } from "lucide-react"
+import { ShoppingBag, X, Sparkles, Bell, Menu } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import { useCart } from "@/components/cart-provider"
@@ -93,62 +93,51 @@ export function Header() {
           backdropFilter: scrolled ? "blur(12px)" : "none",
         }}
       >
-        <div className="flex items-center justify-between px-4 py-3">
+        <div className="relative flex items-center justify-between px-4 py-3">
 
-          {/* Logo / brand */}
-          <Link href="/" className="flex items-center gap-2 active:opacity-70 transition-opacity">
-            <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center shadow-sm">
-              <span className="text-primary-foreground text-base font-black">أ</span>
-            </div>
-            <div dir="rtl">
-              <p className="text-base font-black leading-none tracking-tight">أمل سناك</p>
-              <p className="text-[10px] text-muted-foreground leading-none mt-0.5">Amal Snack</p>
-            </div>
+          {/* Left: Bell icon */}
+          <button className="w-10 h-10 flex items-center justify-center active:opacity-60 transition-opacity">
+            <Bell className="h-5 w-5 text-foreground" />
+          </button>
+
+          {/* Center: Brand name */}
+          <Link href="/" className="absolute left-1/2 -translate-x-1/2 active:opacity-70 transition-opacity">
+            <p className="text-xl font-black tracking-tight text-foreground" dir="rtl">أمل سناك</p>
           </Link>
 
-          {/* Right side actions */}
-          <div className="flex items-center gap-2">
-
-            {/* Working hours badge */}
-            <div className="hidden sm:flex items-center gap-1.5 bg-green-50 border border-green-100 rounded-full px-3 py-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse flex-shrink-0" />
-              <span className="text-xs font-medium text-green-700">8ص – 2ف</span>
-            </div>
-
-            {/* Cart button */}
-            <button
-              onClick={() => setCartOpen(true)}
-              className="relative flex items-center gap-2 rounded-full active:scale-95 transition-all duration-150"
+          {/* Right: Cart button */}
+          <button
+            onClick={() => setCartOpen(true)}
+            className="relative flex items-center gap-2 rounded-full active:scale-95 transition-all duration-150"
+            style={{
+              background: totalItems > 0 ? "var(--foreground)" : "#f5f5f5",
+              padding: totalItems > 0 ? "8px 14px 8px 10px" : "10px",
+            }}
+          >
+            <ShoppingBag
+              className="h-5 w-5 transition-transform duration-300"
               style={{
-                background: totalItems > 0 ? "var(--foreground)" : "#f5f5f5",
-                padding: totalItems > 0 ? "8px 14px 8px 10px" : "10px",
+                color: totalItems > 0 ? "var(--background)" : "var(--foreground)",
+                transform: cartBounce ? "scale(1.3)" : "scale(1)",
               }}
-            >
-              <ShoppingBag
-                className="h-5 w-5 transition-transform duration-300"
-                style={{
-                  color: totalItems > 0 ? "var(--background)" : "var(--foreground)",
-                  transform: cartBounce ? "scale(1.3)" : "scale(1)",
-                }}
-              />
-              {totalItems > 0 && (
-                <span
-                  className="text-sm font-bold transition-all"
-                  style={{ color: "var(--background)" }}
-                >
-                  {totalPrice} ر.س
-                </span>
-              )}
-              {totalItems > 0 && (
-                <span
-                  className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-black flex items-center justify-center shadow"
-                  style={{ transform: cartBounce ? "scale(1.4)" : "scale(1)", transition: "transform 0.3s" }}
-                >
-                  {totalItems > 9 ? "9+" : totalItems}
-                </span>
-              )}
-            </button>
-          </div>
+            />
+            {totalItems > 0 && (
+              <span
+                className="text-sm font-bold transition-all"
+                style={{ color: "var(--background)" }}
+              >
+                {totalPrice} ر.س
+              </span>
+            )}
+            {totalItems > 0 && (
+              <span
+                className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-black flex items-center justify-center shadow"
+                style={{ transform: cartBounce ? "scale(1.4)" : "scale(1)", transition: "transform 0.3s" }}
+              >
+                {totalItems > 9 ? "9+" : totalItems}
+              </span>
+            )}
+          </button>
         </div>
       </header>
 

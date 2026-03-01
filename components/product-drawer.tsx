@@ -105,6 +105,12 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
                 {product.name}
               </DialogTitle>
               <DialogDescription className="text-gray-500 mt-1">{product.description}</DialogDescription>
+              {product.makingTime && product.makingTime > 0 ? (
+                <p className="text-xs text-gray-400 mt-1 flex items-center gap-1 justify-end">
+                  <span>⏱</span>
+                  <span>وقت التحضير: {product.makingTime} دقيقة</span>
+                </p>
+              ) : null}
             </div>
             <button
               onClick={onClose}
@@ -293,15 +299,19 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
           {/* Order button */}
           <button
             onClick={handleAddToCart}
-            disabled={isTray && !trayComplete}
+            disabled={(isTray && !trayComplete) || product.inStock === false}
             className={cn(
               "w-full py-4 rounded-full text-lg font-medium transition-colors",
-              isTray && !trayComplete
+              product.inStock === false
+                ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                : isTray && !trayComplete
                 ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                 : "bg-[#1e5631] text-white hover:bg-[#174425]"
             )}
           >
-            {isTray && !trayComplete
+            {product.inStock === false
+              ? "نفذت الكمية"
+              : isTray && !trayComplete
               ? `اختر ${TRAY_REQUIRED - traySelections.length} أصناف أخرى`
               : "اطلب الآن"}
           </button>

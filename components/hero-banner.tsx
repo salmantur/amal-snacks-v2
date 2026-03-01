@@ -34,7 +34,6 @@ export function HeroBanner() {
           alt="banner design"
           fill
           className="object-cover object-center"
-          unoptimized
           priority
         />
       </div>
@@ -99,7 +98,6 @@ export function HeroBanner() {
                   alt={featuredProduct.name}
                   fill
                   className="object-cover"
-                  unoptimized
                 />
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/5">

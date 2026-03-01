@@ -17,6 +17,17 @@ export const metadata: Metadata = {
   title: 'أمل سناك | Amal Snacks',
   description: 'أفضل الوجبات المثلجة والساخنة بجودة عالمية مختارة لك',
   appleWebApp: { capable: true, statusBarStyle: 'default', title: 'أمل سناك' },
+  openGraph: {
+    title: 'أمل سناك | Amal Snacks',
+    description: 'أفضل الوجبات المثلجة والساخنة بجودة عالمية مختارة لك',
+    type: 'website',
+    locale: 'ar_SA',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'أمل سناك | Amal Snacks',
+    description: 'أفضل الوجبات المثلجة والساخنة بجودة عالمية مختارة لك',
+  },
   formatDetection: { telephone: false },
 }
 

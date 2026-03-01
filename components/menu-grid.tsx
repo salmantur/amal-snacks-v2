@@ -1,12 +1,12 @@
 "use client"
 
 import { useState, useEffect, useMemo, useCallback } from "react"
-import useSWR from "swr"
 import dynamic from "next/dynamic"
 import { ProductCard } from "@/components/product-card"
 import { CategoryFilter } from "@/components/category-filter"
 import { SearchBar } from "@/components/search-bar"
 import { useCategories } from "@/hooks/use-categories"
+import { useMenu } from "@/hooks/use-menu"
 import type { MenuItem } from "@/components/cart-provider"
 
 const ProductDrawer = dynamic(
@@ -20,15 +20,7 @@ export function MenuGrid() {
   const { categories: allCategories } = useCategories()
   const categories = allCategories.filter((c) => c.isVisible)
 
-  const { data: result, error: fetchError, isLoading } = useSWR<{ data: MenuItem[]; error: string | null }>(
-    "/api/menu",
-    fetcher,
-    { revalidateOnFocus: false, dedupingInterval: 300000, revalidateOnReconnect: false }
-  )
-
-  const menuItems = result?.data || []
-  const error = fetchError ? (fetchError instanceof Error ? fetchError.message : "Unknown error") : result?.error || null
-  const loading = isLoading
+  const { menuItems, error, isLoading: loading } = useMenu()
 
   const [selectedCategory, setSelectedCategory] = useState("platters_breakfast")
   const [searchQuery, setSearchQuery] = useState("")

@@ -16,9 +16,9 @@ export const ProductCard = memo(function ProductCard({ item, onSelect, priority 
 
   return (
     <div
-      onClick={() => onSelect(item)}
+      onClick={() => item.inStock !== false && onSelect(item)}
       // active:scale gives instant tactile feedback on both iOS and Android
-      className="cursor-pointer group active:scale-95 transition-transform duration-100"
+      className={`cursor-pointer group transition-transform duration-100 ${item.inStock !== false ? "active:scale-95" : "opacity-60 cursor-not-allowed"}`}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => e.key === 'Enter' && onSelect(item)}
@@ -46,6 +46,11 @@ export const ProductCard = memo(function ProductCard({ item, onSelect, priority 
           <div className="absolute top-2 right-2 bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-0.5">
             <Star className="h-2.5 w-2.5 fill-yellow-900" />
             الأكثر
+          </div>
+        )}
+        {item.inStock === false && (
+          <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-2xl">
+            <span className="bg-white text-gray-800 text-xs font-bold px-3 py-1 rounded-full">نفذت الكمية</span>
           </div>
         )}
       </div>

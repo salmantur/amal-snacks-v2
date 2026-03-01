@@ -1,10 +1,10 @@
 "use client"
 
-import useSWR from "swr"
 import { useState, useRef } from "react"
 import Image from "next/image"
 import { Check, Upload, X, Eye, EyeOff, ImageIcon } from "lucide-react"
 import { useBannerConfig, DEFAULT_BANNER, type BannerConfig } from "@/hooks/use-banner-config"
+import { useMenu } from "@/hooks/use-menu"
 import { createClient } from "@/lib/supabase/client"
 import { cn } from "@/lib/utils"
 
@@ -19,14 +19,9 @@ const PRESET_GRADIENTS = [
   { label: "داكن", from: "#1e293b", to: "#334155" },
 ]
 
-const fetcher = (url: string) => fetch(url).then(r => r.json())
-
 export function HeroBannerEditor() {
   const { config, loading, saveConfig } = useBannerConfig()
-  const { data: menuResult } = useSWR<{ data: { id: string; name: string; nameEn?: string }[] }>("/api/menu", fetcher, {
-    revalidateOnFocus: false, dedupingInterval: 300000,
-  })
-  const menuItems = menuResult?.data || []
+  const { menuItems } = useMenu()
   const [draft, setDraft] = useState<BannerConfig | null>(null)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)

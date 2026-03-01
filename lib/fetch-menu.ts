@@ -1,12 +1,12 @@
 import { createClient } from "@supabase/supabase-js"
 import type { MenuItem } from "@/components/cart-provider"
 
-const SUPABASE_URL = "https://eejlqdydoilbjpegxvbq.supabase.co"
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVlamxxZHlkb2lsYmpwZWd4dmJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAyMjE4MTQsImV4cCI6MjA4NTc5NzgxNH0.J5pQRDXpjYWpoNqmpmh-3KRICK9ijcL0NRe06405JYA"
-
 export async function fetchMenuItems(): Promise<{ data: MenuItem[]; error: string | null }> {
   try {
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
 
     const { data, error } = await supabase.from("menu").select("*").eq("in_stock", true)
 
@@ -17,6 +17,8 @@ export async function fetchMenuItems(): Promise<{ data: MenuItem[]; error: strin
     if (!data || data.length === 0) {
       return { error: "No items found in menu table", data: [] }
     }
+
+    const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
 
     const items: MenuItem[] = data.map((item: Record<string, unknown>) => {
       let imageValue = String(item.image || item.img || item.image_url || item.photo || item.picture || "")

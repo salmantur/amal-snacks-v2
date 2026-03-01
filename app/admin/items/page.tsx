@@ -304,7 +304,7 @@ export default function ItemsPage() {
                   {/* Image — leftmost */}
                   <div className="w-20 h-20 rounded-2xl bg-[#f5f5f5] overflow-hidden flex-shrink-0">
                     {imgSrc
-                      ? <img src={imgSrc} alt={item.name} className="w-full h-full object-cover" />
+                      ? <Image src={imgSrc} alt={item.name} fill className="object-cover" unoptimized />
                       : <div className="w-full h-full flex items-center justify-center"><ImageIcon className="h-6 w-6 text-gray-300" /></div>
                     }
                   </div>
@@ -399,7 +399,7 @@ export default function ItemsPage() {
                 <div className="flex items-center gap-3">
                   <div className="w-24 h-24 rounded-2xl bg-[#f5f5f5] flex items-center justify-center overflow-hidden flex-shrink-0">
                     {modalItem.image
-                      ? <img src={getDisplayImage(modalItem.image) || modalItem.image} alt="preview" className="w-full h-full object-cover" />
+                      ? <Image src={getDisplayImage(modalItem.image) || modalItem.image || ""} alt="preview" fill className="object-cover" unoptimized />
                       : <ImageIcon className="h-7 w-7 text-gray-300" />
                     }
                   </div>
@@ -527,7 +527,7 @@ export default function ItemsPage() {
                 <div className="flex gap-2 flex-wrap mb-2">
                   {(modalItem.images || []).map((url, idx) => (
                     <div key={idx} className="relative w-16 h-16 rounded-xl overflow-hidden bg-[#f5f5f5] flex-shrink-0">
-                      <img src={url} alt="" className="w-full h-full object-cover" />
+                      <Image src={url} alt="" fill className="object-cover" unoptimized />
                       <button
                         onClick={() => setModalItem(prev => ({ ...prev, images: (prev.images || []).filter((_, i) => i !== idx) }))}
                         className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-xs"

@@ -29,6 +29,22 @@ export function HeroBanner() {
     return <div className="mx-4 mt-4 rounded-3xl bg-amal-pink-light/50 h-44 animate-pulse" />
   }
 
+  // ── Full design mode: custom poster image fills entire banner ──────────────
+  if (config.full_design_mode && config.full_design_url) {
+    return (
+      <div className="mx-4 mt-4 rounded-3xl overflow-hidden relative" style={{ aspectRatio: "2.5/1" }}>
+        <Image
+          src={config.full_design_url}
+          alt="banner design"
+          fill
+          className="object-cover object-center"
+          unoptimized
+          priority
+        />
+      </div>
+    )
+  }
+
   // ── With featured product: split layout ────────────────────────────────────
   if (featuredProduct) {
     return (

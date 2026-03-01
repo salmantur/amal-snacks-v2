@@ -32,6 +32,8 @@ export function HeroBannerEditor() {
   const [saved, setSaved] = useState(false)
   const [uploading, setUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const designInputRef = useRef<HTMLInputElement>(null)
+  const [uploadingDesign, setUploadingDesign] = useState(false)
 
   const current = draft ?? config
 
@@ -86,6 +88,21 @@ export function HeroBannerEditor() {
     }
     setUploading(false)
     // Reset input so same file can be re-uploaded
+    e.target.value = ""
+  }
+
+  const handleDesignUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadingDesign(true)
+    const supabase = createClient()
+    const filename = `banner_design_${Date.now()}.${file.name.split(".").pop()}`
+    const { data: d1, error: e1 } = await supabase.storage.from("Menu").upload(filename, file, { upsert: true })
+    if (!e1 && d1) {
+      const { data: urlData } = supabase.storage.from("Menu").getPublicUrl(d1.path)
+      update({ full_design_url: urlData.publicUrl, full_design_mode: true })
+    }
+    setUploadingDesign(false)
     e.target.value = ""
   }
 
@@ -280,6 +297,67 @@ export function HeroBannerEditor() {
           className="hidden"
         />
         <p className="text-xs text-muted-foreground text-center">الصورة ستظهر بشفافية خلف النص</p>
+      </div>
+
+      {/* Full Design Banner */}
+      <div className="space-y-3 pt-2 border-t border-border/50">
+        <div dir="rtl">
+          <p className="font-semibold text-sm">🎨 تصميم كامل للبانر</p>
+          <p className="text-xs text-muted-foreground mt-0.5">ارفع صورة تصميم تملأ البانر بالكامل</p>
+          <p className="text-xs text-primary font-medium mt-1">📐 الحجم المُوصى به: 1200 × 480 بكسل (نسبة 2.5:1)</p>
+        </div>
+
+        {/* Toggle */}
+        {current.full_design_url && (
+          <button
+            onClick={() => update({ full_design_mode: !current.full_design_mode })}
+            className={cn(
+              "w-full py-2.5 rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2",
+              current.full_design_mode
+                ? "bg-[#1e5631] text-white"
+                : "bg-amal-grey text-muted-foreground"
+            )}
+          >
+            {current.full_design_mode ? <><Eye className="h-4 w-4" /> التصميم الكامل مفعّل</> : <><EyeOff className="h-4 w-4" /> التصميم الكامل معطّل</>}
+          </button>
+        )}
+
+        {/* Upload area */}
+        <button
+          onClick={() => designInputRef.current?.click()}
+          disabled={uploadingDesign}
+          className="w-full relative rounded-2xl border-2 border-dashed border-gray-200 overflow-hidden transition-all hover:border-primary/50 active:scale-[0.99] disabled:opacity-60"
+          style={{ minHeight: 100 }}
+        >
+          {current.full_design_url ? (
+            <div className="relative w-full" style={{ aspectRatio: "2.5/1" }}>
+              <Image src={current.full_design_url} alt="full design" fill className="object-cover" unoptimized />
+              <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center gap-1">
+                <Upload className="h-5 w-5 text-white" />
+                <span className="text-white text-sm font-medium">استبدال التصميم</span>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center gap-2 py-6">
+              {uploadingDesign ? (
+                <><div className="w-7 h-7 border-2 border-primary border-t-transparent rounded-full animate-spin" /><span className="text-sm text-muted-foreground">جاري الرفع...</span></>
+              ) : (
+                <><div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center"><ImageIcon className="h-5 w-5 text-primary" /></div><span className="text-sm font-medium">ارفع تصميم البانر</span><span className="text-xs text-muted-foreground">1200 × 480 بكسل — PNG, JPG, WEBP</span></>
+              )}
+            </div>
+          )}
+        </button>
+
+        {current.full_design_url && (
+          <button
+            onClick={() => update({ full_design_url: null, full_design_mode: false })}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-red-50 text-red-500 text-sm w-full justify-center"
+          >
+            <X className="h-4 w-4" /> حذف التصميم
+          </button>
+        )}
+
+        <input ref={designInputRef} type="file" accept="image/*" onChange={handleDesignUpload} className="hidden" />
       </div>
 
       {/* Featured Product on Banner */}

@@ -14,6 +14,8 @@ export interface BannerConfig {
   show_subtitle: boolean
   featured_product_id: string | null   // item id to feature on banner
   featured_product_label: string       // e.g. "جديد 🔥" or "عرض اليوم"
+  full_design_url: string | null       // full-frame custom design image
+  full_design_mode: boolean            // when true, show only the full design image
 }
 
 export const DEFAULT_BANNER: BannerConfig = {
@@ -27,6 +29,8 @@ export const DEFAULT_BANNER: BannerConfig = {
   show_subtitle: true,
   featured_product_id: null,
   featured_product_label: "جديد 🔥",
+  full_design_url: null,
+  full_design_mode: false,
 }
 
 const TABLE = "app_settings"

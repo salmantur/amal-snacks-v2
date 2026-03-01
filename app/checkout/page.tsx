@@ -60,7 +60,7 @@ function CheckoutContent() {
 
   // Calculate the longest preparation time across all cart items
   const maxMakingTime = items.reduce((max, item) => {
-    const t = (item as { makingTime?: number }).makingTime || 0
+    const t = item.makingTime || 0
     return Math.max(max, t)
   }, 0)
 
@@ -89,7 +89,7 @@ function CheckoutContent() {
       quantity: item.quantity,
       price: item.price,
       selectedIngredients: item.selectedIngredients,
-      makingTime: (item as { makingTime?: number }).makingTime || 0,
+      makingTime: item.makingTime || 0,
     }))
 
     // Build message FIRST — before any await

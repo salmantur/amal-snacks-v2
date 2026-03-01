@@ -238,8 +238,8 @@ export function AIChat() {
 
           {/* Messages */}
           <div className="flex-1 overflow-y-auto px-3 py-4 space-y-3">
-            {messages.map((msg, i) => (
-              <div key={i} className={`flex items-end gap-2 ${msg.role === "user" ? "flex-row-reverse" : "flex-row"}`}>
+            {messages.map((msg) => (
+              <div key={msg.id} className={`flex items-end gap-2 ${msg.role === "user" ? "flex-row-reverse" : "flex-row"}`}>
                 {msg.role === "assistant" && (
                   <div className="w-7 h-7 rounded-full bg-foreground flex items-center justify-center flex-shrink-0 mb-1">
                     <Bot className="h-3.5 w-3.5 text-background" />

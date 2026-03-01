@@ -19,17 +19,15 @@ function ConfirmationContent() {
   const wa = searchParams.get("wa") || ""
   const isPickup = type === "pickup"
 
-  // Open WhatsApp as soon as page loads — this is now the "user action" context
+  // Open WhatsApp once on load
   useEffect(() => {
     if (wa && !whatsappOpened) {
       setWhatsappOpened(true)
-      // Small delay so page renders first, then redirect to WhatsApp
-      setTimeout(() => {
-        window.location.href = wa
-      }, 300)
+      setTimeout(() => { window.open(wa, "_blank") }, 300)
     }
   }, [wa, whatsappOpened])
 
+  // Countdown → auto-return home
   useEffect(() => {
     if (countdown <= 0) {
       router.push("/")

@@ -519,7 +519,7 @@ export default function ItemsPage() {
                     <p className="text-xs text-gray-400 mt-0.5">إيقاف يخفي الصنف من القائمة</p>
                   </div>
                   <button
-                    onClick={() => setModalItem(p => p ? { ...p, inStock: p.inStock === false } : p)}
+                    onClick={() => setModalItem(p => p ? { ...p, inStock: !(p.inStock !== false) } : p)}
                     className={`w-14 h-8 rounded-full transition-colors relative flex-shrink-0 ml-3 ${modalItem.inStock !== false ? "bg-black" : "bg-gray-300"}`}
                   >
                     <span className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow transition-all duration-200 ${modalItem.inStock !== false ? "left-7" : "left-1"}`} />

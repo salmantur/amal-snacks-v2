@@ -152,9 +152,9 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
                   </button>
                   {/* Dots */}
                   <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1.5">
-                    {allImgs.map((_, i) => (
+                    {allImgs.map((imgUrl, i) => (
                       <button
-                        key={i}
+                        key={imgUrl || i}
                         onClick={() => setImgIndex(i)}
                         className="rounded-full transition-all"
                         style={{

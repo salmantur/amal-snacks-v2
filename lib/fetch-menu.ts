@@ -8,13 +8,13 @@ export async function fetchMenuItems(): Promise<{ data: MenuItem[]; error: strin
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     )
 
-    const { data, error } = await supabase.from("menu").select("*").eq("in_stock", true)
+    const { data, error } = await supabase.from("menu").select("*")
 
     if (error) {
       return { error: `${error.code}: ${error.message}`, data: [] }
     }
 
-    if (!data || data.length === 0) {
+    if (!data) {
       return { error: "No items found in menu table", data: [] }
     }
 

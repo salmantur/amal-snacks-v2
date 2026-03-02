@@ -39,6 +39,21 @@ const TRAY_ITEMS: { ar: string; en: string }[] = [
 
 const TRAY_REQUIRED = 7
 
+// Eid package سخانات options
+const EID_HEATER_ITEMS = [
+  "كروسون محشي بالبيض والمشروم والاجبان",
+  "حمسة حلومي بالزيتون",
+  "شعيرية / بلاليط",
+  "بلاتر فلافل",
+  "حمسة باذنجان",
+  "فلافل سبشيل",
+  "بيض تركي",
+  "شكشوكة",
+  "فاصوليا",
+  "فول",
+]
+
+
 export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
   const [quantity, setQuantity] = useState(1)
   const [selectedIngredients, setSelectedIngredients] = useState<string[]>([])
@@ -47,6 +62,7 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
   const { addItem } = useCart()
 
   const isTray = product?.category === "trays"
+  const isEidPackage = product?.category === "eid"
 
   useEffect(() => {
     if (open) {
@@ -78,15 +94,18 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
     const key = `${item.ar}||${item.en}`
     setTraySelections((prev) => {
       if (prev.includes(key)) return prev.filter((i) => i !== key)
-      if (prev.length >= TRAY_REQUIRED) return prev
+      const maxAllowed = isEidPackage ? eidRequired : TRAY_REQUIRED
+      if (prev.length >= maxAllowed) return prev
       return [...prev, key]
     })
   }
 
+  const eidRequired = product?.limit || 4
   const trayComplete = traySelections.length === TRAY_REQUIRED
+  const eidComplete = traySelections.length === eidRequired
 
   const handleAddToCart = () => {
-    const selections = isTray
+    const selections = (isTray || isEidPackage)
       ? traySelections
       : selectedIngredients.length > 0
       ? selectedIngredients
@@ -233,6 +252,63 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
             </div>
           )}
 
+
+          {/* ── EID PACKAGE SELECTION ── */}
+          {isEidPackage && (
+            <div className="pb-4">
+              {/* Included: بلاتر الاجبان */}
+              <div className="flex items-center justify-between mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded-2xl">
+                <span className="text-xs bg-yellow-400 text-yellow-900 font-bold px-2 py-0.5 rounded-full">مشمول 🎁</span>
+                <span className="font-semibold text-sm text-right">بلاتر الاجبان</span>
+              </div>
+
+              {/* Choose heaters */}
+              <div className="flex items-center justify-between mb-3">
+                <span className={cn(
+                  "text-sm font-medium px-3 py-1 rounded-full",
+                  eidComplete ? "bg-[#1e5631]/10 text-[#1e5631]" : "bg-amal-yellow/20 text-foreground"
+                )}>
+                  {traySelections.length} / {eidRequired}
+                </span>
+                <h3 className="font-bold text-[#1e293b]">اختر {eidRequired} سخانات</h3>
+              </div>
+
+              {/* Progress bar */}
+              <div className="w-full h-2 bg-gray-200 rounded-full mb-4">
+                <div
+                  className={cn("h-2 rounded-full transition-all duration-300",
+                    eidComplete ? "bg-[#1e5631]" : "bg-amal-yellow"
+                  )}
+                  style={{ width: `${(traySelections.length / eidRequired) * 100}%` }}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 gap-2">
+                {EID_HEATER_ITEMS.map((item) => {
+                  const isSelected = traySelections.includes(item)
+                  const isDisabled = !isSelected && traySelections.length >= eidRequired
+                  return (
+                    <button
+                      key={item}
+                      onClick={() => toggleTrayItem({ ar: item, en: item })}
+                      disabled={isDisabled}
+                      className={cn(
+                        "flex items-center justify-between p-3 rounded-xl border-2 transition-all text-sm text-right",
+                        isSelected
+                          ? "border-[#1e5631] bg-[#1e5631]/10 text-[#1e5631]"
+                          : "border-gray-200 bg-white text-[#1e293b]",
+                        isDisabled && "opacity-40 cursor-not-allowed"
+                      )}
+                    >
+                      <span className="flex-1">{item}</span>
+                      {isSelected && <Check className="h-4 w-4 flex-shrink-0 mr-1" />}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
           {/* ── OPTIONS / CUSTOMIZATION (any item with ingredients) ── */}
           {hasIngredients && (
             <div className="pb-4">
@@ -303,7 +379,7 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
           {/* Order button */}
           <button
             onClick={handleAddToCart}
-            disabled={(isTray && !trayComplete) || product.inStock === false}
+            disabled={((isTray && !trayComplete) || (isEidPackage && !eidComplete)) || product.inStock === false}
             className={cn(
               "w-full py-4 rounded-full text-lg font-medium transition-colors",
               product.inStock === false

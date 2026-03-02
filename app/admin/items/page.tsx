@@ -56,6 +56,8 @@ export default function ItemsPage() {
   const [galleryUploading, setGalleryUploading] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
   const [ingredientInput, setIngredientInput] = useState("")
+  const [pkgLabelInput, setPkgLabelInput] = useState("")
+  const [pkgQtyInput, setPkgQtyInput] = useState(1)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const supabase = createClient()
 
@@ -102,6 +104,8 @@ export default function ItemsPage() {
     setIsNew(isNewItem)
     setError(null)
     setIngredientInput("")
+    setPkgLabelInput("")
+    setPkgQtyInput(1)
     document.body.style.overflow = "hidden"
   }
 
@@ -637,61 +641,78 @@ export default function ItemsPage() {
               </div>
 
 
-              {/* Package Items — only for eid category */}
+              {/* ── PACKAGE MODE (باقات العيد only) ── */}
               {modalItem.category === "eid" && (
-                <div dir="rtl">
-                  <label className="block text-sm font-semibold mb-2">🎁 محتويات الباقة</label>
-                  <div className="space-y-2 mb-3">
-                    {(modalItem.packageItems || []).map((pkg, i) => (
-                      <div key={i} className="flex items-center gap-2 p-3 bg-[#f5f5f5] rounded-2xl">
-                        <button
-                          onClick={() => setModalItem(p => p ? { ...p, packageItems: (p.packageItems || []).filter((_, idx) => idx !== i) } : p)}
-                          className="w-7 h-7 rounded-full bg-red-100 text-red-500 flex items-center justify-center text-sm flex-shrink-0"
-                        >×</button>
-                        <div className="flex-1 text-right">
-                          <p className="font-semibold text-sm">{pkg.label}</p>
-                          <p className="text-xs text-gray-400">{pkg.included ? "مشمول" : `${pkg.quantity} قطعة`}</p>
-                        </div>
-                      </div>
-                    ))}
+                <div dir="rtl" className="border-2 border-yellow-300 bg-yellow-50 rounded-2xl p-4 space-y-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">🎁</span>
+                    <p className="font-black text-base text-[#1e293b]">إعداد الباقة</p>
+                    <span className="text-xs bg-yellow-400 text-yellow-900 font-bold px-2 py-0.5 rounded-full mr-auto">باقة عيد</span>
                   </div>
-                  <div className="space-y-2 p-3 bg-[#f5f5f5] rounded-2xl">
-                    <p className="text-xs font-semibold text-gray-500">إضافة عنصر جديد</p>
+
+                  {/* Hint */}
+                  <div className="bg-white rounded-xl p-3 text-xs text-gray-500 space-y-1">
+                    <p>• <strong>حد الاختيار</strong> أعلاه = عدد السخانات (4 أو 6)</p>
+                    <p>• أضف بلاتر الاجبان كـ "مشمول" أدناه</p>
+                  </div>
+
+                  {/* Current package items */}
+                  {(modalItem.packageItems || []).length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-xs font-semibold text-gray-500">محتويات الباقة الحالية:</p>
+                      {(modalItem.packageItems || []).map((pkg, i) => (
+                        <div key={i} className="flex items-center gap-2 p-3 bg-white rounded-xl border border-gray-100">
+                          <button
+                            onClick={() => setModalItem(p => p ? { ...p, packageItems: (p.packageItems || []).filter((_, idx) => idx !== i) } : p)}
+                            className="w-6 h-6 rounded-full bg-red-100 text-red-500 flex items-center justify-center text-sm flex-shrink-0 active:scale-95"
+                          >×</button>
+                          <div className="flex-1 text-right">
+                            <p className="font-semibold text-sm">{pkg.label}</p>
+                          </div>
+                          <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${pkg.included ? "bg-yellow-100 text-yellow-700" : "bg-gray-100 text-gray-600"}`}>
+                            {pkg.included ? "مشمول" : `${pkg.quantity} قطعة`}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Add item */}
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold text-gray-500">إضافة عنصر:</p>
                     <input
-                      id="pkg-label"
-                      placeholder="مثال: سخانات، بلاتر لاجبان..."
+                      value={pkgLabelInput}
+                      onChange={e => setPkgLabelInput(e.target.value)}
+                      placeholder="مثال: بلاتر الاجبان"
                       dir="rtl"
-                      className="w-full px-3 py-2.5 rounded-xl bg-white text-sm focus:outline-none text-right"
+                      className="w-full px-3 py-2.5 rounded-xl bg-white border border-gray-200 text-sm focus:outline-none text-right"
                     />
                     <div className="flex gap-2">
                       <input
-                        id="pkg-qty"
                         type="number"
                         min={1}
-                        placeholder="عدد"
-                        className="flex-1 px-3 py-2.5 rounded-xl bg-white text-sm focus:outline-none text-center"
+                        value={pkgQtyInput}
+                        onChange={e => setPkgQtyInput(Number(e.target.value))}
+                        className="w-20 px-3 py-2.5 rounded-xl bg-white border border-gray-200 text-sm focus:outline-none text-center"
                       />
                       <button
                         onClick={() => {
-                          const label = (document.getElementById("pkg-label") as HTMLInputElement)?.value.trim()
-                          const qty = Number((document.getElementById("pkg-qty") as HTMLInputElement)?.value) || 1
-                          if (!label) return
-                          setModalItem(p => p ? { ...p, packageItems: [...(p.packageItems || []), { label, quantity: qty }] } : p)
-                          ;(document.getElementById("pkg-label") as HTMLInputElement).value = ""
-                          ;(document.getElementById("pkg-qty") as HTMLInputElement).value = ""
+                          if (!pkgLabelInput.trim()) return
+                          setModalItem(p => p ? { ...p, packageItems: [...(p.packageItems || []), { label: pkgLabelInput.trim(), quantity: pkgQtyInput }] } : p)
+                          setPkgLabelInput("")
+                          setPkgQtyInput(1)
                         }}
-                        className="px-4 py-2.5 bg-black text-white rounded-xl text-sm font-medium active:scale-95"
-                      >إضافة</button>
+                        className="flex-1 py-2.5 bg-[#1e293b] text-white rounded-xl text-sm font-medium active:scale-95"
+                      >+ إضافة بعدد</button>
                     </div>
                     <button
                       onClick={() => {
-                        const label = (document.getElementById("pkg-label") as HTMLInputElement)?.value.trim()
-                        if (!label) return
-                        setModalItem(p => p ? { ...p, packageItems: [...(p.packageItems || []), { label, quantity: 1, included: true }] } : p)
-                        ;(document.getElementById("pkg-label") as HTMLInputElement).value = ""
+                        if (!pkgLabelInput.trim()) return
+                        setModalItem(p => p ? { ...p, packageItems: [...(p.packageItems || []), { label: pkgLabelInput.trim(), quantity: 1, included: true }] } : p)
+                        setPkgLabelInput("")
                       }}
-                      className="w-full py-2 border-2 border-dashed border-gray-300 rounded-xl text-sm text-gray-500 active:scale-95"
-                    >+ إضافة كـ "مشمول"</button>
+                      className="w-full py-2.5 bg-yellow-400 text-yellow-900 rounded-xl text-sm font-bold active:scale-95"
+                    >⭐ إضافة كـ "مشمول"</button>
                   </div>
                 </div>
               )}

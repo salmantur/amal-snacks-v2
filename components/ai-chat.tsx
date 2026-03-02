@@ -181,7 +181,7 @@ export function AIChat() {
           content: m.content // Keep content for both 'text' and 'items' types
         }))
 
-      const response = await fetch("/api/chat", {
+      const response = await fetch("/api/menu/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

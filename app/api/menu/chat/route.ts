@@ -12,13 +12,15 @@ export async function POST(req: Request) {
     // Build conversation history for Gemini
     const geminiMessages = []
     for (const m of messages) {
-      const textContent = typeof m.content === 'string'
-        ? m.content
-        : Array.isArray(m.content)
-          ? m.content.map((c: { text?: string }) => c.text || "").join(" ")
-          : String(m.content)
+      // Ensure content is a flat string (handles frontend array formats)
+      const textContent = typeof m.content === 'string' 
+        ? m.content 
+        : Array.isArray(m.content) 
+          ? m.content.map((c: any) => c.text || "").join(" ") 
+          : String(m.content);
 
-      if (!textContent.trim()) continue
+      // Skip completely empty messages to avoid triggering string pattern errors
+      if (!textContent.trim()) continue;
 
       geminiMessages.push({
         role: m.role === "assistant" ? "model" : "user",
@@ -26,21 +28,30 @@ export async function POST(req: Request) {
       })
     }
 
+    // Gemini requires the conversation to start with a user message
     if (geminiMessages.length === 0 || geminiMessages[geminiMessages.length - 1].role !== "user") {
       return NextResponse.json({ content: [{ type: "text", text: "أهلاً، كيف أقدر أساعدك؟" }] })
     }
 
-    const payload: Record<string, unknown> = {
+    // Build the payload dynamically
+    const payload: any = {
       contents: geminiMessages,
-      generationConfig: { maxOutputTokens: 500, temperature: 0.7 },
+      generationConfig: {
+        maxOutputTokens: 500,
+        temperature: 0.7,
+      },
+    };
+
+    // Only add systemInstruction if a valid string is provided
+    if (system && typeof system === 'string' && system.trim() !== "") {
+      payload.systemInstruction = { 
+        parts: [{ text: system }] 
+      };
     }
 
-    if (system && typeof system === "string" && system.trim()) {
-      payload.systemInstruction = { parts: [{ text: system }] }
-    }
-
+    // UPDATED: Using gemini-1.5-flash (The most stable and supported model)
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -49,9 +60,12 @@ export async function POST(req: Request) {
     )
 
     const raw = await response.text()
+
     let data
-    try { data = JSON.parse(raw) } catch {
-      console.error("Gemini non-JSON:", raw)
+    try {
+      data = JSON.parse(raw)
+    } catch {
+      console.error("Gemini non-JSON response:", raw)
       return NextResponse.json({ error: "Invalid response from AI" }, { status: 500 })
     }
 
@@ -62,7 +76,7 @@ export async function POST(req: Request) {
 
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text
     if (!text) {
-      console.error("Gemini empty:", JSON.stringify(data))
+      console.error("Gemini empty response:", JSON.stringify(data))
       return NextResponse.json({ error: "Empty response from AI" }, { status: 500 })
     }
 

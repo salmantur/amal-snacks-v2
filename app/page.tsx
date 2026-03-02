@@ -2,7 +2,6 @@ import { Header } from "@/components/header"
 import { HeroBanner } from "@/components/hero-banner"
 import { MenuGrid } from "@/components/menu-grid"
 import { CartBar } from "@/components/cart-bar"
-import { AIChat } from "@/components/ai-chat"
 import { BestSellers } from "@/components/best-sellers"
 
 export default function HomePage() {
@@ -13,7 +12,6 @@ export default function HomePage() {
       <BestSellers />
       <MenuGrid />
       <CartBar />
-      <AIChat />
     </main>
   )
 }

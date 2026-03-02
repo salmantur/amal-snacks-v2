@@ -24,12 +24,13 @@ interface MenuItem {
   makingTime: number
   isFeatured: boolean
   images: string[]
+  packageItems: { label: string; quantity: number; included?: boolean }[]
 }
 
 const EMPTY_ITEM: Omit<MenuItem, "id"> = {
   name: "", nameEn: "", description: "",
   price: 0, image: "", category: "",
-  ingredients: "", limit: 0, inStock: true, makingTime: 0, isFeatured: false, images: [],
+  ingredients: "", limit: 0, inStock: true, makingTime: 0, isFeatured: false, images: [], packageItems: [],
 }
 
 const ALL_CATEGORIES = categories.flatMap((cat) =>
@@ -87,6 +88,7 @@ export default function ItemsPage() {
       makingTime: Number(raw.making_time) || 0,
       isFeatured: raw.is_featured === true,
       images: Array.isArray(raw.images) ? raw.images : [],
+      packageItems: Array.isArray(raw.package_items) ? raw.package_items : [],
     }
   }
 
@@ -161,6 +163,7 @@ export default function ItemsPage() {
       making_time: modalItem.makingTime || 0,
       is_featured: modalItem.isFeatured === true,
       images: modalItem.images || [],
+      package_items: modalItem.packageItems || [],
     }
     if (isNew) {
       const { error } = await supabase.from("menu").insert(payload)
@@ -632,6 +635,66 @@ export default function ItemsPage() {
                 </div>
                 <p className="text-xs text-gray-400 mt-1.5 text-right" dir="rtl">اكتب الخيار واضغط Enter أو +</p>
               </div>
+
+
+              {/* Package Items — only for eid_packages category */}
+              {modalItem.category === "eid_packages" && (
+                <div dir="rtl">
+                  <label className="block text-sm font-semibold mb-2">🎁 محتويات الباقة</label>
+                  <div className="space-y-2 mb-3">
+                    {(modalItem.packageItems || []).map((pkg, i) => (
+                      <div key={i} className="flex items-center gap-2 p-3 bg-[#f5f5f5] rounded-2xl">
+                        <button
+                          onClick={() => setModalItem(p => p ? { ...p, packageItems: (p.packageItems || []).filter((_, idx) => idx !== i) } : p)}
+                          className="w-7 h-7 rounded-full bg-red-100 text-red-500 flex items-center justify-center text-sm flex-shrink-0"
+                        >×</button>
+                        <div className="flex-1 text-right">
+                          <p className="font-semibold text-sm">{pkg.label}</p>
+                          <p className="text-xs text-gray-400">{pkg.included ? "مشمول" : `${pkg.quantity} قطعة`}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="space-y-2 p-3 bg-[#f5f5f5] rounded-2xl">
+                    <p className="text-xs font-semibold text-gray-500">إضافة عنصر جديد</p>
+                    <input
+                      id="pkg-label"
+                      placeholder="مثال: سخانات، بلاتر لاجبان..."
+                      dir="rtl"
+                      className="w-full px-3 py-2.5 rounded-xl bg-white text-sm focus:outline-none text-right"
+                    />
+                    <div className="flex gap-2">
+                      <input
+                        id="pkg-qty"
+                        type="number"
+                        min={1}
+                        placeholder="عدد"
+                        className="flex-1 px-3 py-2.5 rounded-xl bg-white text-sm focus:outline-none text-center"
+                      />
+                      <button
+                        onClick={() => {
+                          const label = (document.getElementById("pkg-label") as HTMLInputElement)?.value.trim()
+                          const qty = Number((document.getElementById("pkg-qty") as HTMLInputElement)?.value) || 1
+                          if (!label) return
+                          setModalItem(p => p ? { ...p, packageItems: [...(p.packageItems || []), { label, quantity: qty }] } : p)
+                          ;(document.getElementById("pkg-label") as HTMLInputElement).value = ""
+                          ;(document.getElementById("pkg-qty") as HTMLInputElement).value = ""
+                        }}
+                        className="px-4 py-2.5 bg-black text-white rounded-xl text-sm font-medium active:scale-95"
+                      >إضافة</button>
+                    </div>
+                    <button
+                      onClick={() => {
+                        const label = (document.getElementById("pkg-label") as HTMLInputElement)?.value.trim()
+                        if (!label) return
+                        setModalItem(p => p ? { ...p, packageItems: [...(p.packageItems || []), { label, quantity: 1, included: true }] } : p)
+                        ;(document.getElementById("pkg-label") as HTMLInputElement).value = ""
+                      }}
+                      className="w-full py-2 border-2 border-dashed border-gray-300 rounded-xl text-sm text-gray-500 active:scale-95"
+                    >+ إضافة كـ "مشمول"</button>
+                  </div>
+                </div>
+              )}
 
               <div className="h-8" />
             </div>

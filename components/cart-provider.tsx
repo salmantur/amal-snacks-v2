@@ -24,6 +24,7 @@ export interface MenuItem {
   isFeatured?: boolean  // best seller
   images?: string[]      // additional gallery images
   inStock?: boolean
+  packageItems?: { label: string; quantity: number; included?: boolean }[]
 }
 
 export interface CartItem extends MenuItem {

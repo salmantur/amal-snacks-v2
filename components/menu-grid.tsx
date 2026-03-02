@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react"
 import dynamic from "next/dynamic"
 import { ProductCard } from "@/components/product-card"
+import { PackageCard } from "@/components/package-card"
 import { CategoryFilter } from "@/components/category-filter"
 import { SearchBar } from "@/components/search-bar"
 import { useCategories } from "@/hooks/use-categories"
@@ -135,7 +136,7 @@ export function MenuGrid() {
                   <h2 className="text-xl md:text-2xl font-bold text-[#1e293b] text-right mb-4 md:mb-8">{section.label}</h2>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8">
                     {sectionItems.map((item, idx) => (
-                      <ProductCard key={item.id} item={item} onSelect={setSelectedProduct} priority={idx < 4} />
+                      {item.category === "eid_packages" ? <PackageCard key={item.id} item={item} onSelect={setSelectedProduct} priority={idx < 4} /> : <ProductCard key={item.id} item={item} onSelect={setSelectedProduct} priority={idx < 4} />}
                     ))}
                   </div>
                 </div>
@@ -146,7 +147,7 @@ export function MenuGrid() {
           // Render as flat grid for other categories
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8">
             {filteredItems.map((item, idx) => (
-              <ProductCard key={item.id} item={item} onSelect={setSelectedProduct} priority={idx < 4} />
+              {item.category === "eid_packages" ? <PackageCard key={item.id} item={item} onSelect={setSelectedProduct} priority={idx < 4} /> : <ProductCard key={item.id} item={item} onSelect={setSelectedProduct} priority={idx < 4} />}
             ))}
           </div>
         )}

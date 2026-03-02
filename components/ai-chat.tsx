@@ -24,9 +24,6 @@ interface ItemsMessage {
 }
 type Message = TextMessage | ItemsMessage
 
-// ─── Fetcher ──────────────────────────────────────────────────────────────────
-
-
 // ─── System prompt (injected with live menu) ──────────────────────────────────
 
 function buildSystemPrompt(menuItems: MenuItem[]): string {
@@ -176,9 +173,13 @@ export function AIChat() {
         ? `\n\nسلة العميل: ${cartItems.map(i => `${i.name} x${i.quantity}`).join("، ")}`
         : ""
 
+      // --- FIXED MESSAGE MAP ---
       const apiMessages = [...messages, userMsg]
-        .filter(m => m.type === "text")
-        .map(m => ({ role: m.role, content: m.content }))
+        .filter(m => m.id !== "init") // Ensure history starts with user
+        .map(m => ({ 
+          role: m.role, 
+          content: m.content // Keep content for both 'text' and 'items' types
+        }))
 
       const response = await fetch("/api/chat", {
         method: "POST",

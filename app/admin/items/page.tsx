@@ -637,8 +637,8 @@ export default function ItemsPage() {
               </div>
 
 
-              {/* Package Items — only for eid_packages category */}
-              {modalItem.category === "eid_packages" && (
+              {/* Package Items — only for eid category */}
+              {modalItem.category === "eid" && (
                 <div dir="rtl">
                   <label className="block text-sm font-semibold mb-2">🎁 محتويات الباقة</label>
                   <div className="space-y-2 mb-3">

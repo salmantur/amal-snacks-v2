@@ -1,6 +1,6 @@
 // Categories matching your Supabase database values
 export const categories = [
-  { id: "eid_packages", label: "باقات العيد 🎁", dbCategories: ["eid_packages"] },
+  { id: "eid", label: "باقات العيد 🎁", dbCategories: ["eid"] },
   { 
     id: "platters_breakfast", 
     label: "بلاتر وسخانات الفطور", 

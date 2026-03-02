@@ -12,7 +12,7 @@ export async function POST(req: Request) {
     // Build conversation history for Gemini
     const geminiMessages = []
     for (const m of messages) {
-      // 1. Ensure content is a flat string (handles frontend array formats)
+      // Ensure content is a flat string (handles frontend array formats)
       const textContent = typeof m.content === 'string' 
         ? m.content 
         : Array.isArray(m.content) 
@@ -32,7 +32,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ content: [{ type: "text", text: "أهلاً، كيف أقدر أساعدك؟" }] })
     }
 
-    // 2. Build the payload dynamically
+    // Build the payload dynamically
     const payload: any = {
       contents: geminiMessages,
       generationConfig: {
@@ -41,15 +41,16 @@ export async function POST(req: Request) {
       },
     };
 
-    // 3. Only add systemInstruction (camelCase) if a valid string is provided
+    // Only add systemInstruction if a valid string is provided
     if (system && typeof system === 'string' && system.trim() !== "") {
       payload.systemInstruction = { 
         parts: [{ text: system }] 
       };
     }
 
+    // UPDATED: Using gemini-flash to point to the active model
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash:generateContent?key=${apiKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },

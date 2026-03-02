@@ -10,18 +10,42 @@ export async function POST(req: Request) {
     }
 
     // Build conversation history for Gemini
-    // Gemini requires alternating user/model turns, starting with user
     const geminiMessages = []
     for (const m of messages) {
+      // 1. Ensure content is a flat string (handles frontend array formats)
+      const textContent = typeof m.content === 'string' 
+        ? m.content 
+        : Array.isArray(m.content) 
+          ? m.content.map((c: any) => c.text || "").join(" ") 
+          : String(m.content);
+
+      // Skip completely empty messages to avoid triggering string pattern errors
+      if (!textContent.trim()) continue;
+
       geminiMessages.push({
         role: m.role === "assistant" ? "model" : "user",
-        parts: [{ text: m.content }],
+        parts: [{ text: textContent }],
       })
     }
 
-    // Gemini needs at least one user message
     if (geminiMessages.length === 0 || geminiMessages[geminiMessages.length - 1].role !== "user") {
       return NextResponse.json({ content: [{ type: "text", text: "أهلاً، كيف أقدر أساعدك؟" }] })
+    }
+
+    // 2. Build the payload dynamically
+    const payload: any = {
+      contents: geminiMessages,
+      generationConfig: {
+        maxOutputTokens: 500,
+        temperature: 0.7,
+      },
+    };
+
+    // 3. Only add systemInstruction (camelCase) if a valid string is provided
+    if (system && typeof system === 'string' && system.trim() !== "") {
+      payload.systemInstruction = { 
+        parts: [{ text: system }] 
+      };
     }
 
     const response = await fetch(
@@ -29,14 +53,7 @@ export async function POST(req: Request) {
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          system_instruction: { parts: [{ text: system }] },
-          contents: geminiMessages,
-          generationConfig: {
-            maxOutputTokens: 500,
-            temperature: 0.7,
-          },
-        }),
+        body: JSON.stringify(payload),
       }
     )
 

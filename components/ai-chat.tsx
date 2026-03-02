@@ -200,8 +200,9 @@ export function AIChat() {
       } else {
         setMessages(prev => [...prev, { id: `a-${Date.now()}`, role: "assistant", type: "text", content: replyText }])
       }
-    } catch {
-      setMessages(prev => [...prev, { id: `err-${Date.now()}`, role: "assistant", type: "text", content: "عذراً، حدث خطأ في الاتصال." }])
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "خطأ غير معروف"
+      setMessages(prev => [...prev, { id: `err-${Date.now()}`, role: "assistant", type: "text", content: `عذراً، حدث خطأ: ${msg}` }])
     }
     setLoading(false)
   }

@@ -6,6 +6,7 @@ export async function POST(req: Request) {
 
     const apiKey = process.env.ANTHROPIC_API_KEY
     if (!apiKey) {
+      console.error("ANTHROPIC_API_KEY is not set")
       return NextResponse.json({ error: "API key not configured" }, { status: 500 })
     }
 
@@ -27,11 +28,16 @@ export async function POST(req: Request) {
     const data = await response.json()
 
     if (!response.ok) {
-      return NextResponse.json({ error: data.error?.message || "API error" }, { status: response.status })
+      console.error("Anthropic API error:", JSON.stringify(data))
+      return NextResponse.json(
+        { error: data.error?.message || "API error", details: data },
+        { status: response.status }
+      )
     }
 
     return NextResponse.json(data)
   } catch (err) {
+    console.error("Chat route error:", err)
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Unknown error" },
       { status: 500 }

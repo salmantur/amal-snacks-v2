@@ -48,9 +48,9 @@ export async function POST(req: Request) {
       };
     }
 
-    // UPDATED: Using gemini-flash to point to the active model
+    // UPDATED: Using gemini-1.5-flash which is fully supported in v1beta
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },

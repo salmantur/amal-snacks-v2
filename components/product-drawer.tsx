@@ -384,7 +384,7 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
               "w-full py-4 rounded-full text-lg font-medium transition-colors",
               product.inStock === false
                 ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                : isTray && !trayComplete
+                : (isTray && !trayComplete) || (isEidPackage && !eidComplete)
                 ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                 : "bg-[#1e5631] text-white hover:bg-[#174425]"
             )}
@@ -393,6 +393,8 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
               ? "نفذت الكمية"
               : isTray && !trayComplete
               ? `اختر ${TRAY_REQUIRED - traySelections.length} أصناف أخرى`
+              : isEidPackage && !eidComplete
+              ? `اختر ${eidRequired - traySelections.length} سخانات`
               : "اطلب الآن"}
           </button>
         </div>

@@ -4,7 +4,6 @@ import React, { memo, useState } from "react"
 import Image from "next/image"
 import { Star, Search, Plus, Minus, ShoppingBag } from "lucide-react"
 import { type MenuItem } from "@/components/cart-provider"
-import { useCart } from "@/components/cart-provider"
 
 interface PackageCardProps {
   item: MenuItem
@@ -15,7 +14,6 @@ interface PackageCardProps {
 export const PackageCard = memo(function PackageCard({ item, onSelect, priority = false }: PackageCardProps) {
   const [imgError, setImgError] = useState(false)
   const [qty, setQty] = useState(1)
-  const { addItem } = useCart()
   const isOutOfStock = item.inStock === false
   const required = item.limit || 4
 

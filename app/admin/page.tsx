@@ -13,7 +13,6 @@ import { StockManager } from "@/components/stock-manager"
 import { CategoryManager } from "@/components/category-manager"
 import { SalesDashboard } from "@/components/sales-dashboard"
 import { ThemeEditor } from "@/components/theme-editor"
-import { DeliveryAreasManager } from "@/components/delivery-areas-manager"
 import { cn } from "@/lib/utils"
 
 export default function AdminPage() {
@@ -259,7 +258,7 @@ export default function AdminPage() {
       )}
       {activeTab === "delivery" && (
         <div className="p-4 max-w-lg mx-auto">
-          <DeliveryAreasManager />
+          <p className="text-center text-gray-400 py-10">جاري التحميل...</p>
         </div>
       )}
       {activeTab === "orders" && (

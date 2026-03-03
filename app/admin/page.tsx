@@ -13,6 +13,7 @@ import { StockManager } from "@/components/stock-manager"
 import { CategoryManager } from "@/components/category-manager"
 import { SalesDashboard } from "@/components/sales-dashboard"
 import { ThemeEditor } from "@/components/theme-editor"
+import { DeliveryAreasManager } from "@/components/delivery-areas-manager"
 import { cn } from "@/lib/utils"
 
 export default function AdminPage() {
@@ -244,6 +245,12 @@ export default function AdminPage() {
           <CategoryManager />
         </div>
       )}
+      {activeTab === "delivery" && (
+        <div className="p-4 max-w-lg mx-auto">
+          <DeliveryAreasManager />
+        </div>
+      )}
+
       {activeTab === "colors" && (
         <div className="p-4 max-w-lg mx-auto">
           <h2 className="text-lg font-bold mb-4">🎨 تخصيص المظهر</h2>
@@ -256,13 +263,7 @@ export default function AdminPage() {
           <SalesDashboard />
         </div>
       )}
-      {activeTab === "delivery" && (
-        <div className="p-4 max-w-lg mx-auto">
-          <p className="text-center text-gray-400 py-10">جاري التحميل...</p>
-        </div>
-      )}
       {activeTab === "orders" && (
-        <div>
         <div className="p-4">
           {loading ? (
             <div className="text-center py-12">
@@ -285,7 +286,6 @@ export default function AdminPage() {
               ))}
             </div>
           )}
-        </div>
         </div>
       )}
     </main>

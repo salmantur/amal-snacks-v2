@@ -110,12 +110,11 @@ export function getAvailableTimeSlots(minMinutes = 0): { date: string; slots: st
 
 // Delivery areas with prices
 export const deliveryAreas = [
-  { id: "khobar", name: "الخبر", price: 50 },
-  { id: "dammam", name: "الدمام", price: 50 },
-  { id: "dhahran", name: "الظهران", price: 50 },
-  { id: "qatif", name: "القطيف", price: 60 },
-  { id: "saihat", name: "سيهات", price: 55 },
-  { id: "jubail", name: "الجبيل", price: 80 },
+  { id: "west-dammam",  name: "غرب الدمام",     price: 30 },
+  { id: "east-dammam",  name: "شرق الدمام",     price: 35 },
+  { id: "dhahran-raka", name: "الظهران الراكة", price: 40 },
+  { id: "khobar",       name: "الخبر",           price: 50 },
+  { id: "aziziyah",     name: "العزيزية",        price: 60 },
 ]
 
 // WhatsApp message generator

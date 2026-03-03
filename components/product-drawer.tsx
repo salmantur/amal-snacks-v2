@@ -285,7 +285,8 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
 
               <div className="grid grid-cols-1 gap-2">
                 {EID_HEATER_ITEMS.map((item) => {
-                  const isSelected = traySelections.includes(item)
+                  const key = `${item}||${item}`
+                  const isSelected = traySelections.includes(key)
                   const isDisabled = !isSelected && traySelections.length >= eidRequired
                   return (
                     <button

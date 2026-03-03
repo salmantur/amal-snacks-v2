@@ -1,12 +1,13 @@
 "use client"
 
-import { ShoppingBag, X, Sparkles, Bell, ChevronLeft } from "lucide-react"
+import { ShoppingBag, X, Sparkles, Menu, ChevronLeft, ChevronRight } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import { useCart } from "@/components/cart-provider"
 import { OrderTypeModal } from "@/components/order-type-modal"
 import { useRouter } from "next/navigation"
 import { useMenu } from "@/hooks/use-menu"
+import { useCategories } from "@/hooks/use-categories"
 import type { MenuItem } from "@/components/cart-provider"
 
 
@@ -48,6 +49,7 @@ function NewProductsTicker({ items }: { items: MenuItem[] }) {
 // ─── Main Header ──────────────────────────────────────────────────────────────
 export function Header() {
   const [cartOpen, setCartOpen] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
   const [orderModalOpen, setOrderModalOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [cartBounce, setCartBounce] = useState(false)
@@ -56,6 +58,7 @@ export function Header() {
   const { items, totalItems, totalPrice, removeItem, updateQuantity } = useCart()
 
   const { menuItems } = useMenu()
+  const { categories } = useCategories()
 
   // Scroll shadow
   useEffect(() => {
@@ -95,9 +98,12 @@ export function Header() {
       >
         <div className="relative flex items-center justify-between px-4 py-3">
 
-          {/* Left: Bell icon */}
-          <button className="w-10 h-10 flex items-center justify-center active:opacity-60 transition-opacity">
-            <Bell className="h-5 w-5 text-foreground" />
+          {/* Left: Hamburger menu */}
+          <button
+            onClick={() => setMenuOpen(true)}
+            className="w-10 h-10 flex items-center justify-center active:opacity-60 transition-opacity"
+          >
+            <Menu className="h-5 w-5 text-foreground" />
           </button>
 
           {/* Center: Brand name */}
@@ -238,6 +244,38 @@ export function Header() {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Categories Drawer */}
+      {menuOpen && (
+        <div className="fixed inset-0 z-[100]" dir="rtl">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setMenuOpen(false)} />
+          <div className="absolute top-0 right-0 bottom-0 w-72 bg-white flex flex-col shadow-2xl" style={{ borderRadius: "0 0 0 24px" }}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+              <button onClick={() => setMenuOpen(false)} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center active:scale-95">
+                <ChevronRight className="h-4 w-4" />
+              </button>
+              <p className="font-bold text-base">القائمة</p>
+            </div>
+            <div className="overflow-y-auto flex-1 py-3">
+              {categories.filter(cat => cat.isVisible).map(cat => (
+                <button
+                  key={cat.id}
+                  onClick={() => {
+                    setMenuOpen(false)
+                    setTimeout(() => {
+                      window.dispatchEvent(new CustomEvent("selectCategory", { detail: cat.id }))
+                    }, 100)
+                  }}
+                  className="w-full flex items-center justify-between px-5 py-3.5 active:bg-gray-50 transition-colors border-b border-gray-50 last:border-0"
+                >
+                  <ChevronLeft className="h-4 w-4 text-gray-300 flex-shrink-0" />
+                  <span className="font-medium text-[15px] text-gray-800">{cat.label}</span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       )}

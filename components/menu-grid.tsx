@@ -41,6 +41,17 @@ export function MenuGrid() {
     }
   }, [categories.length])
 
+  // Listen for category selection from hamburger drawer
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const catId = (e as CustomEvent).detail
+      setSelectedCategory(catId)
+      window.scrollTo({ top: 0, behavior: "smooth" })
+    }
+    window.addEventListener("selectCategory", handler)
+    return () => window.removeEventListener("selectCategory", handler)
+  }, [])
+
   // Get current category config
   const categoryConfig = useMemo(
     () => categories.find(c => c.id === selectedCategory),

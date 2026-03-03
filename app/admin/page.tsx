@@ -190,8 +190,6 @@ export default function AdminPage() {
 
         {/* Row 3: order filter tabs — only when on orders tab */}
         {activeTab === "orders" && (
-        <>
-        <WhatsAppOrderImport onOrderCreated={() => fetchRecentOrders().then(setOrders)} />
           <div className="flex gap-2 px-4 pb-3 overflow-x-auto scrollbar-hide border-t border-gray-100 pt-2">
             {([
               { value: "all", label: "الكل" },
@@ -226,7 +224,6 @@ export default function AdminPage() {
             </div>
           </div>
         </div>
-        </>
       )}
 
       {/* Tab content */}
@@ -261,8 +258,10 @@ export default function AdminPage() {
         </div>
       )}
       {activeTab === "orders" && (
-        <>
-        <WhatsAppOrderImport onOrderCreated={() => fetchRecentOrders().then(setOrders)} />
+        <div>
+          <div className="px-4 pt-4">
+            <WhatsAppOrderImport onOrderCreated={() => fetchRecentOrders().then(setOrders)} />
+          </div>
         <div className="p-4">
           {loading ? (
             <div className="text-center py-12">
@@ -285,6 +284,7 @@ export default function AdminPage() {
               ))}
             </div>
           )}
+        </div>
         </div>
       )}
     </main>

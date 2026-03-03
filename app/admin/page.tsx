@@ -174,6 +174,7 @@ export default function AdminPage() {
             { id: "categories", label: "🗂 التصنيفات" },
             { id: "sales", label: "📊 المبيعات" },
             { id: "colors", label: "🎨 المظهر" },
+              { id: "delivery", label: "🚚 التوصيل" },
           ] as const).map(tab => (
             <button
               key={tab.id}

@@ -13,6 +13,7 @@ import { StockManager } from "@/components/stock-manager"
 import { CategoryManager } from "@/components/category-manager"
 import { SalesDashboard } from "@/components/sales-dashboard"
 import { ThemeEditor } from "@/components/theme-editor"
+import { DeliveryAreasManager } from "@/components/delivery-areas-manager"
 import { cn } from "@/lib/utils"
 
 export default function AdminPage() {
@@ -22,7 +23,7 @@ export default function AdminPage() {
   const [soundEnabled, setSoundEnabled] = useState(true)
 
   const [filter, setFilter] = useState<Order["status"] | "all">("all")
-  const [activeTab, setActiveTab] = useState<"orders" | "banner" | "stock" | "categories" | "sales" | "colors">("orders")
+  const [activeTab, setActiveTab] = useState<"orders" | "banner" | "stock" | "categories" | "sales" | "colors" | "delivery">("orders")
   const [newOrderAlert, setNewOrderAlert] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const orderCountRef = useRef(orders.length)
@@ -254,6 +255,11 @@ export default function AdminPage() {
         <div className="p-4 max-w-lg mx-auto">
           <h2 className="text-lg font-bold mb-4">تقرير المبيعات</h2>
           <SalesDashboard />
+        </div>
+      )}
+      {activeTab === "delivery" && (
+        <div className="p-4 max-w-lg mx-auto">
+          <DeliveryAreasManager />
         </div>
       )}
       {activeTab === "orders" && (

@@ -8,7 +8,8 @@ import { ArrowRight, Minus, Plus, Trash2, MapPin, User, Phone, FileText, Chevron
 import { useCart } from "@/components/cart-provider"
 import type { CartItem } from "@/components/cart-provider"
 import { TimePicker } from "@/components/time-picker"
-import { generateWhatsAppMessage, generatePickupWhatsAppMessage, WHATSAPP_NUMBER, deliveryAreas } from "@/lib/data"
+import { generateWhatsAppMessage, generatePickupWhatsAppMessage, WHATSAPP_NUMBER } from "@/lib/data"
+import { useDeliveryAreas } from "@/hooks/use-delivery-areas"
 import { saveOrder } from "@/lib/orders"
 import { Button } from "@/components/ui/button"
 

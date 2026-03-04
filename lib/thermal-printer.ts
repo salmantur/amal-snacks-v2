@@ -141,7 +141,7 @@ function renderCanvas(lines: Line[]): HTMLCanvasElement {
   totalH += PAD
 
   canvas.width  = PAPER_WIDTH
-  canvas.height = totalH
+  canvas.height = Math.ceil(totalH / 8) * 8  // must be multiple of 8 for TM-M30II
 
   ctx.fillStyle = "#ffffff"
   ctx.fillRect(0, 0, canvas.width, canvas.height)
@@ -172,7 +172,7 @@ function canvasToMono(canvas: HTMLCanvasElement): { w: number; h: number; b64: s
   const ctx  = canvas.getContext("2d")!
   const { data, width: w, height: h } = ctx.getImageData(0, 0, canvas.width, canvas.height)
 
-  const rowBytes = Math.ceil(w / 8)
+  const rowBytes = Math.ceil(w / 8)  // must be multiple of 8 bytes per row
   const mono     = new Uint8Array(rowBytes * h)
 
   for (let y = 0; y < h; y++) {
@@ -204,7 +204,7 @@ async function buildXml(order: Order): Promise<string> {
 <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
   <s:Body>
     <epos-print xmlns="http://www.epson-pos.com/schemas/2011/03/epos-print">
-      <image width="${w}" height="${h}" color="color_1" mode="mono">${b64}</image>
+      <image width="${w}" height="${h}" color="color_1" mode="mono" hri="false">${b64}</image>
       <feed line="5"/>
       <cut type="feed"/>
     </epos-print>
@@ -216,16 +216,16 @@ async function buildXml(order: Order): Promise<string> {
 
 export async function printOrder(order: Order): Promise<void> {
   const ip  = getPrinterIp()
-  const xml = await buildXml(order)
 
-  // Use server-side proxy to avoid Safari mixed-content / SSL issues
+  // Send order data to server — server builds XML and sends to printer
+  // This avoids Safari mobile canvas/btoa issues entirely
   let response: Response
   try {
     response = await fetch("/api/print", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ip, xml }),
-      signal: AbortSignal.timeout(20000),
+      body: JSON.stringify({ ip, order }),
+      signal: AbortSignal.timeout(25000),
     })
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)

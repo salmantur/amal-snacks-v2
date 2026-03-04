@@ -106,12 +106,12 @@ export default function ItemsPage() {
     setIngredientInput("")
     setPkgLabelInput("")
     setPkgQtyInput(1)
-    document.body.style.overflow = "hidden"
+    document.documentElement.classList.add("modal-open")
   }
 
   function closeModal() {
     setModalItem(null)
-    document.body.style.overflow = ""
+    document.documentElement.classList.remove("modal-open")
   }
 
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -370,10 +370,10 @@ export default function ItemsPage() {
 
       {/* Edit / Add Modal */}
       {modalItem && (
-        <div className="fixed inset-0 z-50 bg-black/50">
+        <div className="fixed inset-0 z-50 bg-black/50" onClick={(e) => e.target === e.currentTarget && closeModal()}>
           <div
             className="absolute inset-x-0 bottom-0 bg-white rounded-t-3xl flex flex-col"
-            style={{ height: "94svh" }}
+            style={{ maxHeight: "92dvh", height: "92dvh" }}
           >
             {/* Modal header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 flex-shrink-0">
@@ -384,7 +384,7 @@ export default function ItemsPage() {
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="flex items-center gap-2 px-5 py-2.5 bg-black text-white rounded-full text-sm font-medium disabled:opacity-50 active:scale-95 transition-transform"
+                className="flex items-center gap-2 px-5 py-3 bg-black text-white rounded-full text-sm font-medium disabled:opacity-50 active:scale-95 transition-transform"
               >
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                 <span dir="rtl">حفظ</span>
@@ -441,7 +441,7 @@ export default function ItemsPage() {
                   onChange={e => setModalItem(p => p ? { ...p, name: e.target.value } : p)}
                   placeholder="مثال: سمبوسة جبن"
                   dir="rtl"
-                  className="w-full px-4 py-3.5 rounded-2xl bg-[#f5f5f5] focus:outline-none text-right text-base"
+                  className="w-full px-4 py-3.5 rounded-2xl bg-[#f5f5f5] focus:outline-none text-right text-base" style={{fontSize: "16px"}}
                 />
               </div>
 
@@ -453,7 +453,7 @@ export default function ItemsPage() {
                   onChange={e => setModalItem(p => p ? { ...p, nameEn: e.target.value } : p)}
                   placeholder="e.g. Cheese Samboosa"
                   dir="ltr"
-                  className="w-full px-4 py-3.5 rounded-2xl bg-[#f5f5f5] focus:outline-none text-left text-base"
+                  className="w-full px-4 py-3.5 rounded-2xl bg-[#f5f5f5] focus:outline-none text-left text-base" style={{fontSize: "16px"}}
                 />
               </div>
 
@@ -466,7 +466,7 @@ export default function ItemsPage() {
                   placeholder="وصف الصنف"
                   rows={2}
                   dir="rtl"
-                  className="w-full px-4 py-3.5 rounded-2xl bg-[#f5f5f5] focus:outline-none text-right resize-none text-base"
+                  className="w-full px-4 py-3.5 rounded-2xl bg-[#f5f5f5] focus:outline-none text-right resize-none text-base" style={{fontSize: "16px"}}
                 />
               </div>
 
@@ -481,7 +481,7 @@ export default function ItemsPage() {
                     value={modalItem.price || ""}
                     onChange={e => setModalItem(p => p ? { ...p, price: Number(e.target.value) } : p)}
                     placeholder="0"
-                    className="w-full px-4 py-3.5 rounded-2xl bg-[#f5f5f5] focus:outline-none text-center text-base"
+                    className="w-full px-4 py-3.5 rounded-2xl bg-[#f5f5f5] focus:outline-none text-center text-base" style={{fontSize: "16px"}}
                   />
                 </div>
                 <div>
@@ -493,7 +493,7 @@ export default function ItemsPage() {
                     value={modalItem.limit || ""}
                     onChange={e => setModalItem(p => p ? { ...p, limit: Number(e.target.value) } : p)}
                     placeholder="0"
-                    className="w-full px-4 py-3.5 rounded-2xl bg-[#f5f5f5] focus:outline-none text-center text-base"
+                    className="w-full px-4 py-3.5 rounded-2xl bg-[#f5f5f5] focus:outline-none text-center text-base" style={{fontSize: "16px"}}
                   />
                 </div>
               </div>
@@ -506,7 +506,7 @@ export default function ItemsPage() {
                     value={modalItem.category || ""}
                     onChange={e => setModalItem(p => p ? { ...p, category: e.target.value } : p)}
                     dir="rtl"
-                    className="w-full appearance-none px-4 py-3.5 rounded-2xl bg-[#f5f5f5] focus:outline-none text-right cursor-pointer text-base"
+                    className="w-full appearance-none px-4 py-3.5 rounded-2xl bg-[#f5f5f5] focus:outline-none text-right cursor-pointer text-base" style={{fontSize: "16px"}}
                   >
                     <option value="">اختر الفئة</option>
                     {ALL_CATEGORIES.map(c => (
@@ -555,7 +555,7 @@ export default function ItemsPage() {
                   <select
                     value={modalItem.makingTime || 0}
                     onChange={(e) => setModalItem((p) => p ? { ...p, makingTime: Number(e.target.value) } : p)}
-                    className="w-full appearance-none px-4 py-3.5 rounded-2xl bg-[#f5f5f5] focus:outline-none text-right text-base cursor-pointer"
+                    className="w-full appearance-none px-4 py-3.5 rounded-2xl bg-[#f5f5f5] focus:outline-none text-right text-base cursor-pointer" style={{fontSize: "16px"}}
                     dir="rtl"
                   >
                     <option value={0}>بدون وقت تحضير (فوري)</option>
@@ -628,7 +628,7 @@ export default function ItemsPage() {
                     onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addIngredient(ingredientInput) } }}
                     placeholder="مثال: جبن، لحم..."
                     dir="rtl"
-                    className="flex-1 px-4 py-3.5 rounded-2xl bg-[#f5f5f5] focus:outline-none text-right text-base"
+                    className="flex-1 px-4 py-3.5 rounded-2xl bg-[#f5f5f5] focus:outline-none text-right text-base" style={{fontSize: "16px"}}
                   />
                   <button
                     onClick={() => addIngredient(ingredientInput)}
@@ -717,7 +717,7 @@ export default function ItemsPage() {
                 </div>
               )}
 
-              <div className="h-8" />
+              <div style={{ height: "calc(2rem + env(safe-area-inset-bottom))" }} />
             </div>
           </div>
         </div>

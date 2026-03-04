@@ -112,3 +112,9 @@
   transform: translateY(100%);
   transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
 }
+/* Prevent background scroll when modal is open */
+html.modal-open,
+html.modal-open body {
+  overflow: hidden;
+  height: 100%;
+}

@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import React, { useState, useEffect, useRef } from "react"
 import Link from "next/link"
@@ -35,7 +35,7 @@ const EMPTY_ITEM: Omit<MenuItem, "id"> = {
 
 const ALL_CATEGORIES = categories.flatMap((cat) =>
   cat.sections
-    ? cat.sections.map((s) => ({ value: s.dbCategory, label: `${cat.label} â€” ${s.label}` }))
+    ? cat.sections.map((s) => ({ value: s.dbCategory, label: `${cat.label} — ${s.label}` }))
     : (cat.dbCategories || []).map((db) => ({ value: db, label: cat.label }))
 )
 
@@ -109,6 +109,7 @@ export default function ItemsPage() {
     document.body.style.right = "0"
     document.body.style.width = "100%"
   }
+
   function unlockBodyScroll() {
     const scrollY = Number(document.body.dataset.modalScrollY || 0)
     document.documentElement.classList.remove("modal-open")
@@ -119,7 +120,9 @@ export default function ItemsPage() {
     document.body.style.right = ""
     document.body.style.width = ""
     window.scrollTo(0, scrollY)
-  }  function openModal(item: Partial<MenuItem>, isNewItem: boolean) {
+  }
+
+  function openModal(item: Partial<MenuItem>, isNewItem: boolean) {
     setModalItem(item)
     setIsNew(isNewItem)
     setError(null)
@@ -154,7 +157,7 @@ export default function ItemsPage() {
     const filename = `${Date.now()}.${ext}`
     const { error } = await supabase.storage.from("Menu").upload(filename, file, { upsert: true })
     if (error) {
-      setError("ÙØ´Ù„ Ø±ÙØ¹ Ø§Ù„ØµÙˆØ±Ø©: " + error.message)
+      setError("فشل رفع الصورة: " + error.message)
     } else {
       const url = `${SUPABASE_URL}/storage/v1/object/public/Menu/${filename}`
       setModalItem((prev) => prev ? { ...prev, image: url } : prev)
@@ -181,9 +184,9 @@ export default function ItemsPage() {
 
   async function handleSave() {
     if (!modalItem) return
-    if (!modalItem.name?.trim()) { setError("Ø§Ù„Ø§Ø³Ù… Ù…Ø·Ù„ÙˆØ¨"); return }
-    if (!modalItem.category) { setError("Ø§Ù„ÙØ¦Ø© Ù…Ø·Ù„ÙˆØ¨Ø©"); return }
-    if (!modalItem.price || modalItem.price <= 0) { setError("Ø§Ù„Ø³Ø¹Ø± ÙŠØ¬Ø¨ Ø£Ù† ÙŠÙƒÙˆÙ† Ø£ÙƒØ¨Ø± Ù…Ù† ØµÙØ±"); return }
+    if (!modalItem.name?.trim()) { setError("الاسم مطلوب"); return }
+    if (!modalItem.category) { setError("الفئة مطلوبة"); return }
+    if (!modalItem.price || modalItem.price <= 0) { setError("السعر يجب أن يكون أكبر من صفر"); return }
     setSaving(true)
     setError(null)
     const payload = {
@@ -204,11 +207,11 @@ export default function ItemsPage() {
     if (isNew) {
       const { error } = await supabase.from("menu").insert(payload)
       if (error) setError(error.message)
-      else { flash("ØªÙ… Ø§Ù„Ø¥Ø¶Ø§ÙØ© âœ“"); closeModal(); loadItems() }
+      else { flash("تم الإضافة ✓"); closeModal(); loadItems() }
     } else {
       const { error } = await supabase.from("menu").update(payload).eq("id", modalItem.id)
       if (error) setError(error.message)
-      else { flash("ØªÙ… Ø§Ù„Ø­ÙØ¸ âœ“"); closeModal(); loadItems() }
+      else { flash("تم الحفظ ✓"); closeModal(); loadItems() }
     }
     setSaving(false)
   }
@@ -217,7 +220,7 @@ export default function ItemsPage() {
     setDeleting(id)
     const { error } = await supabase.from("menu").delete().eq("id", id)
     if (error) setError(error.message)
-    else { flash("ØªÙ… Ø§Ù„Ø­Ø°Ù"); setItems((prev) => prev.filter((i) => i.id !== id)) }
+    else { flash("تم الحذف"); setItems((prev) => prev.filter((i) => i.id !== id)) }
     setDeleting(null)
     setDeleteConfirm(null)
   }
@@ -259,15 +262,15 @@ export default function ItemsPage() {
             <ArrowRight className="h-5 w-5" />
           </Link>
           <div className="text-center">
-            <h1 className="text-lg font-bold" dir="rtl">Ø¥Ø¯Ø§Ø±Ø© Ø§Ù„Ø£ØµÙ†Ø§Ù</h1>
-            <p className="text-xs text-gray-400">{items.length} ØµÙ†Ù</p>
+            <h1 className="text-lg font-bold" dir="rtl">إدارة الأصناف</h1>
+            <p className="text-xs text-gray-400">{items.length} صنف</p>
           </div>
           <button
             onClick={() => openModal({ ...EMPTY_ITEM }, true)}
             className="flex items-center gap-1.5 px-4 py-2.5 bg-black text-white rounded-full font-medium text-sm active:scale-95 transition-transform flex-shrink-0"
           >
             <Plus className="h-4 w-4" />
-            <span dir="rtl">Ø¥Ø¶Ø§ÙØ©</span>
+            <span dir="rtl">إضافة</span>
           </button>
         </div>
 
@@ -278,7 +281,7 @@ export default function ItemsPage() {
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Ø¨Ø­Ø«..."
+              placeholder="بحث..."
               dir="rtl"
               className="w-full pr-9 pl-3 py-2.5 rounded-xl bg-[#f5f5f5] text-sm focus:outline-none"
             />
@@ -290,7 +293,7 @@ export default function ItemsPage() {
               dir="rtl"
               className="appearance-none pr-3 pl-7 py-2.5 rounded-xl bg-[#f5f5f5] text-sm focus:outline-none cursor-pointer max-w-[120px]"
             >
-              <option value="all">Ø§Ù„ÙƒÙ„</option>
+              <option value="all">الكل</option>
               {ALL_CATEGORIES.map(c => (
                 <option key={c.value} value={c.value}>{c.label}</option>
               ))}
@@ -325,7 +328,7 @@ export default function ItemsPage() {
         ) : filtered.length === 0 ? (
           <div className="text-center py-20 text-gray-400">
             <ImageIcon className="h-12 w-12 mx-auto mb-3 opacity-30" />
-            <p dir="rtl">Ù„Ø§ ØªÙˆØ¬Ø¯ Ø£ØµÙ†Ø§Ù</p>
+            <p dir="rtl">لا توجد أصناف</p>
           </div>
         ) : (
           <div className="grid gap-3">
@@ -347,7 +350,7 @@ export default function ItemsPage() {
                     )}
                     {!item.inStock && (
                       <div className="absolute inset-0 bg-black/40 flex items-center justify-center rounded-2xl">
-                        <span className="text-white text-[9px] font-bold">Ù†ÙØ°</span>
+                        <span className="text-white text-[9px] font-bold">نفذ</span>
                       </div>
                     )}
                   </div>
@@ -356,7 +359,7 @@ export default function ItemsPage() {
                   <div className="flex-1 min-w-0 text-right" dir="rtl">
                     <p className="font-bold text-sm truncate">{item.name}</p>
                     {item.nameEn && <p className="text-xs text-gray-400 truncate">{item.nameEn}</p>}
-                    <p className="text-sm font-bold mt-0.5">{item.price} Ø±.Ø³</p>
+                    <p className="text-sm font-bold mt-0.5">{item.price} ر.س</p>
                     <p className="text-xs text-gray-400 truncate">{ALL_CATEGORIES.find(c => c.value === item.category)?.label || item.category}</p>
                   </div>
 
@@ -390,11 +393,11 @@ export default function ItemsPage() {
       {deleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4">
           <div className="w-full max-w-sm bg-white rounded-3xl p-6" dir="rtl">
-            <h3 className="text-lg font-bold text-center mb-2">ØªØ£ÙƒÙŠØ¯ Ø§Ù„Ø­Ø°Ù</h3>
-            <p className="text-sm text-gray-500 text-center mb-6">Ù‡Ù„ Ø£Ù†Øª Ù…ØªØ£ÙƒØ¯ Ù…Ù† Ø­Ø°Ù Ù‡Ø°Ø§ Ø§Ù„ØµÙ†ÙØŸ</p>
+            <h3 className="text-lg font-bold text-center mb-2">تأكيد الحذف</h3>
+            <p className="text-sm text-gray-500 text-center mb-6">هل أنت متأكد من حذف هذا الصنف؟</p>
             <div className="flex gap-3">
-              <button onClick={() => setDeleteConfirm(null)} className="flex-1 py-3.5 rounded-2xl bg-[#f5f5f5] font-medium active:scale-95 transition-transform">Ø¥Ù„ØºØ§Ø¡</button>
-              <button onClick={() => handleDelete(deleteConfirm)} className="flex-1 py-3.5 rounded-2xl bg-red-500 text-white font-medium active:scale-95 transition-transform">Ø­Ø°Ù</button>
+              <button onClick={() => setDeleteConfirm(null)} className="flex-1 py-3.5 rounded-2xl bg-[#f5f5f5] font-medium active:scale-95 transition-transform">إلغاء</button>
+              <button onClick={() => handleDelete(deleteConfirm)} className="flex-1 py-3.5 rounded-2xl bg-red-500 text-white font-medium active:scale-95 transition-transform">حذف</button>
             </div>
           </div>
         </div>
@@ -412,14 +415,14 @@ export default function ItemsPage() {
               <button onClick={closeModal} className="w-11 h-11 rounded-full bg-[#f5f5f5] flex items-center justify-center active:scale-95 transition-transform">
                 <X className="h-5 w-5" />
               </button>
-              <h2 className="text-base font-bold" dir="rtl">{isNew ? "Ø¥Ø¶Ø§ÙØ© ØµÙ†Ù" : "ØªØ¹Ø¯ÙŠÙ„ Ø§Ù„ØµÙ†Ù"}</h2>
+              <h2 className="text-base font-bold" dir="rtl">{isNew ? "إضافة صنف" : "تعديل الصنف"}</h2>
               <button
                 onClick={handleSave}
                 disabled={saving}
                 className="flex items-center gap-2 px-5 py-3 bg-black text-white rounded-full text-sm font-medium disabled:opacity-50 active:scale-95 transition-transform"
               >
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                <span dir="rtl">Ø­ÙØ¸</span>
+                <span dir="rtl">حفظ</span>
               </button>
             </div>
 
@@ -434,7 +437,7 @@ export default function ItemsPage() {
 
               {/* Main Image */}
               <div>
-                <label className="block text-sm font-semibold mb-2 text-right" dir="rtl">Ø§Ù„ØµÙˆØ±Ø© Ø§Ù„Ø±Ø¦ÙŠØ³ÙŠØ©</label>
+                <label className="block text-sm font-semibold mb-2 text-right" dir="rtl">الصورة الرئيسية</label>
                 <div className="flex items-center gap-3">
                   <div className="relative w-24 h-24 rounded-2xl bg-[#f5f5f5] flex items-center justify-center overflow-hidden flex-shrink-0">
                     {modalItem.image
@@ -449,14 +452,14 @@ export default function ItemsPage() {
                       className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-dashed border-gray-200 text-sm active:scale-95 transition-transform"
                     >
                       {imageUploading
-                        ? <><Loader2 className="h-4 w-4 animate-spin" /> Ø¬Ø§Ø±ÙŠ Ø§Ù„Ø±ÙØ¹...</>
-                        : <><Upload className="h-4 w-4" /> Ø±ÙØ¹ ØµÙˆØ±Ø©</>
+                        ? <><Loader2 className="h-4 w-4 animate-spin" /> جاري الرفع...</>
+                        : <><Upload className="h-4 w-4" /> رفع صورة</>
                       }
                     </button>
                     <input
                       value={modalItem.image || ""}
                       onChange={e => setModalItem(p => p ? { ...p, image: e.target.value } : p)}
-                      placeholder="Ø£Ùˆ Ø§Ù„ØµÙ‚ Ø±Ø§Ø¨Ø· Ø§Ù„ØµÙˆØ±Ø©"
+                      placeholder="أو الصق رابط الصورة"
                       dir="ltr"
                       className="w-full px-3 py-2.5 rounded-xl bg-[#f5f5f5] text-sm focus:outline-none text-left"
                     />
@@ -467,11 +470,11 @@ export default function ItemsPage() {
 
               {/* Arabic Name */}
               <div>
-                <label className="block text-sm font-semibold mb-1.5 text-right" dir="rtl">Ø§Ù„Ø§Ø³Ù… Ø¨Ø§Ù„Ø¹Ø±Ø¨ÙŠ <span className="text-red-500">*</span></label>
+                <label className="block text-sm font-semibold mb-1.5 text-right" dir="rtl">الاسم بالعربي <span className="text-red-500">*</span></label>
                 <input
                   value={modalItem.name || ""}
                   onChange={e => setModalItem(p => p ? { ...p, name: e.target.value } : p)}
-                  placeholder="Ù…Ø«Ø§Ù„: Ø³Ù…Ø¨ÙˆØ³Ø© Ø¬Ø¨Ù†"
+                  placeholder="مثال: سمبوسة جبن"
                   dir="rtl"
                   className="w-full px-4 py-3.5 rounded-2xl bg-[#f5f5f5] focus:outline-none text-right text-base" style={{fontSize: "16px"}}
                 />
@@ -491,11 +494,11 @@ export default function ItemsPage() {
 
               {/* Description */}
               <div>
-                <label className="block text-sm font-semibold mb-1.5 text-right" dir="rtl">Ø§Ù„ÙˆØµÙ</label>
+                <label className="block text-sm font-semibold mb-1.5 text-right" dir="rtl">الوصف</label>
                 <textarea
                   value={modalItem.description || ""}
                   onChange={e => setModalItem(p => p ? { ...p, description: e.target.value } : p)}
-                  placeholder="ÙˆØµÙ Ø§Ù„ØµÙ†Ù"
+                  placeholder="وصف الصنف"
                   rows={2}
                   dir="rtl"
                   className="w-full px-4 py-3.5 rounded-2xl bg-[#f5f5f5] focus:outline-none text-right resize-none text-base" style={{fontSize: "16px"}}
@@ -505,7 +508,7 @@ export default function ItemsPage() {
               {/* Price + Limit */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-semibold mb-1.5 text-right" dir="rtl">Ø§Ù„Ø³Ø¹Ø± (Ø±.Ø³) <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-semibold mb-1.5 text-right" dir="rtl">السعر (ر.س) <span className="text-red-500">*</span></label>
                   <input
                     type="number"
                     inputMode="decimal"
@@ -517,7 +520,7 @@ export default function ItemsPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold mb-1.5 text-right" dir="rtl">Ø­Ø¯ Ø§Ù„Ø§Ø®ØªÙŠØ§Ø±</label>
+                  <label className="block text-sm font-semibold mb-1.5 text-right" dir="rtl">حد الاختيار</label>
                   <input
                     type="number"
                     inputMode="numeric"
@@ -532,7 +535,7 @@ export default function ItemsPage() {
 
               {/* Category */}
               <div>
-                <label className="block text-sm font-semibold mb-1.5 text-right" dir="rtl">Ø§Ù„ÙØ¦Ø© <span className="text-red-500">*</span></label>
+                <label className="block text-sm font-semibold mb-1.5 text-right" dir="rtl">الفئة <span className="text-red-500">*</span></label>
                 <div className="relative">
                   <select
                     value={modalItem.category || ""}
@@ -540,7 +543,7 @@ export default function ItemsPage() {
                     dir="rtl"
                     className="w-full appearance-none px-4 py-3.5 rounded-2xl bg-[#f5f5f5] focus:outline-none text-right cursor-pointer text-base" style={{fontSize: "16px"}}
                   >
-                    <option value="">Ø§Ø®ØªØ± Ø§Ù„ÙØ¦Ø©</option>
+                    <option value="">اختر الفئة</option>
                     {ALL_CATEGORIES.map(c => (
                       <option key={c.value} value={c.value}>{c.label}</option>
                     ))}
@@ -554,8 +557,8 @@ export default function ItemsPage() {
                 {/* In Stock */}
                 <div className="flex items-center justify-between p-4 bg-[#f5f5f5] rounded-2xl">
                   <div dir="rtl">
-                    <p className="font-semibold text-sm">Ù…ØªÙˆÙØ± ÙÙŠ Ø§Ù„Ù…Ø®Ø²ÙˆÙ†</p>
-                    <p className="text-xs text-gray-400 mt-0.5">Ø¥ÙŠÙ‚Ø§Ù ÙŠØ®ÙÙŠ Ø§Ù„ØµÙ†Ù Ù…Ù† Ø§Ù„Ù‚Ø§Ø¦Ù…Ø©</p>
+                    <p className="font-semibold text-sm">متوفر في المخزون</p>
+                    <p className="text-xs text-gray-400 mt-0.5">إيقاف يخفي الصنف من القائمة</p>
                   </div>
                   <button
                     onClick={() => setModalItem(p => p ? { ...p, inStock: !(p.inStock !== false) } : p)}
@@ -568,8 +571,8 @@ export default function ItemsPage() {
                 {/* Best Seller */}
                 <div className="flex items-center justify-between p-4 bg-[#f5f5f5] rounded-2xl">
                   <div dir="rtl">
-                    <p className="font-semibold text-sm">â­ Ø§Ù„Ø£ÙƒØ«Ø± Ø·Ù„Ø¨Ø§Ù‹</p>
-                    <p className="text-xs text-gray-400 mt-0.5">ÙŠØ¸Ù‡Ø± ÙÙŠ Ù‚Ø³Ù… Ø§Ù„Ø£ÙƒØ«Ø± Ø·Ù„Ø¨Ø§Ù‹ ÙˆØ´Ø±ÙŠØ· Ø§Ù„Ø¬Ø¯ÙŠØ¯</p>
+                    <p className="font-semibold text-sm">⭐ الأكثر طلباً</p>
+                    <p className="text-xs text-gray-400 mt-0.5">يظهر في قسم الأكثر طلباً وشريط الجديد</p>
                   </div>
                   <button
                     onClick={() => setModalItem(p => p ? { ...p, isFeatured: !p.isFeatured } : p)}
@@ -582,7 +585,7 @@ export default function ItemsPage() {
 
               {/* Making Time */}
               <div>
-                <label className="block text-sm font-semibold mb-1.5 text-right" dir="rtl">â±ï¸ ÙˆÙ‚Øª Ø§Ù„ØªØ­Ø¶ÙŠØ±</label>
+                <label className="block text-sm font-semibold mb-1.5 text-right" dir="rtl">⏱️ وقت التحضير</label>
                 <div className="relative">
                   <select
                     value={modalItem.makingTime || 0}
@@ -590,25 +593,25 @@ export default function ItemsPage() {
                     className="w-full appearance-none px-4 py-3.5 rounded-2xl bg-[#f5f5f5] focus:outline-none text-right text-base cursor-pointer" style={{fontSize: "16px"}}
                     dir="rtl"
                   >
-                    <option value={0}>Ø¨Ø¯ÙˆÙ† ÙˆÙ‚Øª ØªØ­Ø¶ÙŠØ± (ÙÙˆØ±ÙŠ)</option>
-                    <option value={30}>30 Ø¯Ù‚ÙŠÙ‚Ø©</option>
-                    <option value={60}>1 Ø³Ø§Ø¹Ø©</option>
-                    <option value={90}>1.5 Ø³Ø§Ø¹Ø©</option>
-                    <option value={120}>2 Ø³Ø§Ø¹Ø©</option>
-                    <option value={180}>3 Ø³Ø§Ø¹Ø§Øª</option>
-                    <option value={240}>4 Ø³Ø§Ø¹Ø§Øª</option>
-                    <option value={360}>6 Ø³Ø§Ø¹Ø§Øª</option>
-                    <option value={720}>12 Ø³Ø§Ø¹Ø©</option>
-                    <option value={1440}>24 Ø³Ø§Ø¹Ø© (ÙŠÙˆÙ… ÙƒØ§Ù…Ù„)</option>
+                    <option value={0}>بدون وقت تحضير (فوري)</option>
+                    <option value={30}>30 دقيقة</option>
+                    <option value={60}>1 ساعة</option>
+                    <option value={90}>1.5 ساعة</option>
+                    <option value={120}>2 ساعة</option>
+                    <option value={180}>3 ساعات</option>
+                    <option value={240}>4 ساعات</option>
+                    <option value={360}>6 ساعات</option>
+                    <option value={720}>12 ساعة</option>
+                    <option value={1440}>24 ساعة (يوم كامل)</option>
                   </select>
                   <ChevronDown className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
                 </div>
-                <p className="text-xs text-gray-400 mt-1 text-right" dir="rtl">ÙŠØ­Ø¯Ø¯ Ø£Ù‚Ø±Ø¨ Ù…ÙˆØ¹Ø¯ ØªÙˆØµÙŠÙ„ Ù…ØªØ§Ø­ Ù„Ù„Ø¹Ù…ÙŠÙ„</p>
+                <p className="text-xs text-gray-400 mt-1 text-right" dir="rtl">يحدد أقرب موعد توصيل متاح للعميل</p>
               </div>
 
               {/* Gallery Images */}
               <div dir="rtl">
-                <p className="font-semibold text-sm mb-2">ðŸ–¼ï¸ ØµÙˆØ± Ø¥Ø¶Ø§ÙÙŠØ© (Ø¬Ø§Ù„ÙŠØ±ÙŠ)</p>
+                <p className="font-semibold text-sm mb-2">🖼️ صور إضافية (جاليري)</p>
                 <div className="flex gap-2 flex-wrap mb-2">
                   {(modalItem.images || []).map((url, idx) => (
                     <div key={idx} className="relative w-16 h-16 rounded-xl overflow-hidden bg-[#f5f5f5] flex-shrink-0">
@@ -617,24 +620,24 @@ export default function ItemsPage() {
                         onClick={() => setModalItem(prev => prev ? ({ ...prev, images: (prev.images || []).filter((_, i) => i !== idx) }) : prev)}
                         className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-xs"
                       >
-                        Ã—
+                        ×
                       </button>
                     </div>
                   ))}
                   <label className="w-16 h-16 rounded-xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:border-gray-400 transition-colors flex-shrink-0">
                     {galleryUploading
                       ? <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
-                      : <><Upload className="h-4 w-4 text-gray-400" /><span className="text-[10px] text-gray-400 mt-0.5">Ø¥Ø¶Ø§ÙØ©</span></>
+                      : <><Upload className="h-4 w-4 text-gray-400" /><span className="text-[10px] text-gray-400 mt-0.5">إضافة</span></>
                     }
                     <input type="file" accept="image/*" multiple onChange={handleGalleryUpload} className="hidden" />
                   </label>
                 </div>
-                <p className="text-xs text-gray-400">ÙŠÙ…ÙƒÙ†Ùƒ Ø¥Ø¶Ø§ÙØ© Ø£ÙƒØ«Ø± Ù…Ù† ØµÙˆØ±Ø© â€” Ø³ØªØ¸Ù‡Ø± ÙÙŠ Ù…Ø¹Ø±Ø¶ Ø§Ù„Ù…Ù†ØªØ¬</p>
+                <p className="text-xs text-gray-400">يمكنك إضافة أكثر من صورة — ستظهر في معرض المنتج</p>
               </div>
 
               {/* Options / Ingredients */}
               <div>
-                <label className="block text-sm font-semibold mb-1.5 text-right" dir="rtl">Ø§Ù„Ø®ÙŠØ§Ø±Ø§Øª / Ø§Ù„Ù…ÙƒÙˆÙ†Ø§Øª</label>
+                <label className="block text-sm font-semibold mb-1.5 text-right" dir="rtl">الخيارات / المكونات</label>
                 {tags.length > 0 && (
                   <div className="flex flex-wrap gap-2 mb-3 p-3 bg-[#f5f5f5] rounded-2xl">
                     {tags.map((tag, i) => (
@@ -658,7 +661,7 @@ export default function ItemsPage() {
                     value={ingredientInput}
                     onChange={e => setIngredientInput(e.target.value)}
                     onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addIngredient(ingredientInput) } }}
-                    placeholder="Ù…Ø«Ø§Ù„: Ø¬Ø¨Ù†ØŒ Ù„Ø­Ù…..."
+                    placeholder="مثال: جبن، لحم..."
                     dir="rtl"
                     className="flex-1 px-4 py-3.5 rounded-2xl bg-[#f5f5f5] focus:outline-none text-right text-base" style={{fontSize: "16px"}}
                   />
@@ -669,40 +672,40 @@ export default function ItemsPage() {
                     <Plus className="h-5 w-5" />
                   </button>
                 </div>
-                <p className="text-xs text-gray-400 mt-1.5 text-right" dir="rtl">Ø§ÙƒØªØ¨ Ø§Ù„Ø®ÙŠØ§Ø± ÙˆØ§Ø¶ØºØ· Enter Ø£Ùˆ +</p>
+                <p className="text-xs text-gray-400 mt-1.5 text-right" dir="rtl">اكتب الخيار واضغط Enter أو +</p>
               </div>
 
 
-              {/* â”€â”€ PACKAGE MODE (Ø¨Ø§Ù‚Ø§Øª Ø§Ù„Ø¹ÙŠØ¯ only) â”€â”€ */}
+              {/* ── PACKAGE MODE (باقات العيد only) ── */}
               {modalItem.category === "eid" && (
                 <div dir="rtl" className="border-2 border-yellow-300 bg-yellow-50 rounded-2xl p-4 space-y-4">
                   <div className="flex items-center gap-2">
-                    <span className="text-xl">ðŸŽ</span>
-                    <p className="font-black text-base text-[#1e293b]">Ø¥Ø¹Ø¯Ø§Ø¯ Ø§Ù„Ø¨Ø§Ù‚Ø©</p>
-                    <span className="text-xs bg-yellow-400 text-yellow-900 font-bold px-2 py-0.5 rounded-full mr-auto">Ø¨Ø§Ù‚Ø© Ø¹ÙŠØ¯</span>
+                    <span className="text-xl">🎁</span>
+                    <p className="font-black text-base text-[#1e293b]">إعداد الباقة</p>
+                    <span className="text-xs bg-yellow-400 text-yellow-900 font-bold px-2 py-0.5 rounded-full mr-auto">باقة عيد</span>
                   </div>
 
                   {/* Hint */}
                   <div className="bg-white rounded-xl p-3 text-xs text-gray-500 space-y-1">
-                    <p>â€¢ <strong>Ø­Ø¯ Ø§Ù„Ø§Ø®ØªÙŠØ§Ø±</strong> Ø£Ø¹Ù„Ø§Ù‡ = Ø¹Ø¯Ø¯ Ø§Ù„Ø³Ø®Ø§Ù†Ø§Øª (4 Ø£Ùˆ 6)</p>
-                    <p>â€¢ Ø£Ø¶Ù Ø¨Ù„Ø§ØªØ± Ø§Ù„Ø§Ø¬Ø¨Ø§Ù† ÙƒÙ€ "Ù…Ø´Ù…ÙˆÙ„" Ø£Ø¯Ù†Ø§Ù‡</p>
+                    <p>• <strong>حد الاختيار</strong> أعلاه = عدد السخانات (4 أو 6)</p>
+                    <p>• أضف بلاتر الاجبان كـ "مشمول" أدناه</p>
                   </div>
 
                   {/* Current package items */}
                   {(modalItem.packageItems || []).length > 0 && (
                     <div className="space-y-2">
-                      <p className="text-xs font-semibold text-gray-500">Ù…Ø­ØªÙˆÙŠØ§Øª Ø§Ù„Ø¨Ø§Ù‚Ø© Ø§Ù„Ø­Ø§Ù„ÙŠØ©:</p>
+                      <p className="text-xs font-semibold text-gray-500">محتويات الباقة الحالية:</p>
                       {(modalItem.packageItems || []).map((pkg, i) => (
                         <div key={i} className="flex items-center gap-2 p-3 bg-white rounded-xl border border-gray-100">
                           <button
                             onClick={() => setModalItem(p => p ? { ...p, packageItems: (p.packageItems || []).filter((_, idx) => idx !== i) } : p)}
                             className="w-6 h-6 rounded-full bg-red-100 text-red-500 flex items-center justify-center text-sm flex-shrink-0 active:scale-95"
-                          >Ã—</button>
+                          >×</button>
                           <div className="flex-1 text-right">
                             <p className="font-semibold text-sm">{pkg.label}</p>
                           </div>
                           <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${pkg.included ? "bg-yellow-100 text-yellow-700" : "bg-gray-100 text-gray-600"}`}>
-                            {pkg.included ? "Ù…Ø´Ù…ÙˆÙ„" : `${pkg.quantity} Ù‚Ø·Ø¹Ø©`}
+                            {pkg.included ? "مشمول" : `${pkg.quantity} قطعة`}
                           </span>
                         </div>
                       ))}
@@ -711,11 +714,11 @@ export default function ItemsPage() {
 
                   {/* Add item */}
                   <div className="space-y-2">
-                    <p className="text-xs font-semibold text-gray-500">Ø¥Ø¶Ø§ÙØ© Ø¹Ù†ØµØ±:</p>
+                    <p className="text-xs font-semibold text-gray-500">إضافة عنصر:</p>
                     <input
                       value={pkgLabelInput}
                       onChange={e => setPkgLabelInput(e.target.value)}
-                      placeholder="Ù…Ø«Ø§Ù„: Ø¨Ù„Ø§ØªØ± Ø§Ù„Ø§Ø¬Ø¨Ø§Ù†"
+                      placeholder="مثال: بلاتر الاجبان"
                       dir="rtl"
                       className="w-full px-3 py-2.5 rounded-xl bg-white border border-gray-200 text-sm focus:outline-none text-right"
                     />
@@ -735,7 +738,7 @@ export default function ItemsPage() {
                           setPkgQtyInput(1)
                         }}
                         className="flex-1 py-2.5 bg-[#1e293b] text-white rounded-xl text-sm font-medium active:scale-95"
-                      >+ Ø¥Ø¶Ø§ÙØ© Ø¨Ø¹Ø¯Ø¯</button>
+                      >+ إضافة بعدد</button>
                     </div>
                     <button
                       onClick={() => {
@@ -744,7 +747,7 @@ export default function ItemsPage() {
                         setPkgLabelInput("")
                       }}
                       className="w-full py-2.5 bg-yellow-400 text-yellow-900 rounded-xl text-sm font-bold active:scale-95"
-                    >â­ Ø¥Ø¶Ø§ÙØ© ÙƒÙ€ "Ù…Ø´Ù…ÙˆÙ„"</button>
+                    >⭐ إضافة كـ "مشمول"</button>
                   </div>
                 </div>
               )}
@@ -758,5 +761,3 @@ export default function ItemsPage() {
     </main>
   )
 }
-
-

@@ -214,10 +214,25 @@ async function buildXml(order: Order): Promise<string> {
 
 // ── Main print function ───────────────────────────────────────────────────
 
+function createTimeoutSignal(ms: number): { signal: AbortSignal; cancel: () => void } {
+  // Safari on some iOS versions does not support AbortSignal.timeout().
+  if (typeof AbortSignal !== "undefined" && typeof (AbortSignal as { timeout?: (n: number) => AbortSignal }).timeout === "function") {
+    return { signal: (AbortSignal as { timeout: (n: number) => AbortSignal }).timeout(ms), cancel: () => {} }
+  }
+
+  const controller = new AbortController()
+  const id = window.setTimeout(() => controller.abort(), ms)
+  return {
+    signal: controller.signal,
+    cancel: () => window.clearTimeout(id),
+  }
+}
+
 export async function printOrder(order: Order): Promise<void> {
   const ip  = getPrinterIp()
   const url = `https://${ip}/cgi-bin/epos/service.cgi?devid=local_printer&timeout=10000`
   const xml = await buildXml(order)
+  const { signal, cancel } = createTimeoutSignal(15000)
 
   let response: Response
   try {
@@ -228,11 +243,21 @@ export async function printOrder(order: Order): Promise<void> {
         "SOAPAction": '"\"\"',
       },
       body: xml,
-      signal: AbortSignal.timeout(15000),
+      signal,
     })
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
-    throw new Error(`Cannot reach printer (${ip}) — check WiFi: ${msg}`)
+    const isSafariLike = typeof navigator !== "undefined" && /iPhone|iPad|iPod|Safari/i.test(navigator.userAgent)
+    if (isSafariLike) {
+      throw new Error(
+        `Cannot reach printer (${ip}) - check WiFi.\n` +
+        `On iPhone Safari, open https://${ip} once and trust the printer certificate, then try print again.\n` +
+        `Technical: ${msg}`
+      )
+    }
+    throw new Error(`Cannot reach printer (${ip}) - check WiFi: ${msg}`)
+  } finally {
+    cancel()
   }
 
   if (!response.ok) throw new Error(`Printer rejected request (${response.status})`)

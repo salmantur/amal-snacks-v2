@@ -216,24 +216,28 @@ async function buildXml(order: Order): Promise<string> {
 
 export async function printOrder(order: Order): Promise<void> {
   const ip  = getPrinterIp()
+  const url = `https://${ip}/cgi-bin/epos/service.cgi?devid=local_printer&timeout=10000`
+  const xml = await buildXml(order)
 
-  // Send order data to server — server builds XML and sends to printer
-  // This avoids Safari mobile canvas/btoa issues entirely
   let response: Response
   try {
-    response = await fetch("/api/print", {
+    response = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ip, order }),
-      signal: AbortSignal.timeout(25000),
+      headers: {
+        "Content-Type": "text/xml; charset=utf-8",
+        "SOAPAction": '"\"\"',
+      },
+      body: xml,
+      signal: AbortSignal.timeout(15000),
     })
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
-    throw new Error(`Network error: ${msg}`)
+    throw new Error(`Cannot reach printer (${ip}) — check WiFi: ${msg}`)
   }
 
-  const result = await response.json()
-  if (!response.ok || result.error) {
-    throw new Error(result.error || `Printer error (${response.status})`)
+  if (!response.ok) throw new Error(`Printer rejected request (${response.status})`)
+  const body = await response.text()
+  if (body.includes("SchemaError") || body.includes("DeviceNotFound")) {
+    throw new Error("Make sure ePOS-Print is enabled on the printer")
   }
 }

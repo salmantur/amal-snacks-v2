@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { Minus, Plus, X, Check, ChevronLeft, ChevronRight } from "lucide-react"
 import { useState, useEffect } from "react"
@@ -13,44 +13,44 @@ interface ProductDrawerProps {
   onClose: () => void
 }
 
-// Fixed list of tray items — Arabic + English
+// Fixed list of tray items â€” Arabic + English
 const TRAY_ITEMS: { ar: string; en: string }[] = [
-  { ar: "كبه",                      en: "Kibbeh" },
-  { ar: "سبرنق رول",                en: "Spring Roll" },
-  { ar: "سمبوسة بطاطس",            en: "Potato Samosa" },
-  { ar: "معجنات جبن",               en: "Cheese Pastry" },
-  { ar: "ميني ساندوتش حلومي",       en: "Mini Halloumi Sandwich" },
-  { ar: "ميني شاورما",              en: "Mini Shawarma" },
-  { ar: "ورق عنب",                  en: "Grape Leaves" },
-  { ar: "مطبق مغلف",               en: "Wrapped Matazeez" },
-  { ar: "معجنات زعتر",              en: "Zaatar Pastry" },
-  { ar: "ميني ساندوتش لبنه",        en: "Mini Labneh Sandwich" },
-  { ar: "مسخن",                    en: "Musakhan" },
-  { ar: "ميني برجر",               en: "Mini Burger" },
-  { ar: "ميني تورتلا",             en: "Mini Tortilla" },
-  { ar: "معجنات بيتزا",            en: "Pizza Pastry" },
-  { ar: "ميني ساندوتش ديك رومي",   en: "Mini Turkey Sandwich" },
-  { ar: "بف لحم",                  en: "Beef Puff" },
-  { ar: "بف دجاج",                 en: "Chicken Puff" },
-  { ar: "سمبوسة جبن",              en: "Cheese Samosa" },
-  { ar: "معجنات لبنه",             en: "Labneh Pastry" },
-  { ar: "ميني ساندوتش فلافل",      en: "Mini Falafel Sandwich" },
+  { ar: "ÙƒØ¨Ù‡",                      en: "Kibbeh" },
+  { ar: "Ø³Ø¨Ø±Ù†Ù‚ Ø±ÙˆÙ„",                en: "Spring Roll" },
+  { ar: "Ø³Ù…Ø¨ÙˆØ³Ø© Ø¨Ø·Ø§Ø·Ø³",            en: "Potato Samosa" },
+  { ar: "Ù…Ø¹Ø¬Ù†Ø§Øª Ø¬Ø¨Ù†",               en: "Cheese Pastry" },
+  { ar: "Ù…ÙŠÙ†ÙŠ Ø³Ø§Ù†Ø¯ÙˆØªØ´ Ø­Ù„ÙˆÙ…ÙŠ",       en: "Mini Halloumi Sandwich" },
+  { ar: "Ù…ÙŠÙ†ÙŠ Ø´Ø§ÙˆØ±Ù…Ø§",              en: "Mini Shawarma" },
+  { ar: "ÙˆØ±Ù‚ Ø¹Ù†Ø¨",                  en: "Grape Leaves" },
+  { ar: "Ù…Ø·Ø¨Ù‚ Ù…ØºÙ„Ù",               en: "Wrapped Matazeez" },
+  { ar: "Ù…Ø¹Ø¬Ù†Ø§Øª Ø²Ø¹ØªØ±",              en: "Zaatar Pastry" },
+  { ar: "Ù…ÙŠÙ†ÙŠ Ø³Ø§Ù†Ø¯ÙˆØªØ´ Ù„Ø¨Ù†Ù‡",        en: "Mini Labneh Sandwich" },
+  { ar: "Ù…Ø³Ø®Ù†",                    en: "Musakhan" },
+  { ar: "Ù…ÙŠÙ†ÙŠ Ø¨Ø±Ø¬Ø±",               en: "Mini Burger" },
+  { ar: "Ù…ÙŠÙ†ÙŠ ØªÙˆØ±ØªÙ„Ø§",             en: "Mini Tortilla" },
+  { ar: "Ù…Ø¹Ø¬Ù†Ø§Øª Ø¨ÙŠØªØ²Ø§",            en: "Pizza Pastry" },
+  { ar: "Ù…ÙŠÙ†ÙŠ Ø³Ø§Ù†Ø¯ÙˆØªØ´ Ø¯ÙŠÙƒ Ø±ÙˆÙ…ÙŠ",   en: "Mini Turkey Sandwich" },
+  { ar: "Ø¨Ù Ù„Ø­Ù…",                  en: "Beef Puff" },
+  { ar: "Ø¨Ù Ø¯Ø¬Ø§Ø¬",                 en: "Chicken Puff" },
+  { ar: "Ø³Ù…Ø¨ÙˆØ³Ø© Ø¬Ø¨Ù†",              en: "Cheese Samosa" },
+  { ar: "Ù…Ø¹Ø¬Ù†Ø§Øª Ù„Ø¨Ù†Ù‡",             en: "Labneh Pastry" },
+  { ar: "Ù…ÙŠÙ†ÙŠ Ø³Ø§Ù†Ø¯ÙˆØªØ´ ÙÙ„Ø§ÙÙ„",      en: "Mini Falafel Sandwich" },
 ]
 
 const TRAY_REQUIRED = 7
 
-// Eid package سخانات options
+// Eid package Ø³Ø®Ø§Ù†Ø§Øª options
 const EID_HEATER_ITEMS = [
-  "كروسون محشي بالبيض والمشروم والاجبان",
-  "حمسة حلومي بالزيتون",
-  "شعيرية / بلاليط",
-  "بلاتر فلافل",
-  "حمسة باذنجان",
-  "فلافل سبشيل",
-  "بيض تركي",
-  "شكشوكة",
-  "فاصوليا",
-  "فول",
+  "ÙƒØ±ÙˆØ³ÙˆÙ† Ù…Ø­Ø´ÙŠ Ø¨Ø§Ù„Ø¨ÙŠØ¶ ÙˆØ§Ù„Ù…Ø´Ø±ÙˆÙ… ÙˆØ§Ù„Ø§Ø¬Ø¨Ø§Ù†",
+  "Ø­Ù…Ø³Ø© Ø­Ù„ÙˆÙ…ÙŠ Ø¨Ø§Ù„Ø²ÙŠØªÙˆÙ†",
+  "Ø´Ø¹ÙŠØ±ÙŠØ© / Ø¨Ù„Ø§Ù„ÙŠØ·",
+  "Ø¨Ù„Ø§ØªØ± ÙÙ„Ø§ÙÙ„",
+  "Ø­Ù…Ø³Ø© Ø¨Ø§Ø°Ù†Ø¬Ø§Ù†",
+  "ÙÙ„Ø§ÙÙ„ Ø³Ø¨Ø´ÙŠÙ„",
+  "Ø¨ÙŠØ¶ ØªØ±ÙƒÙŠ",
+  "Ø´ÙƒØ´ÙˆÙƒØ©",
+  "ÙØ§ØµÙˆÙ„ÙŠØ§",
+  "ÙÙˆÙ„",
 ]
 
 
@@ -78,7 +78,6 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
   // Show selectable options for ANY item with ingredients
   // If limit > 0: user must choose up to limit (e.g. beef or chicken)
   // If limit = 0 with ingredients: just show as info text
-  const isPlatters = product.category === "platters"
   const hasIngredients = product.ingredients && product.ingredients.length > 0
   const maxSelections = product.limit || 0
 
@@ -128,15 +127,15 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
               <DialogDescription className="text-gray-500 mt-1">{product.description}</DialogDescription>
               {product.makingTime && product.makingTime > 0 ? (
                 <p className="text-xs text-gray-400 mt-1 flex items-center gap-1 justify-end">
-                  <span>⏱</span>
-                  <span>وقت التحضير: {product.makingTime < 60 ? `${product.makingTime} دقيقة` : product.makingTime % 60 === 0 ? `${product.makingTime / 60} ساعة` : `${Math.floor(product.makingTime / 60)} ساعة و${product.makingTime % 60} دقيقة`}</span>
+                  <span>â±</span>
+                  <span>ÙˆÙ‚Øª Ø§Ù„ØªØ­Ø¶ÙŠØ±: {product.makingTime < 60 ? `${product.makingTime} Ø¯Ù‚ÙŠÙ‚Ø©` : product.makingTime % 60 === 0 ? `${product.makingTime / 60} Ø³Ø§Ø¹Ø©` : `${Math.floor(product.makingTime / 60)} Ø³Ø§Ø¹Ø© Ùˆ${product.makingTime % 60} Ø¯Ù‚ÙŠÙ‚Ø©`}</span>
                 </p>
               ) : null}
             </div>
             <button
               onClick={onClose}
               className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors flex-shrink-0"
-              aria-label="إغلاق"
+              aria-label="Ø¥ØºÙ„Ø§Ù‚"
             >
               <X className="h-5 w-5 text-gray-600" />
             </button>
@@ -158,7 +157,7 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
                 </div>
               ) : (
                 <div className="w-full aspect-square flex items-center justify-center text-gray-400">
-                  لا توجد صورة
+                  Ù„Ø§ ØªÙˆØ¬Ø¯ ØµÙˆØ±Ø©
                 </div>
               )}
               {/* Prev/Next arrows */}
@@ -201,7 +200,7 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
           )
         })()}
 
-          {/* ── TRAY SELECTION ── */}
+          {/* â”€â”€ TRAY SELECTION â”€â”€ */}
           {isTray && (
             <div className="pb-4">
               <div className="flex items-center justify-between mb-3">
@@ -211,7 +210,7 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
                 )}>
                   {traySelections.length} / {TRAY_REQUIRED}
                 </span>
-                <h3 className="font-bold text-[#1e293b]">اختر {TRAY_REQUIRED} أصناف</h3>
+                <h3 className="font-bold text-[#1e293b]">Ø§Ø®ØªØ± {TRAY_REQUIRED} Ø£ØµÙ†Ø§Ù</h3>
               </div>
 
               {/* Progress bar */}
@@ -253,13 +252,13 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
           )}
 
 
-          {/* ── EID PACKAGE SELECTION ── */}
+          {/* â”€â”€ EID PACKAGE SELECTION â”€â”€ */}
           {isEidPackage && (
             <div className="pb-4">
-              {/* Included: بلاتر الاجبان */}
+              {/* Included: Ø¨Ù„Ø§ØªØ± Ø§Ù„Ø§Ø¬Ø¨Ø§Ù† */}
               <div className="flex items-center justify-between mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded-2xl">
-                <span className="text-xs bg-yellow-400 text-yellow-900 font-bold px-2 py-0.5 rounded-full">مشمول 🎁</span>
-                <span className="font-semibold text-sm text-right">بلاتر الاجبان</span>
+                <span className="text-xs bg-yellow-400 text-yellow-900 font-bold px-2 py-0.5 rounded-full">Ù…Ø´Ù…ÙˆÙ„ ðŸŽ</span>
+                <span className="font-semibold text-sm text-right">Ø¨Ù„Ø§ØªØ± Ø§Ù„Ø§Ø¬Ø¨Ø§Ù†</span>
               </div>
 
               {/* Choose heaters */}
@@ -270,7 +269,7 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
                 )}>
                   {traySelections.length} / {eidRequired}
                 </span>
-                <h3 className="font-bold text-[#1e293b]">اختر {eidRequired} سخانات</h3>
+                <h3 className="font-bold text-[#1e293b]">Ø§Ø®ØªØ± {eidRequired} Ø³Ø®Ø§Ù†Ø§Øª</h3>
               </div>
 
               {/* Progress bar */}
@@ -310,14 +309,14 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
             </div>
           )}
 
-          {/* ── OPTIONS / CUSTOMIZATION (any item with ingredients) ── */}
+          {/* â”€â”€ OPTIONS / CUSTOMIZATION (any item with ingredients) â”€â”€ */}
           {hasIngredients && (
             <div className="pb-4">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-sm text-gray-500">
                   {maxSelections > 0 && `(${selectedIngredients.length}/${maxSelections})`}
                 </span>
-                <h3 className="font-bold text-[#1e293b]">تخصيص الطلب</h3>
+                <h3 className="font-bold text-[#1e293b]">ØªØ®ØµÙŠØµ Ø§Ù„Ø·Ù„Ø¨</h3>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 {product.ingredients?.map((ingredient) => {
@@ -348,7 +347,7 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
           {/* Ingredients text for non-customizable items */}
           {!isTray && !hasIngredients && product.ingredients && product.ingredients.length > 0 && (
             <p className="text-gray-600 text-sm mb-4 text-right leading-relaxed">
-              {product.ingredients.join("، ")}
+              {product.ingredients.join("ØŒ ")}
             </p>
           )}
         </div>
@@ -361,7 +360,7 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
               <button
                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
                 className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
-                aria-label="تقليل الكمية"
+                aria-label="ØªÙ‚Ù„ÙŠÙ„ Ø§Ù„ÙƒÙ…ÙŠØ©"
               >
                 <Minus className="h-4 w-4" />
               </button>
@@ -369,12 +368,12 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
               <button
                 onClick={() => setQuantity(quantity + 1)}
                 className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
-                aria-label="زيادة الكمية"
+                aria-label="Ø²ÙŠØ§Ø¯Ø© Ø§Ù„ÙƒÙ…ÙŠØ©"
               >
                 <Plus className="h-4 w-4" />
               </button>
             </div>
-            <span className="text-xl font-bold text-[#1e293b]">{product.price * quantity} ر.س</span>
+            <span className="text-xl font-bold text-[#1e293b]">{product.price * quantity} Ø±.Ø³</span>
           </div>
 
           {/* Order button */}
@@ -391,12 +390,12 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
             )}
           >
             {product.inStock === false
-              ? "نفذت الكمية"
+              ? "Ù†ÙØ°Øª Ø§Ù„ÙƒÙ…ÙŠØ©"
               : isTray && !trayComplete
-              ? `اختر ${TRAY_REQUIRED - traySelections.length} أصناف أخرى`
+              ? `Ø§Ø®ØªØ± ${TRAY_REQUIRED - traySelections.length} Ø£ØµÙ†Ø§Ù Ø£Ø®Ø±Ù‰`
               : isEidPackage && !eidComplete
-              ? `اختر ${eidRequired - traySelections.length} سخانات`
-              : "اطلب الآن"}
+              ? `Ø§Ø®ØªØ± ${eidRequired - traySelections.length} Ø³Ø®Ø§Ù†Ø§Øª`
+              : "Ø§Ø·Ù„Ø¨ Ø§Ù„Ø¢Ù†"}
           </button>
         </div>
 
@@ -404,3 +403,4 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
     </Dialog>
   )
 }
+

@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useState, useCallback, Suspense } from "react"
 import Link from "next/link"
@@ -9,7 +9,6 @@ import { useCart } from "@/components/cart-provider"
 import type { CartItem } from "@/components/cart-provider"
 import { TimePicker } from "@/components/time-picker"
 import { generateWhatsAppMessage, generatePickupWhatsAppMessage, WHATSAPP_NUMBER, deliveryAreas } from "@/lib/data"
-import { saveOrder } from "@/lib/orders"
 import { Button } from "@/components/ui/button"
 
 function CheckoutItemImage({ item }: { item: CartItem }) {
@@ -67,16 +66,16 @@ function CheckoutContent() {
   const handleWhatsAppCheckout = async () => {
     if (isPickup) {
       if (!deliveryInfo.name || !deliveryInfo.phone) {
-        alert("الرجاء إدخال الاسم ورقم الهاتف")
+        alert("Ø§Ù„Ø±Ø¬Ø§Ø¡ Ø¥Ø¯Ø®Ø§Ù„ Ø§Ù„Ø§Ø³Ù… ÙˆØ±Ù‚Ù… Ø§Ù„Ù‡Ø§ØªÙ")
         return
       }
       if (!deliveryInfo.scheduledTime) {
-        alert("الرجاء اختيار وقت الاستلام")
+        alert("Ø§Ù„Ø±Ø¬Ø§Ø¡ Ø§Ø®ØªÙŠØ§Ø± ÙˆÙ‚Øª Ø§Ù„Ø§Ø³ØªÙ„Ø§Ù…")
         return
       }
     } else {
       if (!deliveryInfo.name || !deliveryInfo.phone || !deliveryInfo.area) {
-        alert("الرجاء ملء جميع الحقول المطلوبة")
+        alert("Ø§Ù„Ø±Ø¬Ø§Ø¡ Ù…Ù„Ø¡ Ø¬Ù…ÙŠØ¹ Ø§Ù„Ø­Ù‚ÙˆÙ„ Ø§Ù„Ù…Ø·Ù„ÙˆØ¨Ø©")
         return
       }
     }
@@ -84,6 +83,7 @@ function CheckoutContent() {
     setIsSubmitting(true)
 
     const cartItems = items.map((item) => ({
+      id: item.id,
       name: item.name,
       nameEn: (item as { nameEn?: string }).nameEn || "",
       quantity: item.quantity,
@@ -92,42 +92,58 @@ function CheckoutContent() {
       makingTime: item.makingTime || 0,
     }))
 
-    // Build message FIRST — before any await
+    // Build message FIRST â€” before any await
     const message = isPickup
       ? generatePickupWhatsAppMessage(cartItems, totalPrice, deliveryInfo)
       : generateWhatsAppMessage(cartItems, totalPrice, deliveryInfo)
 
     const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${message}`
 
-    // Open WhatsApp BEFORE await — Safari blocks window.open after async calls
+    // Open WhatsApp BEFORE await â€” Safari blocks window.open after async calls
     window.open(whatsappUrl, "_blank")
+    try {
+      const orderResponse = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customerName: deliveryInfo.name,
+          customerPhone: deliveryInfo.phone,
+          customerArea: isPickup ? "" : deliveryInfo.area,
+          orderType: isPickup ? "pickup" : "delivery",
+          items: cartItems.map((item) => ({
+            id: item.id,
+            quantity: item.quantity,
+            selectedIngredients: item.selectedIngredients,
+          })),
+          notes: deliveryInfo.notes,
+          scheduledTime: deliveryInfo.scheduledTime,
+        }),
+      })
 
-    // Save order to Supabase
-    await saveOrder({
-      customerName: deliveryInfo.name,
-      customerPhone: deliveryInfo.phone,
-      customerArea: isPickup ? "استلام من المحل" : deliveryInfo.area,
-      orderType: isPickup ? "pickup" : "delivery",
-      items: cartItems,
-      subtotal: totalPrice,
-      deliveryFee,
-      total: grandTotal,
-      notes: deliveryInfo.notes,
-      scheduledTime: deliveryInfo.scheduledTime,
-    })
+      if (!orderResponse.ok) {
+        throw new Error("تعذر حفظ الطلب. الرجاء المحاولة مرة أخرى.")
+      }
 
-    clearCart()
+      const orderData: { total?: number } = await orderResponse.json()
+      const confirmedTotal = typeof orderData.total === "number" ? orderData.total : grandTotal
 
-    // Redirect to confirmation page
-    const params = new URLSearchParams({
-      name: deliveryInfo.name,
-      area: isPickup ? "" : deliveryInfo.area,
-      total: String(grandTotal),
-      type: isPickup ? "pickup" : "delivery",
-      time: deliveryInfo.scheduledTime ?? "في أقرب وقت",
-      wa: whatsappUrl,
-    })
-    router.push(`/confirmation?${params.toString()}`)
+      clearCart()
+
+      // Redirect to confirmation page
+      const params = new URLSearchParams({
+        name: deliveryInfo.name,
+        area: isPickup ? "" : deliveryInfo.area,
+        total: String(confirmedTotal),
+        type: isPickup ? "pickup" : "delivery",
+        time: deliveryInfo.scheduledTime ?? "في أقرب وقت",
+        wa: whatsappUrl,
+      })
+      router.push(`/confirmation?${params.toString()}`)
+    } catch {
+      alert("تعذر حفظ الطلب. الرجاء المحاولة مرة أخرى.")
+      setIsSubmitting(false)
+      return
+    }
   }
 
   if (items.length === 0) {
@@ -136,9 +152,9 @@ function CheckoutContent() {
         <div className="w-24 h-24 rounded-full bg-amal-grey flex items-center justify-center mb-6">
           <Trash2 className="h-10 w-10 text-muted-foreground" />
         </div>
-        <h1 className="text-2xl font-bold text-foreground mb-2">السلة فارغة</h1>
-        <p className="text-muted-foreground mb-6">لم تقم بإضافة أي منتجات بعد</p>
-        <Link href="/"><Button className="rounded-full px-8">تصفح المنتجات</Button></Link>
+        <h1 className="text-2xl font-bold text-foreground mb-2">Ø§Ù„Ø³Ù„Ø© ÙØ§Ø±ØºØ©</h1>
+        <p className="text-muted-foreground mb-6">Ù„Ù… ØªÙ‚Ù… Ø¨Ø¥Ø¶Ø§ÙØ© Ø£ÙŠ Ù…Ù†ØªØ¬Ø§Øª Ø¨Ø¹Ø¯</p>
+        <Link href="/"><Button className="rounded-full px-8">ØªØµÙØ­ Ø§Ù„Ù…Ù†ØªØ¬Ø§Øª</Button></Link>
       </main>
     )
   }
@@ -151,9 +167,9 @@ function CheckoutContent() {
           <ArrowRight className="h-5 w-5" />
         </Link>
         <div>
-          <h1 className="text-xl font-bold">سلة المشتريات</h1>
+          <h1 className="text-xl font-bold">Ø³Ù„Ø© Ø§Ù„Ù…Ø´ØªØ±ÙŠØ§Øª</h1>
           <p className="text-xs text-muted-foreground">
-            {isPickup ? "🏪 استلام من المحل" : "🚚 توصيل للمنزل"}
+            {isPickup ? "ðŸª Ø§Ø³ØªÙ„Ø§Ù… Ù…Ù† Ø§Ù„Ù…Ø­Ù„" : "ðŸšš ØªÙˆØµÙŠÙ„ Ù„Ù„Ù…Ù†Ø²Ù„"}
           </p>
         </div>
       </header>
@@ -161,7 +177,7 @@ function CheckoutContent() {
       <div className="p-4 space-y-6">
         {/* Cart Items */}
         <section>
-          <h2 className="text-lg font-bold mb-4">طلباتك ({items.length})</h2>
+          <h2 className="text-lg font-bold mb-4">Ø·Ù„Ø¨Ø§ØªÙƒ ({items.length})</h2>
           <div className="space-y-3">
             {items.map((item) => (
               <div key={item.cartKey} className="flex items-center gap-4 p-3 bg-card rounded-2xl border border-border/50">
@@ -170,21 +186,21 @@ function CheckoutContent() {
                   <h3 className="font-bold text-foreground truncate">{item.name}</h3>
                   {item.selectedIngredients && item.selectedIngredients.length > 0 && (
                     <p className="text-xs text-muted-foreground truncate">
-                      {item.selectedIngredients.join("، ")}
+                      {item.selectedIngredients.join("ØŒ ")}
                     </p>
                   )}
-                  <p className="text-primary font-medium">{item.price * item.quantity} ر.س</p>
+                  <p className="text-primary font-medium">{item.price * item.quantity} Ø±.Ø³</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button onClick={() => updateQuantity(item.cartKey, item.quantity - 1)} className="w-8 h-8 rounded-full bg-amal-grey flex items-center justify-center" aria-label="تقليل الكمية">
+                  <button onClick={() => updateQuantity(item.cartKey, item.quantity - 1)} className="w-8 h-8 rounded-full bg-amal-grey flex items-center justify-center" aria-label="ØªÙ‚Ù„ÙŠÙ„ Ø§Ù„ÙƒÙ…ÙŠØ©">
                     <Minus className="h-4 w-4" />
                   </button>
                   <span className="w-6 text-center font-medium">{item.quantity}</span>
-                  <button onClick={() => updateQuantity(item.cartKey, item.quantity + 1)} className="w-8 h-8 rounded-full bg-amal-grey flex items-center justify-center" aria-label="زيادة الكمية">
+                  <button onClick={() => updateQuantity(item.cartKey, item.quantity + 1)} className="w-8 h-8 rounded-full bg-amal-grey flex items-center justify-center" aria-label="Ø²ÙŠØ§Ø¯Ø© Ø§Ù„ÙƒÙ…ÙŠØ©">
                     <Plus className="h-4 w-4" />
                   </button>
                 </div>
-                <button onClick={() => removeItem(item.cartKey)} className="w-8 h-8 rounded-full bg-destructive/10 flex items-center justify-center text-destructive" aria-label="حذف المنتج">
+                <button onClick={() => removeItem(item.cartKey)} className="w-8 h-8 rounded-full bg-destructive/10 flex items-center justify-center text-destructive" aria-label="Ø­Ø°Ù Ø§Ù„Ù…Ù†ØªØ¬">
                   <Trash2 className="h-4 w-4" />
                 </button>
               </div>
@@ -194,18 +210,18 @@ function CheckoutContent() {
 
         {/* Time Picker */}
         <section>
-          <h2 className="text-lg font-bold mb-2">{isPickup ? "وقت الاستلام" : "موعد التوصيل"}</h2>
+          <h2 className="text-lg font-bold mb-2">{isPickup ? "ÙˆÙ‚Øª Ø§Ù„Ø§Ø³ØªÙ„Ø§Ù…" : "Ù…ÙˆØ¹Ø¯ Ø§Ù„ØªÙˆØµÙŠÙ„"}</h2>
           {maxMakingTime > 0 && (
             <div className="mb-3 p-3 bg-amal-yellow/20 rounded-xl flex items-center gap-2 text-right">
-              <span className="text-xl">⏱️</span>
+              <span className="text-xl">â±ï¸</span>
               <p className="text-sm text-foreground">
-                بعض الأصناف تحتاج وقت تحضير{" "}
+                Ø¨Ø¹Ø¶ Ø§Ù„Ø£ØµÙ†Ø§Ù ØªØ­ØªØ§Ø¬ ÙˆÙ‚Øª ØªØ­Ø¶ÙŠØ±{" "}
                 <span className="font-bold">
                   {maxMakingTime >= 60
-                    ? `${maxMakingTime % 60 === 0 ? maxMakingTime / 60 : `${Math.floor(maxMakingTime / 60)} ساعة و${maxMakingTime % 60}`} ساعة`
-                    : `${maxMakingTime} دقيقة`}
+                    ? `${maxMakingTime % 60 === 0 ? maxMakingTime / 60 : `${Math.floor(maxMakingTime / 60)} Ø³Ø§Ø¹Ø© Ùˆ${maxMakingTime % 60}`} Ø³Ø§Ø¹Ø©`
+                    : `${maxMakingTime} Ø¯Ù‚ÙŠÙ‚Ø©`}
                 </span>
-                {" "}— المواعيد المتاحة تبدأ بعد انتهاء التحضير.
+                {" "}â€” Ø§Ù„Ù…ÙˆØ§Ø¹ÙŠØ¯ Ø§Ù„Ù…ØªØ§Ø­Ø© ØªØ¨Ø¯Ø£ Ø¨Ø¹Ø¯ Ø§Ù†ØªÙ‡Ø§Ø¡ Ø§Ù„ØªØ­Ø¶ÙŠØ±.
               </p>
             </div>
           )}
@@ -214,13 +230,13 @@ function CheckoutContent() {
 
         {/* Info Form */}
         <section>
-          <h2 className="text-lg font-bold mb-4">{isPickup ? "معلومات الاستلام" : "معلومات التوصيل"}</h2>
+          <h2 className="text-lg font-bold mb-4">{isPickup ? "Ù…Ø¹Ù„ÙˆÙ…Ø§Øª Ø§Ù„Ø§Ø³ØªÙ„Ø§Ù…" : "Ù…Ø¹Ù„ÙˆÙ…Ø§Øª Ø§Ù„ØªÙˆØµÙŠÙ„"}</h2>
           <div className="space-y-3">
             <div className="relative">
               <User className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="الاسم الكامل *"
+                placeholder="Ø§Ù„Ø§Ø³Ù… Ø§Ù„ÙƒØ§Ù…Ù„ *"
                 value={deliveryInfo.name}
                 onChange={(e) => handleInputChange("name", e.target.value)}
                 className="w-full py-4 px-4 pr-12 rounded-2xl bg-amal-grey text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
@@ -232,7 +248,7 @@ function CheckoutContent() {
               <input
                 type="tel"
                 inputMode="tel"
-                placeholder="رقم الهاتف *"
+                placeholder="Ø±Ù‚Ù… Ø§Ù„Ù‡Ø§ØªÙ *"
                 value={deliveryInfo.phone}
                 onChange={(e) => handleInputChange("phone", e.target.value)}
                 className="w-full py-4 px-4 pr-12 rounded-2xl bg-amal-grey text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
@@ -250,10 +266,10 @@ function CheckoutContent() {
                     onChange={(e) => handleInputChange("area", e.target.value)}
                     className="w-full py-4 px-4 pr-12 rounded-2xl bg-amal-grey text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer"
                   >
-                    <option value="">اختر منطقة التوصيل *</option>
+                    <option value="">Ø§Ø®ØªØ± Ù…Ù†Ø·Ù‚Ø© Ø§Ù„ØªÙˆØµÙŠÙ„ *</option>
                     {deliveryAreas.map((area) => (
                       <option key={area.id} value={area.name}>
-                        {area.name} - {area.price} ر.س
+                        {area.name} - {area.price} Ø±.Ø³
                       </option>
                     ))}
                   </select>
@@ -264,7 +280,7 @@ function CheckoutContent() {
             <div className="relative">
               <FileText className="absolute right-4 top-4 h-5 w-5 text-muted-foreground" />
               <textarea
-                placeholder="ملاحظات إضافية (اختياري)"
+                placeholder="Ù…Ù„Ø§Ø­Ø¸Ø§Øª Ø¥Ø¶Ø§ÙÙŠØ© (Ø§Ø®ØªÙŠØ§Ø±ÙŠ)"
                 value={deliveryInfo.notes}
                 onChange={(e) => handleInputChange("notes", e.target.value)}
                 rows={2}
@@ -277,21 +293,21 @@ function CheckoutContent() {
         {/* Summary */}
         <section className="p-4 bg-amal-pink-light rounded-2xl">
           <div className="flex justify-between mb-2">
-            <span className="text-muted-foreground">المجموع الفرعي</span>
-            <span className="font-medium">{totalPrice} ر.س</span>
+            <span className="text-muted-foreground">Ø§Ù„Ù…Ø¬Ù…ÙˆØ¹ Ø§Ù„ÙØ±Ø¹ÙŠ</span>
+            <span className="font-medium">{totalPrice} Ø±.Ø³</span>
           </div>
           <div className="flex justify-between mb-2">
             <span className="text-muted-foreground">
-              {isPickup ? "رسوم التوصيل" : `رسوم التوصيل ${deliveryInfo.area ? `(${deliveryInfo.area})` : ""}`}
+              {isPickup ? "Ø±Ø³ÙˆÙ… Ø§Ù„ØªÙˆØµÙŠÙ„" : `Ø±Ø³ÙˆÙ… Ø§Ù„ØªÙˆØµÙŠÙ„ ${deliveryInfo.area ? `(${deliveryInfo.area})` : ""}`}
             </span>
             <span className={`font-medium ${isPickup ? "text-[#1e5631]" : ""}`}>
-              {isPickup ? "مجاني 🎉" : deliveryFee > 0 ? `${deliveryFee} ر.س` : "اختر المنطقة"}
+              {isPickup ? "Ù…Ø¬Ø§Ù†ÙŠ ðŸŽ‰" : deliveryFee > 0 ? `${deliveryFee} Ø±.Ø³` : "Ø§Ø®ØªØ± Ø§Ù„Ù…Ù†Ø·Ù‚Ø©"}
             </span>
           </div>
           <div className="border-t border-primary/20 pt-2 mt-2">
             <div className="flex justify-between">
-              <span className="font-bold text-lg">الإجمالي</span>
-              <span className="font-bold text-lg text-primary">{grandTotal} ر.س</span>
+              <span className="font-bold text-lg">Ø§Ù„Ø¥Ø¬Ù…Ø§Ù„ÙŠ</span>
+              <span className="font-bold text-lg text-primary">{grandTotal} Ø±.Ø³</span>
             </div>
           </div>
         </section>
@@ -304,7 +320,7 @@ function CheckoutContent() {
           disabled={isSubmitting}
           className="w-full h-14 rounded-full bg-[#25D366] hover:bg-[#25D366]/90 text-white text-lg font-bold shadow-xl"
         >
-          {isSubmitting ? "جاري الإرسال..." : "إتمام الطلب عبر واتساب"}
+          {isSubmitting ? "Ø¬Ø§Ø±ÙŠ Ø§Ù„Ø¥Ø±Ø³Ø§Ù„..." : "Ø¥ØªÙ…Ø§Ù… Ø§Ù„Ø·Ù„Ø¨ Ø¹Ø¨Ø± ÙˆØ§ØªØ³Ø§Ø¨"}
         </Button>
       </div>
     </main>
@@ -318,3 +334,5 @@ export default function CheckoutPage() {
     </Suspense>
   )
 }
+
+

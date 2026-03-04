@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server"
+﻿import { NextRequest, NextResponse } from "next/server"
+import { timingSafeEqual } from "crypto"
 
 const PRINTER_IP = process.env.PRINTER_IP || "192.168.100.205"
 
@@ -82,8 +83,17 @@ function buildTicketXml(order: {
 
 export async function POST(req: NextRequest) {
   try {
+    const webhookSecret = process.env.WEBHOOK_SECRET
+    if (!webhookSecret) {
+      return NextResponse.json({ error: "Webhook secret not configured" }, { status: 503 })
+    }
+
     const secret = req.headers.get("x-webhook-secret")
-    if (process.env.WEBHOOK_SECRET && secret !== process.env.WEBHOOK_SECRET) {
+    const validSecret = typeof secret === "string"
+      && secret.length === webhookSecret.length
+      && timingSafeEqual(Buffer.from(secret), Buffer.from(webhookSecret))
+
+    if (!validSecret) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
@@ -100,7 +110,7 @@ export async function POST(req: NextRequest) {
 
     const order = {
       orderNumber: record.order_number ?? record.id,
-      customerName: record.customer_name ?? "—",
+      customerName: record.customer_name ?? "â€”",
       customerPhone: record.customer_phone ?? "",
       customerArea: record.customer_area ?? "",
       orderType: record.order_type ?? "delivery",
@@ -143,3 +153,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: msg }, { status: 500 })
   }
 }
+
+

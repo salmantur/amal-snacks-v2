@@ -250,7 +250,7 @@ export default function ItemsPage() {
   const tags = (modalItem?.ingredients || "").split(",").map(t => t.trim()).filter(Boolean)
 
   return (
-    <main className="min-h-screen bg-[#f5f5f5]">
+    <main className="min-h-screen bg-[#f5f5f5] overflow-x-hidden">
 
       {/* Header */}
       <header className="sticky top-0 z-40 bg-white border-b border-gray-100">
@@ -312,9 +312,9 @@ export default function ItemsPage() {
       )}
 
       {/* Items list */}
-      <div className="p-4 pb-32">
+      <div className="w-full max-w-full p-4 pb-32 overflow-x-hidden">
         {loading ? (
-          <div className="grid gap-3">
+          <div className="grid w-full gap-3">
             {[1,2,3,4].map(i => (
               <div key={i} className="bg-white rounded-2xl p-4 flex gap-3 animate-pulse">
                 <div className="w-16 h-16 rounded-xl bg-gray-100 flex-shrink-0" />
@@ -335,7 +335,7 @@ export default function ItemsPage() {
             {filtered.map(item => {
               const imgSrc = getDisplayImage(item.image)
               return (
-                <div key={item.id} className="bg-white rounded-2xl p-3 flex items-center gap-3 shadow-sm">
+                <div key={item.id} className="w-full max-w-full bg-white rounded-2xl p-3 flex items-center gap-3 shadow-sm overflow-hidden">
 
                   {/* Image */}
                   <div className="relative w-20 h-20 rounded-2xl bg-[#f5f5f5] overflow-hidden flex-shrink-0">

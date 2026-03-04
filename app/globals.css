@@ -10,6 +10,7 @@
 
 @layer base {
   :root {
+    --checkout-green: #1e5631;
     --background: 0 0% 100%;
     --foreground: 0 0% 15%;
     --card: 0 0% 100%;

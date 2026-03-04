@@ -1,10 +1,10 @@
-﻿"use client"
+"use client"
 
 import { Clock, Phone, MapPin, ChefHat, CheckCircle, Truck, Printer } from "lucide-react"
 import { useState } from "react"
 import { cn } from "@/lib/utils"
 import type { Order } from "@/lib/data"
-import { printOrder, setPrinterIp } from "@/lib/thermal-printer"
+import { printOrder, getPrinterIp, setPrinterIp } from "@/lib/thermal-printer"
 
 interface KitchenTicketProps {
   order: Order
@@ -13,22 +13,22 @@ interface KitchenTicketProps {
 
 const statusConfig = {
   pending: {
-    label: "Ø¬Ø¯ÙŠØ¯",
+    label: "جديد",
     color: "bg-primary text-primary-foreground",
     icon: Clock,
   },
   preparing: {
-    label: "Ù‚ÙŠØ¯ Ø§Ù„ØªØ­Ø¶ÙŠØ±",
+    label: "قيد التحضير",
     color: "bg-amal-yellow text-foreground",
     icon: ChefHat,
   },
   ready: {
-    label: "Ø¬Ø§Ù‡Ø²",
+    label: "جاهز",
     color: "bg-green-500 text-white",
     icon: CheckCircle,
   },
   delivered: {
-    label: "ØªÙ… Ø§Ù„ØªÙˆØµÙŠÙ„",
+    label: "تم التوصيل",
     color: "bg-muted text-muted-foreground",
     icon: Truck,
   },
@@ -55,7 +55,7 @@ export function KitchenTicket({ order, onStatusChange }: KitchenTicketProps) {
       setPrintSuccess(true)
       setTimeout(() => setPrintSuccess(false), 3000)
     } catch (err) {
-      setPrintError(err instanceof Error ? err.message : "ÙØ´Ù„ Ø§Ù„Ø§ØªØµØ§Ù„ Ø¨Ø§Ù„Ø·Ø§Ø¨Ø¹Ø©")
+      setPrintError(err instanceof Error ? err.message : "فشل الاتصال بالطابعة")
     } finally {
       setPrinting(false)
     }
@@ -124,20 +124,20 @@ export function KitchenTicket({ order, onStatusChange }: KitchenTicketProps) {
         {order.scheduledTime && (
           <div className="flex items-center gap-2 p-2 bg-amal-yellow-light rounded-lg">
             <Clock className="h-4 w-4 text-foreground" />
-            <span className="text-sm font-medium">Ù…ÙˆØ¹Ø¯ Ø§Ù„ØªØ³Ù„ÙŠÙ…: {order.scheduledTime}</span>
+            <span className="text-sm font-medium">موعد التسليم: {order.scheduledTime}</span>
           </div>
         )}
 
         {/* Items */}
         <div className="border-t border-border pt-4">
-          <h4 className="font-medium mb-2">Ø§Ù„Ø·Ù„Ø¨Ø§Øª:</h4>
+          <h4 className="font-medium mb-2">الطلبات:</h4>
           <ul className="space-y-2">
             {order.items.map((item, index) => (
               <li key={index} className="flex justify-between text-sm">
                 <span>
-                  <span className="font-bold text-primary">{item.quantity}Ã—</span> {item.name}
+                  <span className="font-bold text-primary">{item.quantity}×</span> {item.name}
                 </span>
-                <span className="text-muted-foreground">{item.price * item.quantity} Ø±.Ø³</span>
+                <span className="text-muted-foreground">{item.price * item.quantity} ر.س</span>
               </li>
             ))}
           </ul>
@@ -147,15 +147,15 @@ export function KitchenTicket({ order, onStatusChange }: KitchenTicketProps) {
         {order.notes && (
           <div className="p-3 bg-amal-pink-light rounded-lg">
             <p className="text-sm">
-              <span className="font-medium">Ù…Ù„Ø§Ø­Ø¸Ø§Øª:</span> {order.notes}
+              <span className="font-medium">ملاحظات:</span> {order.notes}
             </p>
           </div>
         )}
 
         {/* Total */}
         <div className="flex justify-between items-center pt-2 border-t border-border">
-          <span className="font-bold">Ø§Ù„Ø¥Ø¬Ù…Ø§Ù„ÙŠ</span>
-          <span className="text-xl font-bold text-primary">{order.total} Ø±.Ø³</span>
+          <span className="font-bold">الإجمالي</span>
+          <span className="text-xl font-bold text-primary">{order.total} ر.س</span>
         </div>
 
         {/* Action Button */}
@@ -169,9 +169,9 @@ export function KitchenTicket({ order, onStatusChange }: KitchenTicketProps) {
               order.status === "ready" && "bg-muted text-muted-foreground hover:bg-muted/80"
             )}
           >
-            {order.status === "pending" && "Ø¨Ø¯Ø¡ Ø§Ù„ØªØ­Ø¶ÙŠØ±"}
-            {order.status === "preparing" && "Ø¬Ø§Ù‡Ø² Ù„Ù„ØªÙˆØµÙŠÙ„"}
-            {order.status === "ready" && "ØªÙ… Ø§Ù„ØªÙˆØµÙŠÙ„"}
+            {order.status === "pending" && "بدء التحضير"}
+            {order.status === "preparing" && "جاهز للتوصيل"}
+            {order.status === "ready" && "تم التوصيل"}
           </button>
         )}
 
@@ -187,7 +187,7 @@ export function KitchenTicket({ order, onStatusChange }: KitchenTicketProps) {
           )}
         >
           <Printer className="h-4 w-4" />
-          {printing ? "Ø¬Ø§Ø±ÙŠ Ø§Ù„Ø·Ø¨Ø§Ø¹Ø©..." : printSuccess ? "âœ“ ØªÙ…Øª Ø§Ù„Ø·Ø¨Ø§Ø¹Ø©" : "Ø·Ø¨Ø§Ø¹Ø© Ø§Ù„ØªØ°ÙƒØ±Ø©"}
+          {printing ? "جاري الطباعة..." : printSuccess ? "✓ تمت الطباعة" : "طباعة التذكرة"}
         </button>
 
         {/* Printer IP setting */}
@@ -196,7 +196,7 @@ export function KitchenTicket({ order, onStatusChange }: KitchenTicketProps) {
             onClick={() => setShowIpEdit(!showIpEdit)}
             className="text-xs text-muted-foreground underline"
           >
-            IP Ø§Ù„Ø·Ø§Ø¨Ø¹Ø©: {printerIp}
+            IP الطابعة: {printerIp}
           </button>
         </div>
 
@@ -219,7 +219,7 @@ export function KitchenTicket({ order, onStatusChange }: KitchenTicketProps) {
               }}
               className="px-3 py-1.5 text-sm bg-primary text-primary-foreground rounded-lg"
             >
-              Ø­ÙØ¸
+              حفظ
             </button>
           </div>
         )}
@@ -238,8 +238,8 @@ export function KitchenTicket({ order, onStatusChange }: KitchenTicketProps) {
 function getTimeAgo(date: Date): string {
   const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000)
   
-  if (seconds < 60) return "Ø§Ù„Ø¢Ù†"
-  if (seconds < 3600) return `Ù…Ù†Ø° ${Math.floor(seconds / 60)} Ø¯Ù‚ÙŠÙ‚Ø©`
-  if (seconds < 86400) return `Ù…Ù†Ø° ${Math.floor(seconds / 3600)} Ø³Ø§Ø¹Ø©`
-  return `Ù…Ù†Ø° ${Math.floor(seconds / 86400)} ÙŠÙˆÙ…`
+  if (seconds < 60) return "الآن"
+  if (seconds < 3600) return `منذ ${Math.floor(seconds / 60)} دقيقة`
+  if (seconds < 86400) return `منذ ${Math.floor(seconds / 3600)} ساعة`
+  return `منذ ${Math.floor(seconds / 86400)} يوم`
 }

@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import Image from "next/image"
 import { useBannerConfig } from "@/hooks/use-banner-config"
@@ -6,6 +6,7 @@ import { useState } from "react"
 import { ProductDrawer } from "@/components/product-drawer"
 import { useCart } from "@/components/cart-provider"
 import { useMenu } from "@/hooks/use-menu"
+import type { MenuItem } from "@/components/cart-provider"
 import { ShoppingBag, Sparkles } from "lucide-react"
 
 
@@ -24,7 +25,7 @@ export function HeroBanner() {
     return <div className="mx-4 mt-4 rounded-3xl bg-amal-pink-light/50 h-44 animate-pulse" />
   }
 
-  // â”€â”€ Full design mode: custom poster image fills entire banner â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Full design mode: custom poster image fills entire banner ──────────────
   if (config.full_design_mode && config.full_design_url) {
     return (
       <div className="mx-4 mt-4 rounded-3xl overflow-hidden relative" style={{ aspectRatio: "2.5/1" }}>
@@ -39,7 +40,7 @@ export function HeroBanner() {
     )
   }
 
-  // â”€â”€ With featured product: split layout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── With featured product: split layout ────────────────────────────────────
   if (featuredProduct) {
     return (
       <>
@@ -53,7 +54,7 @@ export function HeroBanner() {
             <div className="flex-1 p-5 flex flex-col justify-between" dir="rtl">
               {/* Label badge */}
               <span className="self-start bg-white/80 text-foreground text-xs font-bold px-3 py-1 rounded-full backdrop-blur-sm">
-                {config.featured_product_label || "Ø¬Ø¯ÙŠØ¯ ðŸ”¥"}
+                {config.featured_product_label || "جديد 🔥"}
               </span>
 
               {/* Product name + price */}
@@ -65,7 +66,7 @@ export function HeroBanner() {
                   <p className="text-xs text-foreground/60 mt-0.5">{featuredProduct.nameEn}</p>
                 )}
                 <p className="text-lg font-black text-foreground/80 mt-1">
-                  {featuredProduct.price} Ø±.Ø³
+                  {featuredProduct.price} ر.س
                 </p>
               </div>
 
@@ -79,9 +80,9 @@ export function HeroBanner() {
                 className="mt-4 self-start flex items-center gap-2 bg-foreground text-background rounded-full px-4 py-2.5 text-sm font-bold active:scale-95 transition-all shadow-lg"
               >
                 {added ? (
-                  <>âœ“ Ø£Ø¶ÙŠÙ Ù„Ù„Ø³Ù„Ø©!</>
+                  <>✓ أضيف للسلة!</>
                 ) : (
-                  <><ShoppingBag className="h-3.5 w-3.5" /> Ø§Ø·Ù„Ø¨ Ø§Ù„Ø¢Ù†</>
+                  <><ShoppingBag className="h-3.5 w-3.5" /> اطلب الآن</>
                 )}
               </button>
             </div>
@@ -105,7 +106,7 @@ export function HeroBanner() {
               )}
               {/* Tap for details hint */}
               <div className="absolute bottom-2 right-2 bg-black/30 text-white text-[10px] px-2 py-0.5 rounded-full backdrop-blur-sm">
-                Ø§Ù„ØªÙØ§ØµÙŠÙ„
+                التفاصيل
               </div>
             </button>
           </div>
@@ -125,7 +126,7 @@ export function HeroBanner() {
     )
   }
 
-  // â”€â”€ Without featured product: original banner â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Without featured product: original banner ──────────────────────────────
   const hasImage = !!config.image_url
   return (
     <div
@@ -151,4 +152,3 @@ export function HeroBanner() {
     </div>
   )
 }
-

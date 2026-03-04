@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import { useState, useEffect, useMemo, useCallback } from "react"
 import dynamic from "next/dynamic"
@@ -14,6 +14,8 @@ const ProductDrawer = dynamic(
   () => import("@/components/product-drawer").then((mod) => ({ default: mod.ProductDrawer })),
   { ssr: false }
 )
+
+const fetcher = (url: string) => fetch(url).then((res) => res.json())
 
 export function MenuGrid() {
   const { categories: allCategories } = useCategories()
@@ -32,6 +34,13 @@ export function MenuGrid() {
     return () => clearTimeout(timer)
   }, [searchQuery])
 
+  // When categories first load, reset selectedCategory to trigger re-render
+  useEffect(() => {
+    if (categories.length > 0) {
+      setSelectedCategory(prev => prev) // force re-render with loaded categories
+    }
+  }, [categories.length])
+
   // Listen for category selection from hamburger drawer
   useEffect(() => {
     const handler = (e: Event) => {
@@ -48,9 +57,10 @@ export function MenuGrid() {
     () => categories.find(c => c.id === selectedCategory),
     [selectedCategory, categories]
   )
+  const dbCategories = categoryConfig?.dbCategories || []
   const sections = categoryConfig?.sections
 
-  // Global search â€” searches ALL items across ALL categories
+  // Global search — searches ALL items across ALL categories
   const globalSearchResults = useMemo(() => {
     if (!debouncedSearch) return []
     const q = debouncedSearch.toLowerCase()
@@ -70,10 +80,9 @@ export function MenuGrid() {
   }, [menuItems])
 
   // Flat filtered items for categories without sections (used when not searching)
-  const filteredItems = useMemo(() => {
-    const dbCategories = categoryConfig?.dbCategories || []
-    return menuItems.filter((item) => dbCategories.includes(item.category))
-  }, [menuItems, categoryConfig])
+  const filteredItems = useMemo(() => menuItems.filter((item) => {
+    return dbCategories.includes(item.category)
+  }), [menuItems, dbCategories])
 
   return (
     <div className="min-h-screen bg-background">
@@ -106,14 +115,14 @@ export function MenuGrid() {
           // Global search results across ALL categories
           globalSearchResults.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center" dir="rtl">
-              <p className="text-4xl mb-3">ðŸ”</p>
-              <p className="font-bold text-lg">Ù„Ø§ ØªÙˆØ¬Ø¯ Ù†ØªØ§Ø¦Ø¬</p>
-              <p className="text-muted-foreground text-sm mt-1">Ø¬Ø±Ù‘Ø¨ ÙƒÙ„Ù…Ø© Ø¨Ø­Ø« Ù…Ø®ØªÙ„ÙØ©</p>
+              <p className="text-4xl mb-3">🔍</p>
+              <p className="font-bold text-lg">لا توجد نتائج</p>
+              <p className="text-muted-foreground text-sm mt-1">جرّب كلمة بحث مختلفة</p>
             </div>
           ) : (
             <div>
               <p className="text-sm text-muted-foreground mb-4 text-right" dir="rtl">
-                {globalSearchResults.length} Ù†ØªÙŠØ¬Ø© Ù„Ù€ "{debouncedSearch}"
+                {globalSearchResults.length} نتيجة لـ "{debouncedSearch}"
               </p>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8">
                 {globalSearchResults.map((item, idx) => (
@@ -163,6 +172,3 @@ export function MenuGrid() {
     </div>
   )
 }
-
-
-

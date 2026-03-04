@@ -211,41 +211,24 @@ async function buildXml(order: Order): Promise<string> {
 
 export async function printOrder(order: Order): Promise<void> {
   const ip  = getPrinterIp()
-  const url = `https://${ip}/cgi-bin/epos/service.cgi?devid=local_printer&timeout=10000`
   const xml = await buildXml(order)
 
+  // Use server-side proxy to avoid Safari mixed-content / SSL issues
   let response: Response
   try {
-    response = await fetch(url, {
+    response = await fetch("/api/print", {
       method: "POST",
-      headers: {
-        "Content-Type": "text/xml; charset=utf-8",
-        "SOAPAction": '""',
-      },
-      body: xml,
-      signal: AbortSignal.timeout(15000),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ip, xml }),
+      signal: AbortSignal.timeout(20000),
     })
   } catch (err) {
-    const msg       = err instanceof Error ? err.message : String(err)
-    const isTimeout = err instanceof Error &&
-      (err.name === "AbortError" || err.name === "TimeoutError")
-    if (isTimeout || msg.includes("fetch")) {
-      throw new Error(
-        `Cannot reach printer (${ip})\n` +
-        `• Make sure printer is on\n` +
-        `• Device must be on same WiFi\n` +
-        `• SSL must be enabled on printer`
-      )
-    }
-    throw new Error(`Error: ${msg}`)
+    const msg = err instanceof Error ? err.message : String(err)
+    throw new Error(`Network error: ${msg}`)
   }
 
-  if (!response.ok) {
-    throw new Error(`Printer rejected request (${response.status})`)
-  }
-
-  const body = await response.text()
-  if (body.includes("SchemaError") || body.includes("DeviceNotFound")) {
-    throw new Error("Make sure ePOS-Print is enabled on the printer")
+  const result = await response.json()
+  if (!response.ok || result.error) {
+    throw new Error(result.error || `Printer error (${response.status})`)
   }
 }

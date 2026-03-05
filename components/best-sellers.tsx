@@ -36,7 +36,7 @@ export function BestSellers() {
             >
               <div className="relative w-full bg-[#f5f5f5]" style={{ aspectRatio: "4/3" }}>
                 {item.image
-                  ? <Image src={item.image} alt={item.name} fill className="object-cover" />
+                  ? <Image src={item.image} alt={item.name} fill sizes="160px" quality={70} loading="lazy" className="object-cover" />
                   : <div className="absolute inset-0 flex items-center justify-center"><ShoppingBag className="h-8 w-8 text-gray-200" /></div>
                 }
                 <span className="absolute top-2 right-2 bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-1">

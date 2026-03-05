@@ -45,6 +45,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <head>
         <link rel="preconnect" href="https://eejlqdydoilbjpegxvbq.supabase.co" />
         <link rel="dns-prefetch" href="https://eejlqdydoilbjpegxvbq.supabase.co" />
+        <link rel="preconnect" href="https://wa.me" />
+        <link rel="dns-prefetch" href="https://wa.me" />
       </head>
       <body className={`${tajawal.variable} font-sans antialiased`}>
         <CartProvider>

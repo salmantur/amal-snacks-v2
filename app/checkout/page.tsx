@@ -15,7 +15,6 @@ import {
   FileText,
   ShoppingBag,
   CheckCircle2,
-  Clock3,
   ShieldCheck,
   MessageCircle,
 } from "lucide-react"
@@ -445,7 +444,6 @@ function CheckoutContent() {
             <h2 className="text-lg font-bold">{isPickup ? "وقت الاستلام" : "موعد التوصيل"}</h2>
             {!isPickup && earliestSlot ? (
               <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold px-2.5 py-1">
-                <Clock3 className="h-3.5 w-3.5" />
                 أقرب موعد: {earliestSlot}
               </div>
             ) : null}

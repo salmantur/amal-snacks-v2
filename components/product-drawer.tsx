@@ -141,7 +141,7 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
               <div className="-mx-6 mb-4 rounded-none overflow-hidden bg-[#f5f5f5] relative">
                 {current ? (
                   <div className="relative w-full aspect-square">
-                    <Image src={current} alt={product.name} fill className="object-cover" unoptimized />
+                    <Image src={current} alt={product.name} fill sizes="(max-width: 768px) 96vw, 560px" quality={76} className="object-cover" />
                   </div>
                 ) : (
                   <div className="w-full aspect-square flex items-center justify-center text-gray-400">لا توجد صورة</div>

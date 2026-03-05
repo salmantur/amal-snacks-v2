@@ -93,7 +93,8 @@ export const ProductCard = memo(function ProductCard({
             src={item.image}
             alt={item.name}
             fill
-            sizes="(max-width: 768px) 50vw, 33vw"
+            sizes="(max-width: 640px) 46vw, (max-width: 1024px) 30vw, 280px"
+            quality={72}
             className="object-cover group-hover:scale-105 transition-transform duration-300"
             onError={() => setImgError(true)}
             priority={priority}

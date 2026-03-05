@@ -33,6 +33,8 @@ export function HeroBanner() {
           src={config.full_design_url}
           alt="banner design"
           fill
+          sizes="(max-width: 768px) 100vw, 1200px"
+          quality={75}
           className="object-cover object-center"
           priority
         />
@@ -97,6 +99,8 @@ export function HeroBanner() {
                   src={featuredProduct.image}
                   alt={featuredProduct.name}
                   fill
+                  sizes="160px"
+                  quality={72}
                   className="object-cover"
                 />
               ) : (
@@ -135,7 +139,7 @@ export function HeroBanner() {
     >
       {hasImage && (
         <div className="absolute inset-0 rounded-3xl overflow-hidden">
-          <Image src={config.image_url!} alt="banner" fill className="object-cover opacity-20" />
+          <Image src={config.image_url!} alt="banner" fill sizes="(max-width: 768px) 100vw, 1200px" quality={70} className="object-cover opacity-20" />
         </div>
       )}
       <div className="relative z-10">

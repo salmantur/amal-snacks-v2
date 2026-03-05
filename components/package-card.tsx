@@ -65,7 +65,8 @@ export const PackageCard = memo(function PackageCard({
             src={item.image}
             alt={item.name}
             fill
-            sizes="100vw"
+            sizes="(max-width: 768px) 94vw, (max-width: 1280px) 62vw, 700px"
+            quality={72}
             className="object-cover"
             onError={() => setImgError(true)}
             priority={priority}

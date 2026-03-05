@@ -132,45 +132,101 @@ function buildLines(order: Order): Line[] {
 
 function renderCanvas(lines: Line[]): HTMLCanvasElement {
   const canvas = document.createElement("canvas")
-  const ctx    = canvas.getContext("2d")!
-  const PAD    = 24
+  const ctx = canvas.getContext("2d")!
+  const PAD = 24
+  const MAX_TEXT_WIDTH = PAPER_WIDTH - PAD * 2
+
+  const chunkLongWord = (word: string, maxWidth: number): string[] => {
+    const chunks: string[] = []
+    let current = ""
+    for (const ch of word) {
+      const candidate = current + ch
+      if (ctx.measureText(candidate).width <= maxWidth || current.length === 0) {
+        current = candidate
+      } else {
+        chunks.push(current)
+        current = ch
+      }
+    }
+    if (current) chunks.push(current)
+    return chunks.length > 0 ? chunks : [word]
+  }
+
+  const wrapLine = (text: string): string[] => {
+    if (!text) return [""]
+    const paragraphs = text.split("\n")
+    const wrapped: string[] = []
+
+    for (const paragraph of paragraphs) {
+      if (!paragraph.trim()) {
+        wrapped.push("")
+        continue
+      }
+
+      const words = paragraph.split(/\s+/)
+      let current = ""
+
+      for (const word of words) {
+        const candidate = current ? `${current} ${word}` : word
+        if (ctx.measureText(candidate).width <= MAX_TEXT_WIDTH) {
+          current = candidate
+          continue
+        }
+
+        if (current) wrapped.push(current)
+
+        if (ctx.measureText(word).width <= MAX_TEXT_WIDTH) {
+          current = word
+        } else {
+          const parts = chunkLongWord(word, MAX_TEXT_WIDTH)
+          wrapped.push(...parts.slice(0, -1))
+          current = parts[parts.length - 1]
+        }
+      }
+
+      if (current) wrapped.push(current)
+    }
+
+    return wrapped.length > 0 ? wrapped : [text]
+  }
+
+  const measured = lines.map((l) => {
+    const size = l.size ?? 28
+    const lh = size + 12
+    ctx.font = `${l.bold ? "bold " : ""}${size}px Arial, sans-serif`
+    const wrapped = wrapLine(l.text)
+    return { ...l, size, lh, wrapped }
+  })
 
   let totalH = PAD
-  const measured = lines.map(l => {
-    const size = l.size ?? 28
-    const lh   = size + 10
-    totalH += lh
-    return { ...l, size, lh }
-  })
+  for (const l of measured) totalH += l.lh * l.wrapped.length
   totalH += PAD
 
-  canvas.width  = PAPER_WIDTH
-  canvas.height = Math.ceil(totalH / 8) * 8  // must be multiple of 8 for TM-M30II
+  canvas.width = PAPER_WIDTH
+  canvas.height = Math.ceil(totalH / 8) * 8 // must be multiple of 8 for TM-M30II
 
   ctx.fillStyle = "#ffffff"
   ctx.fillRect(0, 0, canvas.width, canvas.height)
-  ctx.fillStyle    = "#000000"
+  ctx.fillStyle = "#000000"
   ctx.textBaseline = "top"
 
   let y = PAD
   for (const l of measured) {
-    ctx.font      = `${l.bold ? "bold " : ""}${l.size}px Arial, sans-serif`
+    ctx.font = `${l.bold ? "bold " : ""}${l.size}px Arial, sans-serif`
     ctx.direction = l.dir ?? "ltr"
 
     const align = l.align ?? "left"
     ctx.textAlign = align === "center" ? "center" : align === "right" ? "right" : "left"
-    const x = align === "center" ? PAPER_WIDTH / 2
-             : align === "right"  ? PAPER_WIDTH - PAD
-             : PAD
+    const x = align === "center" ? PAPER_WIDTH / 2 : align === "right" ? PAPER_WIDTH - PAD : PAD
 
-    if (l.text) ctx.fillText(l.text, x, y)
-    y += l.lh
+    for (const row of l.wrapped) {
+      if (row) ctx.fillText(row, x, y)
+      y += l.lh
+    }
   }
 
   return canvas
 }
-
-// ── Canvas → 1-bit monochrome base64 ─────────────────────────────────────
 
 function canvasToMono(canvas: HTMLCanvasElement): { w: number; h: number; b64: string } {
   const ctx  = canvas.getContext("2d")!

@@ -31,9 +31,30 @@ type Line = {
   size?: number
   align?: "center" | "right" | "left"
   dir?: "ltr" | "rtl"
+  padX?: number
+  maxLines?: number
+  continuationPrefix?: string
 }
 
-function buildLines(order: Order): Line[] {
+export type PrintMode = "readable" | "compact"
+
+const DEFAULT_PRINT_MODE: PrintMode = "readable"
+
+export function getPrintMode(): PrintMode {
+  if (typeof window !== "undefined") {
+    const value = localStorage.getItem("printer_mode")
+    if (value === "compact" || value === "readable") return value
+  }
+  return DEFAULT_PRINT_MODE
+}
+
+export function setPrintMode(mode: PrintMode): void {
+  if (typeof window !== "undefined") {
+    localStorage.setItem("printer_mode", mode)
+  }
+}
+
+function buildLines(order: Order, mode: PrintMode = DEFAULT_PRINT_MODE): Line[] {
   const d    = new Date(order.createdAt)
   const days = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"]
   const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
@@ -41,33 +62,38 @@ function buildLines(order: Order): Line[] {
   const date = `${day}, ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`
   const time = d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true })
 
+  const isCompact = mode === "compact"
+  const baseSize = isCompact ? -2 : 0
+  const optionSize = isCompact ? 20 : 24
+  const optionPadX = isCompact ? 34 : 44
+
   const L: Line[] = []
   const sep  = () => L.push({ text: "─".repeat(32), size: 20, align: "center", dir: "ltr" })
   const gap  = () => L.push({ text: "", size: 12 })
 
   // Header
-  L.push({ text: "Amal Snack",      bold: true,  size: 44, align: "center", dir: "ltr" })
-  L.push({ text: "Kitchen Ticket",  bold: false, size: 26, align: "center", dir: "ltr" })
+  L.push({ text: "Amal Snack",      bold: true,  size: 44 + baseSize, align: "center", dir: "ltr" })
+  L.push({ text: "Kitchen Ticket",  bold: false, size: 26 + baseSize, align: "center", dir: "ltr" })
   sep()
 
   // Order number
-  L.push({ text: `Order #${order.orderNumber}`, bold: true, size: 40, align: "center", dir: "ltr" })
+  L.push({ text: `Order #${order.orderNumber}`, bold: true, size: 40 + baseSize, align: "center", dir: "ltr" })
   gap()
 
   // Date & time
-  L.push({ text: date, size: 24, align: "left", dir: "ltr" })
-  L.push({ text: `Time: ${time}`, size: 24, align: "left", dir: "ltr" })
+  L.push({ text: date, size: 24 + baseSize, align: "left", dir: "ltr" })
+  L.push({ text: `Time: ${time}`, size: 24 + baseSize, align: "left", dir: "ltr" })
   sep()
 
   // Customer
-  L.push({ text: `Name: ${order.customerName}`, bold: true, size: 28, align: "left", dir: "ltr" })
+  L.push({ text: `Name: ${order.customerName}`, bold: true, size: 28 + baseSize, align: "left", dir: "ltr" })
   if (order.scheduledTime) {
-    L.push({ text: `Due: ${order.scheduledTime}`, bold: true, size: 28, align: "left", dir: "ltr" })
+    L.push({ text: `Due: ${order.scheduledTime}`, bold: true, size: 28 + baseSize, align: "left", dir: "ltr" })
   }
   sep()
 
   // Items
-  L.push({ text: "ITEMS:", bold: true, size: 28, align: "left", dir: "ltr" })
+  L.push({ text: "ITEMS:", bold: true, size: 28 + baseSize, align: "left", dir: "ltr" })
   gap()
 
   for (const item of order.items) {
@@ -76,13 +102,13 @@ function buildLines(order: Order): Line[] {
 
     // English name (large, bold)
     if (nameEn) {
-      L.push({ text: `${qty}x  ${nameEn}`, bold: true, size: 30, align: "left", dir: "ltr" })
+      L.push({ text: `${qty}x  ${nameEn}`, bold: true, size: 30 + baseSize, align: "left", dir: "ltr" })
     }
     // Arabic name (smaller, right-aligned)
     L.push({
       text: nameEn ? `      ${item.name}` : `${qty}x  ${item.name}`,
       bold: !nameEn,
-      size: nameEn ? 24 : 30,
+      size: (nameEn ? 24 : 30) + baseSize,
       align: "right",
       dir: "rtl"
     })
@@ -101,14 +127,30 @@ function buildLines(order: Order): Line[] {
           arNames.push(s)
         }
       }
-      // Print one selection per line to avoid clipping on thermal paper.
+      // Options: readable spacing, extra horizontal padding, and 2-line cap with ellipsis.
       if (enNames.length > 0) {
         for (const name of enNames) {
-          L.push({ text: `  - ${name}`, size: 22, align: "left", dir: "ltr" })
+          L.push({
+            text: `- ${name}`,
+            size: optionSize,
+            align: "left",
+            dir: "ltr",
+            padX: optionPadX,
+            maxLines: 2,
+            continuationPrefix: "  "
+          })
         }
       } else {
         for (const name of arNames) {
-          L.push({ text: `  - ${name}`, size: 22, align: "right", dir: "rtl" })
+          L.push({
+            text: `- ${name}`,
+            size: optionSize,
+            align: "right",
+            dir: "rtl",
+            padX: optionPadX,
+            maxLines: 2,
+            continuationPrefix: "  "
+          })
         }
       }
     }
@@ -118,8 +160,8 @@ function buildLines(order: Order): Line[] {
   // Notes
   if (order.notes) {
     sep()
-    L.push({ text: "Notes:", bold: true, size: 26, align: "left", dir: "ltr" })
-    L.push({ text: order.notes, size: 24, align: "left", dir: "ltr" })
+    L.push({ text: "Notes:", bold: true, size: 26 + baseSize, align: "left", dir: "ltr" })
+    L.push({ text: order.notes, size: 24 + baseSize, align: "left", dir: "ltr" })
   }
 
   sep()
@@ -134,7 +176,6 @@ function renderCanvas(lines: Line[]): HTMLCanvasElement {
   const canvas = document.createElement("canvas")
   const ctx = canvas.getContext("2d")!
   const PAD = 24
-  const MAX_TEXT_WIDTH = PAPER_WIDTH - PAD * 2
 
   const chunkLongWord = (word: string, maxWidth: number): string[] => {
     const chunks: string[] = []
@@ -152,10 +193,22 @@ function renderCanvas(lines: Line[]): HTMLCanvasElement {
     return chunks.length > 0 ? chunks : [word]
   }
 
-  const wrapLine = (text: string): string[] => {
+  const applyEllipsis = (line: string, maxWidth: number): string => {
+    const ellipsis = "..."
+    if (ctx.measureText(line + ellipsis).width <= maxWidth) return line + ellipsis
+    let value = line
+    while (value.length > 0 && ctx.measureText(value + ellipsis).width > maxWidth) {
+      value = value.slice(0, -1)
+    }
+    return value ? value + ellipsis : ellipsis
+  }
+
+  const wrapLine = (line: Line, maxWidth: number): string[] => {
+    const text = line.text
     if (!text) return [""]
     const paragraphs = text.split("\n")
     const wrapped: string[] = []
+    const continuation = line.continuationPrefix ?? ""
 
     for (const paragraph of paragraphs) {
       if (!paragraph.trim()) {
@@ -168,23 +221,30 @@ function renderCanvas(lines: Line[]): HTMLCanvasElement {
 
       for (const word of words) {
         const candidate = current ? `${current} ${word}` : word
-        if (ctx.measureText(candidate).width <= MAX_TEXT_WIDTH) {
+        if (ctx.measureText(candidate).width <= maxWidth) {
           current = candidate
           continue
         }
 
         if (current) wrapped.push(current)
 
-        if (ctx.measureText(word).width <= MAX_TEXT_WIDTH) {
-          current = word
+        if (ctx.measureText(word).width <= maxWidth) {
+          current = continuation + word
         } else {
-          const parts = chunkLongWord(word, MAX_TEXT_WIDTH)
-          wrapped.push(...parts.slice(0, -1))
-          current = parts[parts.length - 1]
+          const parts = chunkLongWord(word, maxWidth)
+          wrapped.push(...parts.slice(0, -1).map((part, idx) => (idx === 0 ? part : continuation + part)))
+          current = continuation + parts[parts.length - 1]
         }
       }
 
       if (current) wrapped.push(current)
+    }
+
+    const maxLines = line.maxLines
+    if (maxLines && wrapped.length > maxLines) {
+      const truncated = wrapped.slice(0, maxLines)
+      truncated[maxLines - 1] = applyEllipsis(truncated[maxLines - 1], maxWidth)
+      return truncated
     }
 
     return wrapped.length > 0 ? wrapped : [text]
@@ -193,9 +253,11 @@ function renderCanvas(lines: Line[]): HTMLCanvasElement {
   const measured = lines.map((l) => {
     const size = l.size ?? 28
     const lh = size + 12
+    const padX = l.padX ?? PAD
+    const maxWidth = Math.max(120, PAPER_WIDTH - padX * 2)
     ctx.font = `${l.bold ? "bold " : ""}${size}px Arial, sans-serif`
-    const wrapped = wrapLine(l.text)
-    return { ...l, size, lh, wrapped }
+    const wrapped = wrapLine(l, maxWidth)
+    return { ...l, size, lh, wrapped, padX }
   })
 
   let totalH = PAD
@@ -217,7 +279,7 @@ function renderCanvas(lines: Line[]): HTMLCanvasElement {
 
     const align = l.align ?? "left"
     ctx.textAlign = align === "center" ? "center" : align === "right" ? "right" : "left"
-    const x = align === "center" ? PAPER_WIDTH / 2 : align === "right" ? PAPER_WIDTH - PAD : PAD
+    const x = align === "center" ? PAPER_WIDTH / 2 : align === "right" ? PAPER_WIDTH - l.padX : l.padX
 
     for (const row of l.wrapped) {
       if (row) ctx.fillText(row, x, y)
@@ -255,8 +317,8 @@ function canvasToMono(canvas: HTMLCanvasElement): { w: number; h: number; b64: s
 
 // ── Build ePOS XML ────────────────────────────────────────────────────────
 
-async function buildXml(order: Order): Promise<string> {
-  const lines        = buildLines(order)
+async function buildXml(order: Order, mode: PrintMode): Promise<string> {
+  const lines        = buildLines(order, mode)
   const canvas       = renderCanvas(lines)
   const { w, h, b64 } = canvasToMono(canvas)
 
@@ -274,6 +336,15 @@ async function buildXml(order: Order): Promise<string> {
 
 // ── Main print function ───────────────────────────────────────────────────
 
+type PrintJobOptions = {
+  mode?: PrintMode
+}
+
+export function getTicketPreviewDataUrl(order: Order, mode: PrintMode = getPrintMode()): string {
+  const canvas = renderCanvas(buildLines(order, mode))
+  return canvas.toDataURL("image/png")
+}
+
 function createTimeoutSignal(ms: number): { signal: AbortSignal; cancel: () => void } {
   // Safari on some iOS versions does not support AbortSignal.timeout().
   if (typeof AbortSignal !== "undefined" && typeof (AbortSignal as { timeout?: (n: number) => AbortSignal }).timeout === "function") {
@@ -288,10 +359,11 @@ function createTimeoutSignal(ms: number): { signal: AbortSignal; cancel: () => v
   }
 }
 
-export async function printOrder(order: Order): Promise<void> {
+export async function printOrder(order: Order, options: PrintJobOptions = {}): Promise<void> {
   const ip  = getPrinterIp()
   const url = `https://${ip}/cgi-bin/epos/service.cgi?devid=local_printer&timeout=10000`
-  const xml = await buildXml(order)
+  const mode = options.mode ?? getPrintMode()
+  const xml = await buildXml(order, mode)
   const { signal, cancel } = createTimeoutSignal(15000)
 
   let response: Response

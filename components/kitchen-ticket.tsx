@@ -1,10 +1,12 @@
 "use client"
 
-import { Clock, Phone, MapPin, ChefHat, CheckCircle, Truck, Printer } from "lucide-react"
+import { Clock, Phone, MapPin, ChefHat, CheckCircle, Truck, Eye } from "lucide-react"
 import { useState } from "react"
+import Image from "next/image"
 import { cn } from "@/lib/utils"
 import type { Order } from "@/lib/data"
-import { printOrder, getPrinterIp, setPrinterIp } from "@/lib/thermal-printer"
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
+import { printOrder, setPrinterIp, getPrintMode, setPrintMode, getTicketPreviewDataUrl, type PrintMode } from "@/lib/thermal-printer"
 
 interface KitchenTicketProps {
   order: Order
@@ -46,21 +48,47 @@ export function KitchenTicket({ order, onStatusChange }: KitchenTicketProps) {
     typeof window !== "undefined" ? (localStorage.getItem("printer_ip") || "192.168.100.205") : "192.168.100.205"
   )
 
+  const [printModeState, setPrintModeState] = useState<PrintMode>(() =>
+    typeof window !== "undefined" ? getPrintMode() : "readable"
+  )
+  const [showPreview, setShowPreview] = useState(false)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [previewLoading, setPreviewLoading] = useState(false)
+
+  const updatePrintMode = (mode: PrintMode) => {
+    setPrintModeState(mode)
+    setPrintMode(mode)
+    if (showPreview) {
+      setPreviewUrl(getTicketPreviewDataUrl(order, mode))
+    }
+  }
+
+  const openPreview = () => {
+    setPrintError(null)
+    setPreviewLoading(true)
+    setShowPreview(true)
+    try {
+      setPreviewUrl(getTicketPreviewDataUrl(order, printModeState))
+    } finally {
+      setPreviewLoading(false)
+    }
+  }
+
   const handlePrint = async () => {
     setPrinting(true)
     setPrintError(null)
     setPrintSuccess(false)
     try {
-      await printOrder(order)
+      await printOrder(order, { mode: printModeState })
       setPrintSuccess(true)
+      setShowPreview(false)
       setTimeout(() => setPrintSuccess(false), 3000)
     } catch (err) {
-      setPrintError(err instanceof Error ? err.message : "فشل الاتصال بالطابعة")
+      setPrintError(err instanceof Error ? err.message : "Print failed")
     } finally {
       setPrinting(false)
     }
   }
-
   const handleSaveIp = (ip: string) => {
     setPrinterIpState(ip)
     setPrinterIp(ip)
@@ -175,9 +203,30 @@ export function KitchenTicket({ order, onStatusChange }: KitchenTicketProps) {
           </button>
         )}
 
-        {/* Print Button */}
+        {/* Print Controls */}
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            onClick={() => updatePrintMode("readable")}
+            className={cn(
+              "py-2 rounded-lg text-xs font-bold border transition-colors",
+              printModeState === "readable" ? "bg-black text-white border-black" : "bg-white border-border text-foreground"
+            )}
+          >
+            Readable
+          </button>
+          <button
+            onClick={() => updatePrintMode("compact")}
+            className={cn(
+              "py-2 rounded-lg text-xs font-bold border transition-colors",
+              printModeState === "compact" ? "bg-black text-white border-black" : "bg-white border-border text-foreground"
+            )}
+          >
+            Compact
+          </button>
+        </div>
+
         <button
-          onClick={handlePrint}
+          onClick={openPreview}
           disabled={printing}
           className={cn(
             "w-full py-3 rounded-xl font-medium border-2 flex items-center justify-center gap-2 transition-colors disabled:opacity-50",
@@ -186,10 +235,9 @@ export function KitchenTicket({ order, onStatusChange }: KitchenTicketProps) {
               : "border-border hover:bg-amal-grey"
           )}
         >
-          <Printer className="h-4 w-4" />
-          {printing ? "جاري الطباعة..." : printSuccess ? "✓ تمت الطباعة" : "طباعة التذكرة"}
+          <Eye className="h-4 w-4" />
+          {printing ? "Printing..." : printSuccess ? "Printed" : "Preview Before Print"}
         </button>
-
         {/* Printer IP setting */}
         <div className="flex items-center justify-between">
           <button
@@ -230,6 +278,35 @@ export function KitchenTicket({ order, onStatusChange }: KitchenTicketProps) {
             {printError}
           </div>
         )}
+
+        <Dialog open={showPreview} onOpenChange={setShowPreview}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden p-0">
+            <div className="p-4 border-b border-border flex items-center justify-between">
+              <DialogTitle className="text-base font-bold">Ticket Preview</DialogTitle>
+              <div className="text-xs text-muted-foreground">{printModeState === "readable" ? "Readable" : "Compact"}</div>
+            </div>
+
+            <div className="p-4 overflow-y-auto max-h-[60vh] bg-[#f5f5f5]">
+              {previewLoading ? (
+                <div className="h-56 flex items-center justify-center text-sm text-muted-foreground">Generating preview...</div>
+              ) : previewUrl ? (
+                <Image src={previewUrl} alt="Ticket preview" width={576} height={1200} unoptimized className="w-full h-auto rounded-md bg-white border border-border" />
+              ) : (
+                <div className="h-56 flex items-center justify-center text-sm text-muted-foreground">Preview unavailable</div>
+              )}
+            </div>
+
+            <div className="p-4 border-t border-border">
+              <button
+                onClick={handlePrint}
+                disabled={printing || previewLoading}
+                className="w-full py-3 rounded-xl bg-black text-white font-bold disabled:opacity-50"
+              >
+                {printing ? "Printing..." : "Print Now"}
+              </button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   )

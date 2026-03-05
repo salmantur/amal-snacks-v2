@@ -101,12 +101,16 @@ function buildLines(order: Order): Line[] {
           arNames.push(s)
         }
       }
-      // Print English selections if available
+      // Print one selection per line to avoid clipping on thermal paper.
       if (enNames.length > 0) {
-        L.push({ text: `  → ${enNames.join(", ")}`, size: 22, align: "left", dir: "ltr" })
+        for (const name of enNames) {
+          L.push({ text: `  - ${name}`, size: 22, align: "left", dir: "ltr" })
+        }
+      } else {
+        for (const name of arNames) {
+          L.push({ text: `  - ${name}`, size: 22, align: "right", dir: "rtl" })
+        }
       }
-      // Print Arabic selections
-      L.push({ text: `  → ${arNames.join("، ")}`, size: 22, align: "right", dir: "rtl" })
     }
     gap()
   }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react"
 import dynamic from "next/dynamic"
+import { useSearchParams } from "next/navigation"
 import { ProductCard } from "@/components/product-card"
 import { PackageCard } from "@/components/package-card"
 import { CategoryFilter } from "@/components/category-filter"
@@ -19,8 +20,18 @@ const ProductDrawer = dynamic(
 const INITIAL_VISIBLE_ITEMS = 6
 
 export function MenuGrid() {
+  const searchParams = useSearchParams()
   const { categories: allCategories } = useCategories()
   const categories = allCategories.filter((c) => c.isVisible)
+  const itemUiParam = searchParams.get("itemui")
+  const itemVariant =
+    itemUiParam === "glass" ||
+    itemUiParam === "editorial" ||
+    itemUiParam === "warm" ||
+    itemUiParam === "minimal" ||
+    itemUiParam === "neo"
+      ? itemUiParam
+      : "neo"
 
   const { menuItems, error, isLoading: loading } = useMenu()
 
@@ -133,7 +144,7 @@ export function MenuGrid() {
               </p>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8">
                 {globalSearchResults.map((item, idx) => (
-                  <ProductCard key={item.id} item={item} onSelect={setSelectedProduct} priority={idx < 4} />
+                  <ProductCard key={item.id} item={item} onSelect={setSelectedProduct} priority={idx < 4} variant={itemVariant} />
                 ))}
               </div>
             </div>
@@ -152,9 +163,9 @@ export function MenuGrid() {
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8">
                     {visibleSectionItems.map((item, idx) =>
                       item.category === "eid" ? (
-                        <PackageCard key={item.id} item={item} onSelect={setSelectedProduct} priority={idx < 4} />
+                        <PackageCard key={item.id} item={item} onSelect={setSelectedProduct} priority={idx < 4} variant={itemVariant} />
                       ) : (
-                        <ProductCard key={item.id} item={item} onSelect={setSelectedProduct} priority={idx < 4} />
+                        <ProductCard key={item.id} item={item} onSelect={setSelectedProduct} priority={idx < 4} variant={itemVariant} />
                       )
                     )}
                   </div>
@@ -166,9 +177,9 @@ export function MenuGrid() {
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8">
             {visibleFilteredItems.map((item, idx) =>
               item.category === "eid" ? (
-                <PackageCard key={item.id} item={item} onSelect={setSelectedProduct} priority={idx < 4} />
+                <PackageCard key={item.id} item={item} onSelect={setSelectedProduct} priority={idx < 4} variant={itemVariant} />
               ) : (
-                <ProductCard key={item.id} item={item} onSelect={setSelectedProduct} priority={idx < 4} />
+                <ProductCard key={item.id} item={item} onSelect={setSelectedProduct} priority={idx < 4} variant={itemVariant} />
               )
             )}
           </div>

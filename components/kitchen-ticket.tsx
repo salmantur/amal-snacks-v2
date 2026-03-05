@@ -84,7 +84,7 @@ export function KitchenTicket({ order, onStatusChange }: KitchenTicketProps) {
       setShowPreview(false)
       setTimeout(() => setPrintSuccess(false), 3000)
     } catch (err) {
-      setPrintError(err instanceof Error ? err.message : "Print failed")
+      setPrintError(err instanceof Error ? err.message : "فشل الاتصال بالطابعة")
     } finally {
       setPrinting(false)
     }
@@ -212,7 +212,7 @@ export function KitchenTicket({ order, onStatusChange }: KitchenTicketProps) {
               printModeState === "readable" ? "bg-black text-white border-black" : "bg-white border-border text-foreground"
             )}
           >
-            Readable
+            واضح
           </button>
           <button
             onClick={() => updatePrintMode("compact")}
@@ -221,7 +221,7 @@ export function KitchenTicket({ order, onStatusChange }: KitchenTicketProps) {
               printModeState === "compact" ? "bg-black text-white border-black" : "bg-white border-border text-foreground"
             )}
           >
-            Compact
+            مختصر
           </button>
         </div>
 
@@ -236,7 +236,7 @@ export function KitchenTicket({ order, onStatusChange }: KitchenTicketProps) {
           )}
         >
           <Eye className="h-4 w-4" />
-          {printing ? "Printing..." : printSuccess ? "Printed" : "Preview Before Print"}
+          {printing ? "جاري الطباعة..." : printSuccess ? "تمت الطباعة" : "معاينة قبل الطباعة"}
         </button>
         {/* Printer IP setting */}
         <div className="flex items-center justify-between">
@@ -282,8 +282,8 @@ export function KitchenTicket({ order, onStatusChange }: KitchenTicketProps) {
         <Dialog open={showPreview} onOpenChange={setShowPreview}>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden p-0">
             <div className="p-4 border-b border-border flex items-center justify-between">
-              <DialogTitle className="text-base font-bold">Ticket Preview</DialogTitle>
-              <div className="text-xs text-muted-foreground">{printModeState === "readable" ? "Readable" : "Compact"}</div>
+              <DialogTitle className="text-base font-bold">معاينة التذكرة</DialogTitle>
+              <div className="text-xs text-muted-foreground">{printModeState === "readable" ? "واضح" : "مختصر"}</div>
             </div>
 
             <div className="p-4 overflow-y-auto max-h-[60vh] bg-[#f5f5f5]">
@@ -302,7 +302,7 @@ export function KitchenTicket({ order, onStatusChange }: KitchenTicketProps) {
                 disabled={printing || previewLoading}
                 className="w-full py-3 rounded-xl bg-black text-white font-bold disabled:opacity-50"
               >
-                {printing ? "Printing..." : "Print Now"}
+                {printing ? "جاري الطباعة..." : "طباعة الآن"}
               </button>
             </div>
           </DialogContent>

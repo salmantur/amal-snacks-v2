@@ -16,6 +16,8 @@ import {
   ShoppingBag,
   CheckCircle2,
   Clock3,
+  ShieldCheck,
+  MessageCircle,
 } from "lucide-react"
 import { useCart } from "@/components/cart-provider"
 import type { CartItem } from "@/components/cart-provider"
@@ -42,6 +44,7 @@ function CheckoutItemImage({ item }: { item: CartItem }) {
       </div>
     )
   }
+
   return (
     <div className="relative w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-muted">
       <Image src={item.image} alt={item.name} fill sizes="64px" className="object-cover" onError={() => setImgError(true)} />
@@ -52,7 +55,12 @@ function CheckoutItemImage({ item }: { item: CartItem }) {
 function ProgressStep({ label, done }: { label: string; done: boolean }) {
   return (
     <div className="flex items-center gap-2">
-      <div className={cn("w-6 h-6 rounded-full flex items-center justify-center border text-[10px] font-bold", done ? "bg-primary text-primary-foreground border-primary" : "bg-background text-muted-foreground border-border")}>
+      <div
+        className={cn(
+          "w-6 h-6 rounded-full flex items-center justify-center border text-[10px] font-bold",
+          done ? "bg-primary text-primary-foreground border-primary" : "bg-background text-muted-foreground border-border"
+        )}
+      >
         {done ? <CheckCircle2 className="h-3.5 w-3.5" /> : "•"}
       </div>
       <span className={cn("text-xs font-medium", done ? "text-foreground" : "text-muted-foreground")}>{label}</span>
@@ -61,7 +69,13 @@ function ProgressStep({ label, done }: { label: string; done: boolean }) {
 }
 
 function normalizeText(value: string): string {
-  return value.toLowerCase().replace(/[أإآٱ]/g, "ا").replace(/ة/g, "ه").replace(/ى/g, "ي").replace(/\s+/g, " ").trim()
+  return value
+    .toLowerCase()
+    .replace(/[أإآٱ]/g, "ا")
+    .replace(/ة/g, "ه")
+    .replace(/ى/g, "ي")
+    .replace(/\s+/g, " ")
+    .trim()
 }
 
 function getEarliestDeliverySlot(minMinutes: number): string | null {
@@ -97,38 +111,43 @@ function CheckoutContent() {
   const isPickup = orderType === "pickup"
 
   const areaDesignParam = searchParams.get("areaui")
-  const areaDesign: AreaDesign = areaDesignParam === "chips" || areaDesignParam === "cards" || areaDesignParam === "search" ? areaDesignParam : "chips"
+  const areaDesign: AreaDesign =
+    areaDesignParam === "chips" || areaDesignParam === "cards" || areaDesignParam === "search"
+      ? areaDesignParam
+      : "chips"
 
   const themeParam = searchParams.get("checkoutui")
   const activeCheckoutTheme: CheckoutTheme =
     themeParam === "glass" || themeParam === "contrast" || themeParam === "classic" ? themeParam : "glass"
 
-  const theme = activeCheckoutTheme === "glass"
-    ? {
-        main: "min-h-screen pb-32 bg-[radial-gradient(circle_at_top,_#f7fafc,_#edf2f7_50%,_#e2e8f0)]",
-        header: "sticky top-0 z-50 bg-white/55 backdrop-blur-xl border-b border-white/60",
-        section: "rounded-3xl border border-white/60 bg-white/55 backdrop-blur-md shadow-[0_10px_30px_rgba(0,0,0,0.07)] p-4",
-        summary: "p-4 rounded-3xl border border-white/60 bg-white/55 backdrop-blur-md",
-        input: "bg-white/70",
-        ctaWrap: "fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-background via-background/90 to-transparent pt-8",
-      }
-    : activeCheckoutTheme === "contrast"
+  const theme =
+    activeCheckoutTheme === "glass"
       ? {
-          main: "min-h-screen pb-32 bg-slate-50",
-          header: "sticky top-0 z-50 bg-slate-900 text-white border-b border-slate-800",
-          section: "rounded-2xl border border-slate-200 bg-white shadow-sm p-4",
-          summary: "p-4 rounded-2xl bg-slate-900 text-white",
-          input: "bg-slate-100",
-          ctaWrap: "fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-slate-50 via-slate-50 to-transparent pt-8",
+          main: "min-h-screen pb-32 bg-[radial-gradient(circle_at_top,_#f7fafc,_#edf2f7_50%,_#e2e8f0)]",
+          header: "sticky top-0 z-50 bg-white/55 backdrop-blur-xl border-b border-white/60",
+          section: "rounded-3xl border border-white/60 bg-white/55 backdrop-blur-md shadow-[0_10px_30px_rgba(0,0,0,0.07)] p-4",
+          summary: "p-4 rounded-3xl border border-white/60 bg-white/55 backdrop-blur-md",
+          input: "bg-white/70",
+          ctaWrap:
+            "fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-background via-background/90 to-transparent pt-8",
         }
-      : {
-          main: "min-h-screen bg-background pb-32",
-          header: "sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border/50",
-          section: "rounded-2xl border border-border/60 bg-card p-4",
-          summary: "p-4 bg-amal-pink-light rounded-2xl",
-          input: "bg-amal-grey",
-          ctaWrap: "fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-background via-background to-transparent pt-8",
-        }
+      : activeCheckoutTheme === "contrast"
+        ? {
+            main: "min-h-screen pb-32 bg-slate-50",
+            header: "sticky top-0 z-50 bg-slate-900 text-white border-b border-slate-800",
+            section: "rounded-2xl border border-slate-200 bg-white shadow-sm p-4",
+            summary: "p-4 rounded-2xl bg-slate-900 text-white",
+            input: "bg-slate-100",
+            ctaWrap: "fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-slate-50 via-slate-50 to-transparent pt-8",
+          }
+        : {
+            main: "min-h-screen bg-background pb-32",
+            header: "sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border/50",
+            section: "rounded-2xl border border-border/60 bg-card p-4",
+            summary: "p-4 bg-amal-pink-light rounded-2xl",
+            input: "bg-amal-grey",
+            ctaWrap: "fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-background via-background to-transparent pt-8",
+          }
 
   const router = useRouter()
   const { items, totalPrice, updateQuantity, removeItem, deliveryInfo, setDeliveryInfo, clearCart } = useCart()
@@ -137,20 +156,29 @@ function CheckoutContent() {
   const [submitted, setSubmitted] = useState(false)
   const [areaFocused, setAreaFocused] = useState(false)
 
-  const handleInputChange = useCallback((field: keyof typeof deliveryInfo, value: string) => {
-    setDeliveryInfo({ ...deliveryInfo, [field]: value })
-    if (submitted) setErrors((prev) => ({ ...prev, [field]: undefined }))
-  }, [deliveryInfo, setDeliveryInfo, submitted])
+  const handleInputChange = useCallback(
+    (field: keyof typeof deliveryInfo, value: string) => {
+      setDeliveryInfo({ ...deliveryInfo, [field]: value })
+      if (submitted) setErrors((prev) => ({ ...prev, [field]: undefined }))
+    },
+    [deliveryInfo, setDeliveryInfo, submitted]
+  )
 
-  const pickArea = useCallback((areaName: string) => {
-    handleInputChange("area", areaName)
-    setAreaFocused(false)
-  }, [handleInputChange])
+  const pickArea = useCallback(
+    (areaName: string) => {
+      handleInputChange("area", areaName)
+      setAreaFocused(false)
+    },
+    [handleInputChange]
+  )
 
-  const handleScheduleChange = useCallback((value: string | null) => setDeliveryInfo({ ...deliveryInfo, scheduledTime: value }), [deliveryInfo, setDeliveryInfo])
+  const handleScheduleChange = useCallback(
+    (value: string | null) => setDeliveryInfo({ ...deliveryInfo, scheduledTime: value }),
+    [deliveryInfo, setDeliveryInfo]
+  )
 
   const selectedArea = deliveryAreas.find((a) => a.name === deliveryInfo.area)
-  const deliveryFee = isPickup ? 0 : (selectedArea?.price || 0)
+  const deliveryFee = isPickup ? 0 : selectedArea?.price || 0
   const grandTotal = totalPrice + deliveryFee
   const maxMakingTime = items.reduce((max, item) => Math.max(max, item.makingTime || 0), 0)
   const earliestSlot = useMemo(() => getEarliestDeliverySlot(maxMakingTime), [maxMakingTime])
@@ -175,6 +203,14 @@ function CheckoutContent() {
     return next
   }, [deliveryInfo.name, deliveryInfo.phone, isPickup, selectedArea])
 
+  const deliveryAccuracyText = useMemo(() => {
+    if (isPickup) return "جاهزية الطلب حسب موعد الاستلام المختار."
+    if (deliveryInfo.scheduledTime) return `التسليم المتوقع ضمن 15-25 دقيقة من الموعد: ${deliveryInfo.scheduledTime}`
+    return earliestSlot
+      ? `أقرب نافذة توصيل متاحة: ${earliestSlot} (قد تتغير ±20 دقيقة حسب الزحام).`
+      : "نؤكد أقرب نافذة توصيل متاحة بعد مراجعة وقت التحضير."
+  }, [isPickup, deliveryInfo.scheduledTime, earliestSlot])
+
   const fieldBaseClass = `w-full py-4 px-4 pr-12 rounded-2xl ${theme.input} text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20`
 
   const handleWhatsAppCheckout = async () => {
@@ -194,7 +230,10 @@ function CheckoutContent() {
       makingTime: item.makingTime || 0,
     }))
 
-    const message = isPickup ? generatePickupWhatsAppMessage(cartItems, totalPrice, deliveryInfo) : generateWhatsAppMessage(cartItems, totalPrice, deliveryInfo)
+    const message = isPickup
+      ? generatePickupWhatsAppMessage(cartItems, totalPrice, deliveryInfo)
+      : generateWhatsAppMessage(cartItems, totalPrice, deliveryInfo)
+
     const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${message}`
     window.open(whatsappUrl, "_blank")
 
@@ -205,7 +244,7 @@ function CheckoutContent() {
         body: JSON.stringify({
           customerName: deliveryInfo.name,
           customerPhone: deliveryInfo.phone,
-          customerArea: isPickup ? "" : (selectedArea?.name || ""),
+          customerArea: isPickup ? "" : selectedArea?.name || "",
           orderType: isPickup ? "pickup" : "delivery",
           items: cartItems.map((item) => ({ id: item.id, quantity: item.quantity, selectedIngredients: item.selectedIngredients })),
           notes: deliveryInfo.notes,
@@ -218,7 +257,7 @@ function CheckoutContent() {
       clearCart()
       const params = new URLSearchParams({
         name: deliveryInfo.name,
-        area: isPickup ? "" : (selectedArea?.name || ""),
+        area: isPickup ? "" : selectedArea?.name || "",
         total: String(confirmedTotal),
         type: isPickup ? "pickup" : "delivery",
         time: deliveryInfo.scheduledTime ?? "في أقرب وقت",
@@ -234,10 +273,14 @@ function CheckoutContent() {
   if (items.length === 0) {
     return (
       <main className={cn(theme.main, "flex flex-col items-center justify-center p-6 text-center")}>
-        <div className="w-24 h-24 rounded-full bg-amal-grey flex items-center justify-center mb-6"><Trash2 className="h-10 w-10 text-muted-foreground" /></div>
+        <div className="w-24 h-24 rounded-full bg-amal-grey flex items-center justify-center mb-6">
+          <Trash2 className="h-10 w-10 text-muted-foreground" />
+        </div>
         <h1 className="text-2xl font-bold text-foreground mb-2">السلة فارغة</h1>
         <p className="text-muted-foreground mb-6">لم تقم بإضافة أي منتجات بعد</p>
-        <Link href="/"><Button className="rounded-full px-8">تصفح المنتجات</Button></Link>
+        <Link href="/">
+          <Button className="rounded-full px-8">تصفح المنتجات</Button>
+        </Link>
       </main>
     )
   }
@@ -251,7 +294,9 @@ function CheckoutContent() {
           </Link>
           <div>
             <h1 className="text-xl font-bold">إتمام الطلب</h1>
-            <p className={cn("text-xs", activeCheckoutTheme === "contrast" ? "text-slate-300" : "text-muted-foreground")}>{isPickup ? "استلام من المحل" : "توصيل للمنزل"}</p>
+            <p className={cn("text-xs", activeCheckoutTheme === "contrast" ? "text-slate-300" : "text-muted-foreground")}>
+              {isPickup ? "استلام من المحل" : "توصيل للمنزل"}
+            </p>
           </div>
         </div>
         <div className={cn("px-4 pb-3 flex items-center justify-between border-t", activeCheckoutTheme === "contrast" ? "border-slate-700" : "border-border/40")}>
@@ -268,11 +313,13 @@ function CheckoutContent() {
           <h2 className="text-lg font-bold mb-4">طلباتك ({items.length})</h2>
           <div className="space-y-3">
             {items.map((item) => (
-              <div key={item.cartKey} className={cn("flex items-center gap-4 p-3 rounded-2xl border", checkoutTheme === "contrast" ? "bg-white border-slate-200" : "bg-background border-border/50")}>
+              <div key={item.cartKey} className={cn("flex items-center gap-4 p-3 rounded-2xl border", activeCheckoutTheme === "contrast" ? "bg-white border-slate-200" : "bg-background border-border/50")}>
                 <CheckoutItemImage item={item} />
                 <div className="flex-1 min-w-0">
                   <h3 className="font-bold text-foreground truncate">{item.name}</h3>
-                  {item.selectedIngredients?.length ? <p className="text-xs text-muted-foreground truncate">{item.selectedIngredients.join("، ")}</p> : null}
+                  {item.selectedIngredients?.length ? (
+                    <p className="text-xs text-muted-foreground truncate">{item.selectedIngredients.join("، ")}</p>
+                  ) : null}
                   <p className="text-primary font-medium">{item.price * item.quantity} ر.س</p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -289,9 +336,23 @@ function CheckoutContent() {
         <section className={theme.section}>
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-lg font-bold">{isPickup ? "وقت الاستلام" : "موعد التوصيل"}</h2>
-            {!isPickup && earliestSlot ? <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold px-2.5 py-1"><Clock3 className="h-3.5 w-3.5" />أقرب موعد: {earliestSlot}</div> : null}
+            {!isPickup && earliestSlot ? (
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold px-2.5 py-1">
+                <Clock3 className="h-3.5 w-3.5" />
+                أقرب موعد: {earliestSlot}
+              </div>
+            ) : null}
           </div>
-          {maxMakingTime > 0 ? <div className="mb-3 p-3 bg-amal-yellow/20 rounded-xl text-right text-sm text-foreground">الحد الأدنى للتجهيز: <span className="font-bold">{maxMakingTime >= 60 ? `${maxMakingTime % 60 === 0 ? maxMakingTime / 60 : `${Math.floor(maxMakingTime / 60)} ساعة و${maxMakingTime % 60}`} ساعة` : `${maxMakingTime} دقيقة`}</span></div> : null}
+          {maxMakingTime > 0 ? (
+            <div className="mb-3 p-3 bg-amal-yellow/20 rounded-xl text-right text-sm text-foreground">
+              الحد الأدنى للتجهيز:{" "}
+              <span className="font-bold">
+                {maxMakingTime >= 60
+                  ? `${maxMakingTime % 60 === 0 ? maxMakingTime / 60 : `${Math.floor(maxMakingTime / 60)} ساعة و${maxMakingTime % 60}`} ساعة`
+                  : `${maxMakingTime} دقيقة`}
+              </span>
+            </div>
+          ) : null}
           <TimePicker value={deliveryInfo.scheduledTime} onChange={handleScheduleChange} minMinutes={maxMakingTime} required={false} />
         </section>
 
@@ -306,6 +367,7 @@ function CheckoutContent() {
               <input type="text" placeholder="الاسم الكامل *" value={deliveryInfo.name} onChange={(e) => handleInputChange("name", e.target.value)} className={cn(fieldBaseClass, errors.name && "ring-2 ring-red-300")} />
               {errors.name ? <p className="text-xs text-red-500 mt-1 pr-2">{errors.name}</p> : null}
             </div>
+
             <div className="relative">
               <Phone className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
               <input type="tel" inputMode="tel" dir="ltr" placeholder="رقم الهاتف *" value={deliveryInfo.phone} onChange={(e) => handleInputChange("phone", e.target.value)} className={cn(fieldBaseClass, errors.phone && "ring-2 ring-red-300")} />
@@ -317,7 +379,15 @@ function CheckoutContent() {
                 {areaDesign === "search" ? (
                   <>
                     <MapPin className="absolute right-4 top-4 h-5 w-5 text-muted-foreground" />
-                    <input type="text" placeholder="اكتب المنطقة *" value={deliveryInfo.area} onFocus={() => setAreaFocused(true)} onBlur={() => setTimeout(() => setAreaFocused(false), 120)} onChange={(e) => handleInputChange("area", e.target.value)} className={cn(fieldBaseClass, errors.area && "ring-2 ring-red-300")} />
+                    <input
+                      type="text"
+                      placeholder="اكتب المنطقة *"
+                      value={deliveryInfo.area}
+                      onFocus={() => setAreaFocused(true)}
+                      onBlur={() => setTimeout(() => setAreaFocused(false), 120)}
+                      onChange={(e) => handleInputChange("area", e.target.value)}
+                      className={cn(fieldBaseClass, errors.area && "ring-2 ring-red-300")}
+                    />
                     {areaFocused && filteredAreas.length > 0 ? (
                       <div className="absolute z-20 mt-2 w-full rounded-2xl border border-border bg-white shadow-lg overflow-hidden">
                         <div className="max-h-56 overflow-y-auto">
@@ -335,7 +405,10 @@ function CheckoutContent() {
                   <div className="space-y-2">
                     {filteredAreas.map((area) => (
                       <button key={area.id} type="button" onClick={() => pickArea(area.name)} className={cn("w-full rounded-2xl border px-3 py-3 text-right transition-colors", selectedArea?.id === area.id ? "border-primary bg-primary/10" : "border-border bg-amal-grey/60 hover:bg-amal-grey")}>
-                        <div className="flex items-center justify-between"><span className="font-semibold">{area.name}</span><span className={cn("text-sm", selectedArea?.id === area.id ? "text-primary font-bold" : "text-muted-foreground")}>{area.price} ر.س</span></div>
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold">{area.name}</span>
+                          <span className={cn("text-sm", selectedArea?.id === area.id ? "text-primary font-bold" : "text-muted-foreground")}>{area.price} ر.س</span>
+                        </div>
                       </button>
                     ))}
                   </div>
@@ -361,9 +434,44 @@ function CheckoutContent() {
         </section>
 
         <section className={theme.summary}>
-          <div className="flex justify-between mb-2"><span className={cn(activeCheckoutTheme === "contrast" ? "text-slate-300" : "text-muted-foreground")}>المجموع الفرعي</span><span className="font-medium">{totalPrice} ر.س</span></div>
-          <div className="flex justify-between mb-2"><span className={cn(activeCheckoutTheme === "contrast" ? "text-slate-300" : "text-muted-foreground")}>{isPickup ? "رسوم التوصيل" : `رسوم التوصيل ${selectedArea ? `(${selectedArea.name})` : ""}`}</span><span className={cn("font-medium", isPickup && "text-[#1e5631]")}>{isPickup ? "مجاني" : selectedArea ? `${selectedArea.price} ر.س` : "اختر المنطقة"}</span></div>
-          <div className={cn("pt-2 mt-2 border-t", activeCheckoutTheme === "contrast" ? "border-slate-700" : "border-primary/20")}><div className="flex justify-between"><span className="font-bold text-lg">الإجمالي</span><span className="font-bold text-lg text-primary">{grandTotal} ر.س</span></div></div>
+          <div className="flex justify-between mb-2">
+            <span className={cn(activeCheckoutTheme === "contrast" ? "text-slate-300" : "text-muted-foreground")}>المجموع الفرعي</span>
+            <span className="font-medium">{totalPrice} ر.س</span>
+          </div>
+          <div className="flex justify-between mb-2">
+            <span className={cn(activeCheckoutTheme === "contrast" ? "text-slate-300" : "text-muted-foreground")}>
+              {isPickup ? "رسوم التوصيل" : `رسوم التوصيل ${selectedArea ? `(${selectedArea.name})` : ""}`}
+            </span>
+            <span className={cn("font-medium", isPickup && "text-[#1e5631]")}>
+              {isPickup ? "مجاني" : selectedArea ? `${selectedArea.price} ر.س` : "اختر المنطقة"}
+            </span>
+          </div>
+          <div className={cn("pt-2 mt-2 border-t", activeCheckoutTheme === "contrast" ? "border-slate-700" : "border-primary/20")}>
+            <div className="flex justify-between">
+              <span className="font-bold text-lg">الإجمالي</span>
+              <span className="font-bold text-lg text-primary">{grandTotal} ر.س</span>
+            </div>
+          </div>
+        </section>
+
+        <section className={theme.section} dir="rtl">
+          <div className="flex items-center gap-2 mb-3">
+            <ShieldCheck className="h-5 w-5 text-emerald-600" />
+            <h3 className="font-bold text-base">ضمانات الطلب</h3>
+          </div>
+
+          <p className="text-sm text-muted-foreground mb-3">{deliveryAccuracyText}</p>
+
+          <a
+            href={`https://wa.me/${WHATSAPP_NUMBER}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-full px-4 py-2 bg-[#25D366]/10 text-[#1f8f48] text-sm font-semibold hover:bg-[#25D366]/20 transition-colors"
+          >
+            <MessageCircle className="h-4 w-4" />
+            تواصل مباشر للدعم
+          </a>
+
         </section>
       </div>
 

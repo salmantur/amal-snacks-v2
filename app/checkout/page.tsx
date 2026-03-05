@@ -13,9 +13,9 @@ import {
   User,
   Phone,
   FileText,
-  ChevronDown,
   ShoppingBag,
   CheckCircle2,
+  Clock3,
 } from "lucide-react"
 import { useCart } from "@/components/cart-provider"
 import type { CartItem } from "@/components/cart-provider"
@@ -29,15 +29,12 @@ import {
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
-type CheckoutErrors = {
-  name?: string
-  phone?: string
-  area?: string
-}
+type CheckoutErrors = { name?: string; phone?: string; area?: string }
+type AreaDesign = "search" | "chips" | "cards"
+type CheckoutTheme = "classic" | "glass" | "contrast"
 
 function CheckoutItemImage({ item }: { item: CartItem }) {
   const [imgError, setImgError] = useState(false)
-
   if (!item.image || imgError) {
     return (
       <div className="w-16 h-16 rounded-xl flex-shrink-0 bg-muted flex items-center justify-center">
@@ -45,17 +42,9 @@ function CheckoutItemImage({ item }: { item: CartItem }) {
       </div>
     )
   }
-
   return (
     <div className="relative w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-muted">
-      <Image
-        src={item.image}
-        alt={item.name}
-        fill
-        sizes="64px"
-        className="object-cover"
-        onError={() => setImgError(true)}
-      />
+      <Image src={item.image} alt={item.name} fill sizes="64px" className="object-cover" onError={() => setImgError(true)} />
     </div>
   )
 }
@@ -63,12 +52,7 @@ function CheckoutItemImage({ item }: { item: CartItem }) {
 function ProgressStep({ label, done }: { label: string; done: boolean }) {
   return (
     <div className="flex items-center gap-2">
-      <div
-        className={cn(
-          "w-6 h-6 rounded-full flex items-center justify-center border text-[10px] font-bold",
-          done ? "bg-primary text-primary-foreground border-primary" : "bg-background text-muted-foreground border-border"
-        )}
-      >
+      <div className={cn("w-6 h-6 rounded-full flex items-center justify-center border text-[10px] font-bold", done ? "bg-primary text-primary-foreground border-primary" : "bg-background text-muted-foreground border-border")}>
         {done ? <CheckCircle2 className="h-3.5 w-3.5" /> : "•"}
       </div>
       <span className={cn("text-xs font-medium", done ? "text-foreground" : "text-muted-foreground")}>{label}</span>
@@ -76,53 +60,122 @@ function ProgressStep({ label, done }: { label: string; done: boolean }) {
   )
 }
 
+function normalizeText(value: string): string {
+  return value.toLowerCase().replace(/[أإآٱ]/g, "ا").replace(/ة/g, "ه").replace(/ى/g, "ي").replace(/\s+/g, " ").trim()
+}
+
+function getEarliestDeliverySlot(minMinutes: number): string | null {
+  const now = new Date()
+  const saudiNow = new Date(now.getTime() + (3 * 60 - now.getTimezoneOffset()) * 60000)
+  const earliest = new Date(saudiNow.getTime() + (minMinutes + 45) * 60 * 1000)
+  const OPEN_HOUR = 15
+  const CLOSE_HOUR = 22
+  const dayNames = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"]
+  const monthNames = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"]
+
+  for (let i = 0; i < 7; i++) {
+    const day = new Date(saudiNow)
+    day.setDate(saudiNow.getDate() + i)
+    for (let hour = OPEN_HOUR; hour < CLOSE_HOUR; hour++) {
+      for (const min of [0, 30]) {
+        const slot = new Date(day)
+        slot.setHours(hour, min, 0, 0)
+        if (slot <= earliest) continue
+        const dayLabel = i === 0 ? "اليوم" : i === 1 ? "غدًا" : dayNames[day.getDay()]
+        const h12 = hour > 12 ? hour - 12 : hour
+        const period = hour >= 12 ? "م" : "ص"
+        return `${dayLabel} ${day.getDate()} ${monthNames[day.getMonth()]} - ${h12}:${min === 0 ? "00" : "30"} ${period}`
+      }
+    }
+  }
+  return null
+}
+
 function CheckoutContent() {
   const searchParams = useSearchParams()
   const orderType = (searchParams.get("type") as "pickup" | "delivery") || "delivery"
   const isPickup = orderType === "pickup"
+
+  const areaDesignParam = searchParams.get("areaui")
+  const areaDesign: AreaDesign = areaDesignParam === "chips" || areaDesignParam === "cards" || areaDesignParam === "search" ? areaDesignParam : "chips"
+
+  const themeParam = searchParams.get("checkoutui")
+  const activeCheckoutTheme: CheckoutTheme =
+    themeParam === "glass" || themeParam === "contrast" || themeParam === "classic" ? themeParam : "glass"
+
+  const theme = activeCheckoutTheme === "glass"
+    ? {
+        main: "min-h-screen pb-32 bg-[radial-gradient(circle_at_top,_#f7fafc,_#edf2f7_50%,_#e2e8f0)]",
+        header: "sticky top-0 z-50 bg-white/55 backdrop-blur-xl border-b border-white/60",
+        section: "rounded-3xl border border-white/60 bg-white/55 backdrop-blur-md shadow-[0_10px_30px_rgba(0,0,0,0.07)] p-4",
+        summary: "p-4 rounded-3xl border border-white/60 bg-white/55 backdrop-blur-md",
+        input: "bg-white/70",
+        ctaWrap: "fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-background via-background/90 to-transparent pt-8",
+      }
+    : activeCheckoutTheme === "contrast"
+      ? {
+          main: "min-h-screen pb-32 bg-slate-50",
+          header: "sticky top-0 z-50 bg-slate-900 text-white border-b border-slate-800",
+          section: "rounded-2xl border border-slate-200 bg-white shadow-sm p-4",
+          summary: "p-4 rounded-2xl bg-slate-900 text-white",
+          input: "bg-slate-100",
+          ctaWrap: "fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-slate-50 via-slate-50 to-transparent pt-8",
+        }
+      : {
+          main: "min-h-screen bg-background pb-32",
+          header: "sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border/50",
+          section: "rounded-2xl border border-border/60 bg-card p-4",
+          summary: "p-4 bg-amal-pink-light rounded-2xl",
+          input: "bg-amal-grey",
+          ctaWrap: "fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-background via-background to-transparent pt-8",
+        }
 
   const router = useRouter()
   const { items, totalPrice, updateQuantity, removeItem, deliveryInfo, setDeliveryInfo, clearCart } = useCart()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errors, setErrors] = useState<CheckoutErrors>({})
   const [submitted, setSubmitted] = useState(false)
+  const [areaFocused, setAreaFocused] = useState(false)
 
-  const handleInputChange = useCallback(
-    (field: keyof typeof deliveryInfo, value: string) => {
-      setDeliveryInfo({ ...deliveryInfo, [field]: value })
-      if (submitted) {
-        setErrors((prev) => ({ ...prev, [field]: undefined }))
-      }
-    },
-    [deliveryInfo, setDeliveryInfo, submitted]
-  )
+  const handleInputChange = useCallback((field: keyof typeof deliveryInfo, value: string) => {
+    setDeliveryInfo({ ...deliveryInfo, [field]: value })
+    if (submitted) setErrors((prev) => ({ ...prev, [field]: undefined }))
+  }, [deliveryInfo, setDeliveryInfo, submitted])
 
-  const handleScheduleChange = useCallback(
-    (value: string | null) => {
-      setDeliveryInfo({ ...deliveryInfo, scheduledTime: value })
-    },
-    [deliveryInfo, setDeliveryInfo]
-  )
+  const pickArea = useCallback((areaName: string) => {
+    handleInputChange("area", areaName)
+    setAreaFocused(false)
+  }, [handleInputChange])
+
+  const handleScheduleChange = useCallback((value: string | null) => setDeliveryInfo({ ...deliveryInfo, scheduledTime: value }), [deliveryInfo, setDeliveryInfo])
 
   const selectedArea = deliveryAreas.find((a) => a.name === deliveryInfo.area)
   const deliveryFee = isPickup ? 0 : (selectedArea?.price || 0)
   const grandTotal = totalPrice + deliveryFee
-
   const maxMakingTime = items.reduce((max, item) => Math.max(max, item.makingTime || 0), 0)
+  const earliestSlot = useMemo(() => getEarliestDeliverySlot(maxMakingTime), [maxMakingTime])
+
+  const filteredAreas = useMemo(() => {
+    if (isPickup) return []
+    const q = normalizeText(deliveryInfo.area || "")
+    if (!q) return deliveryAreas
+    return deliveryAreas.filter((a) => normalizeText(a.name).includes(q))
+  }, [deliveryInfo.area, isPickup])
 
   const infoDone = useMemo(() => {
     const hasBaseInfo = Boolean(deliveryInfo.name.trim() && deliveryInfo.phone.trim())
-    if (isPickup) return hasBaseInfo
-    return hasBaseInfo && Boolean(deliveryInfo.area)
-  }, [deliveryInfo.name, deliveryInfo.phone, deliveryInfo.area, isPickup])
+    return isPickup ? hasBaseInfo : hasBaseInfo && Boolean(selectedArea)
+  }, [deliveryInfo.name, deliveryInfo.phone, selectedArea, isPickup])
 
   const validate = useCallback((): CheckoutErrors => {
-    const nextErrors: CheckoutErrors = {}
-    if (!deliveryInfo.name.trim()) nextErrors.name = "الاسم مطلوب"
-    if (!deliveryInfo.phone.trim()) nextErrors.phone = "رقم الهاتف مطلوب"
-    if (!isPickup && !deliveryInfo.area) nextErrors.area = "اختر منطقة التوصيل"
-    return nextErrors
-  }, [deliveryInfo.name, deliveryInfo.phone, deliveryInfo.area, isPickup])
+    const next: CheckoutErrors = {}
+    if (!deliveryInfo.name.trim()) next.name = "الاسم مطلوب"
+    if (!deliveryInfo.phone.trim()) next.phone = "رقم الهاتف مطلوب"
+    if (!isPickup && !selectedArea) next.area = "اختر منطقة التوصيل من القائمة"
+    return next
+  }, [deliveryInfo.name, deliveryInfo.phone, isPickup, selectedArea])
+
+  const fieldBaseClass = `w-full py-4 px-4 pr-12 rounded-2xl ${theme.input} text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20`
 
   const handleWhatsAppCheckout = async () => {
     setSubmitted(true)
@@ -131,7 +184,6 @@ function CheckoutContent() {
     if (Object.keys(nextErrors).length > 0) return
 
     setIsSubmitting(true)
-
     const cartItems = items.map((item) => ({
       id: item.id,
       name: item.name,
@@ -142,10 +194,7 @@ function CheckoutContent() {
       makingTime: item.makingTime || 0,
     }))
 
-    const message = isPickup
-      ? generatePickupWhatsAppMessage(cartItems, totalPrice, deliveryInfo)
-      : generateWhatsAppMessage(cartItems, totalPrice, deliveryInfo)
-
+    const message = isPickup ? generatePickupWhatsAppMessage(cartItems, totalPrice, deliveryInfo) : generateWhatsAppMessage(cartItems, totalPrice, deliveryInfo)
     const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${message}`
     window.open(whatsappUrl, "_blank")
 
@@ -156,30 +205,20 @@ function CheckoutContent() {
         body: JSON.stringify({
           customerName: deliveryInfo.name,
           customerPhone: deliveryInfo.phone,
-          customerArea: isPickup ? "" : deliveryInfo.area,
+          customerArea: isPickup ? "" : (selectedArea?.name || ""),
           orderType: isPickup ? "pickup" : "delivery",
-          items: cartItems.map((item) => ({
-            id: item.id,
-            quantity: item.quantity,
-            selectedIngredients: item.selectedIngredients,
-          })),
+          items: cartItems.map((item) => ({ id: item.id, quantity: item.quantity, selectedIngredients: item.selectedIngredients })),
           notes: deliveryInfo.notes,
           scheduledTime: deliveryInfo.scheduledTime,
         }),
       })
-
-      if (!orderResponse.ok) {
-        throw new Error("Unable to save order")
-      }
-
+      if (!orderResponse.ok) throw new Error("save failed")
       const orderData: { total?: number } = await orderResponse.json()
       const confirmedTotal = typeof orderData.total === "number" ? orderData.total : grandTotal
-
       clearCart()
-
       const params = new URLSearchParams({
         name: deliveryInfo.name,
-        area: isPickup ? "" : deliveryInfo.area,
+        area: isPickup ? "" : (selectedArea?.name || ""),
         total: String(confirmedTotal),
         type: isPickup ? "pickup" : "delivery",
         time: deliveryInfo.scheduledTime ?? "في أقرب وقت",
@@ -194,208 +233,142 @@ function CheckoutContent() {
 
   if (items.length === 0) {
     return (
-      <main className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-center">
-        <div className="w-24 h-24 rounded-full bg-amal-grey flex items-center justify-center mb-6">
-          <Trash2 className="h-10 w-10 text-muted-foreground" />
-        </div>
+      <main className={cn(theme.main, "flex flex-col items-center justify-center p-6 text-center")}>
+        <div className="w-24 h-24 rounded-full bg-amal-grey flex items-center justify-center mb-6"><Trash2 className="h-10 w-10 text-muted-foreground" /></div>
         <h1 className="text-2xl font-bold text-foreground mb-2">السلة فارغة</h1>
         <p className="text-muted-foreground mb-6">لم تقم بإضافة أي منتجات بعد</p>
-        <Link href="/">
-          <Button className="rounded-full px-8">تصفح المنتجات</Button>
-        </Link>
+        <Link href="/"><Button className="rounded-full px-8">تصفح المنتجات</Button></Link>
       </main>
     )
   }
 
   return (
-    <main className="min-h-screen bg-background pb-32">
-      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border/50">
+    <main className={theme.main}>
+      <header className={theme.header}>
         <div className="flex items-center gap-4 px-4 py-3">
-          <Link href="/" className="w-10 h-10 rounded-full bg-amal-grey flex items-center justify-center">
+          <Link href="/" className={cn("w-10 h-10 rounded-full flex items-center justify-center", activeCheckoutTheme === "contrast" ? "bg-slate-700" : "bg-amal-grey")}>
             <ArrowRight className="h-5 w-5" />
           </Link>
           <div>
             <h1 className="text-xl font-bold">إتمام الطلب</h1>
-            <p className="text-xs text-muted-foreground">
-              {isPickup ? "استلام من المحل" : "توصيل للمنزل"}
-            </p>
+            <p className={cn("text-xs", activeCheckoutTheme === "contrast" ? "text-slate-300" : "text-muted-foreground")}>{isPickup ? "استلام من المحل" : "توصيل للمنزل"}</p>
           </div>
         </div>
-
-        <div className="px-4 pb-3 flex items-center justify-between border-t border-border/40">
+        <div className={cn("px-4 pb-3 flex items-center justify-between border-t", activeCheckoutTheme === "contrast" ? "border-slate-700" : "border-border/40")}>
           <ProgressStep label="السلة" done={items.length > 0} />
-          <div className="h-px flex-1 mx-2 bg-border" />
+          <div className={cn("h-px flex-1 mx-2", activeCheckoutTheme === "contrast" ? "bg-slate-700" : "bg-border")} />
           <ProgressStep label="البيانات" done={infoDone} />
-          <div className="h-px flex-1 mx-2 bg-border" />
+          <div className={cn("h-px flex-1 mx-2", activeCheckoutTheme === "contrast" ? "bg-slate-700" : "bg-border")} />
           <ProgressStep label="التأكيد" done={false} />
         </div>
       </header>
 
       <div className="p-4 space-y-5">
-        <section className="rounded-2xl border border-border/60 bg-card p-4">
+        <section className={theme.section}>
           <h2 className="text-lg font-bold mb-4">طلباتك ({items.length})</h2>
           <div className="space-y-3">
             {items.map((item) => (
-              <div key={item.cartKey} className="flex items-center gap-4 p-3 bg-background rounded-2xl border border-border/50">
+              <div key={item.cartKey} className={cn("flex items-center gap-4 p-3 rounded-2xl border", checkoutTheme === "contrast" ? "bg-white border-slate-200" : "bg-background border-border/50")}>
                 <CheckoutItemImage item={item} />
                 <div className="flex-1 min-w-0">
                   <h3 className="font-bold text-foreground truncate">{item.name}</h3>
-                  {item.selectedIngredients?.length ? (
-                    <p className="text-xs text-muted-foreground truncate">{item.selectedIngredients.join("، ")}</p>
-                  ) : null}
+                  {item.selectedIngredients?.length ? <p className="text-xs text-muted-foreground truncate">{item.selectedIngredients.join("، ")}</p> : null}
                   <p className="text-primary font-medium">{item.price * item.quantity} ر.س</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => updateQuantity(item.cartKey, item.quantity - 1)}
-                    className="w-8 h-8 rounded-full bg-amal-grey flex items-center justify-center"
-                    aria-label="تقليل الكمية"
-                  >
-                    <Minus className="h-4 w-4" />
-                  </button>
+                  <button onClick={() => updateQuantity(item.cartKey, item.quantity - 1)} className={cn("w-8 h-8 rounded-full flex items-center justify-center", theme.input)} aria-label="تقليل"><Minus className="h-4 w-4" /></button>
                   <span className="w-6 text-center font-medium">{item.quantity}</span>
-                  <button
-                    onClick={() => updateQuantity(item.cartKey, item.quantity + 1)}
-                    className="w-8 h-8 rounded-full bg-amal-grey flex items-center justify-center"
-                    aria-label="زيادة الكمية"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </button>
+                  <button onClick={() => updateQuantity(item.cartKey, item.quantity + 1)} className={cn("w-8 h-8 rounded-full flex items-center justify-center", theme.input)} aria-label="زيادة"><Plus className="h-4 w-4" /></button>
                 </div>
-                <button
-                  onClick={() => removeItem(item.cartKey)}
-                  className="w-8 h-8 rounded-full bg-destructive/10 flex items-center justify-center text-destructive"
-                  aria-label="حذف المنتج"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
+                <button onClick={() => removeItem(item.cartKey)} className="w-8 h-8 rounded-full bg-destructive/10 flex items-center justify-center text-destructive" aria-label="حذف"><Trash2 className="h-4 w-4" /></button>
               </div>
             ))}
           </div>
         </section>
 
-        <section className="rounded-2xl border border-border/60 bg-card p-4">
-          <h2 className="text-lg font-bold mb-2">{isPickup ? "وقت الاستلام" : "موعد التوصيل"}</h2>
-          {maxMakingTime > 0 && (
-            <div className="mb-3 p-3 bg-amal-yellow/20 rounded-xl flex items-center gap-2 text-right">
-              <span className="text-xl">⏱️</span>
-              <p className="text-sm text-foreground">
-                الحد الأدنى للتجهيز{" "}
-                <span className="font-bold">
-                  {maxMakingTime >= 60
-                    ? `${maxMakingTime % 60 === 0 ? maxMakingTime / 60 : `${Math.floor(maxMakingTime / 60)} ساعة و${maxMakingTime % 60}`} ساعة`
-                    : `${maxMakingTime} دقيقة`}
-                </span>
-                . المواعيد المتاحة تراعي وقت التحضير.
-              </p>
-            </div>
-          )}
+        <section className={theme.section}>
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-lg font-bold">{isPickup ? "وقت الاستلام" : "موعد التوصيل"}</h2>
+            {!isPickup && earliestSlot ? <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold px-2.5 py-1"><Clock3 className="h-3.5 w-3.5" />أقرب موعد: {earliestSlot}</div> : null}
+          </div>
+          {maxMakingTime > 0 ? <div className="mb-3 p-3 bg-amal-yellow/20 rounded-xl text-right text-sm text-foreground">الحد الأدنى للتجهيز: <span className="font-bold">{maxMakingTime >= 60 ? `${maxMakingTime % 60 === 0 ? maxMakingTime / 60 : `${Math.floor(maxMakingTime / 60)} ساعة و${maxMakingTime % 60}`} ساعة` : `${maxMakingTime} دقيقة`}</span></div> : null}
           <TimePicker value={deliveryInfo.scheduledTime} onChange={handleScheduleChange} minMinutes={maxMakingTime} required={false} />
         </section>
 
-        <section className="rounded-2xl border border-border/60 bg-card p-4">
+        <section className={theme.section}>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-bold">{isPickup ? "بيانات الاستلام" : "بيانات التوصيل"}</h2>
             <span className="text-xs text-muted-foreground">* الحقول المطلوبة</span>
           </div>
-
           <div className="space-y-3">
             <div className="relative">
               <User className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="الاسم الكامل *"
-                value={deliveryInfo.name}
-                onChange={(e) => handleInputChange("name", e.target.value)}
-                className={cn(
-                  "w-full py-4 px-4 pr-12 rounded-2xl bg-amal-grey text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20",
-                  errors.name && "ring-2 ring-red-300"
-                )}
-              />
+              <input type="text" placeholder="الاسم الكامل *" value={deliveryInfo.name} onChange={(e) => handleInputChange("name", e.target.value)} className={cn(fieldBaseClass, errors.name && "ring-2 ring-red-300")} />
               {errors.name ? <p className="text-xs text-red-500 mt-1 pr-2">{errors.name}</p> : null}
             </div>
-
             <div className="relative">
               <Phone className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              <input
-                type="tel"
-                inputMode="tel"
-                placeholder="رقم الهاتف *"
-                value={deliveryInfo.phone}
-                onChange={(e) => handleInputChange("phone", e.target.value)}
-                className={cn(
-                  "w-full py-4 px-4 pr-12 rounded-2xl bg-amal-grey text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20",
-                  errors.phone && "ring-2 ring-red-300"
-                )}
-                dir="ltr"
-              />
+              <input type="tel" inputMode="tel" dir="ltr" placeholder="رقم الهاتف *" value={deliveryInfo.phone} onChange={(e) => handleInputChange("phone", e.target.value)} className={cn(fieldBaseClass, errors.phone && "ring-2 ring-red-300")} />
               {errors.phone ? <p className="text-xs text-red-500 mt-1 pr-2">{errors.phone}</p> : null}
             </div>
 
-            {!isPickup && (
+            {!isPickup ? (
               <div className="relative">
-                <MapPin className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <ChevronDown className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
-                <select
-                  value={deliveryInfo.area}
-                  onChange={(e) => handleInputChange("area", e.target.value)}
-                  className={cn(
-                    "w-full py-4 px-4 pr-12 rounded-2xl bg-amal-grey text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer",
-                    errors.area && "ring-2 ring-red-300"
-                  )}
-                >
-                  <option value="">اختر منطقة التوصيل *</option>
-                  {deliveryAreas.map((area) => (
-                    <option key={area.id} value={area.name}>
-                      {area.name} - {area.price} ر.س
-                    </option>
-                  ))}
-                </select>
+                {areaDesign === "search" ? (
+                  <>
+                    <MapPin className="absolute right-4 top-4 h-5 w-5 text-muted-foreground" />
+                    <input type="text" placeholder="اكتب المنطقة *" value={deliveryInfo.area} onFocus={() => setAreaFocused(true)} onBlur={() => setTimeout(() => setAreaFocused(false), 120)} onChange={(e) => handleInputChange("area", e.target.value)} className={cn(fieldBaseClass, errors.area && "ring-2 ring-red-300")} />
+                    {areaFocused && filteredAreas.length > 0 ? (
+                      <div className="absolute z-20 mt-2 w-full rounded-2xl border border-border bg-white shadow-lg overflow-hidden">
+                        <div className="max-h-56 overflow-y-auto">
+                          {filteredAreas.map((area) => (
+                            <button key={area.id} type="button" onMouseDown={(e) => { e.preventDefault(); pickArea(area.name) }} className="w-full text-right px-4 py-3 hover:bg-amal-grey/60 transition-colors">
+                              <p className="font-medium">{area.name}</p>
+                              <p className="text-xs text-muted-foreground">رسوم التوصيل: {area.price} ر.س</p>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
+                  </>
+                ) : areaDesign === "cards" ? (
+                  <div className="space-y-2">
+                    {filteredAreas.map((area) => (
+                      <button key={area.id} type="button" onClick={() => pickArea(area.name)} className={cn("w-full rounded-2xl border px-3 py-3 text-right transition-colors", selectedArea?.id === area.id ? "border-primary bg-primary/10" : "border-border bg-amal-grey/60 hover:bg-amal-grey")}>
+                        <div className="flex items-center justify-between"><span className="font-semibold">{area.name}</span><span className={cn("text-sm", selectedArea?.id === area.id ? "text-primary font-bold" : "text-muted-foreground")}>{area.price} ر.س</span></div>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {filteredAreas.map((area) => (
+                      <button key={area.id} type="button" onClick={() => pickArea(area.name)} className={cn("rounded-full px-3 py-2 text-sm border transition-colors", selectedArea?.id === area.id ? "bg-primary text-primary-foreground border-primary" : `${theme.input} text-foreground border-border hover:bg-primary/10`)}>
+                        {area.name} · {area.price} ر.س
+                      </button>
+                    ))}
+                  </div>
+                )}
                 {errors.area ? <p className="text-xs text-red-500 mt-1 pr-2">{errors.area}</p> : null}
+                <p className="text-xs mt-2 text-muted-foreground">{selectedArea ? <span className="text-primary font-semibold">رسوم التوصيل الآن: {selectedArea.price} ر.س</span> : "اختر منطقة من القائمة لاحتساب الرسوم فورًا"}</p>
               </div>
-            )}
+            ) : null}
 
             <div className="relative">
               <FileText className="absolute right-4 top-4 h-5 w-5 text-muted-foreground" />
-              <textarea
-                placeholder="ملاحظات إضافية (اختياري)"
-                value={deliveryInfo.notes}
-                onChange={(e) => handleInputChange("notes", e.target.value)}
-                rows={2}
-                className="w-full py-4 px-4 pr-12 rounded-2xl bg-amal-grey text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
-              />
+              <textarea placeholder="ملاحظات إضافية (اختياري)" value={deliveryInfo.notes} onChange={(e) => handleInputChange("notes", e.target.value)} rows={2} className={cn(fieldBaseClass, "resize-none")} />
             </div>
           </div>
         </section>
 
-        <section className="p-4 bg-amal-pink-light rounded-2xl">
-          <div className="flex justify-between mb-2">
-            <span className="text-muted-foreground">المجموع الفرعي</span>
-            <span className="font-medium">{totalPrice} ر.س</span>
-          </div>
-          <div className="flex justify-between mb-2">
-            <span className="text-muted-foreground">
-              {isPickup ? "رسوم التوصيل" : `رسوم التوصيل ${deliveryInfo.area ? `(${deliveryInfo.area})` : ""}`}
-            </span>
-            <span className={cn("font-medium", isPickup && "text-[#1e5631]")}>
-              {isPickup ? "مجاني" : deliveryFee > 0 ? `${deliveryFee} ر.س` : "اختر المنطقة"}
-            </span>
-          </div>
-          <div className="border-t border-primary/20 pt-2 mt-2">
-            <div className="flex justify-between">
-              <span className="font-bold text-lg">الإجمالي</span>
-              <span className="font-bold text-lg text-primary">{grandTotal} ر.س</span>
-            </div>
-          </div>
+        <section className={theme.summary}>
+          <div className="flex justify-between mb-2"><span className={cn(activeCheckoutTheme === "contrast" ? "text-slate-300" : "text-muted-foreground")}>المجموع الفرعي</span><span className="font-medium">{totalPrice} ر.س</span></div>
+          <div className="flex justify-between mb-2"><span className={cn(activeCheckoutTheme === "contrast" ? "text-slate-300" : "text-muted-foreground")}>{isPickup ? "رسوم التوصيل" : `رسوم التوصيل ${selectedArea ? `(${selectedArea.name})` : ""}`}</span><span className={cn("font-medium", isPickup && "text-[#1e5631]")}>{isPickup ? "مجاني" : selectedArea ? `${selectedArea.price} ر.س` : "اختر المنطقة"}</span></div>
+          <div className={cn("pt-2 mt-2 border-t", activeCheckoutTheme === "contrast" ? "border-slate-700" : "border-primary/20")}><div className="flex justify-between"><span className="font-bold text-lg">الإجمالي</span><span className="font-bold text-lg text-primary">{grandTotal} ر.س</span></div></div>
         </section>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-background via-background to-transparent pt-8">
-        <Button
-          onClick={handleWhatsAppCheckout}
-          disabled={isSubmitting}
-          className="w-full h-14 rounded-full bg-[#25D366] hover:bg-[#25D366]/90 text-white text-lg font-bold shadow-xl"
-        >
+      <div className={theme.ctaWrap}>
+        <Button onClick={handleWhatsAppCheckout} disabled={isSubmitting} className="w-full h-14 rounded-full bg-[#25D366] hover:bg-[#25D366]/90 text-white text-lg font-bold shadow-xl">
           {isSubmitting ? "جاري الإرسال..." : "إتمام الطلب عبر واتساب"}
         </Button>
       </div>

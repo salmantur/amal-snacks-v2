@@ -66,7 +66,7 @@ export function OrderTypeModal({ open, onSelect, onClose }: OrderTypeModalProps)
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-sm p-0 border-0 rounded-3xl overflow-hidden gap-0 bg-transparent shadow-none [&>button]:hidden">
+      <DialogContent className="max-w-sm w-[calc(100vw-2rem)] sm:w-full mx-4 sm:mx-auto p-0 border-0 rounded-3xl overflow-hidden gap-0 bg-transparent shadow-none [&>button]:hidden">
         <div className={`relative overflow-hidden ${theme.shell}`}>
           <div className={`pointer-events-none absolute inset-0 ${theme.glow}`} />
           <div className="pointer-events-none absolute inset-[1px] rounded-3xl border border-white/30" />

@@ -6,7 +6,17 @@ import Image from "next/image"
 import { cn } from "@/lib/utils"
 import type { Order } from "@/lib/data"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
-import { printOrder, setPrinterIp, getPrintMode, setPrintMode, getTicketPreviewDataUrl, type PrintMode } from "@/lib/thermal-printer"
+import {
+  printOrder,
+  setPrinterIp,
+  getPrintMode,
+  setPrintMode,
+  getPrintDarkness,
+  setPrintDarkness,
+  getTicketPreviewDataUrl,
+  type PrintMode,
+  type PrintDarkness,
+} from "@/lib/thermal-printer"
 
 interface KitchenTicketProps {
   order: Order
@@ -51,6 +61,9 @@ export function KitchenTicket({ order, onStatusChange }: KitchenTicketProps) {
   const [printModeState, setPrintModeState] = useState<PrintMode>(() =>
     typeof window !== "undefined" ? getPrintMode() : "readable"
   )
+  const [printDarknessState, setPrintDarknessState] = useState<PrintDarkness>(() =>
+    typeof window !== "undefined" ? getPrintDarkness() : "normal"
+  )
   const [showPreview, setShowPreview] = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [previewLoading, setPreviewLoading] = useState(false)
@@ -59,7 +72,15 @@ export function KitchenTicket({ order, onStatusChange }: KitchenTicketProps) {
     setPrintModeState(mode)
     setPrintMode(mode)
     if (showPreview) {
-      setPreviewUrl(getTicketPreviewDataUrl(order, mode))
+      setPreviewUrl(getTicketPreviewDataUrl(order, mode, printDarknessState))
+    }
+  }
+
+  const updatePrintDarkness = (darkness: PrintDarkness) => {
+    setPrintDarknessState(darkness)
+    setPrintDarkness(darkness)
+    if (showPreview) {
+      setPreviewUrl(getTicketPreviewDataUrl(order, printModeState, darkness))
     }
   }
 
@@ -68,7 +89,7 @@ export function KitchenTicket({ order, onStatusChange }: KitchenTicketProps) {
     setPreviewLoading(true)
     setShowPreview(true)
     try {
-      setPreviewUrl(getTicketPreviewDataUrl(order, printModeState))
+      setPreviewUrl(getTicketPreviewDataUrl(order, printModeState, printDarknessState))
     } finally {
       setPreviewLoading(false)
     }
@@ -79,7 +100,7 @@ export function KitchenTicket({ order, onStatusChange }: KitchenTicketProps) {
     setPrintError(null)
     setPrintSuccess(false)
     try {
-      await printOrder(order, { mode: printModeState })
+      await printOrder(order, { mode: printModeState, darkness: printDarknessState })
       setPrintSuccess(true)
       setShowPreview(false)
       setTimeout(() => setPrintSuccess(false), 3000)
@@ -224,6 +245,35 @@ export function KitchenTicket({ order, onStatusChange }: KitchenTicketProps) {
             مختصر
           </button>
         </div>
+        <div className="grid grid-cols-3 gap-2">
+          <button
+            onClick={() => updatePrintDarkness("light")}
+            className={cn(
+              "py-2 rounded-lg text-xs font-bold border transition-colors",
+              printDarknessState === "light" ? "bg-black text-white border-black" : "bg-white border-border text-foreground"
+            )}
+          >
+            فاتح
+          </button>
+          <button
+            onClick={() => updatePrintDarkness("normal")}
+            className={cn(
+              "py-2 rounded-lg text-xs font-bold border transition-colors",
+              printDarknessState === "normal" ? "bg-black text-white border-black" : "bg-white border-border text-foreground"
+            )}
+          >
+            عادي
+          </button>
+          <button
+            onClick={() => updatePrintDarkness("dark")}
+            className={cn(
+              "py-2 rounded-lg text-xs font-bold border transition-colors",
+              printDarknessState === "dark" ? "bg-black text-white border-black" : "bg-white border-border text-foreground"
+            )}
+          >
+            غامق
+          </button>
+        </div>
 
         <button
           onClick={openPreview}
@@ -283,7 +333,9 @@ export function KitchenTicket({ order, onStatusChange }: KitchenTicketProps) {
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden p-0">
             <div className="p-4 border-b border-border flex items-center justify-between">
               <DialogTitle className="text-base font-bold">معاينة التذكرة</DialogTitle>
-              <div className="text-xs text-muted-foreground">{printModeState === "readable" ? "واضح" : "مختصر"}</div>
+              <div className="text-xs text-muted-foreground">
+                {printModeState === "readable" ? "واضح" : "مختصر"} - {printDarknessState === "light" ? "فاتح" : printDarknessState === "normal" ? "عادي" : "غامق"}
+              </div>
             </div>
 
             <div className="p-4 overflow-y-auto max-h-[60vh] bg-[#f5f5f5]">

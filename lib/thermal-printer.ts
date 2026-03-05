@@ -37,8 +37,10 @@ type Line = {
 }
 
 export type PrintMode = "readable" | "compact"
+export type PrintDarkness = "light" | "normal" | "dark"
 
 const DEFAULT_PRINT_MODE: PrintMode = "readable"
+const DEFAULT_PRINT_DARKNESS: PrintDarkness = "normal"
 
 export function getPrintMode(): PrintMode {
   if (typeof window !== "undefined") {
@@ -51,6 +53,20 @@ export function getPrintMode(): PrintMode {
 export function setPrintMode(mode: PrintMode): void {
   if (typeof window !== "undefined") {
     localStorage.setItem("printer_mode", mode)
+  }
+}
+
+export function getPrintDarkness(): PrintDarkness {
+  if (typeof window !== "undefined") {
+    const value = localStorage.getItem("printer_darkness")
+    if (value === "light" || value === "normal" || value === "dark") return value
+  }
+  return DEFAULT_PRINT_DARKNESS
+}
+
+export function setPrintDarkness(darkness: PrintDarkness): void {
+  if (typeof window !== "undefined") {
+    localStorage.setItem("printer_darkness", darkness)
   }
 }
 
@@ -290,18 +306,19 @@ function renderCanvas(lines: Line[]): HTMLCanvasElement {
   return canvas
 }
 
-function canvasToMono(canvas: HTMLCanvasElement): { w: number; h: number; b64: string } {
+function canvasToMono(canvas: HTMLCanvasElement, darkness: PrintDarkness = DEFAULT_PRINT_DARKNESS): { w: number; h: number; b64: string } {
   const ctx  = canvas.getContext("2d")!
   const { data, width: w, height: h } = ctx.getImageData(0, 0, canvas.width, canvas.height)
 
   const rowBytes = Math.ceil(w / 8)  // must be multiple of 8 bytes per row
   const mono     = new Uint8Array(rowBytes * h)
+  const threshold = darkness === "light" ? 112 : darkness === "dark" ? 152 : 128
 
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
       const i    = (y * w + x) * 4
       const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]
-      if (gray < 128) mono[y * rowBytes + Math.floor(x / 8)] |= (1 << (7 - (x % 8)))
+      if (gray < threshold) mono[y * rowBytes + Math.floor(x / 8)] |= (1 << (7 - (x % 8)))
     }
   }
 
@@ -317,10 +334,10 @@ function canvasToMono(canvas: HTMLCanvasElement): { w: number; h: number; b64: s
 
 // ── Build ePOS XML ────────────────────────────────────────────────────────
 
-async function buildXml(order: Order, mode: PrintMode): Promise<string> {
+async function buildXml(order: Order, mode: PrintMode, darkness: PrintDarkness): Promise<string> {
   const lines        = buildLines(order, mode)
   const canvas       = renderCanvas(lines)
-  const { w, h, b64 } = canvasToMono(canvas)
+  const { w, h, b64 } = canvasToMono(canvas, darkness)
 
   return `<?xml version="1.0" encoding="utf-8"?>
 <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
@@ -338,9 +355,15 @@ async function buildXml(order: Order, mode: PrintMode): Promise<string> {
 
 type PrintJobOptions = {
   mode?: PrintMode
+  darkness?: PrintDarkness
 }
 
-export function getTicketPreviewDataUrl(order: Order, mode: PrintMode = getPrintMode()): string {
+export function getTicketPreviewDataUrl(
+  order: Order,
+  mode: PrintMode = getPrintMode(),
+  darkness: PrintDarkness = getPrintDarkness(),
+): string {
+  void darkness
   const canvas = renderCanvas(buildLines(order, mode))
   return canvas.toDataURL("image/png")
 }
@@ -363,7 +386,8 @@ export async function printOrder(order: Order, options: PrintJobOptions = {}): P
   const ip  = getPrinterIp()
   const url = `https://${ip}/cgi-bin/epos/service.cgi?devid=local_printer&timeout=10000`
   const mode = options.mode ?? getPrintMode()
-  const xml = await buildXml(order, mode)
+  const darkness = options.darkness ?? getPrintDarkness()
+  const xml = await buildXml(order, mode, darkness)
   const { signal, cancel } = createTimeoutSignal(15000)
 
   let response: Response

@@ -126,19 +126,6 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
             <div className="flex-1 text-right pr-4">
               <DialogTitle className="text-2xl font-bold text-[#1e293b]">{product.name}</DialogTitle>
               <DialogDescription className="text-gray-500 mt-1">{product.description}</DialogDescription>
-              {product.makingTime && product.makingTime > 0 ? (
-                <p className="text-xs text-gray-400 mt-1 flex items-center gap-1 justify-end">
-                  <span>⏱</span>
-                  <span>
-                    وقت التحضير:{" "}
-                    {product.makingTime < 60
-                      ? `${product.makingTime} دقيقة`
-                      : product.makingTime % 60 === 0
-                      ? `${product.makingTime / 60} ساعة`
-                      : `${Math.floor(product.makingTime / 60)} ساعة و${product.makingTime % 60} دقيقة`}
-                  </span>
-                </p>
-              ) : null}
             </div>
             <button onClick={onClose} className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors flex-shrink-0" aria-label="إغلاق">
               <X className="h-5 w-5 text-gray-600" />

@@ -61,7 +61,7 @@ function ProgressStep({ label, done }: { label: string; done: boolean }) {
           done ? "bg-primary text-primary-foreground border-primary" : "bg-background text-muted-foreground border-border"
         )}
       >
-        {done ? <CheckCircle2 className="h-3.5 w-3.5" /> : "â€¢"}
+        {done ? <CheckCircle2 className="h-3.5 w-3.5" /> : "•"}
       </div>
       <span className={cn("text-xs font-medium", done ? "text-foreground" : "text-muted-foreground")}>{label}</span>
     </div>
@@ -71,9 +71,9 @@ function ProgressStep({ label, done }: { label: string; done: boolean }) {
 function normalizeText(value: string): string {
   return value
     .toLowerCase()
-    .replace(/[Ø£Ø¥Ø¢Ù±]/g, "Ø§")
-    .replace(/Ø©/g, "Ù‡")
-    .replace(/Ù‰/g, "ÙŠ")
+    .replace(/[أإآٱ]/g, "ا")
+    .replace(/ة/g, "ه")
+    .replace(/ى/g, "ي")
     .replace(/\s+/g, " ")
     .trim()
 }
@@ -84,8 +84,8 @@ function getEarliestDeliverySlot(minMinutes: number): string | null {
   const earliest = new Date(saudiNow.getTime() + (minMinutes + 45) * 60 * 1000)
   const OPEN_HOUR = 15
   const CLOSE_HOUR = 22
-  const dayNames = ["Ø§Ù„Ø£Ø­Ø¯", "Ø§Ù„Ø§Ø«Ù†ÙŠÙ†", "Ø§Ù„Ø«Ù„Ø§Ø«Ø§Ø¡", "Ø§Ù„Ø£Ø±Ø¨Ø¹Ø§Ø¡", "Ø§Ù„Ø®Ù…ÙŠØ³", "Ø§Ù„Ø¬Ù…Ø¹Ø©", "Ø§Ù„Ø³Ø¨Øª"]
-  const monthNames = ["ÙŠÙ†Ø§ÙŠØ±", "ÙØ¨Ø±Ø§ÙŠØ±", "Ù…Ø§Ø±Ø³", "Ø£Ø¨Ø±ÙŠÙ„", "Ù…Ø§ÙŠÙˆ", "ÙŠÙˆÙ†ÙŠÙˆ", "ÙŠÙˆÙ„ÙŠÙˆ", "Ø£ØºØ³Ø·Ø³", "Ø³Ø¨ØªÙ…Ø¨Ø±", "Ø£ÙƒØªÙˆØ¨Ø±", "Ù†ÙˆÙÙ…Ø¨Ø±", "Ø¯ÙŠØ³Ù…Ø¨Ø±"]
+  const dayNames = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"]
+  const monthNames = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"]
 
   for (let i = 0; i < 7; i++) {
     const day = new Date(saudiNow)
@@ -95,13 +95,15 @@ function getEarliestDeliverySlot(minMinutes: number): string | null {
         const slot = new Date(day)
         slot.setHours(hour, min, 0, 0)
         if (slot <= earliest) continue
-        const dayLabel = i === 0 ? "Ø§Ù„ÙŠÙˆÙ…" : i === 1 ? "ØºØ¯Ù‹Ø§" : dayNames[day.getDay()]
+
+        const dayLabel = i === 0 ? "اليوم" : i === 1 ? "غدًا" : dayNames[day.getDay()]
         const h12 = hour > 12 ? hour - 12 : hour
-        const period = hour >= 12 ? "Ù…" : "Øµ"
+        const period = hour >= 12 ? "م" : "ص"
         return `${dayLabel} ${day.getDate()} ${monthNames[day.getMonth()]} - ${h12}:${min === 0 ? "00" : "30"} ${period}`
       }
     }
   }
+
   return null
 }
 
@@ -179,7 +181,7 @@ function CheckoutContent() {
     (areaName: string) => {
       handleInputChange("area", areaName)
       setAreaFocused(false)
-      showActionFeedback("ØªÙ… ØªØ­Ø¯ÙŠØ« Ø±Ø³ÙˆÙ… Ø§Ù„ØªÙˆØµÙŠÙ„")
+      showActionFeedback("تم تحديث رسوم التوصيل")
     },
     [handleInputChange, showActionFeedback]
   )
@@ -190,7 +192,7 @@ function CheckoutContent() {
       updateQuantity(item.cartKey, nextQty)
       setHighlightedCartKey(item.cartKey)
       window.setTimeout(() => setHighlightedCartKey((prev) => (prev === item.cartKey ? null : prev)), 500)
-      showActionFeedback(nextQty <= 0 ? "ØªÙ… Ø­Ø°Ù Ø§Ù„ØµÙ†Ù Ù…Ù† Ø§Ù„Ø³Ù„Ø©" : "ØªÙ… ØªØ­Ø¯ÙŠØ« Ø§Ù„ÙƒÙ…ÙŠØ©")
+      showActionFeedback(nextQty <= 0 ? "تم حذف الصنف من السلة" : "تم تحديث الكمية")
     },
     [updateQuantity, showActionFeedback]
   )
@@ -200,7 +202,7 @@ function CheckoutContent() {
       updateQuantity(item.cartKey, item.quantity + 1)
       setHighlightedCartKey(item.cartKey)
       window.setTimeout(() => setHighlightedCartKey((prev) => (prev === item.cartKey ? null : prev)), 500)
-      showActionFeedback("ØªÙ… ØªØ­Ø¯ÙŠØ« Ø§Ù„ÙƒÙ…ÙŠØ©")
+      showActionFeedback("تم تحديث الكمية")
     },
     [updateQuantity, showActionFeedback]
   )
@@ -208,7 +210,7 @@ function CheckoutContent() {
   const handleRemove = useCallback(
     (item: CartItem) => {
       removeItem(item.cartKey)
-      showActionFeedback("ØªÙ… Ø­Ø°Ù Ø§Ù„ØµÙ†Ù Ù…Ù† Ø§Ù„Ø³Ù„Ø©")
+      showActionFeedback("تم حذف الصنف من السلة")
     },
     [removeItem, showActionFeedback]
   )
@@ -238,22 +240,24 @@ function CheckoutContent() {
 
   const validate = useCallback((): CheckoutErrors => {
     const next: CheckoutErrors = {}
-    if (!deliveryInfo.name.trim()) next.name = "Ø§Ù„Ø§Ø³Ù… Ù…Ø·Ù„ÙˆØ¨"
-    if (!deliveryInfo.phone.trim()) next.phone = "Phone is required"
+    if (!deliveryInfo.name.trim()) next.name = "الاسم مطلوب"
+
+    if (!deliveryInfo.phone.trim()) next.phone = "رقم الهاتف مطلوب"
     else {
       const digitsOnly = deliveryInfo.phone.replace(/\D/g, "")
-      if (digitsOnly.length < 9) next.phone = "Enter a valid phone number"
+      if (digitsOnly.length < 9) next.phone = "أدخل رقم هاتف صحيح"
     }
-    if (!isPickup && !selectedArea) next.area = "Select a delivery area from list"
+
+    if (!isPickup && !selectedArea) next.area = "اختر منطقة التوصيل من القائمة"
     return next
   }, [deliveryInfo.name, deliveryInfo.phone, isPickup, selectedArea])
 
   const deliveryAccuracyText = useMemo(() => {
-    if (isPickup) return "Ø¬Ø§Ù‡Ø²ÙŠØ© Ø§Ù„Ø·Ù„Ø¨ Ø­Ø³Ø¨ Ù…ÙˆØ¹Ø¯ Ø§Ù„Ø§Ø³ØªÙ„Ø§Ù… Ø§Ù„Ù…Ø®ØªØ§Ø±."
-    if (deliveryInfo.scheduledTime) return `Ø§Ù„ØªØ³Ù„ÙŠÙ… Ø§Ù„Ù…ØªÙˆÙ‚Ø¹ Ø¶Ù…Ù† 15-25 Ø¯Ù‚ÙŠÙ‚Ø© Ù…Ù† Ø§Ù„Ù…ÙˆØ¹Ø¯: ${deliveryInfo.scheduledTime}`
+    if (isPickup) return "جاهزية الطلب حسب موعد الاستلام المختار."
+    if (deliveryInfo.scheduledTime) return `التسليم المتوقع ضمن 15-25 دقيقة من الموعد: ${deliveryInfo.scheduledTime}`
     return earliestSlot
-      ? `Ø£Ù‚Ø±Ø¨ Ù†Ø§ÙØ°Ø© ØªÙˆØµÙŠÙ„ Ù…ØªØ§Ø­Ø©: ${earliestSlot} (Ù‚Ø¯ ØªØªØºÙŠØ± Â±20 Ø¯Ù‚ÙŠÙ‚Ø© Ø­Ø³Ø¨ Ø§Ù„Ø²Ø­Ø§Ù…).`
-      : "Ù†Ø¤ÙƒØ¯ Ø£Ù‚Ø±Ø¨ Ù†Ø§ÙØ°Ø© ØªÙˆØµÙŠÙ„ Ù…ØªØ§Ø­Ø© Ø¨Ø¹Ø¯ Ù…Ø±Ø§Ø¬Ø¹Ø© ÙˆÙ‚Øª Ø§Ù„ØªØ­Ø¶ÙŠØ±."
+      ? `أقرب نافذة توصيل متاحة: ${earliestSlot} (قد تتغير ±20 دقيقة حسب الزحام).`
+      : "نؤكد أقرب نافذة توصيل متاحة بعد مراجعة وقت التحضير."
   }, [isPickup, deliveryInfo.scheduledTime, earliestSlot])
 
   const fieldBaseClass = `w-full min-h-12 py-4 px-4 pr-12 rounded-2xl ${theme.input} text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all`
@@ -263,7 +267,7 @@ function CheckoutContent() {
     const nextErrors = validate()
     setErrors(nextErrors)
     if (Object.keys(nextErrors).length > 0) {
-      showActionFeedback("Please fix highlighted fields")
+      showActionFeedback("يرجى تصحيح الحقول المحددة")
       return
     }
 
@@ -299,21 +303,23 @@ function CheckoutContent() {
           scheduledTime: deliveryInfo.scheduledTime,
         }),
       })
+
       if (!orderResponse.ok) throw new Error("save failed")
       const orderData: { total?: number } = await orderResponse.json()
       const confirmedTotal = typeof orderData.total === "number" ? orderData.total : grandTotal
+
       clearCart()
       const params = new URLSearchParams({
         name: deliveryInfo.name,
         area: isPickup ? "" : selectedArea?.name || "",
         total: String(confirmedTotal),
         type: isPickup ? "pickup" : "delivery",
-        time: deliveryInfo.scheduledTime ?? "ÙÙŠ Ø£Ù‚Ø±Ø¨ ÙˆÙ‚Øª",
+        time: deliveryInfo.scheduledTime ?? "في أقرب وقت",
         wa: whatsappUrl,
       })
       router.push(`/confirmation?${params.toString()}`)
     } catch {
-      alert("ØªØ¹Ø°Ø± Ø­ÙØ¸ Ø§Ù„Ø·Ù„Ø¨ØŒ Ø­Ø§ÙˆÙ„ Ù…Ø±Ø© Ø£Ø®Ø±Ù‰.")
+      alert("تعذر حفظ الطلب، حاول مرة أخرى.")
       setIsSubmitting(false)
     }
   }
@@ -324,10 +330,10 @@ function CheckoutContent() {
         <div className="w-24 h-24 rounded-full bg-amal-grey flex items-center justify-center mb-6">
           <Trash2 className="h-10 w-10 text-muted-foreground" />
         </div>
-        <h1 className="text-2xl font-bold text-foreground mb-2">Ø§Ù„Ø³Ù„Ø© ÙØ§Ø±ØºØ©</h1>
-        <p className="text-muted-foreground mb-6">Ù„Ù… ØªÙ‚Ù… Ø¨Ø¥Ø¶Ø§ÙØ© Ø£ÙŠ Ù…Ù†ØªØ¬Ø§Øª Ø¨Ø¹Ø¯</p>
+        <h1 className="text-2xl font-bold text-foreground mb-2">السلة فارغة</h1>
+        <p className="text-muted-foreground mb-6">لم تقم بإضافة أي منتجات بعد</p>
         <Link href="/">
-          <Button className="rounded-full px-8">ØªØµÙØ­ Ø§Ù„Ù…Ù†ØªØ¬Ø§Øª</Button>
+          <Button className="rounded-full px-8">تصفح المنتجات</Button>
         </Link>
       </main>
     )
@@ -337,22 +343,29 @@ function CheckoutContent() {
     <main className={theme.main}>
       <header className={theme.header}>
         <div className="flex items-center gap-4 px-4 py-3">
-          <Link href="/" className={cn("w-11 h-11 rounded-full flex items-center justify-center active:scale-95 transition-transform", activeCheckoutTheme === "contrast" ? "bg-slate-700" : "bg-amal-grey")}>
+          <Link
+            href="/"
+            className={cn(
+              "w-11 h-11 rounded-full flex items-center justify-center active:scale-95 transition-transform",
+              activeCheckoutTheme === "contrast" ? "bg-slate-700" : "bg-amal-grey"
+            )}
+          >
             <ArrowRight className="h-5 w-5" />
           </Link>
           <div>
-            <h1 className="text-xl font-bold">Ø¥ØªÙ…Ø§Ù… Ø§Ù„Ø·Ù„Ø¨</h1>
+            <h1 className="text-xl font-bold">إتمام الطلب</h1>
             <p className={cn("text-xs", activeCheckoutTheme === "contrast" ? "text-slate-300" : "text-muted-foreground")}>
-              {isPickup ? "Ø§Ø³ØªÙ„Ø§Ù… Ù…Ù† Ø§Ù„Ù…Ø­Ù„" : "ØªÙˆØµÙŠÙ„ Ù„Ù„Ù…Ù†Ø²Ù„"}
+              {isPickup ? "استلام من المحل" : "توصيل للمنزل"}
             </p>
           </div>
         </div>
+
         <div className={cn("px-4 pb-3 flex items-center justify-between border-t", activeCheckoutTheme === "contrast" ? "border-slate-700" : "border-border/40")}>
-          <ProgressStep label="Ø§Ù„Ø³Ù„Ø©" done={items.length > 0} />
+          <ProgressStep label="السلة" done={items.length > 0} />
           <div className={cn("h-px flex-1 mx-2", activeCheckoutTheme === "contrast" ? "bg-slate-700" : "bg-border")} />
-          <ProgressStep label="Ø§Ù„Ø¨ÙŠØ§Ù†Ø§Øª" done={infoDone} />
+          <ProgressStep label="البيانات" done={infoDone} />
           <div className={cn("h-px flex-1 mx-2", activeCheckoutTheme === "contrast" ? "bg-slate-700" : "bg-border")} />
-          <ProgressStep label="Ø§Ù„ØªØ£ÙƒÙŠØ¯" done={false} />
+          <ProgressStep label="التأكيد" done={false} />
         </div>
       </header>
 
@@ -366,24 +379,52 @@ function CheckoutContent() {
 
       <div className="p-4 space-y-5">
         <section className={theme.section}>
-          <h2 className="text-lg font-bold mb-4">Ø·Ù„Ø¨Ø§ØªÙƒ ({items.length})</h2>
+          <h2 className="text-lg font-bold mb-4">طلباتك ({items.length})</h2>
           <div className="space-y-3">
             {items.map((item) => (
-              <div key={item.cartKey} className={cn("flex items-center gap-4 p-3 rounded-2xl border transition-all duration-300", highlightedCartKey === item.cartKey && "ring-2 ring-primary/30 scale-[1.01]", activeCheckoutTheme === "contrast" ? "bg-white border-slate-200" : "bg-background border-border/50")}>
+              <div
+                key={item.cartKey}
+                className={cn(
+                  "flex items-center gap-4 p-3 rounded-2xl border transition-all duration-300",
+                  highlightedCartKey === item.cartKey && "ring-2 ring-primary/30 scale-[1.01]",
+                  activeCheckoutTheme === "contrast" ? "bg-white border-slate-200" : "bg-background border-border/50"
+                )}
+              >
                 <CheckoutItemImage item={item} />
+
                 <div className="flex-1 min-w-0">
                   <h3 className="font-bold text-foreground truncate">{item.name}</h3>
                   {item.selectedIngredients?.length ? (
-                    <p className="text-xs text-muted-foreground truncate">{item.selectedIngredients.join("ØŒ ")}</p>
+                    <p className="text-xs text-muted-foreground truncate">{item.selectedIngredients.join("، ")}</p>
                   ) : null}
-                  <p className="text-primary font-medium">{item.price * item.quantity} Ø±.Ø³</p>
+                  <p className="text-primary font-medium">{item.price * item.quantity} ر.س</p>
                 </div>
+
                 <div className="flex items-center gap-2">
-                  <button onClick={() => handleDecrease(item)} className={cn("w-11 h-11 rounded-full flex items-center justify-center active:scale-95 transition-transform", theme.input)} aria-label="decrease"><Minus className="h-4 w-4" /></button>
+                  <button
+                    onClick={() => handleDecrease(item)}
+                    className={cn("w-11 h-11 rounded-full flex items-center justify-center active:scale-95 transition-transform", theme.input)}
+                    aria-label="تقليل"
+                  >
+                    <Minus className="h-4 w-4" />
+                  </button>
                   <span className="w-6 text-center font-medium">{item.quantity}</span>
-                  <button onClick={() => handleIncrease(item)} className={cn("w-11 h-11 rounded-full flex items-center justify-center active:scale-95 transition-transform", theme.input)} aria-label="increase"><Plus className="h-4 w-4" /></button>
+                  <button
+                    onClick={() => handleIncrease(item)}
+                    className={cn("w-11 h-11 rounded-full flex items-center justify-center active:scale-95 transition-transform", theme.input)}
+                    aria-label="زيادة"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </button>
                 </div>
-                <button onClick={() => handleRemove(item)} className="w-11 h-11 rounded-full bg-destructive/10 flex items-center justify-center text-destructive active:scale-95 transition-transform" aria-label="remove"><Trash2 className="h-4 w-4" /></button>
+
+                <button
+                  onClick={() => handleRemove(item)}
+                  className="w-11 h-11 rounded-full bg-destructive/10 flex items-center justify-center text-destructive active:scale-95 transition-transform"
+                  aria-label="حذف"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
               </div>
             ))}
           </div>
@@ -391,44 +432,63 @@ function CheckoutContent() {
 
         <section className={theme.section}>
           <div className="flex items-center justify-between mb-2">
-            <h2 className="text-lg font-bold">{isPickup ? "ÙˆÙ‚Øª Ø§Ù„Ø§Ø³ØªÙ„Ø§Ù…" : "Ù…ÙˆØ¹Ø¯ Ø§Ù„ØªÙˆØµÙŠÙ„"}</h2>
+            <h2 className="text-lg font-bold">{isPickup ? "وقت الاستلام" : "موعد التوصيل"}</h2>
             {!isPickup && earliestSlot ? (
               <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold px-2.5 py-1">
                 <Clock3 className="h-3.5 w-3.5" />
-                Ø£Ù‚Ø±Ø¨ Ù…ÙˆØ¹Ø¯: {earliestSlot}
+                أقرب موعد: {earliestSlot}
               </div>
             ) : null}
           </div>
+
           {maxMakingTime > 0 ? (
             <div className="mb-3 p-3 bg-amal-yellow/20 rounded-xl text-right text-sm text-foreground">
-              Ø§Ù„Ø­Ø¯ Ø§Ù„Ø£Ø¯Ù†Ù‰ Ù„Ù„ØªØ¬Ù‡ÙŠØ²:{" "}
+              الحد الأدنى للتجهيز:{" "}
               <span className="font-bold">
                 {maxMakingTime >= 60
-                  ? `${maxMakingTime % 60 === 0 ? maxMakingTime / 60 : `${Math.floor(maxMakingTime / 60)} Ø³Ø§Ø¹Ø© Ùˆ${maxMakingTime % 60}`} Ø³Ø§Ø¹Ø©`
-                  : `${maxMakingTime} Ø¯Ù‚ÙŠÙ‚Ø©`}
+                  ? `${maxMakingTime % 60 === 0 ? maxMakingTime / 60 : `${Math.floor(maxMakingTime / 60)} ساعة و${maxMakingTime % 60} دقيقة`}`
+                  : `${maxMakingTime} دقيقة`}
               </span>
             </div>
           ) : null}
+
           <TimePicker value={deliveryInfo.scheduledTime} onChange={handleScheduleChange} minMinutes={maxMakingTime} required={false} />
         </section>
 
         <section className={theme.section}>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold">{isPickup ? "Ø¨ÙŠØ§Ù†Ø§Øª Ø§Ù„Ø§Ø³ØªÙ„Ø§Ù…" : "Ø¨ÙŠØ§Ù†Ø§Øª Ø§Ù„ØªÙˆØµÙŠÙ„"}</h2>
-            <span className="text-xs text-muted-foreground">* Ø§Ù„Ø­Ù‚ÙˆÙ„ Ø§Ù„Ù…Ø·Ù„ÙˆØ¨Ø©</span>
+            <h2 className="text-lg font-bold">{isPickup ? "بيانات الاستلام" : "بيانات التوصيل"}</h2>
+            <span className="text-xs text-muted-foreground">* الحقول المطلوبة</span>
           </div>
+
           <div className="space-y-3">
             <div className="relative">
               <User className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              <input type="text" placeholder="Ø§Ù„Ø§Ø³Ù… Ø§Ù„ÙƒØ§Ù…Ù„ *" value={deliveryInfo.name} onChange={(e) => handleInputChange("name", e.target.value)} className={cn(fieldBaseClass, errors.name && "ring-2 ring-red-300 border border-red-300")} aria-invalid={Boolean(errors.name)} />
+              <input
+                type="text"
+                placeholder="الاسم الكامل *"
+                value={deliveryInfo.name}
+                onChange={(e) => handleInputChange("name", e.target.value)}
+                className={cn(fieldBaseClass, errors.name && "ring-2 ring-red-300 border border-red-300")}
+                aria-invalid={Boolean(errors.name)}
+              />
               {errors.name ? <p className="text-xs text-red-500 mt-1 pr-2">{errors.name}</p> : null}
             </div>
 
             <div className="relative">
               <Phone className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              <input type="tel" inputMode="tel" dir="ltr" placeholder="Ø±Ù‚Ù… Ø§Ù„Ù‡Ø§ØªÙ *" value={deliveryInfo.phone} onChange={(e) => handleInputChange("phone", e.target.value)} className={cn(fieldBaseClass, errors.phone && "ring-2 ring-red-300 border border-red-300")} aria-invalid={Boolean(errors.phone)} />
+              <input
+                type="tel"
+                inputMode="tel"
+                dir="ltr"
+                placeholder="رقم الهاتف *"
+                value={deliveryInfo.phone}
+                onChange={(e) => handleInputChange("phone", e.target.value)}
+                className={cn(fieldBaseClass, errors.phone && "ring-2 ring-red-300 border border-red-300")}
+                aria-invalid={Boolean(errors.phone)}
+              />
               {errors.phone ? <p className="text-xs text-red-500 mt-1 pr-2">{errors.phone}</p> : null}
-              {!errors.phone ? <p className="text-xs text-muted-foreground mt-1 pr-2">ØµÙŠØºØ© Ù…Ù‚ØªØ±Ø­Ø©: 05xxxxxxxx</p> : null}
+              {!errors.phone ? <p className="text-xs text-muted-foreground mt-1 pr-2">صيغة مقترحة: 05xxxxxxxx</p> : null}
             </div>
 
             {!isPickup ? (
@@ -438,7 +498,7 @@ function CheckoutContent() {
                     <MapPin className="absolute right-4 top-4 h-5 w-5 text-muted-foreground" />
                     <input
                       type="text"
-                      placeholder="Ø§ÙƒØªØ¨ Ø§Ù„Ù…Ù†Ø·Ù‚Ø© *"
+                      placeholder="اكتب المنطقة *"
                       value={deliveryInfo.area}
                       onFocus={() => setAreaFocused(true)}
                       onBlur={() => setTimeout(() => setAreaFocused(false), 120)}
@@ -446,13 +506,22 @@ function CheckoutContent() {
                       className={cn(fieldBaseClass, errors.area && "ring-2 ring-red-300 border border-red-300")}
                       aria-invalid={Boolean(errors.area)}
                     />
+
                     {areaFocused && filteredAreas.length > 0 ? (
                       <div className="absolute z-20 mt-2 w-full rounded-2xl border border-border bg-white shadow-lg overflow-hidden">
                         <div className="max-h-56 overflow-y-auto">
                           {filteredAreas.map((area) => (
-                            <button key={area.id} type="button" onMouseDown={(e) => { e.preventDefault(); pickArea(area.name) }} className="w-full text-right px-4 py-3.5 min-h-12 hover:bg-amal-grey/60 transition-colors">
+                            <button
+                              key={area.id}
+                              type="button"
+                              onMouseDown={(e) => {
+                                e.preventDefault()
+                                pickArea(area.name)
+                              }}
+                              className="w-full text-right px-4 py-3.5 min-h-12 hover:bg-amal-grey/60 transition-colors"
+                            >
                               <p className="font-medium">{area.name}</p>
-                              <p className="text-xs text-muted-foreground">Ø±Ø³ÙˆÙ… Ø§Ù„ØªÙˆØµÙŠÙ„: {area.price} Ø±.Ø³</p>
+                              <p className="text-xs text-muted-foreground">رسوم التوصيل: {area.price} ر.س</p>
                             </button>
                           ))}
                         </div>
@@ -462,10 +531,18 @@ function CheckoutContent() {
                 ) : areaDesign === "cards" ? (
                   <div className="space-y-2">
                     {filteredAreas.map((area) => (
-                      <button key={area.id} type="button" onClick={() => pickArea(area.name)} className={cn("w-full rounded-2xl border px-3 py-3.5 min-h-12 text-right transition-colors active:scale-[0.99]", selectedArea?.id === area.id ? "border-primary bg-primary/10" : "border-border bg-amal-grey/60 hover:bg-amal-grey")}>
+                      <button
+                        key={area.id}
+                        type="button"
+                        onClick={() => pickArea(area.name)}
+                        className={cn(
+                          "w-full rounded-2xl border px-3 py-3.5 min-h-12 text-right transition-colors active:scale-[0.99]",
+                          selectedArea?.id === area.id ? "border-primary bg-primary/10" : "border-border bg-amal-grey/60 hover:bg-amal-grey"
+                        )}
+                      >
                         <div className="flex items-center justify-between">
                           <span className="font-semibold">{area.name}</span>
-                          <span className={cn("text-sm", selectedArea?.id === area.id ? "text-primary font-bold" : "text-muted-foreground")}>{area.price} Ø±.Ø³</span>
+                          <span className={cn("text-sm", selectedArea?.id === area.id ? "text-primary font-bold" : "text-muted-foreground")}>{area.price} ر.س</span>
                         </div>
                       </button>
                     ))}
@@ -473,41 +550,66 @@ function CheckoutContent() {
                 ) : (
                   <div className="flex flex-wrap gap-2">
                     {filteredAreas.map((area) => (
-                      <button key={area.id} type="button" onClick={() => pickArea(area.name)} className={cn("rounded-full px-4 py-3 min-h-12 text-sm border transition-colors active:scale-[0.99]", selectedArea?.id === area.id ? "bg-primary text-primary-foreground border-primary" : `${theme.input} text-foreground border-border hover:bg-primary/10`)}>
-                        {area.name} Â· {area.price} Ø±.Ø³
+                      <button
+                        key={area.id}
+                        type="button"
+                        onClick={() => pickArea(area.name)}
+                        className={cn(
+                          "rounded-full px-4 py-3 min-h-12 text-sm border transition-colors active:scale-[0.99]",
+                          selectedArea?.id === area.id
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : `${theme.input} text-foreground border-border hover:bg-primary/10`
+                        )}
+                      >
+                        {area.name} · {area.price} ر.س
                       </button>
                     ))}
                   </div>
                 )}
+
                 {errors.area ? <p className="text-xs text-red-500 mt-1 pr-2">{errors.area}</p> : null}
-                <p className="text-xs mt-2 text-muted-foreground">{selectedArea ? <span className="text-primary font-semibold">Ø±Ø³ÙˆÙ… Ø§Ù„ØªÙˆØµÙŠÙ„ Ø§Ù„Ø¢Ù†: {selectedArea.price} Ø±.Ø³</span> : "Ø§Ø®ØªØ± Ù…Ù†Ø·Ù‚Ø© Ù…Ù† Ø§Ù„Ù‚Ø§Ø¦Ù…Ø© Ù„Ø§Ø­ØªØ³Ø§Ø¨ Ø§Ù„Ø±Ø³ÙˆÙ… ÙÙˆØ±Ù‹Ø§"}</p>
+                <p className="text-xs mt-2 text-muted-foreground">
+                  {selectedArea ? (
+                    <span className="text-primary font-semibold">رسوم التوصيل الآن: {selectedArea.price} ر.س</span>
+                  ) : (
+                    "اختر منطقة من القائمة لاحتساب الرسوم فورًا"
+                  )}
+                </p>
               </div>
             ) : null}
 
             <div className="relative">
               <FileText className="absolute right-4 top-4 h-5 w-5 text-muted-foreground" />
-              <textarea placeholder="Ù…Ù„Ø§Ø­Ø¸Ø§Øª Ø¥Ø¶Ø§ÙÙŠØ© (Ø§Ø®ØªÙŠØ§Ø±ÙŠ)" value={deliveryInfo.notes} onChange={(e) => handleInputChange("notes", e.target.value)} rows={2} className={cn(fieldBaseClass, "resize-none")} />
+              <textarea
+                placeholder="ملاحظات إضافية (اختياري)"
+                value={deliveryInfo.notes}
+                onChange={(e) => handleInputChange("notes", e.target.value)}
+                rows={2}
+                className={cn(fieldBaseClass, "resize-none")}
+              />
             </div>
           </div>
         </section>
 
         <section className={theme.summary}>
           <div className="flex justify-between mb-2">
-            <span className={cn(activeCheckoutTheme === "contrast" ? "text-slate-300" : "text-muted-foreground")}>Ø§Ù„Ù…Ø¬Ù…ÙˆØ¹ Ø§Ù„ÙØ±Ø¹ÙŠ</span>
-            <span className="font-medium">{totalPrice} Ø±.Ø³</span>
+            <span className={cn(activeCheckoutTheme === "contrast" ? "text-slate-300" : "text-muted-foreground")}>المجموع الفرعي</span>
+            <span className="font-medium">{totalPrice} ر.س</span>
           </div>
+
           <div className="flex justify-between mb-2">
             <span className={cn(activeCheckoutTheme === "contrast" ? "text-slate-300" : "text-muted-foreground")}>
-              {isPickup ? "Ø±Ø³ÙˆÙ… Ø§Ù„ØªÙˆØµÙŠÙ„" : `Ø±Ø³ÙˆÙ… Ø§Ù„ØªÙˆØµÙŠÙ„ ${selectedArea ? `(${selectedArea.name})` : ""}`}
+              {isPickup ? "رسوم التوصيل" : `رسوم التوصيل ${selectedArea ? `(${selectedArea.name})` : ""}`}
             </span>
             <span className={cn("font-medium", isPickup && "text-[#1e5631]")}>
-              {isPickup ? "Ù…Ø¬Ø§Ù†ÙŠ" : selectedArea ? `${selectedArea.price} Ø±.Ø³` : "Ø§Ø®ØªØ± Ø§Ù„Ù…Ù†Ø·Ù‚Ø©"}
+              {isPickup ? "مجاني" : selectedArea ? `${selectedArea.price} ر.س` : "اختر المنطقة"}
             </span>
           </div>
+
           <div className={cn("pt-2 mt-2 border-t", activeCheckoutTheme === "contrast" ? "border-slate-700" : "border-primary/20")}>
             <div className="flex justify-between">
-              <span className="font-bold text-lg">Ø§Ù„Ø¥Ø¬Ù…Ø§Ù„ÙŠ</span>
-              <span className="font-bold text-lg text-primary">{grandTotal} Ø±.Ø³</span>
+              <span className="font-bold text-lg">الإجمالي</span>
+              <span className="font-bold text-lg text-primary">{grandTotal} ر.س</span>
             </div>
           </div>
         </section>
@@ -515,7 +617,7 @@ function CheckoutContent() {
         <section className={theme.section} dir="rtl">
           <div className="flex items-center gap-2 mb-3">
             <ShieldCheck className="h-5 w-5 text-emerald-600" />
-            <h3 className="font-bold text-base">Ø¶Ù…Ø§Ù†Ø§Øª Ø§Ù„Ø·Ù„Ø¨</h3>
+            <h3 className="font-bold text-base">ضمانات الطلب</h3>
           </div>
 
           <p className="text-sm text-muted-foreground mb-3">{deliveryAccuracyText}</p>
@@ -527,15 +629,14 @@ function CheckoutContent() {
             className="inline-flex items-center gap-2 rounded-full px-4 py-2 bg-[#25D366]/10 text-[#1f8f48] text-sm font-semibold hover:bg-[#25D366]/20 transition-colors"
           >
             <MessageCircle className="h-4 w-4" />
-            ØªÙˆØ§ØµÙ„ Ù…Ø¨Ø§Ø´Ø± Ù„Ù„Ø¯Ø¹Ù…
+            تواصل مباشر للدعم
           </a>
-
         </section>
       </div>
 
       <div className={theme.ctaWrap}>
         <Button onClick={handleWhatsAppCheckout} disabled={isSubmitting} className="w-full h-14 rounded-full bg-[#25D366] hover:bg-[#25D366]/90 text-white text-lg font-bold shadow-xl">
-          {isSubmitting ? "Ø¬Ø§Ø±ÙŠ Ø§Ù„Ø¥Ø±Ø³Ø§Ù„..." : "Ø¥ØªÙ…Ø§Ù… Ø§Ù„Ø·Ù„Ø¨ Ø¹Ø¨Ø± ÙˆØ§ØªØ³Ø§Ø¨"}
+          {isSubmitting ? "جاري الإرسال..." : "إتمام الطلب عبر واتساب"}
         </Button>
       </div>
     </main>
@@ -549,4 +650,3 @@ export default function CheckoutPage() {
     </Suspense>
   )
 }
-

@@ -1,3 +1,4 @@
+import { Suspense } from "react"
 import { Header } from "@/components/header"
 import { HeroBanner } from "@/components/hero-banner"
 import { MenuGrid } from "@/components/menu-grid"
@@ -10,7 +11,9 @@ export default function HomePage() {
       <Header />
       <HeroBanner />
       <BestSellers />
-      <MenuGrid />
+      <Suspense fallback={null}>
+        <MenuGrid />
+      </Suspense>
       <CartBar />
     </main>
   )

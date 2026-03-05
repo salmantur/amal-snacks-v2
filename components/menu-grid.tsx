@@ -9,6 +9,7 @@ import { SearchBar } from "@/components/search-bar"
 import { useCategories } from "@/hooks/use-categories"
 import { useMenu } from "@/hooks/use-menu"
 import type { MenuItem } from "@/components/cart-provider"
+import { smartFilterMenuItems } from "@/lib/smart-search"
 
 const ProductDrawer = dynamic(
   () => import("@/components/product-drawer").then((mod) => ({ default: mod.ProductDrawer })),
@@ -29,19 +30,16 @@ export function MenuGrid() {
   const [selectedProduct, setSelectedProduct] = useState<MenuItem | null>(null)
   const [showAllItems, setShowAllItems] = useState(false)
 
-  // Debounce search input
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(searchQuery), 300)
     return () => clearTimeout(timer)
   }, [searchQuery])
 
-  // Render only a small above-the-fold batch first, then hydrate the full list in idle time.
   useEffect(() => {
     setShowAllItems(false)
 
     let timeoutId: ReturnType<typeof setTimeout> | null = null
     let idleId: number | null = null
-
     const revealAll = () => setShowAllItems(true)
 
     if ("requestIdleCallback" in window) {
@@ -60,14 +58,12 @@ export function MenuGrid() {
     }
   }, [selectedCategory, debouncedSearch])
 
-  // When categories first load, reset selectedCategory to trigger re-render
   useEffect(() => {
     if (categories.length > 0) {
-      setSelectedCategory(prev => prev) // force re-render with loaded categories
+      setSelectedCategory((prev) => prev)
     }
   }, [categories.length])
 
-  // Listen for category selection from hamburger drawer
   useEffect(() => {
     const handler = (e: Event) => {
       const catId = (e as CustomEvent).detail
@@ -78,38 +74,23 @@ export function MenuGrid() {
     return () => window.removeEventListener("selectCategory", handler)
   }, [])
 
-  // Get current category config
-  const categoryConfig = useMemo(
-    () => categories.find(c => c.id === selectedCategory),
-    [selectedCategory, categories]
-  )
+  const categoryConfig = useMemo(() => categories.find((c) => c.id === selectedCategory), [selectedCategory, categories])
   const dbCategories = categoryConfig?.dbCategories || []
   const sections = categoryConfig?.sections
 
-  // Global search — searches ALL items across ALL categories
   const globalSearchResults = useMemo(() => {
     if (!debouncedSearch) return []
-    const q = debouncedSearch.toLowerCase()
-    return menuItems.filter(item =>
-      item.name.toLowerCase().includes(q) ||
-      (item.nameEn || "").toLowerCase().includes(q) ||
-      (item.description || "").toLowerCase().includes(q) ||
-      (item.ingredients || []).some(ing => ing.toLowerCase().includes(q))
-    )
+    return smartFilterMenuItems(menuItems, debouncedSearch)
   }, [menuItems, debouncedSearch])
 
   const isSearching = debouncedSearch.length > 0
   const shouldLimitItems = !isSearching && !showAllItems
 
-  // Per-category filtered items (used when not searching)
   const getItemsForCategory = useCallback((dbCategory: string) => {
     return menuItems.filter((item) => item.category === dbCategory)
   }, [menuItems])
 
-  // Flat filtered items for categories without sections (used when not searching)
-  const filteredItems = useMemo(() => menuItems.filter((item) => {
-    return dbCategories.includes(item.category)
-  }), [menuItems, dbCategories])
+  const filteredItems = useMemo(() => menuItems.filter((item) => dbCategories.includes(item.category)), [menuItems, dbCategories])
 
   const visibleFilteredItems = useMemo(
     () => (shouldLimitItems ? filteredItems.slice(0, INITIAL_VISIBLE_ITEMS) : filteredItems),
@@ -124,12 +105,7 @@ export function MenuGrid() {
         </div>
       )}
 
-      <CategoryFilter
-        selectedCategory={selectedCategory}
-        onSelectCategory={setSelectedCategory}
-        categories={categories}
-      />
-      
+      <CategoryFilter selectedCategory={selectedCategory} onSelectCategory={setSelectedCategory} categories={categories} />
       <SearchBar value={searchQuery} onChange={setSearchQuery} />
 
       <div className="max-w-6xl mx-auto px-4 md:px-6 py-6 md:py-8 pb-32">
@@ -144,7 +120,6 @@ export function MenuGrid() {
             ))}
           </div>
         ) : isSearching ? (
-          // Global search results across ALL categories
           globalSearchResults.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center" dir="rtl">
               <p className="text-4xl mb-3">🔍</p>
@@ -158,18 +133,12 @@ export function MenuGrid() {
               </p>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8">
                 {globalSearchResults.map((item, idx) => (
-                  <ProductCard
-                    key={item.id}
-                    item={item}
-                    onSelect={setSelectedProduct}
-                    priority={idx < 4}
-                  />
+                  <ProductCard key={item.id} item={item} onSelect={setSelectedProduct} priority={idx < 4} />
                 ))}
               </div>
             </div>
           )
         ) : sections ? (
-          // Render with sub-sections (like platters_breakfast)
           <div className="space-y-10 md:space-y-16">
             {sections.map((section) => {
               const sectionItems = getItemsForCategory(section.dbCategory)
@@ -181,29 +150,32 @@ export function MenuGrid() {
                 <div key={section.dbCategory}>
                   <h2 className="text-xl md:text-2xl font-bold text-[#1e293b] text-right mb-4 md:mb-8">{section.label}</h2>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8">
-                    {visibleSectionItems.map((item, idx) => (
-                      item.category === "eid" ? <PackageCard key={item.id} item={item} onSelect={setSelectedProduct} priority={idx < 4} /> : <ProductCard key={item.id} item={item} onSelect={setSelectedProduct} priority={idx < 4} />
-                    ))}
+                    {visibleSectionItems.map((item, idx) =>
+                      item.category === "eid" ? (
+                        <PackageCard key={item.id} item={item} onSelect={setSelectedProduct} priority={idx < 4} />
+                      ) : (
+                        <ProductCard key={item.id} item={item} onSelect={setSelectedProduct} priority={idx < 4} />
+                      )
+                    )}
                   </div>
                 </div>
               )
             })}
           </div>
         ) : (
-          // Render as flat grid for other categories
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8">
-            {visibleFilteredItems.map((item, idx) => (
-              item.category === "eid" ? <PackageCard key={item.id} item={item} onSelect={setSelectedProduct} priority={idx < 4} /> : <ProductCard key={item.id} item={item} onSelect={setSelectedProduct} priority={idx < 4} />
-            ))}
+            {visibleFilteredItems.map((item, idx) =>
+              item.category === "eid" ? (
+                <PackageCard key={item.id} item={item} onSelect={setSelectedProduct} priority={idx < 4} />
+              ) : (
+                <ProductCard key={item.id} item={item} onSelect={setSelectedProduct} priority={idx < 4} />
+              )
+            )}
           </div>
         )}
       </div>
 
-      <ProductDrawer
-        product={selectedProduct}
-        open={!!selectedProduct}
-        onClose={() => setSelectedProduct(null)}
-      />
+      <ProductDrawer product={selectedProduct} open={!!selectedProduct} onClose={() => setSelectedProduct(null)} />
     </div>
   )
 }

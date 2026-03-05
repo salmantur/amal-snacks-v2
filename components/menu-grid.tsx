@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useState, useEffect, useMemo, useCallback } from "react"
 import dynamic from "next/dynamic"
@@ -18,6 +18,7 @@ const ProductDrawer = dynamic(
 )
 
 const INITIAL_VISIBLE_ITEMS = 6
+const SEARCH_SUGGESTIONS = ["سمبوسة", "سخانات", "باقة العيد", "Spring Rolls"]
 
 export function MenuGrid() {
   const searchParams = useSearchParams()
@@ -86,7 +87,7 @@ export function MenuGrid() {
   }, [])
 
   const categoryConfig = useMemo(() => categories.find((c) => c.id === selectedCategory), [selectedCategory, categories])
-  const dbCategories = categoryConfig?.dbCategories || []
+  const dbCategories = useMemo(() => categoryConfig?.dbCategories || [], [categoryConfig])
   const sections = categoryConfig?.sections
 
   const globalSearchResults = useMemo(() => {
@@ -97,9 +98,12 @@ export function MenuGrid() {
   const isSearching = debouncedSearch.length > 0
   const shouldLimitItems = !isSearching && !showAllItems
 
-  const getItemsForCategory = useCallback((dbCategory: string) => {
-    return menuItems.filter((item) => item.category === dbCategory)
-  }, [menuItems])
+  const getItemsForCategory = useCallback(
+    (dbCategory: string) => {
+      return menuItems.filter((item) => item.category === dbCategory)
+    },
+    [menuItems]
+  )
 
   const filteredItems = useMemo(() => menuItems.filter((item) => dbCategories.includes(item.category)), [menuItems, dbCategories])
 
@@ -110,11 +114,11 @@ export function MenuGrid() {
 
   return (
     <div className="min-h-screen bg-background">
-      {error && (
+      {error ? (
         <div className="mx-4 mt-4 p-4 bg-red-500 text-white rounded-lg font-medium">
           <p className="text-sm">{error}</p>
         </div>
-      )}
+      ) : null}
 
       <CategoryFilter selectedCategory={selectedCategory} onSelectCategory={setSelectedCategory} categories={categories} />
       <SearchBar value={searchQuery} onChange={setSearchQuery} />
@@ -135,7 +139,18 @@ export function MenuGrid() {
             <div className="flex flex-col items-center justify-center py-20 text-center" dir="rtl">
               <p className="text-4xl mb-3">🔍</p>
               <p className="font-bold text-lg">لا توجد نتائج</p>
-              <p className="text-muted-foreground text-sm mt-1">جرّب كلمة بحث مختلفة</p>
+              <p className="text-muted-foreground text-sm mt-1">جرّب كتابة اسم الصنف بالعربي أو بالإنجليزي</p>
+              <div className="flex flex-wrap justify-center gap-2 mt-4">
+                {SEARCH_SUGGESTIONS.map((suggestion) => (
+                  <button
+                    key={suggestion}
+                    onClick={() => setSearchQuery(suggestion)}
+                    className="px-4 py-2 rounded-full border border-[#1e5631]/30 bg-white text-[#1e5631] text-sm hover:bg-[#1e5631]/5 transition-colors"
+                  >
+                    {suggestion}
+                  </button>
+                ))}
+              </div>
             </div>
           ) : (
             <div>
@@ -153,10 +168,9 @@ export function MenuGrid() {
           <div className="space-y-10 md:space-y-16">
             {sections.map((section) => {
               const sectionItems = getItemsForCategory(section.dbCategory)
-              const visibleSectionItems = shouldLimitItems
-                ? sectionItems.slice(0, INITIAL_VISIBLE_ITEMS)
-                : sectionItems
+              const visibleSectionItems = shouldLimitItems ? sectionItems.slice(0, INITIAL_VISIBLE_ITEMS) : sectionItems
               if (sectionItems.length === 0) return null
+
               return (
                 <div key={section.dbCategory}>
                   <h2 className="text-xl md:text-2xl font-bold text-[#1e293b] text-right mb-4 md:mb-8">{section.label}</h2>

@@ -1,4 +1,4 @@
-import type { MenuItem } from "@/components/cart-provider"
+﻿import type { MenuItem } from "@/components/cart-provider"
 
 type RankedItem = { item: MenuItem; score: number }
 
@@ -8,8 +8,102 @@ const ARABIC_VARIANTS = /[أإآٱ]/g
 const NON_WORDS = /[^\u0621-\u064Aa-z0-9\s]/g
 const MULTI_SPACE = /\s+/g
 
+const EN_TO_AR_KEYBOARD: Record<string, string> = {
+  q: "ض",
+  w: "ص",
+  e: "ث",
+  r: "ق",
+  t: "ف",
+  y: "غ",
+  u: "ع",
+  i: "ه",
+  o: "خ",
+  p: "ح",
+  "[": "ج",
+  "]": "د",
+  a: "ش",
+  s: "س",
+  d: "ي",
+  f: "ب",
+  g: "ل",
+  h: "ا",
+  j: "ت",
+  k: "ن",
+  l: "م",
+  ";": "ك",
+  "'": "ط",
+  z: "ئ",
+  x: "ء",
+  c: "ؤ",
+  v: "ر",
+  b: "لا",
+  n: "ى",
+  m: "ة",
+  ",": "و",
+  ".": "ز",
+  "/": "ظ",
+}
+
+const AR_TO_EN_KEYBOARD: Record<string, string> = {
+  ض: "q",
+  ص: "w",
+  ث: "e",
+  ق: "r",
+  ف: "t",
+  غ: "y",
+  ع: "u",
+  ه: "i",
+  خ: "o",
+  ح: "p",
+  ج: "[",
+  د: "]",
+  ش: "a",
+  س: "s",
+  ي: "d",
+  ب: "f",
+  ل: "g",
+  ا: "h",
+  ت: "j",
+  ن: "k",
+  م: "l",
+  ك: ";",
+  ط: "'",
+  ئ: "z",
+  ء: "x",
+  ؤ: "c",
+  ر: "v",
+  ى: "n",
+  ة: "m",
+  و: ",",
+  ز: ".",
+  ظ: "/",
+}
+
 function toLatinDigits(value: string): string {
   return value.replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 1632))
+}
+
+function translateKeyboardLayout(value: string, map: Record<string, string>): string {
+  return value
+    .split("")
+    .map((ch) => map[ch] ?? map[ch.toLowerCase()] ?? ch)
+    .join("")
+}
+
+function getQueryVariants(rawQuery: string): string[] {
+  const set = new Set<string>()
+  const candidates = [
+    rawQuery,
+    translateKeyboardLayout(rawQuery, EN_TO_AR_KEYBOARD),
+    translateKeyboardLayout(rawQuery, AR_TO_EN_KEYBOARD),
+  ]
+
+  for (const candidate of candidates) {
+    const normalized = normalizeSearchText(candidate)
+    if (normalized) set.add(normalized)
+  }
+
+  return Array.from(set)
 }
 
 export function normalizeSearchText(value: string): string {
@@ -73,14 +167,7 @@ function fuzzyTokenMatch(queryToken: string, targetToken: string): boolean {
 }
 
 function buildHaystack(item: MenuItem): string {
-  return normalizeSearchText(
-    [
-      item.name,
-      item.nameEn || "",
-      item.description || "",
-      ...(item.ingredients || []),
-    ].join(" ")
-  )
+  return normalizeSearchText([item.name, item.nameEn || "", item.description || "", ...(item.ingredients || [])].join(" "))
 }
 
 function scoreItem(query: string, queryTokens: string[], haystack: string, haystackTokens: string[]): number {
@@ -111,17 +198,23 @@ function scoreItem(query: string, queryTokens: string[], haystack: string, hayst
 }
 
 export function smartFilterMenuItems(items: MenuItem[], rawQuery: string): MenuItem[] {
-  const query = normalizeSearchText(rawQuery)
-  if (!query) return []
+  const queryVariants = getQueryVariants(rawQuery)
+  if (queryVariants.length === 0) return []
 
-  const queryTokens = query.split(" ").filter(Boolean)
   const ranked: RankedItem[] = []
 
   for (const item of items) {
     const haystack = buildHaystack(item)
     const haystackTokens = haystack.split(" ").filter(Boolean)
-    const score = scoreItem(query, queryTokens, haystack, haystackTokens)
-    if (score > 0) ranked.push({ item, score })
+    let bestScore = 0
+
+    for (const query of queryVariants) {
+      const queryTokens = query.split(" ").filter(Boolean)
+      const score = scoreItem(query, queryTokens, haystack, haystackTokens)
+      if (score > bestScore) bestScore = score
+    }
+
+    if (bestScore > 0) ranked.push({ item, score: bestScore })
   }
 
   ranked.sort((a, b) => b.score - a.score)

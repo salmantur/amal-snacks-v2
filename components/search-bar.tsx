@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { Search, X } from "lucide-react"
 
@@ -20,14 +20,15 @@ export function SearchBar({ value, onChange }: SearchBarProps) {
           className="w-full py-3 px-4 pr-4 pl-12 rounded-full text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
           style={{ backgroundColor: "var(--bar-background, #f5f5f5)" }}
         />
-        {value && (
+        {value ? (
           <button
             onClick={() => onChange("")}
             className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-gray-300 flex items-center justify-center active:scale-95 transition-transform"
+            aria-label="مسح البحث"
           >
             <X className="h-3.5 w-3.5 text-gray-600" />
           </button>
-        )}
+        ) : null}
       </div>
     </div>
   )

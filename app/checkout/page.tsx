@@ -107,6 +107,13 @@ function getEarliestDeliverySlot(minMinutes: number): string | null {
   return null
 }
 
+function normalizeMakingTimeMinutes(value: number): number {
+  if (!value || value <= 0) return 0
+  // Backward compatibility: some old records stored "24" meaning 24 hours.
+  if (value === 24) return 24 * 60
+  return value
+}
+
 function CheckoutContent() {
   const searchParams = useSearchParams()
   const orderType = (searchParams.get("type") as "pickup" | "delivery") || "delivery"
@@ -223,7 +230,7 @@ function CheckoutContent() {
   const selectedArea = deliveryAreas.find((a) => a.name === deliveryInfo.area)
   const deliveryFee = isPickup ? 0 : selectedArea?.price || 0
   const grandTotal = totalPrice + deliveryFee
-  const maxMakingTime = items.reduce((max, item) => Math.max(max, item.makingTime || 0), 0)
+  const maxMakingTime = items.reduce((max, item) => Math.max(max, normalizeMakingTimeMinutes(item.makingTime || 0)), 0)
   const earliestSlot = useMemo(() => getEarliestDeliverySlot(maxMakingTime), [maxMakingTime])
 
   const filteredAreas = useMemo(() => {
@@ -260,7 +267,7 @@ function CheckoutContent() {
       : "نؤكد أقرب نافذة توصيل متاحة بعد مراجعة وقت التحضير."
   }, [isPickup, deliveryInfo.scheduledTime, earliestSlot])
 
-  const fieldBaseClass = `w-full min-h-12 py-4 px-4 pr-12 rounded-2xl ${theme.input} text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all`
+  const fieldBaseClass = `w-full min-h-12 py-4 px-4 pr-12 rounded-2xl text-base ${theme.input} text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all`
 
   const handleWhatsAppCheckout = async () => {
     setSubmitted(true)
@@ -385,46 +392,49 @@ function CheckoutContent() {
               <div
                 key={item.cartKey}
                 className={cn(
-                  "flex items-center gap-4 p-3 rounded-2xl border transition-all duration-300",
+                  "p-3 rounded-2xl border transition-all duration-300",
                   highlightedCartKey === item.cartKey && "ring-2 ring-primary/30 scale-[1.01]",
                   activeCheckoutTheme === "contrast" ? "bg-white border-slate-200" : "bg-background border-border/50"
                 )}
               >
-                <CheckoutItemImage item={item} />
-
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-bold text-foreground truncate">{item.name}</h3>
-                  {item.selectedIngredients?.length ? (
-                    <p className="text-xs text-muted-foreground truncate">{item.selectedIngredients.join("، ")}</p>
-                  ) : null}
-                  <p className="text-primary font-medium">{item.price * item.quantity} ر.س</p>
+                <div className="flex items-start gap-3">
+                  <CheckoutItemImage item={item} />
+                  <div className="flex-1 min-w-0 text-right">
+                    <h3 className="font-bold text-foreground leading-tight break-words">{item.name}</h3>
+                    {item.selectedIngredients?.length ? (
+                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{item.selectedIngredients.join("، ")}</p>
+                    ) : null}
+                    <p className="text-primary font-medium mt-1">{item.price * item.quantity} ر.س</p>
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="mt-3 flex items-center justify-between">
                   <button
-                    onClick={() => handleDecrease(item)}
-                    className={cn("w-11 h-11 rounded-full flex items-center justify-center active:scale-95 transition-transform", theme.input)}
-                    aria-label="تقليل"
+                    onClick={() => handleRemove(item)}
+                    className="w-11 h-11 rounded-full bg-destructive/10 flex items-center justify-center text-destructive active:scale-95 transition-transform flex-shrink-0"
+                    aria-label="حذف"
                   >
-                    <Minus className="h-4 w-4" />
+                    <Trash2 className="h-4 w-4" />
                   </button>
-                  <span className="w-6 text-center font-medium">{item.quantity}</span>
-                  <button
-                    onClick={() => handleIncrease(item)}
-                    className={cn("w-11 h-11 rounded-full flex items-center justify-center active:scale-95 transition-transform", theme.input)}
-                    aria-label="زيادة"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </button>
-                </div>
 
-                <button
-                  onClick={() => handleRemove(item)}
-                  className="w-11 h-11 rounded-full bg-destructive/10 flex items-center justify-center text-destructive active:scale-95 transition-transform"
-                  aria-label="حذف"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleDecrease(item)}
+                      className={cn("w-11 h-11 rounded-full flex items-center justify-center active:scale-95 transition-transform", theme.input)}
+                      aria-label="تقليل"
+                    >
+                      <Minus className="h-4 w-4" />
+                    </button>
+                    <span className="w-7 text-center font-medium">{item.quantity}</span>
+                    <button
+                      onClick={() => handleIncrease(item)}
+                      className={cn("w-11 h-11 rounded-full flex items-center justify-center active:scale-95 transition-transform", theme.input)}
+                      aria-label="زيادة"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
@@ -472,7 +482,7 @@ function CheckoutContent() {
                 className={cn(fieldBaseClass, errors.name && "ring-2 ring-red-300 border border-red-300")}
                 aria-invalid={Boolean(errors.name)}
               />
-              {errors.name ? <p className="text-xs text-red-500 mt-1 pr-2">{errors.name}</p> : null}
+              {errors.name ? <p className="text-sm font-medium text-red-600 mt-1 pr-2" role="alert">{errors.name}</p> : null}
             </div>
 
             <div className="relative">
@@ -487,8 +497,8 @@ function CheckoutContent() {
                 className={cn(fieldBaseClass, errors.phone && "ring-2 ring-red-300 border border-red-300")}
                 aria-invalid={Boolean(errors.phone)}
               />
-              {errors.phone ? <p className="text-xs text-red-500 mt-1 pr-2">{errors.phone}</p> : null}
-              {!errors.phone ? <p className="text-xs text-muted-foreground mt-1 pr-2">صيغة مقترحة: 05xxxxxxxx</p> : null}
+              {errors.phone ? <p className="text-sm font-medium text-red-600 mt-1 pr-2" role="alert">{errors.phone}</p> : null}
+              {!errors.phone ? <p className="text-sm text-muted-foreground mt-1 pr-2">صيغة مقترحة: 05xxxxxxxx</p> : null}
             </div>
 
             {!isPickup ? (
@@ -567,8 +577,8 @@ function CheckoutContent() {
                   </div>
                 )}
 
-                {errors.area ? <p className="text-xs text-red-500 mt-1 pr-2">{errors.area}</p> : null}
-                <p className="text-xs mt-2 text-muted-foreground">
+                {errors.area ? <p className="text-sm font-medium text-red-600 mt-1 pr-2" role="alert">{errors.area}</p> : null}
+                <p className="text-sm mt-2 text-muted-foreground">
                   {selectedArea ? (
                     <span className="text-primary font-semibold">رسوم التوصيل الآن: {selectedArea.price} ر.س</span>
                   ) : (

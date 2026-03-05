@@ -22,7 +22,7 @@
     --secondary: 45 93% 80%;
     --secondary-foreground: 0 0% 15%;
     --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 45%;
+    --muted-foreground: 0 0% 35%;
     --accent: 45 93% 80%;
     --accent-foreground: 0 0% 15%;
     --destructive: 0 84% 60%;
@@ -58,6 +58,23 @@
     overscroll-behavior-y: contain;
     /* Safe area insets for iPhone notch / Dynamic Island */
     padding-bottom: env(safe-area-inset-bottom);
+  }
+  :lang(ar) {
+    letter-spacing: 0;
+    line-height: 1.65;
+  }
+  @media (max-width: 768px) {
+    :lang(ar) {
+      font-size: 1.03rem;
+    }
+  }
+  input:focus-visible,
+  textarea:focus-visible,
+  button:focus-visible,
+  a:focus-visible,
+  select:focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
   }
   /* Prevent long-press context menu on images */
   img {

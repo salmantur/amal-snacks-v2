@@ -138,8 +138,8 @@ export function MenuGrid() {
           globalSearchResults.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center" dir="rtl">
               <p className="text-4xl mb-3">🔍</p>
-              <p className="font-bold text-lg">لا توجد نتائج</p>
-              <p className="text-muted-foreground text-sm mt-1">جرّب كتابة اسم الصنف بالعربي أو بالإنجليزي</p>
+              <p className="font-bold text-xl">لا توجد نتائج</p>
+              <p className="text-[#4b5563] text-base mt-1">جرّب كتابة اسم الصنف بالعربي أو بالإنجليزي</p>
               <div className="flex flex-wrap justify-center gap-2 mt-4">
                 {SEARCH_SUGGESTIONS.map((suggestion) => (
                   <button

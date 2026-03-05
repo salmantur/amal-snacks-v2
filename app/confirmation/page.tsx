@@ -98,7 +98,7 @@ function ConfirmationContent() {
       </div>
 
       <h1 className="text-2xl font-bold text-foreground mb-1">تم تأكيد طلبك!</h1>
-      <p className="text-muted-foreground text-sm mb-5">اضغط زر واتساب لإرسال الطلب</p>
+      <p className="text-[#4b5563] text-base mb-5">اضغط زر واتساب لإرسال الطلب</p>
 
       {feedback ? (
         <div className="w-full max-w-sm rounded-2xl border border-[#1e5631]/20 bg-[#1e5631]/10 text-[#1e5631] text-sm font-medium px-4 py-3 mb-4 animate-in fade-in slide-in-from-top-1 duration-300">
@@ -113,7 +113,7 @@ function ConfirmationContent() {
           </div>
           <div className="flex-1">
             <p className="font-bold text-[#1e5631] text-sm">جاهز للإرسال عبر واتساب</p>
-            <p className="text-xs text-muted-foreground mt-0.5">يمكنك التعديل فقط إذا احتجت</p>
+            <p className="text-sm text-[#4b5563] mt-0.5">يمكنك التعديل فقط إذا احتجت</p>
           </div>
         </div>
       </div>
@@ -152,7 +152,7 @@ function ConfirmationContent() {
             rows={7}
             className="w-full rounded-2xl bg-[#f5f5f5] p-3 text-sm leading-6 focus:outline-none focus:ring-2 focus:ring-[#25D366]/30 resize-none"
           />
-          <p className="text-xs text-muted-foreground mt-2">بعد التعديل اضغط زر واتساب بالأعلى</p>
+          <p className="text-sm text-[#4b5563] mt-2">بعد التعديل اضغط زر واتساب بالأعلى</p>
         </div>
       ) : null}
 
@@ -163,7 +163,7 @@ function ConfirmationContent() {
               <ShoppingBag className="h-4 w-4 text-muted-foreground" />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">الاسم</p>
+              <p className="text-sm text-[#4b5563]">الاسم</p>
               <p className="font-semibold text-foreground">{name}</p>
             </div>
           </div>
@@ -174,7 +174,7 @@ function ConfirmationContent() {
             <MapPin className="h-4 w-4 text-muted-foreground" />
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">نوع الطلب</p>
+            <p className="text-sm text-[#4b5563]">نوع الطلب</p>
             <p className="font-semibold text-foreground">{isPickup ? "استلام من المحل" : `توصيل إلى ${area}`}</p>
           </div>
         </div>
@@ -184,7 +184,7 @@ function ConfirmationContent() {
             <Clock className="h-4 w-4 text-foreground" />
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">{isPickup ? "وقت الاستلام" : "وقت التسليم"}</p>
+            <p className="text-sm text-[#4b5563]">{isPickup ? "وقت الاستلام" : "وقت التسليم"}</p>
             <p className="font-semibold text-foreground">{time}</p>
           </div>
         </div>
@@ -192,7 +192,7 @@ function ConfirmationContent() {
         {total ? (
           <div className="pt-3 border-t border-border flex justify-between items-center">
             <span className="text-xl font-bold text-[#1e5631]">{total} ريال</span>
-            <span className="text-muted-foreground font-medium">الإجمالي</span>
+            <span className="text-[#4b5563] font-medium">الإجمالي</span>
           </div>
         ) : null}
 
@@ -212,7 +212,7 @@ function ConfirmationContent() {
         العودة للقائمة
       </Link>
 
-      <p className="text-sm text-muted-foreground">
+      <p className="text-base text-[#4b5563]">
         سيتم توجيهك تلقائيًا خلال <span className="font-bold text-foreground">{countdown}</span> ثانية
       </p>
     </main>

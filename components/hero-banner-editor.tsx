@@ -64,12 +64,20 @@ export function HeroBannerEditor() {
     let bucket = "Menu"
     const { data: d1, error: e1 } = await supabase.storage
       .from("Menu")
-      .upload(filename, file, { upsert: true })
+      .upload(filename, file, {
+        upsert: true,
+        cacheControl: "31536000",
+        contentType: file.type || "image/jpeg",
+      })
 
     if (e1) {
       const { data: d2, error: e2 } = await supabase.storage
         .from("app-assets")
-        .upload(filename, file, { upsert: true })
+        .upload(filename, file, {
+          upsert: true,
+          cacheControl: "31536000",
+          contentType: file.type || "image/jpeg",
+        })
       if (!e2) { uploadData = d2; bucket = "app-assets" }
     } else {
       uploadData = d1
@@ -92,7 +100,11 @@ export function HeroBannerEditor() {
     setUploadingDesign(true)
     const supabase = createClient()
     const filename = `banner_design_${Date.now()}.${file.name.split(".").pop()}`
-    const { data: d1, error: e1 } = await supabase.storage.from("Menu").upload(filename, file, { upsert: true })
+    const { data: d1, error: e1 } = await supabase.storage.from("Menu").upload(filename, file, {
+      upsert: true,
+      cacheControl: "31536000",
+      contentType: file.type || "image/jpeg",
+    })
     if (!e1 && d1) {
       const { data: urlData } = supabase.storage.from("Menu").getPublicUrl(d1.path)
       update({ full_design_url: urlData.publicUrl, full_design_mode: true })
@@ -326,7 +338,7 @@ export function HeroBannerEditor() {
         >
           {current.full_design_url ? (
             <div className="relative w-full" style={{ aspectRatio: "2.5/1" }}>
-              <Image src={current.full_design_url} alt="full design" fill className="object-cover" unoptimized />
+              <Image src={current.full_design_url} alt="full design" fill sizes="(max-width: 768px) 96vw, 1200px" quality={75} className="object-cover" />
               <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center gap-1">
                 <Upload className="h-5 w-5 text-white" />
                 <span className="text-white text-sm font-medium">استبدال التصميم</span>

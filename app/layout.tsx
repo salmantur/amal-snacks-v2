@@ -4,6 +4,7 @@ import { Tajawal } from 'next/font/google'
 import './globals.css'
 import { CartProvider } from '@/components/cart-provider'
 import { ThemeLoader } from '@/components/theme-loader'
+import { WebVitalsReporter } from "@/components/web-vitals-reporter"
 
 const tajawal = Tajawal({
   subsets: ['arabic', 'latin'],
@@ -50,6 +51,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       </head>
       <body className={`${tajawal.variable} font-sans antialiased`}>
         <CartProvider>
+          <WebVitalsReporter />
           <ThemeLoader />
           {children}
         </CartProvider>

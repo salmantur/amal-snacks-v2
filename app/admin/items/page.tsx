@@ -155,7 +155,11 @@ export default function ItemsPage() {
     setImageUploading(true)
     const ext = file.name.split(".").pop()
     const filename = `${Date.now()}.${ext}`
-    const { error } = await supabase.storage.from("Menu").upload(filename, file, { upsert: true })
+    const { error } = await supabase.storage.from("Menu").upload(filename, file, {
+      upsert: true,
+      cacheControl: "31536000",
+      contentType: file.type || "image/jpeg",
+    })
     if (error) {
       setError("فشل رفع الصورة: " + error.message)
     } else {
@@ -172,7 +176,11 @@ export default function ItemsPage() {
     const uploaded: string[] = []
     for (const file of files) {
       const filename = `gallery_${Date.now()}_${Math.random().toString(36).slice(2)}_${file.name.replace(/[^a-zA-Z0-9.]/g, "_")}`
-      const { error } = await supabase.storage.from("Menu").upload(filename, file, { upsert: true })
+      const { error } = await supabase.storage.from("Menu").upload(filename, file, {
+        upsert: true,
+        cacheControl: "31536000",
+        contentType: file.type || "image/jpeg",
+      })
       if (!error) {
         uploaded.push(`${SUPABASE_URL}/storage/v1/object/public/Menu/${filename}`)
       }
@@ -340,7 +348,7 @@ export default function ItemsPage() {
                   {/* Image */}
                   <div className="relative w-20 h-20 rounded-2xl bg-[#f5f5f5] overflow-hidden flex-shrink-0">
                     {imgSrc
-                      ? <Image src={imgSrc} alt={item.name} fill className="object-cover" unoptimized />
+                      ? <Image src={imgSrc} alt={item.name} fill sizes="80px" quality={70} className="object-cover" />
                       : <div className="absolute inset-0 flex items-center justify-center"><ImageIcon className="h-6 w-6 text-gray-300" /></div>
                     }
                     {item.isFeatured && (
@@ -441,7 +449,7 @@ export default function ItemsPage() {
                 <div className="flex items-center gap-3">
                   <div className="relative w-24 h-24 rounded-2xl bg-[#f5f5f5] flex items-center justify-center overflow-hidden flex-shrink-0">
                     {modalItem.image
-                      ? <Image src={getDisplayImage(modalItem.image) || modalItem.image || ""} alt="preview" fill className="object-cover" unoptimized />
+                      ? <Image src={getDisplayImage(modalItem.image) || modalItem.image || ""} alt="preview" fill sizes="96px" quality={70} className="object-cover" />
                       : <ImageIcon className="h-7 w-7 text-gray-300" />
                     }
                   </div>
@@ -615,7 +623,7 @@ export default function ItemsPage() {
                 <div className="flex gap-2 flex-wrap mb-2">
                   {(modalItem.images || []).map((url, idx) => (
                     <div key={idx} className="relative w-16 h-16 rounded-xl overflow-hidden bg-[#f5f5f5] flex-shrink-0">
-                      <Image src={url} alt="" fill className="object-cover" unoptimized />
+                      <Image src={url} alt="" fill sizes="64px" quality={70} className="object-cover" />
                       <button
                         onClick={() => setModalItem(prev => prev ? ({ ...prev, images: (prev.images || []).filter((_, i) => i !== idx) }) : prev)}
                         className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-xs"

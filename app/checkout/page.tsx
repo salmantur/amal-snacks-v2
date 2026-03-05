@@ -1,6 +1,6 @@
 ﻿"use client"
 
-import { useMemo, useState, useCallback, Suspense } from "react"
+import { useMemo, useState, useCallback, Suspense, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { useSearchParams, useRouter } from "next/navigation"
@@ -238,6 +238,19 @@ function CheckoutContent() {
     if (!q) return deliveryAreas
     return deliveryAreas.filter((a) => normalizeText(a.name).includes(q))
   }, [deliveryInfo.area, isPickup])
+
+  const quickAreas = useMemo(() => deliveryAreas.slice(0, 6), [])
+
+  useEffect(() => {
+    if (isPickup || !deliveryInfo.area || selectedArea) return
+    const normalizedInput = normalizeText(deliveryInfo.area)
+    const exactMatch = deliveryAreas.find((a) => normalizeText(a.name) === normalizedInput)
+    if (exactMatch) {
+      setDeliveryInfo({ ...deliveryInfo, area: exactMatch.name })
+      setAreaFocused(false)
+      setErrors((prev) => ({ ...prev, area: undefined }))
+    }
+  }, [deliveryInfo, isPickup, selectedArea, setDeliveryInfo])
 
   const infoDone = useMemo(() => {
     const hasBaseInfo = Boolean(deliveryInfo.name.trim() && deliveryInfo.phone.trim())
@@ -501,6 +514,27 @@ function CheckoutContent() {
 
             {!isPickup ? (
               <div className="relative">
+                <div className="mb-2">
+                  <p className="text-sm font-medium text-right mb-2">اختيار سريع</p>
+                  <div className="flex flex-wrap gap-2">
+                    {quickAreas.map((area) => (
+                      <button
+                        key={`quick-${area.id}`}
+                        type="button"
+                        onClick={() => pickArea(area.name)}
+                        className={cn(
+                          "rounded-full px-4 py-2.5 text-sm border transition-colors active:scale-[0.99]",
+                          selectedArea?.id === area.id
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : `${theme.input} text-foreground border-border hover:bg-primary/10`
+                        )}
+                      >
+                        {area.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 {areaDesign === "search" ? (
                   <>
                     <MapPin className="absolute right-4 top-4 h-5 w-5 text-muted-foreground" />

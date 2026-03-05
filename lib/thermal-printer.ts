@@ -40,7 +40,7 @@ export type PrintMode = "readable" | "compact"
 export type PrintDarkness = "light" | "normal" | "dark"
 
 const DEFAULT_PRINT_MODE: PrintMode = "readable"
-const DEFAULT_PRINT_DARKNESS: PrintDarkness = "normal"
+const DEFAULT_PRINT_DARKNESS: PrintDarkness = "dark"
 
 export function getPrintMode(): PrintMode {
   if (typeof window !== "undefined") {

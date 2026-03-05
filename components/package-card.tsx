@@ -4,6 +4,7 @@ import React, { memo, useState } from "react"
 import Image from "next/image"
 import { Star, Search, Plus, Minus, ShoppingBag } from "lucide-react"
 import { type MenuItem } from "@/components/cart-provider"
+import { getEidRequiredHeaters } from "@/lib/eid-packages"
 
 interface PackageCardProps {
   item: MenuItem
@@ -15,7 +16,7 @@ export const PackageCard = memo(function PackageCard({ item, onSelect, priority 
   const [imgError, setImgError] = useState(false)
   const [qty, setQty] = useState(1)
   const isOutOfStock = item.inStock === false
-  const required = item.limit || 4
+  const required = getEidRequiredHeaters(item)
 
   return (
     <div className="col-span-2 bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-100" dir="rtl">

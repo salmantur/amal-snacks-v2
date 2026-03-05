@@ -6,6 +6,7 @@ import Image from "next/image"
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { useCart, type MenuItem } from "@/components/cart-provider"
 import { cn } from "@/lib/utils"
+import { getEidRequiredHeaters } from "@/lib/eid-packages"
 
 interface ProductDrawerProps {
   product: MenuItem | null
@@ -100,7 +101,7 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
     })
   }
 
-  const eidRequired = product?.limit || 4
+  const eidRequired = product ? getEidRequiredHeaters(product) : 4
   const trayComplete = traySelections.length === TRAY_REQUIRED
   const eidComplete = traySelections.length === eidRequired
 

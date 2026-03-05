@@ -2,7 +2,7 @@
 
 import React, { memo, useState } from "react"
 import Image from "next/image"
-import { Star, Search, Plus, Minus, ShoppingBag, Users } from "lucide-react"
+import { Star, Search, Plus, Minus, ShoppingBag } from "lucide-react"
 import { type MenuItem } from "@/components/cart-provider"
 import { getEidRequiredHeaters } from "@/lib/eid-packages"
 import { cn } from "@/lib/utils"
@@ -55,7 +55,6 @@ export const PackageCard = memo(function PackageCard({
   const [qty, setQty] = useState(1)
   const isOutOfStock = item.inStock === false
   const required = getEidRequiredHeaters(item)
-  const portions = item.limit && item.limit > 0 ? item.limit : null
   const v = getVariantStyles(variant)
 
   return (
@@ -98,15 +97,6 @@ export const PackageCard = memo(function PackageCard({
       <div className="p-4 space-y-3">
         <h3 className="font-black text-[#1e293b] text-lg">{item.name}</h3>
         {item.description ? <p className="text-gray-500 text-xs -mt-2">{item.description}</p> : null}
-
-        <div className="flex flex-wrap gap-2">
-          {portions ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 text-amber-800 text-[11px] font-semibold px-2.5 py-1">
-              <Users className="h-3 w-3" />
-              يكفي {portions}
-            </span>
-          ) : null}
-        </div>
 
         <div className="flex items-center justify-between">
           <button onClick={() => !isOutOfStock && onSelect(item)} className="flex items-center gap-1.5 bg-[#1e293b] text-white text-xs font-bold px-3 py-1.5 rounded-full active:scale-95 transition-transform">

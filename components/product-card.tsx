@@ -2,7 +2,7 @@
 
 import React, { memo, useState } from "react"
 import Image from "next/image"
-import { ShoppingBag, Star, Users } from "lucide-react"
+import { ShoppingBag, Star } from "lucide-react"
 import { type MenuItem } from "@/components/cart-provider"
 import { cn } from "@/lib/utils"
 
@@ -72,7 +72,6 @@ export const ProductCard = memo(function ProductCard({
   variant = "neo",
 }: ProductCardProps) {
   const [imgError, setImgError] = useState(false)
-  const portions = item.limit && item.limit > 0 ? item.limit : null
   const v = getVariantStyles(variant)
 
   return (
@@ -125,12 +124,6 @@ export const ProductCard = memo(function ProductCard({
         <p className={cn("text-sm mt-1 line-clamp-2 leading-relaxed", v.desc)}>{item.description}</p>
 
         <div className="mt-2 flex flex-wrap justify-end gap-2">
-          {portions ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 text-amber-800 text-[11px] font-semibold px-2.5 py-1">
-              <Users className="h-3 w-3" />
-              يكفي {portions}
-            </span>
-          ) : null}
           {item.isFeatured ? (
             <span className="inline-flex items-center gap-1 rounded-full bg-yellow-100 text-yellow-800 text-[11px] font-semibold px-2.5 py-1">
               <Star className="h-3 w-3 fill-yellow-700 text-yellow-700" />

@@ -15,7 +15,7 @@ const ProductDrawer = dynamic(
   { ssr: false }
 )
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json())
+const INITIAL_VISIBLE_ITEMS = 6
 
 export function MenuGrid() {
   const { categories: allCategories } = useCategories()
@@ -27,12 +27,38 @@ export function MenuGrid() {
   const [searchQuery, setSearchQuery] = useState("")
   const [debouncedSearch, setDebouncedSearch] = useState("")
   const [selectedProduct, setSelectedProduct] = useState<MenuItem | null>(null)
+  const [showAllItems, setShowAllItems] = useState(false)
 
   // Debounce search input
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(searchQuery), 300)
     return () => clearTimeout(timer)
   }, [searchQuery])
+
+  // Render only a small above-the-fold batch first, then hydrate the full list in idle time.
+  useEffect(() => {
+    setShowAllItems(false)
+
+    let timeoutId: ReturnType<typeof setTimeout> | null = null
+    let idleId: number | null = null
+
+    const revealAll = () => setShowAllItems(true)
+
+    if ("requestIdleCallback" in window) {
+      idleId = window.requestIdleCallback(revealAll, { timeout: 250 })
+    } else {
+      timeoutId = setTimeout(revealAll, 120)
+    }
+
+    return () => {
+      if (idleId !== null && "cancelIdleCallback" in window) {
+        window.cancelIdleCallback(idleId)
+      }
+      if (timeoutId) {
+        clearTimeout(timeoutId)
+      }
+    }
+  }, [selectedCategory, debouncedSearch])
 
   // When categories first load, reset selectedCategory to trigger re-render
   useEffect(() => {
@@ -73,6 +99,7 @@ export function MenuGrid() {
   }, [menuItems, debouncedSearch])
 
   const isSearching = debouncedSearch.length > 0
+  const shouldLimitItems = !isSearching && !showAllItems
 
   // Per-category filtered items (used when not searching)
   const getItemsForCategory = useCallback((dbCategory: string) => {
@@ -83,6 +110,11 @@ export function MenuGrid() {
   const filteredItems = useMemo(() => menuItems.filter((item) => {
     return dbCategories.includes(item.category)
   }), [menuItems, dbCategories])
+
+  const visibleFilteredItems = useMemo(
+    () => (shouldLimitItems ? filteredItems.slice(0, INITIAL_VISIBLE_ITEMS) : filteredItems),
+    [filteredItems, shouldLimitItems]
+  )
 
   return (
     <div className="min-h-screen bg-background">
@@ -141,12 +173,15 @@ export function MenuGrid() {
           <div className="space-y-10 md:space-y-16">
             {sections.map((section) => {
               const sectionItems = getItemsForCategory(section.dbCategory)
+              const visibleSectionItems = shouldLimitItems
+                ? sectionItems.slice(0, INITIAL_VISIBLE_ITEMS)
+                : sectionItems
               if (sectionItems.length === 0) return null
               return (
                 <div key={section.dbCategory}>
                   <h2 className="text-xl md:text-2xl font-bold text-[#1e293b] text-right mb-4 md:mb-8">{section.label}</h2>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8">
-                    {sectionItems.map((item, idx) => (
+                    {visibleSectionItems.map((item, idx) => (
                       item.category === "eid" ? <PackageCard key={item.id} item={item} onSelect={setSelectedProduct} priority={idx < 4} /> : <ProductCard key={item.id} item={item} onSelect={setSelectedProduct} priority={idx < 4} />
                     ))}
                   </div>
@@ -157,7 +192,7 @@ export function MenuGrid() {
         ) : (
           // Render as flat grid for other categories
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8">
-            {filteredItems.map((item, idx) => (
+            {visibleFilteredItems.map((item, idx) => (
               item.category === "eid" ? <PackageCard key={item.id} item={item} onSelect={setSelectedProduct} priority={idx < 4} /> : <ProductCard key={item.id} item={item} onSelect={setSelectedProduct} priority={idx < 4} />
             ))}
           </div>

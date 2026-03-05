@@ -21,54 +21,57 @@ export function CartBar() {
 
   return (
     <>
-      {/* Sticky cart bar */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-background via-background to-transparent pt-8 z-40">
-        <div className="bg-foreground rounded-full px-4 py-3 flex items-center justify-between text-background shadow-xl">
-          {/* Confirm button */}
+      <div
+        className="fixed left-0 right-0 z-40 px-3 md:px-4"
+        style={{ bottom: "calc(0.5rem + env(safe-area-inset-bottom))" }}
+      >
+        <div className="mx-auto max-w-3xl relative rounded-full px-4 py-3 flex items-center justify-between text-foreground shadow-[0_10px_30px_rgba(0,0,0,0.18)] border border-white/40 backdrop-blur-2xl bg-gradient-to-br from-white/70 via-white/45 to-white/30 overflow-hidden">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_20%,rgba(255,255,255,0.8),transparent_45%),radial-gradient(circle_at_85%_80%,rgba(255,255,255,0.35),transparent_45%)]" />
+          <div className="pointer-events-none absolute inset-[1px] rounded-full border border-white/35" />
           <button
             onClick={() => setModalOpen(true)}
-            className="flex items-center gap-2 bg-background text-foreground rounded-full px-4 py-2 font-medium hover:bg-background/90 transition-colors active:scale-95"
+            className="relative z-10 flex items-center gap-2 bg-white/80 text-foreground rounded-full px-4 py-2 font-medium hover:bg-white/90 transition-colors active:scale-95 border border-white/60 shadow-sm"
           >
             <span>تأكيد</span>
             <ChevronLeft className="h-4 w-4" />
           </button>
 
-          {/* Cart summary — tap to open item list */}
           <button
             onClick={() => setCartOpen(true)}
-            className="flex items-center gap-3 text-left active:opacity-70 transition-opacity"
+            className="relative z-10 flex items-center gap-3 text-left active:opacity-70 transition-opacity"
           >
             <div>
-              <p className="text-xs text-background/70">سلتك</p>
-              <p className="font-bold">{totalItems} عنصر · {totalPrice} ر.س</p>
+              <p className="text-xs text-foreground/70">عدد المنتجات</p>
+              <p className="font-bold">
+                {totalItems} · المجموع {totalPrice} ر.س
+              </p>
             </div>
-            <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full bg-primary/90 flex items-center justify-center border border-primary/30 shadow-sm">
               <ShoppingBag className="h-5 w-5 text-primary-foreground" />
             </div>
           </button>
         </div>
       </div>
 
-      {/* Cart item drawer */}
       {cartOpen && (
         <div className="fixed inset-0 z-50" onClick={() => setCartOpen(false)}>
           <div className="absolute inset-0 bg-black/40" />
           <div
             className="absolute bottom-0 left-0 right-0 bg-background rounded-t-3xl p-5 max-h-[70vh] flex flex-col"
             style={{ paddingBottom: "calc(1.25rem + env(safe-area-inset-bottom))" }}
-            onClick={e => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
           >
-            {/* Handle */}
             <div className="w-10 h-1 rounded-full bg-gray-200 mx-auto mb-4" />
 
             <div className="flex items-center justify-between mb-4" dir="rtl">
               <h2 className="text-lg font-bold">سلتك</h2>
-              <span className="text-sm text-muted-foreground">{totalItems} عنصر · {totalPrice} ر.س</span>
+              <span className="text-sm text-muted-foreground">
+                {totalItems} عنصر · {totalPrice} ر.س
+              </span>
             </div>
 
-            {/* Items */}
             <div className="overflow-y-auto flex-1 space-y-2 pb-2" dir="rtl">
-              {items.map(item => (
+              {items.map((item) => (
                 <div key={item.cartKey} className="flex items-center gap-3 p-3 bg-amal-grey rounded-2xl">
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm truncate">{item.name}</p>
@@ -79,7 +82,9 @@ export function CartBar() {
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <button
-                      onClick={() => item.quantity === 1 ? removeItem(item.cartKey) : updateQuantity(item.cartKey, item.quantity - 1)}
+                      onClick={() =>
+                        item.quantity === 1 ? removeItem(item.cartKey) : updateQuantity(item.cartKey, item.quantity - 1)
+                      }
                       className="w-8 h-8 rounded-full bg-gray-200 text-gray-700 flex items-center justify-center active:scale-95 transition-transform text-lg font-bold"
                     >
                       {item.quantity === 1 ? <X className="h-3.5 w-3.5 text-red-500" /> : "−"}
@@ -96,7 +101,6 @@ export function CartBar() {
               ))}
             </div>
 
-            {/* Actions */}
             <div className="flex gap-3 mt-4">
               <button
                 onClick={() => setCartOpen(false)}
@@ -105,7 +109,10 @@ export function CartBar() {
                 متابعة التسوق
               </button>
               <button
-                onClick={() => { setCartOpen(false); setModalOpen(true) }}
+                onClick={() => {
+                  setCartOpen(false)
+                  setModalOpen(true)
+                }}
                 className="flex-1 py-3 rounded-2xl bg-foreground text-background font-medium active:scale-95 transition-transform"
               >
                 تأكيد الطلب
@@ -115,11 +122,7 @@ export function CartBar() {
         </div>
       )}
 
-      <OrderTypeModal
-        open={modalOpen}
-        onSelect={handleSelect}
-        onClose={() => setModalOpen(false)}
-      />
+      <OrderTypeModal open={modalOpen} onSelect={handleSelect} onClose={() => setModalOpen(false)} />
     </>
   )
 }

@@ -29,6 +29,7 @@ export interface Order {
   customerName: string
   customerPhone: string
   customerAddress: string
+  orderType: "delivery" | "pickup"
   items: { name: string; quantity: number; price: number }[]
   total: number
   status: "pending" | "preparing" | "ready" | "delivered"
@@ -44,6 +45,7 @@ export const mockOrders: Order[] = [
     customerName: "أحمد محمد",
     customerPhone: "+966501234567",
     customerAddress: "الرياض، حي النخيل، شارع الملك فهد",
+    orderType: "delivery",
     items: [
       { name: "صحن مشكل", quantity: 2, price: 45 },
       { name: "سمبوسة دجاج", quantity: 3, price: 25 },
@@ -60,6 +62,7 @@ export const mockOrders: Order[] = [
     customerName: "سارة علي",
     customerPhone: "+966509876543",
     customerAddress: "جدة، حي الروضة",
+    orderType: "pickup",
     items: [
       { name: "كبة مثلجة", quantity: 5, price: 30 },
     ],

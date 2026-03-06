@@ -102,6 +102,7 @@ function dbRowToOrder(row: any): Order {
     customerName: row.customer_name,
     customerPhone: row.customer_phone ?? "",
     customerAddress: row.customer_area ?? "",
+    orderType: row.order_type === "pickup" ? "pickup" : "delivery",
     items: (row.items ?? []).map((item: { name: string; nameEn?: string; name_en?: string; quantity: number; price: number; selectedIngredients?: string[] }) => ({
       ...item,
       nameEn: item.nameEn || item.name_en || "",

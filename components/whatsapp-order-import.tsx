@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { MessageCircle, Loader2, Check, X, Plus, Trash2, ChevronDown, ChevronUp, Sparkles } from "lucide-react"
+import { useMemo, useState } from "react"
+import { MessageCircle, Loader2, Check, Plus, Trash2, ChevronDown, ChevronUp } from "lucide-react"
 import { saveOrder } from "@/lib/orders"
 import { cn } from "@/lib/utils"
 
@@ -11,424 +11,347 @@ interface ParsedItem {
   price: number
 }
 
-interface ParsedOrder {
+interface DraftOrder {
   customerName: string
   customerPhone: string
   customerArea: string
   orderType: "delivery" | "pickup"
   items: ParsedItem[]
   notes: string
-  subtotal: number
   deliveryFee: number
-  total: number
 }
 
-const SYSTEM_PROMPT = `أنت مساعد متخصص في استخراج بيانات الطلبات من محادثات واتساب لمطعم أمل سناكس في الدمام/الخبر/الظهران.
-
-استخرج بيانات الطلب وأرجع JSON فقط بهذا الشكل بدون أي نص آخر:
-{
-  "customerName": "",
-  "customerPhone": "",
-  "customerArea": "",
-  "orderType": "delivery" أو "pickup",
-  "items": [{"name": "", "quantity": 1, "price": 0}],
-  "notes": "",
-  "deliveryFee": 50,
-  "total": 0
+const DEFAULT_DRAFT: DraftOrder = {
+  customerName: "",
+  customerPhone: "",
+  customerArea: "",
+  orderType: "delivery",
+  items: [],
+  notes: "",
+  deliveryFee: 50,
 }
 
-== رسوم التوصيل ==
-الخبر: 50 ريال
-الدمام: 50 ريال
-الظهران: 50 ريال
-أي منطقة أخرى أو غير محددة: 50 ريال
-استلام من المحل: 0 ريال
+function normalizeArabicDigits(text: string): string {
+  return text
+    .replace(/[٠-٩]/g, (d) => String("٠١٢٣٤٥٦٧٨٩".indexOf(d)))
+    .replace(/[۰-۹]/g, (d) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(d)))
+}
 
-== قائمة أسعار أمل سناكس الكاملة ==
--- سخانات الفطور --
-فول = 160 ر.س
-فاصوليا = 160 ر.س
-بيض تركي = 180 ر.س
-شكشوكة = 180 ر.س
-فلافل سبيشل / فلافل سبيشيل = 180 ر.س
-حمسة باذنجان = 180 ر.س
-حمسة حلوم بالزيتون / حمسة حلومي = 220 ر.س
-شعيرية / بلاليط = 150 ر.س
+function parseQuickFromWhatsApp(raw: string): Partial<DraftOrder> {
+  const text = normalizeArabicDigits(raw)
+  const lines = text
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean)
 
--- سخانات --
-رز صيني مع ايدام = 280 ر.س
-كشري = 260 ر.س
-مسقعه = 240 ر.س
-مسقعه بالجبن = 250 ر.س
-كرات البطاطس = 240 ر.س
-فوتتشيني / فيتوتشيني = 240 ر.س
-باستا بالدجاج = 240 ر.س
-مكرونة البيتزا = 250 ر.س
-مكرونة الباشميل = 240 ر.س
-لازانيا = 260 ر.س
-برياني = 300 ر.س
-جريش = 200 ر.س
-هريس = 280 ر.س
-رولات الباذنجان = 240 ر.س
-محشي مشكل = 280 ر.س
+  const result: Partial<DraftOrder> = { items: [] }
 
--- سلطات --
-تبولة = 140 ر.س
-تبولة كينوا = 150 ر.س
-تبولة شمندر = 140 ر.س
-سلطة سيزر = 140 ر.س
-سلطة جرجير ورمان = 120 ر.س
-سلطة يونانية = 140 ر.س
-سلطة مكرونة = 140 ر.س
-سلطة بافلو = 140 ر.س
-فتة باذنجان = 150 ر.س
-سلطة كينوا = 150 ر.س
-سلطة كريسبي = 170 ر.س
-سلطة الزعتر = 140 ر.س
-سلطة المنجا = 160 ر.س
+  const nameLine = lines.find((l) => /^(الاسم|name)\s*[:：]/i.test(l))
+  if (nameLine) result.customerName = nameLine.replace(/^(الاسم|name)\s*[:：]\s*/i, "").trim()
 
--- مقبلات --
-متبل = 130 ر.س
-حمص = 120 ر.س
-فتوش = 140 ر.س
-ملفوف = 90 ر.س (40 حبة)
-ورق عنب = 90 ر.س (40 حبة)
-مسخن = 95 ر.س (30 حبة)
-سبرنق رولز = 3 ر.س للحبة
-كبة / كبه = 3.5 ر.س للحبة
-سمبوسة بف = 3 ر.س للحبة (لحم/دجاج/جبن)
-سمبوسة لف / سمبوسة شرائح = 3 ر.س للحبة
+  const areaLine = lines.find((l) => /^(المنطقة|الحي|area)\s*[:：]/i.test(l))
+  if (areaLine) result.customerArea = areaLine.replace(/^(المنطقة|الحي|area)\s*[:：]\s*/i, "").trim()
 
--- سندويشات --
-برجر لحم 20 حبة = 100 ر.س
-دجاج طازج 20 حبة = 100 ر.س
-مسخن 40 حبة = 110 ر.س
-تورتلا / تورتيلا = 4 ر.س للحبة
-شاورما ميني = 4 ر.س للحبة
-مطبق مغلف = 4 ر.س للحبة
-ميني ساندوتش 25 قطعة = 100 ر.س
-كلوب ساندوتش = 18 ر.س
+  const phoneMatch = text.match(/(?:\+?966|0)?5\d{8}/)
+  if (phoneMatch) result.customerPhone = phoneMatch[0]
 
--- بلاترات --
-شيز بلاتر = 400 ر.س
-بلاتر الفلافل = 240 ر.س
+  if (/استلام|pickup/i.test(text)) {
+    result.orderType = "pickup"
+    result.deliveryFee = 0
+  }
 
--- صواني --
-صينية كبيرة (140 قطعة) = 500 ر.س
-صينية وسط (105 قطعة) = 380 ر.س
-صينية صغير (84 قطعة) = 300 ر.س
+  // Parse item lines in formats like:
+  // - سمبوسة لحم x 30 = 90
+  // - 2 × حمص 120
+  // - كبة 20 حبة 3.5
+  const parsedItems: ParsedItem[] = []
+  for (const line of lines) {
+    if (/^(الاسم|name|المنطقة|الحي|area|الهاتف|phone)\s*[:：]/i.test(line)) continue
 
--- معجنات --
-فطاير مشكل 40 قطعة = 130 ر.س
-ميني كروسان 25 قطعة = 100 ر.س
+    const cleaned = line.replace(/^\*+|\*+$/g, "").replace(/^-+\s*/, "").trim()
+    const qtyMatch = cleaned.match(/(?:x|×|\*)?\s*(\d+(?:\.\d+)?)\s*(?:حبة|قطعة|pcs?)?/i)
+    const priceMatch = cleaned.match(/(\d+(?:\.\d+)?)\s*(?:ر\.?س|ريال)?$/i)
 
--- حلويات --
-ليمون بوبز كيك 50 قطعة = 100 ر.س
-ميني تارت بيكان 24 قطعة = 150 ر.س
-مكعبات قرص عقيل = 120 ر.س
-لقيمات = 120 ر.س
+    if (!qtyMatch || !priceMatch) continue
 
--- تمور --
-تمر محشي سكري = 200 ر.س
-تمر وتين محشي = 280 ر.س
-تمر محشى فاخر = 390 ر.س
-صينية تمور ملكي = 500 ر.س
-علبة تمور (سكري-عجوة-تين) = 140 ر.س
+    const quantity = Math.max(1, Math.round(Number(qtyMatch[1])))
+    const unitOrTotal = Number(priceMatch[1])
+    if (!Number.isFinite(quantity) || !Number.isFinite(unitOrTotal)) continue
 
--- مفرزنات --
-سبرنق رولز مفرزن 20 حبة = 50 ر.س
-كبة برغل لحم مفرزن 20 حبة = 60 ر.س
-سمبوسة بف دجاج/لحم مفرزن 20 حبة = 60 ر.س
-سمبوسة بف خضروات/جبن مفرزن 25 حبة = 50 ر.س
-سمبوسة لف دجاج/لحم مفرزن 20 حبة = 60 ر.س
-سمبوسة لف خضروات/بطاطس مفرزن 25 حبة = 50 ر.س
-مسخن مفرزن 20 حبة = 50 ر.س
+    const name = cleaned
+      .replace(qtyMatch[0], " ")
+      .replace(priceMatch[0], " ")
+      .replace(/[=:+-]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
 
-== قواعد الاستخراج ==
-- الاسم: من "الاسم:" أو من ذكر الاسم في المحادثة
-- الهاتف: أي رقم يبدأ بـ 05 أو 966
-- المنطقة: ابحث عن اسم الحي أو المدينة (النزهة، الجامعيين، الفيصلية = الخبر/الدمام/الظهران)
-- نوع الطلب: "pickup" إذا ذكر "استلام" أو "استلام من المحل" وإلا "delivery"
-- الأرقام العربية: ١=1، ٢=2، ٣=3، ٤=4، ٥=5، ٦=6، ٧=7، ٨=8، ٩=9، ١٠=10، ٢٠=20، ٣٠=30، ٤٠=40
-- الكلمات: عشرة=10، عشرين=20، ثلاثين=30، أربعين=40، خمسين=50
-- السعر للحبة: إذا طلب "30 سمبوسة بف" = quantity:30, price:3
-- إذا الرسالة منسقة بنجوم (*طلب جديد*) استخرج مباشرة منها
-- الملاحظات: وقت التسليم، طلبات خاصة (مقلي، مع الصوص، حار...)
-- احسب المجموع الفرعي تلقائياً من الأصناف
-- أرجع JSON فقط بدون أي نص إضافي أو markdown`
+    if (!name) continue
+
+    // If value is large, assume it is total line price and compute unit.
+    const price = unitOrTotal > 25 && quantity > 1 ? Math.round((unitOrTotal / quantity) * 100) / 100 : unitOrTotal
+    parsedItems.push({ name, quantity, price })
+  }
+
+  if (parsedItems.length > 0) result.items = parsedItems
+  return result
+}
 
 export function WhatsAppOrderImport({ onOrderCreated }: { onOrderCreated?: () => void }) {
   const [open, setOpen] = useState(false)
   const [rawText, setRawText] = useState("")
-  const [parsed, setParsed] = useState<ParsedOrder | null>(null)
-  const [parsing, setParsing] = useState(false)
+  const [draft, setDraft] = useState<DraftOrder>(DEFAULT_DRAFT)
   const [saving, setSaving] = useState(false)
   const [success, setSuccess] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  async function handleParse() {
-    if (!rawText.trim()) return
-    setParsing(true)
+  const subtotal = useMemo(() => draft.items.reduce((sum, i) => sum + i.quantity * i.price, 0), [draft.items])
+  const total = subtotal + (draft.orderType === "pickup" ? 0 : draft.deliveryFee)
+
+  function resetAll() {
+    setRawText("")
+    setDraft(DEFAULT_DRAFT)
+    setSuccess(null)
     setError(null)
-
-    try {
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
-          system: SYSTEM_PROMPT,
-          messages: [{ role: "user", content: rawText }]
-        })
-      })
-
-      const data = await response.json()
-      const text = data.content?.[0]?.text || ""
-      const clean = text.replace(/```json|```/g, "").trim()
-      const result = JSON.parse(clean)
-
-      const subtotal = result.items?.reduce((s: number, i: { price: number; quantity: number }) => s + (i.price * i.quantity), 0) || 0
-      const deliveryFee = result.deliveryFee ?? 50
-      const total = result.total || (subtotal + deliveryFee)
-
-      setParsed({
-        customerName: result.customerName || "",
-        customerPhone: result.customerPhone || "",
-        customerArea: result.customerArea || "",
-        orderType: result.orderType || "delivery",
-        items: result.items || [],
-        notes: result.notes || "",
-        subtotal,
-        deliveryFee,
-        total,
-      })
-    } catch {
-      setError("فشل تحليل الرسالة — حاول مرة أخرى")
-    }
-
-    setParsing(false)
   }
 
-  function updateField<K extends keyof ParsedOrder>(key: K, value: ParsedOrder[K]) {
-    setParsed(p => p ? { ...p, [key]: value } : p)
+  function fillFromText() {
+    if (!rawText.trim()) return
+    const parsed = parseQuickFromWhatsApp(rawText)
+    setDraft((prev) => ({
+      ...prev,
+      ...parsed,
+      deliveryFee: parsed.orderType === "pickup" ? 0 : (parsed.deliveryFee ?? prev.deliveryFee),
+      items: parsed.items && parsed.items.length > 0 ? parsed.items : prev.items,
+    }))
+    setError(null)
   }
 
-  function updateItem(idx: number, field: keyof ParsedItem, value: string | number) {
-    setParsed(p => {
-      if (!p) return p
-      const items = [...p.items]
-      items[idx] = { ...items[idx], [field]: field === "name" ? value : Number(value) }
-      const subtotal = items.reduce((s, i) => s + i.price * i.quantity, 0)
-      return { ...p, items, subtotal, total: subtotal + p.deliveryFee }
+  function updateField<K extends keyof DraftOrder>(key: K, value: DraftOrder[K]) {
+    setDraft((prev) => ({ ...prev, [key]: value }))
+  }
+
+  function updateItem(index: number, patch: Partial<ParsedItem>) {
+    setDraft((prev) => {
+      const items = [...prev.items]
+      items[index] = { ...items[index], ...patch }
+      return { ...prev, items }
     })
   }
 
   function addItem() {
-    setParsed(p => p ? { ...p, items: [...p.items, { name: "", quantity: 1, price: 0 }] } : p)
+    setDraft((prev) => ({
+      ...prev,
+      items: [...prev.items, { name: "", quantity: 1, price: 0 }],
+    }))
   }
 
-  function removeItem(idx: number) {
-    setParsed(p => {
-      if (!p) return p
-      const items = p.items.filter((_, i) => i !== idx)
-      const subtotal = items.reduce((s, i) => s + i.price * i.quantity, 0)
-      return { ...p, items, subtotal, total: subtotal + p.deliveryFee }
-    })
+  function removeItem(index: number) {
+    setDraft((prev) => ({
+      ...prev,
+      items: prev.items.filter((_, i) => i !== index),
+    }))
   }
 
   async function handleSave() {
-    if (!parsed) return
-    if (!parsed.customerName) { setError("الاسم مطلوب"); return }
-    if (parsed.items.length === 0) { setError("يجب إضافة منتج واحد على الأقل"); return }
+    if (!draft.customerName.trim()) {
+      setError("الاسم مطلوب")
+      return
+    }
+    if (draft.items.length === 0) {
+      setError("أضف صنفًا واحدًا على الأقل")
+      return
+    }
+
     setSaving(true)
     setError(null)
 
     const result = await saveOrder({
-      customerName: parsed.customerName,
-      customerPhone: parsed.customerPhone,
-      customerArea: parsed.customerArea,
-      orderType: parsed.orderType,
-      items: parsed.items.map(i => ({ name: i.name, quantity: i.quantity, price: i.price })),
-      subtotal: parsed.subtotal,
-      deliveryFee: parsed.deliveryFee,
-      total: parsed.total,
-      notes: parsed.notes,
+      customerName: draft.customerName.trim(),
+      customerPhone: draft.customerPhone.trim(),
+      customerArea: draft.customerArea.trim(),
+      orderType: draft.orderType,
+      items: draft.items
+        .filter((i) => i.name.trim())
+        .map((i) => ({ name: i.name.trim(), quantity: Math.max(1, i.quantity), price: Math.max(0, i.price) })),
+      subtotal,
+      deliveryFee: draft.orderType === "pickup" ? 0 : draft.deliveryFee,
+      total,
+      notes: draft.notes.trim(),
       scheduledTime: null,
     })
 
     setSaving(false)
-    if (!result) { setError("فشل حفظ الطلب — تحقق من الاتصال"); return }
-    setSuccess(result.orderNumber)
-    setParsed(null)
-    setRawText("")
-    onOrderCreated?.()
-  }
+    if (!result) {
+      setError("تعذر حفظ الطلب. تحقق من الاتصال ثم حاول مرة أخرى.")
+      return
+    }
 
-  function reset() {
-    setParsed(null)
-    setRawText("")
-    setSuccess(null)
-    setError(null)
+    setSuccess(result.orderNumber)
+    onOrderCreated?.()
   }
 
   return (
     <div className="mb-4" dir="rtl">
       <button
-        onClick={() => setOpen(o => !o)}
-        className="flex items-center gap-2 px-4 py-2.5 bg-green-500 text-white font-bold rounded-2xl text-sm active:scale-95 transition-transform w-full justify-between"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between rounded-2xl bg-green-600 text-white px-4 py-3 font-bold text-sm active:scale-[0.99] transition-transform"
       >
         <div className="flex items-center gap-2">
           <MessageCircle className="h-4 w-4" />
-          إضافة طلب من واتساب
+          إضافة طلب واتساب مباشرة
         </div>
         {open ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
       </button>
 
-      {open && (
-        <div className="mt-3 bg-white rounded-3xl border border-gray-100 shadow-sm p-4 space-y-4">
-
-          {success && (
-            <div className="flex items-center gap-3 p-3 bg-green-50 border border-green-200 rounded-2xl">
-              <Check className="h-5 w-5 text-green-600 flex-shrink-0" />
+      {open ? (
+        <div className="mt-3 rounded-3xl border border-gray-200 bg-white shadow-sm p-4 space-y-4">
+          {success ? (
+            <div className="rounded-2xl border border-green-200 bg-green-50 p-3 flex items-center gap-3">
+              <Check className="h-5 w-5 text-green-600" />
               <div>
-                <p className="font-bold text-green-800">تم إنشاء الطلب #{success} ✓</p>
-                <p className="text-xs text-green-600">يمكنك طباعته من قائمة الطلبات</p>
+                <p className="font-bold text-green-700">تم إنشاء الطلب #{success}</p>
+                <button onClick={resetAll} className="text-xs text-green-700 underline mt-1">
+                  إضافة طلب جديد
+                </button>
               </div>
-              <button onClick={reset} className="mr-auto text-green-600 text-xs underline">إضافة آخر</button>
             </div>
-          )}
+          ) : null}
 
-          {!parsed && !success && (
+          {!success ? (
             <>
-              <div>
-                <label className="block text-sm font-bold mb-1 text-gray-700">الصق رسالة واتساب:</label>
-                <p className="text-xs text-gray-400 mb-2">يفهم الرسائل العادية بالعامية والمنسقة من الموقع</p>
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-700">الصق رسالة واتساب (اختياري)</label>
                 <textarea
                   value={rawText}
-                  onChange={e => setRawText(e.target.value)}
-                  placeholder={"مثال عامي:\nابي ٣٠ سمبوسه بف دجاج مقلي\nاسمي نوره الساعه ٧\nالنزهه\n\nأو من الموقع:\n*طلب جديد من أمل سناك*\n*الاسم:* منى..."}
-                  className="w-full h-44 px-3 py-2.5 rounded-2xl bg-[#f5f5f5] text-sm focus:outline-none resize-none text-right leading-relaxed"
-                  dir="rtl"
+                  onChange={(e) => setRawText(e.target.value)}
+                  placeholder="الصق الرسالة هنا، ثم اضغط: استخراج بيانات أولية"
+                  className="w-full h-28 rounded-2xl bg-[#f5f5f5] px-3 py-2 text-sm focus:outline-none resize-none"
                 />
-              </div>
-              <button
-                onClick={handleParse}
-                disabled={!rawText.trim() || parsing}
-                className="w-full py-3 bg-[#1e293b] text-white font-bold rounded-2xl text-sm active:scale-95 disabled:opacity-40 flex items-center justify-center gap-2"
-              >
-                {parsing
-                  ? <><Loader2 className="h-4 w-4 animate-spin" /> جاري التحليل...</>
-                  : <><Sparkles className="h-4 w-4" /> تحليل بالذكاء الاصطناعي</>}
-              </button>
-              {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-            </>
-          )}
-
-          {parsed && !success && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <button onClick={reset} className="text-xs text-gray-400 flex items-center gap-1"><X className="h-3 w-3" /> إلغاء</button>
-                <p className="font-bold text-[#1e293b]">مراجعة الطلب</p>
+                <button
+                  type="button"
+                  onClick={fillFromText}
+                  disabled={!rawText.trim()}
+                  className="rounded-xl bg-[#1e293b] text-white text-sm px-4 py-2 font-semibold disabled:opacity-40"
+                >
+                  استخراج بيانات أولية
+                </button>
               </div>
 
               <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-xs text-gray-500 mb-1 block">الاسم *</label>
-                  <input value={parsed.customerName} onChange={e => updateField("customerName", e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-[#f5f5f5] text-sm focus:outline-none text-right" dir="rtl" />
-                </div>
-                <div>
-                  <label className="text-xs text-gray-500 mb-1 block">الهاتف</label>
-                  <input value={parsed.customerPhone} onChange={e => updateField("customerPhone", e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-[#f5f5f5] text-sm focus:outline-none text-right" dir="rtl" />
-                </div>
-                <div>
-                  <label className="text-xs text-gray-500 mb-1 block">المنطقة</label>
-                  <input value={parsed.customerArea} onChange={e => updateField("customerArea", e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-[#f5f5f5] text-sm focus:outline-none text-right" dir="rtl" />
-                </div>
-                <div>
-                  <label className="text-xs text-gray-500 mb-1 block">نوع الطلب</label>
-                  <select value={parsed.orderType} onChange={e => updateField("orderType", e.target.value as "delivery" | "pickup")}
-                    className="w-full px-3 py-2 rounded-xl bg-[#f5f5f5] text-sm focus:outline-none text-right" dir="rtl">
-                    <option value="delivery">توصيل 🚗</option>
-                    <option value="pickup">استلام 🏪</option>
-                  </select>
-                </div>
+                <input
+                  value={draft.customerName}
+                  onChange={(e) => updateField("customerName", e.target.value)}
+                  placeholder="الاسم *"
+                  className="rounded-xl bg-[#f5f5f5] px-3 py-2 text-sm focus:outline-none"
+                />
+                <input
+                  value={draft.customerPhone}
+                  onChange={(e) => updateField("customerPhone", e.target.value)}
+                  placeholder="رقم الهاتف"
+                  className="rounded-xl bg-[#f5f5f5] px-3 py-2 text-sm focus:outline-none"
+                />
+                <input
+                  value={draft.customerArea}
+                  onChange={(e) => updateField("customerArea", e.target.value)}
+                  placeholder="المنطقة"
+                  className="rounded-xl bg-[#f5f5f5] px-3 py-2 text-sm focus:outline-none"
+                />
+                <select
+                  value={draft.orderType}
+                  onChange={(e) => updateField("orderType", e.target.value as "delivery" | "pickup")}
+                  className="rounded-xl bg-[#f5f5f5] px-3 py-2 text-sm focus:outline-none"
+                >
+                  <option value="delivery">توصيل</option>
+                  <option value="pickup">استلام</option>
+                </select>
               </div>
 
-              {parsed.notes ? (
-                <div>
-                  <label className="text-xs text-gray-500 mb-1 block">ملاحظات</label>
-                  <input value={parsed.notes} onChange={e => updateField("notes", e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-yellow-50 border border-yellow-200 text-sm focus:outline-none text-right" dir="rtl" />
-                </div>
-              ) : null}
-
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <button onClick={addItem} className="text-xs text-blue-600 flex items-center gap-1 active:scale-95">
-                    <Plus className="h-3 w-3" /> إضافة منتج
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-bold text-gray-700">الأصناف</label>
+                  <button onClick={addItem} className="text-xs text-blue-700 flex items-center gap-1">
+                    <Plus className="h-3.5 w-3.5" />
+                    إضافة صنف
                   </button>
-                  <label className="text-xs font-bold text-gray-700">المنتجات ({parsed.items.length})</label>
                 </div>
                 <div className="space-y-2">
-                  {parsed.items.map((item, idx) => (
-                    <div key={idx} className="flex items-center gap-2 p-2 bg-[#f5f5f5] rounded-xl">
-                      <button onClick={() => removeItem(idx)} className="text-red-400 flex-shrink-0 active:scale-95">
-                        <Trash2 className="h-3.5 w-3.5" />
+                  {draft.items.map((item, idx) => (
+                    <div key={idx} className="rounded-xl border border-gray-200 p-2 flex items-center gap-2">
+                      <button onClick={() => removeItem(idx)} className="text-red-500">
+                        <Trash2 className="h-4 w-4" />
                       </button>
-                      <input value={item.name} onChange={e => updateItem(idx, "name", e.target.value)}
-                        placeholder="اسم المنتج" dir="rtl"
-                        className="flex-1 px-2 py-1.5 rounded-lg bg-white text-sm focus:outline-none text-right min-w-0" />
-                      <div className="flex items-center gap-1 flex-shrink-0">
-                        <input type="number" value={item.quantity} onChange={e => updateItem(idx, "quantity", e.target.value)}
-                          className="w-10 px-1 py-1.5 rounded-lg bg-white text-sm focus:outline-none text-center" />
-                        <span className="text-xs text-gray-400">×</span>
-                        <input type="number" value={item.price} onChange={e => updateItem(idx, "price", e.target.value)}
-                          placeholder="0" className="w-14 px-1 py-1.5 rounded-lg bg-white text-sm focus:outline-none text-center" />
-                      </div>
+                      <input
+                        value={item.name}
+                        onChange={(e) => updateItem(idx, { name: e.target.value })}
+                        placeholder="اسم الصنف"
+                        className="flex-1 min-w-0 rounded-lg bg-[#f5f5f5] px-2 py-2 text-sm focus:outline-none"
+                      />
+                      <input
+                        type="number"
+                        min={1}
+                        value={item.quantity}
+                        onChange={(e) => updateItem(idx, { quantity: Number(e.target.value) || 1 })}
+                        className="w-14 rounded-lg bg-[#f5f5f5] px-2 py-2 text-sm text-center focus:outline-none"
+                      />
+                      <input
+                        type="number"
+                        min={0}
+                        value={item.price}
+                        onChange={(e) => updateItem(idx, { price: Number(e.target.value) || 0 })}
+                        className="w-20 rounded-lg bg-[#f5f5f5] px-2 py-2 text-sm text-center focus:outline-none"
+                      />
                     </div>
                   ))}
-                  {parsed.items.length === 0 && (
-                    <p className="text-center text-sm text-gray-400 py-3 bg-[#f5f5f5] rounded-xl">لا توجد منتجات — أضف يدوياً</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2 text-sm">
+                <div className="rounded-xl bg-[#f5f5f5] p-2 text-center">
+                  <p className="text-gray-500 text-xs">الفرعي</p>
+                  <p className="font-bold">{subtotal} ر.س</p>
+                </div>
+                <div className={cn("rounded-xl p-2 text-center", draft.orderType === "pickup" ? "bg-gray-100" : "bg-[#f5f5f5]")}>
+                  <p className="text-gray-500 text-xs">التوصيل</p>
+                  {draft.orderType === "pickup" ? (
+                    <p className="font-bold">0</p>
+                  ) : (
+                    <input
+                      type="number"
+                      min={0}
+                      value={draft.deliveryFee}
+                      onChange={(e) => updateField("deliveryFee", Number(e.target.value) || 0)}
+                      className="w-full bg-transparent text-center font-bold focus:outline-none"
+                    />
                   )}
                 </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-2">
-                <div>
-                  <label className="text-xs text-gray-500 mb-1 block">المجموع</label>
-                  <input type="number" value={parsed.subtotal} onChange={e => updateField("subtotal", Number(e.target.value))}
-                    className="w-full px-2 py-2 rounded-xl bg-[#f5f5f5] text-sm focus:outline-none text-center" />
-                </div>
-                <div>
-                  <label className="text-xs text-gray-500 mb-1 block">التوصيل</label>
-                  <input type="number" value={parsed.deliveryFee} onChange={e => {
-                    const fee = Number(e.target.value)
-                    setParsed(p => p ? { ...p, deliveryFee: fee, total: p.subtotal + fee } : p)
-                  }} className="w-full px-2 py-2 rounded-xl bg-[#f5f5f5] text-sm focus:outline-none text-center" />
-                </div>
-                <div>
-                  <label className="text-xs text-gray-500 mb-1 block font-bold">الإجمالي</label>
-                  <div className="w-full px-2 py-2 rounded-xl bg-[#1e293b] text-white text-sm text-center font-bold">
-                    {parsed.total} ر.س
-                  </div>
+                <div className="rounded-xl bg-[#1e293b] text-white p-2 text-center">
+                  <p className="text-xs opacity-80">الإجمالي</p>
+                  <p className="font-bold">{total} ر.س</p>
                 </div>
               </div>
 
-              {error && <p className="text-red-500 text-sm text-center bg-red-50 p-2 rounded-xl">{error}</p>}
+              <textarea
+                value={draft.notes}
+                onChange={(e) => updateField("notes", e.target.value)}
+                placeholder="ملاحظات (اختياري)"
+                className="w-full h-20 rounded-2xl bg-[#f5f5f5] px-3 py-2 text-sm focus:outline-none resize-none"
+              />
 
-              <button onClick={handleSave} disabled={saving}
-                className="w-full py-3.5 bg-green-600 text-white font-bold rounded-2xl text-sm active:scale-95 flex items-center justify-center gap-2 disabled:opacity-60">
+              {error ? <p className="text-sm text-red-600 rounded-xl bg-red-50 p-2">{error}</p> : null}
+
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="w-full rounded-2xl bg-green-600 text-white py-3.5 font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-60"
+              >
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                {saving ? "جاري الحفظ..." : "حفظ الطلب وإرساله للمطبخ"}
+                {saving ? "جاري حفظ الطلب..." : "حفظ الطلب"}
               </button>
-            </div>
-          )}
+            </>
+          ) : null}
         </div>
-      )}
+      ) : null}
     </div>
   )
 }
+

@@ -15,17 +15,17 @@ interface MenuItemStock {
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
-  platters: "Ã˜Â§Ã™â€žÃ˜Â¨Ã™â€žÃ˜Â§Ã˜ÂªÃ˜Â±Ã˜Â§Ã˜Âª",
-  breakfast_heaters: "Ã˜Â³Ã˜Â®Ã˜Â§Ã™â€ Ã˜Â§Ã˜Âª Ã˜Â§Ã™â€žÃ™ÂÃ˜Â·Ã™Ë†Ã˜Â±",
-  heaters: "Ã˜Â³Ã˜Â®Ã˜Â§Ã™â€ Ã˜Â§Ã˜Âª",
-  trays: "Ã˜ÂµÃ™Ë†Ã˜Â§Ã™â€ Ã™Å  Ã˜ÂªÃ™â€šÃ˜Â¯Ã™Å Ã™â€¦Ã˜Â§Ã˜Âª",
-  stuffed_dates: "Ã˜ÂªÃ™â€¦Ã˜Â± Ã™â€¦Ã˜Â­Ã˜Â´Ã™Å ",
-  salads: "Ã˜Â³Ã™â€žÃ˜Â·Ã˜Â§Ã˜Âª",
-  appetizers: "Ã™â€¦Ã™â€šÃ˜Â¨Ã™â€žÃ˜Â§Ã˜Âª",
-  sandwiches: "Ã˜Â³Ã˜Â§Ã™â€ Ã˜Â¯Ã™Ë†Ã˜ÂªÃ˜Â´Ã˜Â§Ã˜Âª",
-  sweets: "Ã˜Â­Ã™â€žÃ˜Â§",
-  bakery: "Ã™â€¦Ã˜Â®Ã˜Â¨Ã™Ë†Ã˜Â²Ã˜Â§Ã˜Âª",
-  frozen: "Ã™â€¦Ã™ÂÃ˜Â±Ã˜Â²Ã™â€ Ã˜Â§Ã˜Âª",
+  platters: "البلاترات",
+  breakfast_heaters: "سخانات الفطور",
+  heaters: "سخانات",
+  trays: "صواني تقديمات",
+  stuffed_dates: "تمر محشي",
+  salads: "سلطات",
+  appetizers: "مقبلات",
+  sandwiches: "ساندوتشات",
+  sweets: "حلا",
+  bakery: "مخبوزات",
+  frozen: "مفرزنات",
 }
 
 export function StockManager() {
@@ -88,11 +88,11 @@ export function StockManager() {
       <div className="flex gap-3">
         <div className="flex-1 bg-[#1e5631]/10 rounded-2xl p-3 text-center">
           <p className="text-2xl font-bold text-[#1e5631]">{items.length - outOfStockCount}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">Ã™â€¦Ã˜ÂªÃ˜Â§Ã˜Â­</p>
+          <p className="text-xs text-muted-foreground mt-0.5">متاح</p>
         </div>
         <div className="flex-1 bg-red-50 rounded-2xl p-3 text-center">
           <p className="text-2xl font-bold text-red-500">{outOfStockCount}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">Ã™â€ Ã™ÂÃ˜Â¯ Ã˜Â§Ã™â€žÃ™â€¦Ã˜Â®Ã˜Â²Ã™Ë†Ã™â€ </p>
+          <p className="text-xs text-muted-foreground mt-0.5">نفد المخزون</p>
         </div>
       </div>
 
@@ -101,7 +101,7 @@ export function StockManager() {
         <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <input
           type="text"
-          placeholder="Ã˜Â§Ã˜Â¨Ã˜Â­Ã˜Â« Ã˜Â¹Ã™â€  Ã™â€¦Ã™â€ Ã˜ÂªÃ˜Â¬..."
+          placeholder="ابحث عن منتج..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="w-full py-3 pr-10 pl-4 rounded-xl bg-amal-grey text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 text-right"
@@ -136,7 +136,7 @@ export function StockManager() {
                         item.in_stock ? "bg-[#1e5631]" : "bg-gray-300",
                         updating === item.id && "opacity-50"
                       )}
-                      aria-label={item.in_stock ? "Ã˜Â¥Ã™Å Ã™â€šÃ˜Â§Ã™Â" : "Ã˜ÂªÃ™ÂÃ˜Â¹Ã™Å Ã™â€ž"}
+                      aria-label={item.in_stock ? "إيقاف" : "تفعيل"}
                     >
                       <span
                         className={cn(
@@ -154,7 +154,7 @@ export function StockManager() {
                         {item.name}
                       </p>
                       {!item.in_stock && (
-                        <p className="text-xs text-red-400">Ã™â€ Ã™ÂÃ˜Â¯ Ã˜Â§Ã™â€žÃ™â€¦Ã˜Â®Ã˜Â²Ã™Ë†Ã™â€ </p>
+                        <p className="text-xs text-red-400">نفد المخزون</p>
                       )}
                     </div>
                   </div>

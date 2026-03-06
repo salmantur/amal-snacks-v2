@@ -110,7 +110,7 @@ export async function POST(req: NextRequest) {
 
     const order = {
       orderNumber: record.order_number ?? record.id,
-      customerName: record.customer_name ?? "â€”",
+      customerName: record.customer_name ?? "—",
       customerPhone: record.customer_phone ?? "",
       customerArea: record.customer_area ?? "",
       orderType: record.order_type ?? "delivery",

@@ -30,7 +30,7 @@ export function DeliveryAreasManager() {
   }
 
   const handleAdd = async () => {
-    if (!newName.trim() || !newPrice) { setError("Ã˜Â§Ã˜Â³Ã™â€¦ Ã˜Â§Ã™â€žÃ™â€¦Ã™â€ Ã˜Â·Ã™â€šÃ˜Â© Ã™Ë†Ã˜Â§Ã™â€žÃ˜Â³Ã˜Â¹Ã˜Â± Ã™â€¦Ã˜Â·Ã™â€žÃ™Ë†Ã˜Â¨Ã˜Â§Ã™â€ "); return }
+    if (!newName.trim() || !newPrice) { setError("اسم المنطقة والسعر مطلوبان"); return }
     setSaving(true)
     setError(null)
     const id = `area-${Date.now()}`
@@ -48,7 +48,7 @@ export function DeliveryAreasManager() {
       setNewPrice("")
       setAdding(false)
     } else {
-      setError("Ã™ÂÃ˜Â´Ã™â€ž Ã˜Â§Ã™â€žÃ˜Â­Ã™ÂÃ˜Â¸ Ã¢â‚¬â€ Ã˜ÂªÃ˜Â£Ã™Æ’Ã˜Â¯ Ã™â€¦Ã™â€  Ã˜Â¥Ã™â€ Ã˜Â´Ã˜Â§Ã˜Â¡ Ã˜Â¬Ã˜Â¯Ã™Ë†Ã™â€ž delivery_areas Ã™ÂÃ™Å  Supabase")
+      setError("فشل الحفظ — تأكد من إنشاء جدول delivery_areas في Supabase")
     }
     setSaving(false)
   }
@@ -67,7 +67,7 @@ export function DeliveryAreasManager() {
       setAreas(prev => prev.map(a => a.id === area.id ? updated : a))
       setEditingId(null)
     } else {
-      setError("Ã™ÂÃ˜Â´Ã™â€ž Ã˜Â§Ã™â€žÃ˜Â­Ã™ÂÃ˜Â¸")
+      setError("فشل الحفظ")
     }
     setSaving(false)
   }
@@ -79,7 +79,7 @@ export function DeliveryAreasManager() {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Ã˜Â­Ã˜Â°Ã™Â Ã™â€¡Ã˜Â°Ã™â€¡ Ã˜Â§Ã™â€žÃ™â€¦Ã™â€ Ã˜Â·Ã™â€šÃ˜Â©Ã˜Å¸")) return
+    if (!confirm("حذف هذه المنطقة؟")) return
     await deleteDeliveryArea(id)
     setAreas(prev => prev.filter(a => a.id !== id))
   }
@@ -101,24 +101,24 @@ export function DeliveryAreasManager() {
           className="text-xs text-blue-500 flex items-center gap-1"
         >
           <RefreshCw className={`h-3 w-3 ${seeding ? "animate-spin" : ""}`} />
-          Ã˜ÂªÃ˜Â­Ã™â€¦Ã™Å Ã™â€ž Ã˜Â§Ã™â€žÃ˜Â£Ã˜Â³Ã˜Â¹Ã˜Â§Ã˜Â± Ã˜Â§Ã™â€žÃ˜Â§Ã™ÂÃ˜ÂªÃ˜Â±Ã˜Â§Ã˜Â¶Ã™Å Ã˜Â©
+          تحميل الأسعار الافتراضية
         </button>
         <h3 className="font-bold text-base flex items-center gap-2">
           <MapPin className="h-4 w-4 text-primary" />
-          Ã™â€¦Ã™â€ Ã˜Â§Ã˜Â·Ã™â€š Ã˜Â§Ã™â€žÃ˜ÂªÃ™Ë†Ã˜ÂµÃ™Å Ã™â€ž
+          مناطق التوصيل
         </h3>
       </div>
 
       {error && (
         <div className="p-3 bg-red-50 border border-red-200 rounded-2xl text-xs text-red-600 text-right">
           {error}
-          <p className="mt-1 opacity-70">Ã™â€šÃ™â€¦ Ã˜Â¨Ã˜ÂªÃ˜Â´Ã˜ÂºÃ™Å Ã™â€ž SQL Ã™ÂÃ™Å  Supabase Ã™â€žÃ˜Â¥Ã™â€ Ã˜Â´Ã˜Â§Ã˜Â¡ Ã˜Â§Ã™â€žÃ˜Â¬Ã˜Â¯Ã™Ë†Ã™â€ž Ã˜Â£Ã™Ë†Ã™â€žÃ˜Â§Ã™â€¹</p>
+          <p className="mt-1 opacity-70">قم بتشغيل SQL في Supabase لإنشاء الجدول أولاً</p>
         </div>
       )}
 
       {/* SQL hint */}
       <details className="text-xs text-gray-400">
-        <summary className="cursor-pointer">SQL Ã™â€žÃ˜Â¥Ã™â€ Ã˜Â´Ã˜Â§Ã˜Â¡ Ã˜Â§Ã™â€žÃ˜Â¬Ã˜Â¯Ã™Ë†Ã™â€ž Ã™ÂÃ™Å  Supabase Ã¢â€ â€œ</summary>
+        <summary className="cursor-pointer">SQL لإنشاء الجدول في Supabase ↓</summary>
         <pre className="mt-2 p-3 bg-gray-50 rounded-xl text-[10px] overflow-x-auto text-gray-600 text-left leading-relaxed">{`CREATE TABLE delivery_areas (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
@@ -151,7 +151,7 @@ CREATE POLICY "public_write" ON delivery_areas FOR ALL TO public USING (true) WI
                   onChange={e => setEditPrice(e.target.value)}
                   type="number"
                   className="w-16 px-2 py-1.5 rounded-xl bg-[#f5f5f5] text-sm text-center focus:outline-none"
-                  placeholder="Ã˜Â§Ã™â€žÃ˜Â³Ã˜Â¹Ã˜Â±"
+                  placeholder="السعر"
                 />
                 <span className="text-xs text-gray-400 flex-shrink-0"><PriceWithRiyalLogo value="" /></span>
                 <input
@@ -205,7 +205,7 @@ CREATE POLICY "public_write" ON delivery_areas FOR ALL TO public USING (true) WI
 
         {areas.length === 0 && (
           <p className="text-center text-sm text-gray-400 py-4">
-            Ã™â€žÃ˜Â§ Ã˜ÂªÃ™Ë†Ã˜Â¬Ã˜Â¯ Ã™â€¦Ã™â€ Ã˜Â§Ã˜Â·Ã™â€š Ã¢â‚¬â€ Ã˜Â§Ã˜Â¶Ã˜ÂºÃ˜Â· "Ã˜ÂªÃ˜Â­Ã™â€¦Ã™Å Ã™â€ž Ã˜Â§Ã™â€žÃ˜Â£Ã˜Â³Ã˜Â¹Ã˜Â§Ã˜Â± Ã˜Â§Ã™â€žÃ˜Â§Ã™ÂÃ˜ÂªÃ˜Â±Ã˜Â§Ã˜Â¶Ã™Å Ã˜Â©"
+            لا توجد مناطق — اضغط "تحميل الأسعار الافتراضية"
           </p>
         )}
       </div>
@@ -221,7 +221,7 @@ CREATE POLICY "public_write" ON delivery_areas FOR ALL TO public USING (true) WI
             value={newPrice}
             onChange={e => setNewPrice(e.target.value)}
             className="w-16 px-2 py-1.5 rounded-xl bg-white text-sm text-center focus:outline-none border border-blue-200"
-            placeholder="Ã˜Â§Ã™â€žÃ˜Â³Ã˜Â¹Ã˜Â±"
+            placeholder="السعر"
             autoFocus
           />
           <span className="text-xs text-gray-400 flex-shrink-0"><PriceWithRiyalLogo value="" /></span>
@@ -229,7 +229,7 @@ CREATE POLICY "public_write" ON delivery_areas FOR ALL TO public USING (true) WI
             value={newName}
             onChange={e => setNewName(e.target.value)}
             className="flex-1 px-3 py-1.5 rounded-xl bg-white text-sm text-right focus:outline-none border border-blue-200"
-            placeholder="Ã˜Â§Ã˜Â³Ã™â€¦ Ã˜Â§Ã™â€žÃ™â€¦Ã™â€ Ã˜Â·Ã™â€šÃ˜Â©"
+            placeholder="اسم المنطقة"
             dir="rtl"
             onKeyDown={e => e.key === "Enter" && handleAdd()}
           />
@@ -247,7 +247,7 @@ CREATE POLICY "public_write" ON delivery_areas FOR ALL TO public USING (true) WI
           className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-dashed border-gray-200 text-gray-500 text-sm font-medium active:scale-95 transition-all hover:border-primary hover:text-primary"
         >
           <Plus className="h-4 w-4" />
-          Ã˜Â¥Ã˜Â¶Ã˜Â§Ã™ÂÃ˜Â© Ã™â€¦Ã™â€ Ã˜Â·Ã™â€šÃ˜Â© Ã˜Â¬Ã˜Â¯Ã™Å Ã˜Â¯Ã˜Â©
+          إضافة منطقة جديدة
         </button>
       )}
     </div>

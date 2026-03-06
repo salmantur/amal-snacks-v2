@@ -26,7 +26,7 @@ export function HeroBanner() {
     return <div className="mx-4 mt-4 rounded-3xl bg-amal-pink-light/50 h-44 animate-pulse" />
   }
 
-  // Ã¢â€â‚¬Ã¢â€â‚¬ Full design mode: custom poster image fills entire banner Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+  // ── Full design mode: custom poster image fills entire banner ──────────────
   if (config.full_design_mode && config.full_design_url) {
     return (
       <div className="mx-4 mt-4 rounded-3xl overflow-hidden relative" style={{ aspectRatio: "2.5/1" }}>
@@ -43,7 +43,7 @@ export function HeroBanner() {
     )
   }
 
-  // Ã¢â€â‚¬Ã¢â€â‚¬ With featured product: split layout Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+  // ── With featured product: split layout ────────────────────────────────────
   if (featuredProduct) {
     return (
       <>
@@ -57,7 +57,7 @@ export function HeroBanner() {
             <div className="flex-1 p-5 flex flex-col justify-between" dir="rtl">
               {/* Label badge */}
               <span className="self-start bg-white/80 text-foreground text-xs font-bold px-3 py-1 rounded-full backdrop-blur-sm">
-                {config.featured_product_label || "Ã˜Â¬Ã˜Â¯Ã™Å Ã˜Â¯ Ã°Å¸â€Â¥"}
+                {config.featured_product_label || "جديد 🔥"}
               </span>
 
               {/* Product name + price */}
@@ -83,9 +83,9 @@ export function HeroBanner() {
                 className="mt-4 self-start flex items-center gap-2 bg-foreground text-background rounded-full px-4 py-2.5 text-sm font-bold active:scale-95 transition-all shadow-lg"
               >
                 {added ? (
-                  <>Ã¢Å“â€œ Ã˜Â£Ã˜Â¶Ã™Å Ã™Â Ã™â€žÃ™â€žÃ˜Â³Ã™â€žÃ˜Â©!</>
+                  <>✓ أضيف للسلة!</>
                 ) : (
-                  <><ShoppingBag className="h-3.5 w-3.5" /> Ã˜Â§Ã˜Â·Ã™â€žÃ˜Â¨ Ã˜Â§Ã™â€žÃ˜Â¢Ã™â€ </>
+                  <><ShoppingBag className="h-3.5 w-3.5" /> اطلب الآن</>
                 )}
               </button>
             </div>
@@ -111,7 +111,7 @@ export function HeroBanner() {
               )}
               {/* Tap for details hint */}
               <div className="absolute bottom-2 right-2 bg-black/30 text-white text-[10px] px-2 py-0.5 rounded-full backdrop-blur-sm">
-                Ã˜Â§Ã™â€žÃ˜ÂªÃ™ÂÃ˜Â§Ã˜ÂµÃ™Å Ã™â€ž
+                التفاصيل
               </div>
             </button>
           </div>
@@ -131,7 +131,7 @@ export function HeroBanner() {
     )
   }
 
-  // Ã¢â€â‚¬Ã¢â€â‚¬ Without featured product: original banner Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+  // ── Without featured product: original banner ──────────────────────────────
   const hasImage = !!config.image_url
   return (
     <div

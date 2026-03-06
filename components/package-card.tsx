@@ -87,13 +87,13 @@ export const PackageCard = memo(function PackageCard({
         {item.isFeatured ? (
           <div className="absolute top-3 left-3 bg-yellow-400 text-yellow-900 text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
             <Star className="h-3 w-3 fill-yellow-900" />
-            Ø§Ù„Ø£ÙƒØ«Ø± Ø·Ù„Ø¨Ù‹Ø§
+            الأكثر طلبًا
           </div>
         ) : null}
 
         {isOutOfStock ? (
           <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-            <span className="bg-white text-gray-800 text-sm font-bold px-4 py-2 rounded-full">Ù†ÙØ°Øª Ø§Ù„ÙƒÙ…ÙŠØ©</span>
+            <span className="bg-white text-gray-800 text-sm font-bold px-4 py-2 rounded-full">نفذت الكمية</span>
           </div>
         ) : null}
       </div>
@@ -104,17 +104,17 @@ export const PackageCard = memo(function PackageCard({
 
         <div className="flex items-center justify-between">
           <button onClick={() => !isOutOfStock && onSelect(item)} className="flex items-center gap-1.5 bg-[#1e293b] text-white text-xs font-bold px-3 py-1.5 rounded-full active:scale-95 transition-transform">
-            Ø§Ø®ØªØ± â†
+            اختر ←
           </button>
           <div className="flex items-center gap-2 text-sm text-[#1e293b]">
             <Search className="h-4 w-4 text-gray-400" />
-            <span className="font-semibold">{required} Ø³Ø®Ø§Ù†Ø§Øª</span>
+            <span className="font-semibold">{required} سخانات</span>
           </div>
         </div>
 
         <div className="flex items-center justify-between">
-          <span className="bg-yellow-100 text-yellow-700 text-xs font-bold px-3 py-1 rounded-full">Ù…Ø´Ù…ÙˆÙ„ â­</span>
-          <span className="font-semibold text-sm text-[#1e293b]">Ø¨Ù„Ø§ØªØ± Ø§Ù„Ø§Ø¬Ø¨Ø§Ù†</span>
+          <span className="bg-yellow-100 text-yellow-700 text-xs font-bold px-3 py-1 rounded-full">مشمول ⭐</span>
+          <span className="font-semibold text-sm text-[#1e293b]">بلاتر الاجبان</span>
         </div>
 
         <div className="border-t border-gray-100" />
@@ -126,7 +126,7 @@ export const PackageCard = memo(function PackageCard({
             className={cn("flex-1 py-3 font-bold rounded-2xl text-sm active:scale-95 transition-transform flex items-center justify-center gap-2", v.cta)}
           >
             <ShoppingBag className="h-4 w-4" />
-            Ø£Ø¶Ù Ù„Ù„Ø³Ù„Ø©
+            أضف للسلة
           </button>
 
           <div className="flex items-center gap-2 bg-[#f5f5f5] rounded-2xl px-2 py-1">
@@ -141,7 +141,7 @@ export const PackageCard = memo(function PackageCard({
         </div>
 
         <p className="text-sm text-gray-500 text-center">
-          Ø§Ù„Ù…Ø¬Ù…ÙˆØ¹:{" "}
+          المجموع:{" "}
           <span className="font-bold text-[#1e293b]">
             <PriceWithRiyalLogo value={(item.price * qty).toLocaleString()} />
           </span>

@@ -1,25 +1,25 @@
-// Categories matching your Supabase database values
+﻿// Categories matching your Supabase database values
 export const categories = [
-  { id: "eid", label: "Ø¨Ø§Ù‚Ø§Øª Ø§Ù„Ø¹ÙŠØ¯ ðŸŽ", dbCategories: ["eid"] },
+  { id: "eid", label: "Ã˜Â¨Ã˜Â§Ã™â€šÃ˜Â§Ã˜Âª Ã˜Â§Ã™â€žÃ˜Â¹Ã™Å Ã˜Â¯ Ã°Å¸Å½Â", dbCategories: ["eid"] },
   { 
     id: "platters_breakfast", 
-    label: "Ø¨Ù„Ø§ØªØ± ÙˆØ³Ø®Ø§Ù†Ø§Øª Ø§Ù„ÙØ·ÙˆØ±", 
+    label: "Ã˜Â¨Ã™â€žÃ˜Â§Ã˜ÂªÃ˜Â± Ã™Ë†Ã˜Â³Ã˜Â®Ã˜Â§Ã™â€ Ã˜Â§Ã˜Âª Ã˜Â§Ã™â€žÃ™ÂÃ˜Â·Ã™Ë†Ã˜Â±", 
     dbCategories: ["platters", "breakfast_heaters"],
     // Sub-sections to display separately within this category
     sections: [
-      { dbCategory: "platters", label: "Ø§Ù„Ø¨Ù„Ø§ØªØ±Ø§Øª", cols: 2 },
-      { dbCategory: "breakfast_heaters", label: "Ø³Ø®Ø§Ù†Ø§Øª Ø§Ù„ÙØ·ÙˆØ±", cols: 3 },
+      { dbCategory: "platters", label: "Ã˜Â§Ã™â€žÃ˜Â¨Ã™â€žÃ˜Â§Ã˜ÂªÃ˜Â±Ã˜Â§Ã˜Âª", cols: 2 },
+      { dbCategory: "breakfast_heaters", label: "Ã˜Â³Ã˜Â®Ã˜Â§Ã™â€ Ã˜Â§Ã˜Âª Ã˜Â§Ã™â€žÃ™ÂÃ˜Â·Ã™Ë†Ã˜Â±", cols: 3 },
     ]
   },
-  { id: "heaters", label: "Ø³Ø®Ø§Ù†Ø§Øª", dbCategories: ["heaters"] },
-  { id: "trays", label: "ØµÙˆØ§Ù†ÙŠ ØªÙ‚Ø¯ÙŠÙ…Ø§Øª", dbCategories: ["trays"] },
-  { id: "stuffed_dates", label: "ØªÙ…Ø± Ù…Ø­Ø´ÙŠ", dbCategories: ["stuffed_dates"] },
-  { id: "salads", label: "Ø³Ù„Ø·Ø§Øª", dbCategories: ["salads"] },
-  { id: "appetizers", label: "Ù…Ù‚Ø¨Ù„Ø§Øª", dbCategories: ["appetizers"] },
-  { id: "sandwiches", label: "Ø³Ø§Ù†Ø¯ÙˆØªØ´Ø§Øª", dbCategories: ["sandwiches"] },
-  { id: "sweets", label: "Ø­Ù„Ø§", dbCategories: ["sweets"] },
-  { id: "bakery", label: "Ù…Ø®Ø¨ÙˆØ²Ø§Øª", dbCategories: ["bakery"] },
-  { id: "frozen", label: "Ù…ÙØ±Ø²Ù†Ø§Øª", dbCategories: ["frozen"] },
+  { id: "heaters", label: "Ã˜Â³Ã˜Â®Ã˜Â§Ã™â€ Ã˜Â§Ã˜Âª", dbCategories: ["heaters"] },
+  { id: "trays", label: "Ã˜ÂµÃ™Ë†Ã˜Â§Ã™â€ Ã™Å  Ã˜ÂªÃ™â€šÃ˜Â¯Ã™Å Ã™â€¦Ã˜Â§Ã˜Âª", dbCategories: ["trays"] },
+  { id: "stuffed_dates", label: "Ã˜ÂªÃ™â€¦Ã˜Â± Ã™â€¦Ã˜Â­Ã˜Â´Ã™Å ", dbCategories: ["stuffed_dates"] },
+  { id: "salads", label: "Ã˜Â³Ã™â€žÃ˜Â·Ã˜Â§Ã˜Âª", dbCategories: ["salads"] },
+  { id: "appetizers", label: "Ã™â€¦Ã™â€šÃ˜Â¨Ã™â€žÃ˜Â§Ã˜Âª", dbCategories: ["appetizers"] },
+  { id: "sandwiches", label: "Ã˜Â³Ã˜Â§Ã™â€ Ã˜Â¯Ã™Ë†Ã˜ÂªÃ˜Â´Ã˜Â§Ã˜Âª", dbCategories: ["sandwiches"] },
+  { id: "sweets", label: "Ã˜Â­Ã™â€žÃ˜Â§", dbCategories: ["sweets"] },
+  { id: "bakery", label: "Ã™â€¦Ã˜Â®Ã˜Â¨Ã™Ë†Ã˜Â²Ã˜Â§Ã˜Âª", dbCategories: ["bakery"] },
+  { id: "frozen", label: "Ã™â€¦Ã™ÂÃ˜Â±Ã˜Â²Ã™â€ Ã˜Â§Ã˜Âª", dbCategories: ["frozen"] },
 ]
 
 // Mock orders data - Replace with Supabase realtime when connected
@@ -42,29 +42,29 @@ export const mockOrders: Order[] = [
   {
     id: "1",
     orderNumber: 1001,
-    customerName: "Ø£Ø­Ù…Ø¯ Ù…Ø­Ù…Ø¯",
+    customerName: "Ã˜Â£Ã˜Â­Ã™â€¦Ã˜Â¯ Ã™â€¦Ã˜Â­Ã™â€¦Ã˜Â¯",
     customerPhone: "+966501234567",
-    customerAddress: "Ø§Ù„Ø±ÙŠØ§Ø¶ØŒ Ø­ÙŠ Ø§Ù„Ù†Ø®ÙŠÙ„ØŒ Ø´Ø§Ø±Ø¹ Ø§Ù„Ù…Ù„Ùƒ ÙÙ‡Ø¯",
+    customerAddress: "Ã˜Â§Ã™â€žÃ˜Â±Ã™Å Ã˜Â§Ã˜Â¶Ã˜Å’ Ã˜Â­Ã™Å  Ã˜Â§Ã™â€žÃ™â€ Ã˜Â®Ã™Å Ã™â€žÃ˜Å’ Ã˜Â´Ã˜Â§Ã˜Â±Ã˜Â¹ Ã˜Â§Ã™â€žÃ™â€¦Ã™â€žÃ™Æ’ Ã™ÂÃ™â€¡Ã˜Â¯",
     orderType: "delivery",
     items: [
-      { name: "ØµØ­Ù† Ù…Ø´ÙƒÙ„", quantity: 2, price: 45 },
-      { name: "Ø³Ù…Ø¨ÙˆØ³Ø© Ø¯Ø¬Ø§Ø¬", quantity: 3, price: 25 },
+      { name: "Ã˜ÂµÃ˜Â­Ã™â€  Ã™â€¦Ã˜Â´Ã™Æ’Ã™â€ž", quantity: 2, price: 45 },
+      { name: "Ã˜Â³Ã™â€¦Ã˜Â¨Ã™Ë†Ã˜Â³Ã˜Â© Ã˜Â¯Ã˜Â¬Ã˜Â§Ã˜Â¬", quantity: 3, price: 25 },
     ],
     total: 165,
     status: "pending",
-    notes: "Ø¨Ø¯ÙˆÙ† Ø¨ØµÙ„",
+    notes: "Ã˜Â¨Ã˜Â¯Ã™Ë†Ã™â€  Ã˜Â¨Ã˜ÂµÃ™â€ž",
     scheduledTime: null,
     createdAt: new Date(Date.now() - 5 * 60000),
   },
   {
     id: "2",
     orderNumber: 1002,
-    customerName: "Ø³Ø§Ø±Ø© Ø¹Ù„ÙŠ",
+    customerName: "Ã˜Â³Ã˜Â§Ã˜Â±Ã˜Â© Ã˜Â¹Ã™â€žÃ™Å ",
     customerPhone: "+966509876543",
-    customerAddress: "Ø¬Ø¯Ø©ØŒ Ø­ÙŠ Ø§Ù„Ø±ÙˆØ¶Ø©",
+    customerAddress: "Ã˜Â¬Ã˜Â¯Ã˜Â©Ã˜Å’ Ã˜Â­Ã™Å  Ã˜Â§Ã™â€žÃ˜Â±Ã™Ë†Ã˜Â¶Ã˜Â©",
     orderType: "pickup",
     items: [
-      { name: "ÙƒØ¨Ø© Ù…Ø«Ù„Ø¬Ø©", quantity: 5, price: 30 },
+      { name: "Ã™Æ’Ã˜Â¨Ã˜Â© Ã™â€¦Ã˜Â«Ã™â€žÃ˜Â¬Ã˜Â©", quantity: 5, price: 30 },
     ],
     total: 150,
     status: "preparing",
@@ -99,7 +99,7 @@ export function getAvailableTimeSlots(minMinutes = 0): { date: string; slots: st
       }
     }
 
-    const dayNames = ["Ø§Ù„Ø£Ø­Ø¯", "Ø§Ù„Ø¥Ø«Ù†ÙŠÙ†", "Ø§Ù„Ø«Ù„Ø§Ø«Ø§Ø¡", "Ø§Ù„Ø£Ø±Ø¨Ø¹Ø§Ø¡", "Ø§Ù„Ø®Ù…ÙŠØ³", "Ø§Ù„Ø¬Ù…Ø¹Ø©", "Ø§Ù„Ø³Ø¨Øª"]
+    const dayNames = ["Ã˜Â§Ã™â€žÃ˜Â£Ã˜Â­Ã˜Â¯", "Ã˜Â§Ã™â€žÃ˜Â¥Ã˜Â«Ã™â€ Ã™Å Ã™â€ ", "Ã˜Â§Ã™â€žÃ˜Â«Ã™â€žÃ˜Â§Ã˜Â«Ã˜Â§Ã˜Â¡", "Ã˜Â§Ã™â€žÃ˜Â£Ã˜Â±Ã˜Â¨Ã˜Â¹Ã˜Â§Ã˜Â¡", "Ã˜Â§Ã™â€žÃ˜Â®Ã™â€¦Ã™Å Ã˜Â³", "Ã˜Â§Ã™â€žÃ˜Â¬Ã™â€¦Ã˜Â¹Ã˜Â©", "Ã˜Â§Ã™â€žÃ˜Â³Ã˜Â¨Ã˜Âª"]
     const dayName = dayNames[date.getDay()]
     const dateStr = `${dayName} ${date.getDate()}/${date.getMonth() + 1}`
 
@@ -113,11 +113,11 @@ export function getAvailableTimeSlots(minMinutes = 0): { date: string; slots: st
 
 // Delivery areas with prices
 export const deliveryAreas = [
-  { id: "west-dammam",  name: "ØºØ±Ø¨ Ø§Ù„Ø¯Ù…Ø§Ù…",     price: 30 },
-  { id: "east-dammam",  name: "Ø´Ø±Ù‚ Ø§Ù„Ø¯Ù…Ø§Ù…",     price: 35 },
-  { id: "dhahran-raka", name: "Ø§Ù„Ø¸Ù‡Ø±Ø§Ù† Ø§Ù„Ø±Ø§ÙƒØ©", price: 40 },
-  { id: "khobar",       name: "Ø§Ù„Ø®Ø¨Ø±",           price: 50 },
-  { id: "aziziyah",     name: "Ø§Ù„Ø¹Ø²ÙŠØ²ÙŠØ©",        price: 60 },
+  { id: "west-dammam",  name: "Ã˜ÂºÃ˜Â±Ã˜Â¨ Ã˜Â§Ã™â€žÃ˜Â¯Ã™â€¦Ã˜Â§Ã™â€¦",     price: 30 },
+  { id: "east-dammam",  name: "Ã˜Â´Ã˜Â±Ã™â€š Ã˜Â§Ã™â€žÃ˜Â¯Ã™â€¦Ã˜Â§Ã™â€¦",     price: 35 },
+  { id: "dhahran-raka", name: "Ã˜Â§Ã™â€žÃ˜Â¸Ã™â€¡Ã˜Â±Ã˜Â§Ã™â€  Ã˜Â§Ã™â€žÃ˜Â±Ã˜Â§Ã™Æ’Ã˜Â©", price: 40 },
+  { id: "khobar",       name: "Ã˜Â§Ã™â€žÃ˜Â®Ã˜Â¨Ã˜Â±",           price: 50 },
+  { id: "aziziyah",     name: "Ã˜Â§Ã™â€žÃ˜Â¹Ã˜Â²Ã™Å Ã˜Â²Ã™Å Ã˜Â©",        price: 60 },
 ]
 
 // WhatsApp message generator
@@ -137,30 +137,30 @@ export function generateWhatsAppMessage(
   const deliveryFee = deliveryArea?.price || 0
   const total = subtotal + deliveryFee
 
-  let message = `*Ø·Ù„Ø¨ Ø¬Ø¯ÙŠØ¯ Ù…Ù† Ø£Ù…Ù„ Ø³Ù†Ø§Ùƒ*\n\n`
-  message += `*Ø§Ù„Ø§Ø³Ù…:* ${deliveryInfo.name}\n`
-  message += `*Ø§Ù„Ù‡Ø§ØªÙ:* ${deliveryInfo.phone}\n`
-  message += `*Ø§Ù„Ù…Ù†Ø·Ù‚Ø©:* ${deliveryInfo.area}\n`
-  message += `*Ø§Ù„Ø¹Ù†ÙˆØ§Ù†:* ${deliveryInfo.address}\n`
+  let message = `*Ã˜Â·Ã™â€žÃ˜Â¨ Ã˜Â¬Ã˜Â¯Ã™Å Ã˜Â¯ Ã™â€¦Ã™â€  Ã˜Â£Ã™â€¦Ã™â€ž Ã˜Â³Ã™â€ Ã˜Â§Ã™Æ’*\n\n`
+  message += `*Ã˜Â§Ã™â€žÃ˜Â§Ã˜Â³Ã™â€¦:* ${deliveryInfo.name}\n`
+  message += `*Ã˜Â§Ã™â€žÃ™â€¡Ã˜Â§Ã˜ÂªÃ™Â:* ${deliveryInfo.phone}\n`
+  message += `*Ã˜Â§Ã™â€žÃ™â€¦Ã™â€ Ã˜Â·Ã™â€šÃ˜Â©:* ${deliveryInfo.area}\n`
+  message += `*Ã˜Â§Ã™â€žÃ˜Â¹Ã™â€ Ã™Ë†Ã˜Â§Ã™â€ :* ${deliveryInfo.address}\n`
   
   if (deliveryInfo.scheduledTime) {
-    message += `*ÙˆÙ‚Øª Ø§Ù„ØªØ³Ù„ÙŠÙ…:* ${deliveryInfo.scheduledTime}\n`
+    message += `*Ã™Ë†Ã™â€šÃ˜Âª Ã˜Â§Ã™â€žÃ˜ÂªÃ˜Â³Ã™â€žÃ™Å Ã™â€¦:* ${deliveryInfo.scheduledTime}\n`
   }
   
-  message += `\n*Ø§Ù„Ø·Ù„Ø¨Ø§Øª:*\n`
+  message += `\n*Ã˜Â§Ã™â€žÃ˜Â·Ã™â€žÃ˜Â¨Ã˜Â§Ã˜Âª:*\n`
   items.forEach((item) => {
-    message += `- ${item.name} x ${item.quantity} = ${item.price * item.quantity} ﷼\n`
+    message += `- ${item.name} x ${item.quantity} = ${item.price * item.quantity} SAR\n`
     if (item.selectedIngredients && item.selectedIngredients.length > 0) {
-      message += `  (${item.selectedIngredients.join("ØŒ ")})\n`
+      message += `  (${item.selectedIngredients.join("Ã˜Å’ ")})\n`
     }
   })
   
-  message += `\n*Ø§Ù„Ù…Ø¬Ù…ÙˆØ¹ Ø§Ù„ÙØ±Ø¹ÙŠ:* ${subtotal} ﷼\n`
-  message += `*Ø±Ø³ÙˆÙ… Ø§Ù„ØªÙˆØµÙŠÙ„ (${deliveryInfo.area}):* ${deliveryFee} ﷼\n`
-  message += `*Ø§Ù„Ø¥Ø¬Ù…Ø§Ù„ÙŠ:* ${total} ﷼\n`
+  message += `\n*Ã˜Â§Ã™â€žÃ™â€¦Ã˜Â¬Ã™â€¦Ã™Ë†Ã˜Â¹ Ã˜Â§Ã™â€žÃ™ÂÃ˜Â±Ã˜Â¹Ã™Å :* ${subtotal} SAR\n`
+  message += `*Ã˜Â±Ã˜Â³Ã™Ë†Ã™â€¦ Ã˜Â§Ã™â€žÃ˜ÂªÃ™Ë†Ã˜ÂµÃ™Å Ã™â€ž (${deliveryInfo.area}):* ${deliveryFee} SAR\n`
+  message += `*Ã˜Â§Ã™â€žÃ˜Â¥Ã˜Â¬Ã™â€¦Ã˜Â§Ã™â€žÃ™Å :* ${total} SAR\n`
   
   if (deliveryInfo.notes) {
-    message += `\n*Ù…Ù„Ø§Ø­Ø¸Ø§Øª:* ${deliveryInfo.notes}`
+    message += `\n*Ã™â€¦Ã™â€žÃ˜Â§Ã˜Â­Ã˜Â¸Ã˜Â§Ã˜Âª:* ${deliveryInfo.notes}`
   }
   
   return encodeURIComponent(message)
@@ -179,27 +179,28 @@ export function generatePickupWhatsAppMessage(
     notes: string
   }
 ): string {
-  let message = `*Ø·Ù„Ø¨ Ø§Ø³ØªÙ„Ø§Ù… Ù…Ù† Ø§Ù„Ù…Ø­Ù„ - Ø£Ù…Ù„ Ø³Ù†Ø§Ùƒ*\n\n`
-  message += `*Ø§Ù„Ø§Ø³Ù…:* ${deliveryInfo.name}\n`
+  let message = `*Ã˜Â·Ã™â€žÃ˜Â¨ Ã˜Â§Ã˜Â³Ã˜ÂªÃ™â€žÃ˜Â§Ã™â€¦ Ã™â€¦Ã™â€  Ã˜Â§Ã™â€žÃ™â€¦Ã˜Â­Ã™â€ž - Ã˜Â£Ã™â€¦Ã™â€ž Ã˜Â³Ã™â€ Ã˜Â§Ã™Æ’*\n\n`
+  message += `*Ã˜Â§Ã™â€žÃ˜Â§Ã˜Â³Ã™â€¦:* ${deliveryInfo.name}\n`
 
   if (deliveryInfo.scheduledTime) {
-    message += `*ÙˆÙ‚Øª Ø§Ù„Ø§Ø³ØªÙ„Ø§Ù…:* ${deliveryInfo.scheduledTime}\n`
+    message += `*Ã™Ë†Ã™â€šÃ˜Âª Ã˜Â§Ã™â€žÃ˜Â§Ã˜Â³Ã˜ÂªÃ™â€žÃ˜Â§Ã™â€¦:* ${deliveryInfo.scheduledTime}\n`
   }
 
-  message += `\n*Ø§Ù„Ø·Ù„Ø¨Ø§Øª:*\n`
+  message += `\n*Ã˜Â§Ã™â€žÃ˜Â·Ã™â€žÃ˜Â¨Ã˜Â§Ã˜Âª:*\n`
   items.forEach((item) => {
-    message += `- ${item.name} x ${item.quantity} = ${item.price * item.quantity} ﷼\n`
+    message += `- ${item.name} x ${item.quantity} = ${item.price * item.quantity} SAR\n`
     if (item.selectedIngredients && item.selectedIngredients.length > 0) {
-      message += `  (${item.selectedIngredients.join("ØŒ ")})\n`
+      message += `  (${item.selectedIngredients.join("Ã˜Å’ ")})\n`
     }
   })
 
-  message += `\n*Ø§Ù„Ø¥Ø¬Ù…Ø§Ù„ÙŠ:* ${subtotal} ﷼\n`
-  message += `*Ù†ÙˆØ¹ Ø§Ù„Ø·Ù„Ø¨:* Ø§Ø³ØªÙ„Ø§Ù… Ù…Ù† Ø§Ù„Ù…Ø­Ù„ ðŸª\n`
+  message += `\n*Ã˜Â§Ã™â€žÃ˜Â¥Ã˜Â¬Ã™â€¦Ã˜Â§Ã™â€žÃ™Å :* ${subtotal} SAR\n`
+  message += `*Ã™â€ Ã™Ë†Ã˜Â¹ Ã˜Â§Ã™â€žÃ˜Â·Ã™â€žÃ˜Â¨:* Ã˜Â§Ã˜Â³Ã˜ÂªÃ™â€žÃ˜Â§Ã™â€¦ Ã™â€¦Ã™â€  Ã˜Â§Ã™â€žÃ™â€¦Ã˜Â­Ã™â€ž Ã°Å¸ÂÂª\n`
 
   if (deliveryInfo.notes) {
-    message += `\n*Ù…Ù„Ø§Ø­Ø¸Ø§Øª:* ${deliveryInfo.notes}`
+    message += `\n*Ã™â€¦Ã™â€žÃ˜Â§Ã˜Â­Ã˜Â¸Ã˜Â§Ã˜Âª:* ${deliveryInfo.notes}`
   }
 
   return encodeURIComponent(message)
 }
+

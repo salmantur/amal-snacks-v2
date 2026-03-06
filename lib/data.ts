@@ -113,11 +113,11 @@ export function getAvailableTimeSlots(minMinutes = 0): { date: string; slots: st
 
 // Delivery areas with prices
 export const deliveryAreas = [
-  { id: "west-dammam",  name: "Ã˜ÂºÃ˜Â±Ã˜Â¨ Ã˜Â§Ã™â€žÃ˜Â¯Ã™â€¦Ã˜Â§Ã™â€¦",     price: 30 },
-  { id: "east-dammam",  name: "Ã˜Â´Ã˜Â±Ã™â€š Ã˜Â§Ã™â€žÃ˜Â¯Ã™â€¦Ã˜Â§Ã™â€¦",     price: 35 },
-  { id: "dhahran-raka", name: "Ã˜Â§Ã™â€žÃ˜Â¸Ã™â€¡Ã˜Â±Ã˜Â§Ã™â€  Ã˜Â§Ã™â€žÃ˜Â±Ã˜Â§Ã™Æ’Ã˜Â©", price: 40 },
-  { id: "khobar",       name: "Ã˜Â§Ã™â€žÃ˜Â®Ã˜Â¨Ã˜Â±",           price: 50 },
-  { id: "aziziyah",     name: "Ã˜Â§Ã™â€žÃ˜Â¹Ã˜Â²Ã™Å Ã˜Â²Ã™Å Ã˜Â©",        price: 60 },
+  { id: "west-dammam",  name: "غرب الدمام", price: 30 },
+  { id: "east-dammam",  name: "شرق الدمام", price: 35 },
+  { id: "dhahran-raka", name: "الظهران - الراكة", price: 40 },
+  { id: "khobar",       name: "الخبر", price: 50 },
+  { id: "aziziyah",     name: "العزيزية", price: 60 },
 ]
 
 // WhatsApp message generator

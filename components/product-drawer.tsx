@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { Minus, Plus, X, Check, ChevronLeft, ChevronRight } from "lucide-react"
 import { useState, useEffect } from "react"
@@ -16,41 +16,41 @@ interface ProductDrawerProps {
 }
 
 const TRAY_ITEMS: { ar: string; en: string }[] = [
-  { ar: "ÙƒØ¨Ù‡", en: "Kibbeh" },
-  { ar: "Ø³Ø¨Ø±Ù†Ù‚ Ø±ÙˆÙ„", en: "Spring Roll" },
-  { ar: "Ø³Ù…Ø¨ÙˆØ³Ø© Ø¨Ø·Ø§Ø·Ø³", en: "Potato Samosa" },
-  { ar: "Ù…Ø¹Ø¬Ù†Ø§Øª Ø¬Ø¨Ù†", en: "Cheese Pastry" },
-  { ar: "Ù…ÙŠÙ†ÙŠ Ø³Ø§Ù†Ø¯ÙˆØªØ´ Ø­Ù„ÙˆÙ…ÙŠ", en: "Mini Halloumi Sandwich" },
-  { ar: "Ù…ÙŠÙ†ÙŠ Ø´Ø§ÙˆØ±Ù…Ø§", en: "Mini Shawarma" },
-  { ar: "ÙˆØ±Ù‚ Ø¹Ù†Ø¨", en: "Grape Leaves" },
-  { ar: "Ù…Ø·Ø¨Ù‚ Ù…ØºÙ„Ù", en: "Wrapped Matazeez" },
-  { ar: "Ù…Ø¹Ø¬Ù†Ø§Øª Ø²Ø¹ØªØ±", en: "Zaatar Pastry" },
-  { ar: "Ù…ÙŠÙ†ÙŠ Ø³Ø§Ù†Ø¯ÙˆØªØ´ Ù„Ø¨Ù†Ù‡", en: "Mini Labneh Sandwich" },
-  { ar: "Ù…Ø³Ø®Ù†", en: "Musakhan" },
-  { ar: "Ù…ÙŠÙ†ÙŠ Ø¨Ø±Ø¬Ø±", en: "Mini Burger" },
-  { ar: "Ù…ÙŠÙ†ÙŠ ØªÙˆØ±ØªÙŠÙ„Ø§", en: "Mini Tortilla" },
-  { ar: "Ù…Ø¹Ø¬Ù†Ø§Øª Ø¨ÙŠØªØ²Ø§", en: "Pizza Pastry" },
-  { ar: "Ù…ÙŠÙ†ÙŠ Ø³Ø§Ù†Ø¯ÙˆØªØ´ Ø¯ÙŠÙƒ Ø±ÙˆÙ…ÙŠ", en: "Mini Turkey Sandwich" },
-  { ar: "Ø¨Ù Ù„Ø­Ù…", en: "Beef Puff" },
-  { ar: "Ø¨Ù Ø¯Ø¬Ø§Ø¬", en: "Chicken Puff" },
-  { ar: "Ø³Ù…Ø¨ÙˆØ³Ø© Ø¬Ø¨Ù†", en: "Cheese Samosa" },
-  { ar: "Ù…Ø¹Ø¬Ù†Ø§Øª Ù„Ø¨Ù†Ù‡", en: "Labneh Pastry" },
-  { ar: "Ù…ÙŠÙ†ÙŠ Ø³Ø§Ù†Ø¯ÙˆØªØ´ ÙÙ„Ø§ÙÙ„", en: "Mini Falafel Sandwich" },
+  { ar: "كبة", en: "Kibbeh" },
+  { ar: "سبرنق رول", en: "Spring Roll" },
+  { ar: "سمبوسة بطاطس", en: "Potato Samosa" },
+  { ar: "معجنات جبن", en: "Cheese Pastry" },
+  { ar: "ميني ساندوتش حلومي", en: "Mini Halloumi Sandwich" },
+  { ar: "ميني شاورما", en: "Mini Shawarma" },
+  { ar: "ورق عنب", en: "Grape Leaves" },
+  { ar: "مطبق مغلف", en: "Wrapped Matazeez" },
+  { ar: "معجنات زعتر", en: "Zaatar Pastry" },
+  { ar: "ميني ساندوتش لبنه", en: "Mini Labneh Sandwich" },
+  { ar: "مسخن", en: "Musakhan" },
+  { ar: "ميني برجر", en: "Mini Burger" },
+  { ar: "ميني تورتيلا", en: "Mini Tortilla" },
+  { ar: "معجنات بيتزا", en: "Pizza Pastry" },
+  { ar: "ميني ساندوتش ديك رومي", en: "Mini Turkey Sandwich" },
+  { ar: "بف لحم", en: "Beef Puff" },
+  { ar: "بف دجاج", en: "Chicken Puff" },
+  { ar: "سمبوسة جبن", en: "Cheese Samosa" },
+  { ar: "معجنات لبنه", en: "Labneh Pastry" },
+  { ar: "ميني ساندوتش فلافل", en: "Mini Falafel Sandwich" },
 ]
 
 const TRAY_REQUIRED = 7
 
 const EID_HEATER_ITEMS = [
-  "ÙƒØ±ÙˆØ³ÙˆÙ† Ù…Ø­Ø´ÙŠ Ø¨Ø§Ù„Ø¨ÙŠØ¶ ÙˆØ§Ù„Ù…Ø´Ø±ÙˆÙ… ÙˆØ§Ù„Ø§Ø¬Ø¨Ø§Ù†",
-  "Ø­Ù…Ø³Ø© Ø­Ù„ÙˆÙ…ÙŠ Ø¨Ø§Ù„Ø²ÙŠØªÙˆÙ†",
-  "Ø´Ø¹ÙŠØ±ÙŠØ© / Ø¨Ù„Ø§Ù„ÙŠØ·",
-  "Ø¨Ù„Ø§ØªØ± ÙÙ„Ø§ÙÙ„",
-  "Ø­Ù…Ø³Ø© Ø¨Ø§Ø°Ù†Ø¬Ø§Ù†",
-  "ÙÙ„Ø§ÙÙ„ Ø³Ø¨Ø´ÙŠÙ„",
-  "Ø¨ÙŠØ¶ ØªØ±ÙƒÙŠ",
-  "Ø´ÙƒØ´ÙˆÙƒØ©",
-  "ÙØ§ØµÙˆÙ„ÙŠØ§",
-  "ÙÙˆÙ„",
+  "كروسون محشي بالبيض والمشروم والاجبان",
+  "حمسة حلومي بالزيتون",
+  "شعيرية / بلاليط",
+  "بلاتر فلافل",
+  "حمسة باذنجان",
+  "فلافل سبشيل",
+  "بيض تركي",
+  "شكشوكة",
+  "فاصوليا",
+  "فول",
 ]
 
 export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
@@ -128,7 +128,7 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
               <DialogTitle className="text-2xl font-bold text-[#1e293b]">{product.name}</DialogTitle>
               <DialogDescription className="text-gray-500 mt-1">{product.description}</DialogDescription>
             </div>
-            <button onClick={onClose} className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors flex-shrink-0" aria-label="Ø¥ØºÙ„Ø§Ù‚">
+            <button onClick={onClose} className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors flex-shrink-0" aria-label="إغلاق">
               <X className="h-5 w-5 text-gray-600" />
             </button>
           </div>
@@ -145,7 +145,7 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
                     <Image src={current} alt={product.name} fill sizes="(max-width: 768px) 96vw, 560px" quality={76} className="object-cover" />
                   </div>
                 ) : (
-                  <div className="w-full aspect-square flex items-center justify-center text-gray-400">Ù„Ø§ ØªÙˆØ¬Ø¯ ØµÙˆØ±Ø©</div>
+                  <div className="w-full aspect-square flex items-center justify-center text-gray-400">لا توجد صورة</div>
                 )}
                 {allImgs.length > 1 ? (
                   <>
@@ -172,7 +172,7 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
                 <span className={cn("text-sm font-medium px-3 py-1 rounded-full", trayComplete ? "bg-[#1e5631]/10 text-[#1e5631]" : "bg-amal-yellow/20 text-foreground")}>
                   {traySelections.length} / {TRAY_REQUIRED}
                 </span>
-                <h3 className="font-bold text-[#1e293b]">Ø§Ø®ØªØ± {TRAY_REQUIRED} Ø£ØµÙ†Ø§Ù</h3>
+                <h3 className="font-bold text-[#1e293b]">اختر {TRAY_REQUIRED} أصناف</h3>
               </div>
               <div className="w-full h-2 bg-gray-200 rounded-full mb-4">
                 <div className={cn("h-2 rounded-full transition-all duration-300", trayComplete ? "bg-[#1e5631]" : "bg-amal-yellow")} style={{ width: `${(traySelections.length / TRAY_REQUIRED) * 100}%` }} />
@@ -196,14 +196,14 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
           {isEidPackage ? (
             <div className="pb-4">
               <div className="flex items-center justify-between mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded-2xl">
-                <span className="text-xs bg-yellow-400 text-yellow-900 font-bold px-2 py-0.5 rounded-full">Ù…Ø´Ù…ÙˆÙ„ ðŸŽ</span>
-                <span className="font-semibold text-sm text-right">Ø¨Ù„Ø§ØªØ± Ø§Ù„Ø§Ø¬Ø¨Ø§Ù†</span>
+                <span className="text-xs bg-yellow-400 text-yellow-900 font-bold px-2 py-0.5 rounded-full">مشمول 🎁</span>
+                <span className="font-semibold text-sm text-right">بلاتر الأجبان</span>
               </div>
               <div className="flex items-center justify-between mb-3">
                 <span className={cn("text-sm font-medium px-3 py-1 rounded-full", eidComplete ? "bg-[#1e5631]/10 text-[#1e5631]" : "bg-amal-yellow/20 text-foreground")}>
                   {traySelections.length} / {eidRequired}
                 </span>
-                <h3 className="font-bold text-[#1e293b]">Ø§Ø®ØªØ± {eidRequired} Ø³Ø®Ø§Ù†Ø§Øª</h3>
+                <h3 className="font-bold text-[#1e293b]">اختر {eidRequired} سخانات</h3>
               </div>
               <div className="w-full h-2 bg-gray-200 rounded-full mb-4">
                 <div className={cn("h-2 rounded-full transition-all duration-300", eidComplete ? "bg-[#1e5631]" : "bg-amal-yellow")} style={{ width: `${(traySelections.length / eidRequired) * 100}%` }} />
@@ -228,7 +228,7 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
             <div className="pb-4">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-sm text-gray-500">{maxSelections > 0 ? `(${selectedIngredients.length}/${maxSelections})` : ""}</span>
-                <h3 className="font-bold text-[#1e293b]">ØªØ®ØµÙŠØµ Ø§Ù„Ø·Ù„Ø¨</h3>
+                <h3 className="font-bold text-[#1e293b]">تخصيص الطلب</h3>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 {product.ingredients?.map((ingredient) => {
@@ -249,11 +249,11 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
         <div className="px-6 pb-6 pt-3 border-t border-gray-100 flex-shrink-0">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors" aria-label="ØªÙ‚Ù„ÙŠÙ„ Ø§Ù„ÙƒÙ…ÙŠØ©">
+              <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors" aria-label="تقليل الكمية">
                 <Minus className="h-4 w-4" />
               </button>
               <span className="text-xl font-bold w-8 text-center">{quantity}</span>
-              <button onClick={() => setQuantity(quantity + 1)} className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors" aria-label="Ø²ÙŠØ§Ø¯Ø© Ø§Ù„ÙƒÙ…ÙŠØ©">
+              <button onClick={() => setQuantity(quantity + 1)} className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors" aria-label="زيادة الكمية">
                 <Plus className="h-4 w-4" />
               </button>
             </div>
@@ -277,14 +277,14 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
             )}
           >
             {isAddedFeedback
-              ? "ØªÙ…Øª Ø§Ù„Ø¥Ø¶Ø§ÙØ© âœ“"
+              ? "تمت الإضافة ✓"
               : product.inStock === false
-              ? "Ù†ÙØ°Øª Ø§Ù„ÙƒÙ…ÙŠØ©"
+              ? "نفذت الكمية"
               : isTray && !trayComplete
-              ? `Ø§Ø®ØªØ± ${TRAY_REQUIRED - traySelections.length} Ø£ØµÙ†Ø§Ù Ø£Ø®Ø±Ù‰`
+              ? `اختر ${TRAY_REQUIRED - traySelections.length} أصناف أخرى`
               : isEidPackage && !eidComplete
-              ? `Ø§Ø®ØªØ± ${eidRequired - traySelections.length} Ø³Ø®Ø§Ù†Ø§Øª`
-              : "Ø§Ø·Ù„Ø¨ Ø§Ù„Ø¢Ù†"}
+              ? `اختر ${eidRequired - traySelections.length} سخانات`
+              : "اطلب الآن"}
           </button>
         </div>
       </DialogContent>

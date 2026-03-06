@@ -1,7 +1,8 @@
-"use client"
+﻿"use client"
 
 import { ShoppingBag, Truck, X, MapPin } from "lucide-react"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
+import { useState } from "react"
 
 interface OrderTypeModalProps {
   open: boolean
@@ -23,6 +24,24 @@ function getModalStyle(): ModalStyle {
 
 export function OrderTypeModal({ open, onSelect, onClose }: OrderTypeModalProps) {
   const style = getModalStyle()
+  const [pickupSelected, setPickupSelected] = useState(false)
+  const [deliverySelected, setDeliverySelected] = useState(false)
+
+  const handlePickupSelect = () => {
+    setPickupSelected(true)
+    window.setTimeout(() => {
+      onSelect("pickup")
+      setPickupSelected(false)
+    }, 180)
+  }
+
+  const handleDeliverySelect = () => {
+    setDeliverySelected(true)
+    window.setTimeout(() => {
+      onSelect("delivery")
+      setDeliverySelected(false)
+    }, 180)
+  }
 
   const theme =
     style === "crystal"
@@ -35,7 +54,6 @@ export function OrderTypeModal({ open, onSelect, onClose }: OrderTypeModalProps)
           subtitle: "text-slate-600",
           buttonA: "border border-white/70 bg-white/55 text-slate-800 hover:bg-white/70",
           buttonB: "border border-sky-200/70 bg-sky-100/60 text-sky-900 hover:bg-sky-100/80",
-          close: "bg-white/60 border-white/70 text-slate-700",
           map: "text-slate-600 hover:text-slate-800",
         }
       : style === "midnight"
@@ -48,7 +66,6 @@ export function OrderTypeModal({ open, onSelect, onClose }: OrderTypeModalProps)
             subtitle: "text-white/75",
             buttonA: "border border-cyan-200/35 bg-cyan-300/20 text-cyan-100 hover:bg-cyan-300/30",
             buttonB: "border border-emerald-200/35 bg-emerald-300/20 text-emerald-100 hover:bg-emerald-300/30",
-            close: "bg-white/10 border-white/25 text-white",
             map: "text-white/70 hover:text-white",
           }
         : {
@@ -60,7 +77,6 @@ export function OrderTypeModal({ open, onSelect, onClose }: OrderTypeModalProps)
             subtitle: "text-white/85",
             buttonA: "border border-white/50 bg-white/35 text-white hover:bg-white/45",
             buttonB: "border border-white/50 bg-white/20 text-white hover:bg-white/30",
-            close: "bg-white/35 border-white/50 text-white",
             map: "text-white/85 hover:text-white",
           }
 
@@ -80,11 +96,26 @@ export function OrderTypeModal({ open, onSelect, onClose }: OrderTypeModalProps)
               <X className="h-4 w-4" />
             </button>
 
+            <style>{`
+              @keyframes pickup-pop {
+                0% { transform: scale(1); }
+                45% { transform: scale(1.2); }
+                75% { transform: scale(1.33); }
+                100% { transform: scale(1.26); }
+              }
+            `}</style>
+
             <div className="flex items-end justify-center gap-3 mb-5">
-              <div className="w-20 h-20 bg-yellow-100/85 border border-yellow-200/80 rounded-3xl flex items-center justify-center backdrop-blur">
+              <div
+                className="w-20 h-20 bg-yellow-100/85 border border-yellow-200/80 rounded-3xl flex items-center justify-center backdrop-blur"
+                style={pickupSelected ? { animation: "pickup-pop 180ms ease-out both" } : undefined}
+              >
                 <ShoppingBag className="h-9 w-9 text-yellow-700" />
               </div>
-              <div className="w-14 h-14 bg-pink-100/85 border border-pink-200/80 rounded-2xl flex items-center justify-center mb-2 backdrop-blur">
+              <div
+                className="w-14 h-14 bg-pink-100/85 border border-pink-200/80 rounded-2xl flex items-center justify-center mb-2 backdrop-blur"
+                style={deliverySelected ? { animation: "pickup-pop 180ms ease-out both" } : undefined}
+              >
                 <Truck className="h-7 w-7 text-pink-700" />
               </div>
             </div>
@@ -95,7 +126,8 @@ export function OrderTypeModal({ open, onSelect, onClose }: OrderTypeModalProps)
 
           <div className="relative px-5 pb-5 space-y-3">
             <button
-              onClick={() => onSelect("pickup")}
+              onClick={handlePickupSelect}
+              disabled={pickupSelected || deliverySelected}
               className={`w-full flex items-center justify-center gap-3 py-4 px-6 rounded-2xl font-extrabold text-xl shadow-[0_8px_20px_rgba(0,0,0,0.15)] transition-colors ${theme.buttonA}`}
             >
               <ShoppingBag className="h-5 w-5" />
@@ -113,7 +145,8 @@ export function OrderTypeModal({ open, onSelect, onClose }: OrderTypeModalProps)
             </a>
 
             <button
-              onClick={() => onSelect("delivery")}
+              onClick={handleDeliverySelect}
+              disabled={pickupSelected || deliverySelected}
               className={`w-full flex items-center justify-center gap-3 py-4 px-6 rounded-2xl font-extrabold text-xl shadow-[0_8px_20px_rgba(0,0,0,0.15)] transition-colors ${theme.buttonB}`}
             >
               <Truck className="h-5 w-5" />
@@ -126,6 +159,7 @@ export function OrderTypeModal({ open, onSelect, onClose }: OrderTypeModalProps)
           </div>
         </div>
       </DialogContent>
+
     </Dialog>
   )
 }

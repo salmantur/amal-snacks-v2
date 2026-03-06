@@ -6,6 +6,10 @@ import { createClient } from "@/lib/supabase/client"
 export interface ThemeConfig {
   primary: string          // cart button, badges (pink)
   primary_foreground: string  // text on primary
+  secondary: string
+  secondary_foreground: string
+  destructive: string
+  destructive_foreground: string
   checkout_green: string   // order type modal green
   background: string       // page background color
   bar_background: string   // category filter bar + search bar background
@@ -14,6 +18,10 @@ export interface ThemeConfig {
 export const DEFAULT_THEME: ThemeConfig = {
   primary: "#f0526a",       // current pink
   primary_foreground: "#ffffff",
+  secondary: "#f0f0f0",
+  secondary_foreground: "#262626",
+  destructive: "#ef4444",
+  destructive_foreground: "#ffffff",
   checkout_green: "#1e5631",
   background: "#ffffff",    // default white
   bar_background: "#f5f5f5", // default light grey bars
@@ -46,6 +54,12 @@ export function applyTheme(config: ThemeConfig) {
   const root = document.documentElement
   root.style.setProperty("--primary", hexToHsl(config.primary))
   root.style.setProperty("--primary-foreground", hexToHsl(config.primary_foreground))
+  root.style.setProperty("--secondary", hexToHsl(config.secondary))
+  root.style.setProperty("--secondary-foreground", hexToHsl(config.secondary_foreground))
+  root.style.setProperty("--accent", hexToHsl(config.secondary))
+  root.style.setProperty("--accent-foreground", hexToHsl(config.secondary_foreground))
+  root.style.setProperty("--destructive", hexToHsl(config.destructive))
+  root.style.setProperty("--destructive-foreground", hexToHsl(config.destructive_foreground))
   root.style.setProperty("--ring", hexToHsl(config.primary))
   root.style.setProperty("--checkout-green", config.checkout_green)
   if (config.background) {

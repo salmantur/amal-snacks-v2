@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import { useMemo, useState, useCallback, Suspense, useEffect } from "react"
 import Link from "next/link"
@@ -416,7 +416,7 @@ function CheckoutContent() {
                     {item.selectedIngredients?.length ? (
                       <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{item.selectedIngredients.join("، ")}</p>
                     ) : null}
-                    <p className="text-primary font-medium mt-1">{item.price * item.quantity} ر.س</p>
+                    <p className="text-primary font-medium mt-1">{item.price * item.quantity} ﷼</p>
                   </div>
                 </div>
 
@@ -563,7 +563,7 @@ function CheckoutContent() {
                               className="w-full text-right px-4 py-3.5 min-h-12 hover:bg-amal-grey/60 transition-colors"
                             >
                               <p className="font-medium">{area.name}</p>
-                              <p className="text-xs text-muted-foreground">رسوم التوصيل: {area.price} ر.س</p>
+                              <p className="text-xs text-muted-foreground">رسوم التوصيل: {area.price} ﷼</p>
                             </button>
                           ))}
                         </div>
@@ -584,7 +584,7 @@ function CheckoutContent() {
                       >
                         <div className="flex items-center justify-between">
                           <span className="font-semibold">{area.name}</span>
-                          <span className={cn("text-sm", selectedArea?.id === area.id ? "text-primary font-bold" : "text-muted-foreground")}>{area.price} ر.س</span>
+                          <span className={cn("text-sm", selectedArea?.id === area.id ? "text-primary font-bold" : "text-muted-foreground")}>{area.price} ﷼</span>
                         </div>
                       </button>
                     ))}
@@ -603,7 +603,7 @@ function CheckoutContent() {
                             : `${theme.input} text-foreground border-border hover:bg-primary/10`
                         )}
                       >
-                        {area.name} · {area.price} ر.س
+                        {area.name} · {area.price} ﷼
                       </button>
                     ))}
                   </div>
@@ -612,7 +612,7 @@ function CheckoutContent() {
                 {errors.area ? <p className="text-sm font-medium text-red-600 mt-1 pr-2" role="alert">{errors.area}</p> : null}
                 <p className="text-sm mt-2 text-muted-foreground">
                   {selectedArea ? (
-                    <span className="text-primary font-semibold">رسوم التوصيل الآن: {selectedArea.price} ر.س</span>
+                    <span className="text-primary font-semibold">رسوم التوصيل الآن: {selectedArea.price} ﷼</span>
                   ) : (
                     "اختر منطقة من القائمة لاحتساب الرسوم فورًا"
                   )}
@@ -636,7 +636,7 @@ function CheckoutContent() {
         <section className={theme.summary}>
           <div className="flex justify-between mb-2">
             <span className={cn(activeCheckoutTheme === "contrast" ? "text-slate-300" : "text-muted-foreground")}>المجموع الفرعي</span>
-            <span className="font-medium">{totalPrice} ر.س</span>
+            <span className="font-medium">{totalPrice} ﷼</span>
           </div>
 
           <div className="flex justify-between mb-2">
@@ -644,14 +644,14 @@ function CheckoutContent() {
               {isPickup ? "رسوم التوصيل" : `رسوم التوصيل ${selectedArea ? `(${selectedArea.name})` : ""}`}
             </span>
             <span className={cn("font-medium", isPickup && "text-[#1e5631]")}>
-              {isPickup ? "مجاني" : selectedArea ? `${selectedArea.price} ر.س` : "اختر المنطقة"}
+              {isPickup ? "مجاني" : selectedArea ? `${selectedArea.price} ﷼` : "اختر المنطقة"}
             </span>
           </div>
 
           <div className={cn("pt-2 mt-2 border-t", activeCheckoutTheme === "contrast" ? "border-slate-700" : "border-primary/20")}>
             <div className="flex justify-between">
               <span className="font-bold text-lg">الإجمالي</span>
-              <span className="font-bold text-lg text-primary">{grandTotal} ر.س</span>
+              <span className="font-bold text-lg text-primary">{grandTotal} ﷼</span>
             </div>
           </div>
         </section>

@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import { useEffect, useMemo, useState, Suspense } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
@@ -70,7 +70,7 @@ function ConfirmationContent() {
       `الاسم: ${name || "-"}`,
       `نوع الطلب: ${isPickup ? "استلام من المحل" : `توصيل إلى ${area || "-"}`}`,
       `${isPickup ? "وقت الاستلام" : "وقت التسليم"}: ${time || "في أقرب وقت"}`,
-      `الإجمالي: ${total ? `${total} ريال` : "-"}`,
+      `الإجمالي: ${total ? `${total} ﷼` : "-"}`,
     ]
     return lines.join("\n")
   }, [name, isPickup, area, time, total])
@@ -191,7 +191,7 @@ function ConfirmationContent() {
 
         {total ? (
           <div className="pt-3 border-t border-border flex justify-between items-center">
-            <span className="text-xl font-bold text-[#1e5631]">{total} ريال</span>
+            <span className="text-xl font-bold text-[#1e5631]">{total} ﷼</span>
             <span className="text-[#4b5563] font-medium">الإجمالي</span>
           </div>
         ) : null}

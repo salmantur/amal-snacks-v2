@@ -17,9 +17,9 @@ interface SalesData {
 type Range = "today" | "week" | "month"
 
 const RANGE_LABELS: Record<Range, string> = {
-  today: "اليوم",
-  week: "هذا الأسبوع",
-  month: "هذا الشهر",
+  today: "Ø§Ù„ÙŠÙˆÙ…",
+  week: "Ù‡Ø°Ø§ Ø§Ù„Ø£Ø³Ø¨ÙˆØ¹",
+  month: "Ù‡Ø°Ø§ Ø§Ù„Ø´Ù‡Ø±",
 }
 
 function getStartDate(range: Range): string {
@@ -126,7 +126,7 @@ export function SalesDashboard() {
       ) : !data || data.totalOrders === 0 ? (
         <div className="text-center py-12 text-muted-foreground">
           <ShoppingBag className="h-10 w-10 mx-auto mb-3 opacity-30" />
-          <p>لا توجد طلبات في هذه الفترة</p>
+          <p>Ù„Ø§ ØªÙˆØ¬Ø¯ Ø·Ù„Ø¨Ø§Øª ÙÙŠ Ù‡Ø°Ù‡ Ø§Ù„ÙØªØ±Ø©</p>
         </div>
       ) : (
         <>
@@ -135,35 +135,35 @@ export function SalesDashboard() {
             <div className="bg-[#1e5631]/10 rounded-2xl p-4">
               <TrendingUp className="h-5 w-5 text-[#1e5631] mb-2" />
               <p className="text-2xl font-bold text-[#1e5631]">{data.totalRevenue.toLocaleString()}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">إجمالي المبيعات (ريال)</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø§Ù„Ù…Ø¨ÙŠØ¹Ø§Øª (﷼)</p>
             </div>
             <div className="bg-amal-yellow/20 rounded-2xl p-4">
               <ShoppingBag className="h-5 w-5 text-foreground mb-2" />
               <p className="text-2xl font-bold text-foreground">{data.totalOrders}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">عدد الطلبات</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Ø¹Ø¯Ø¯ Ø§Ù„Ø·Ù„Ø¨Ø§Øª</p>
             </div>
             <div className="bg-amal-pink-light rounded-2xl p-4">
               <Truck className="h-5 w-5 text-primary mb-2" />
               <p className="text-2xl font-bold text-foreground">{data.deliveryOrders}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">توصيل</p>
+              <p className="text-xs text-muted-foreground mt-0.5">ØªÙˆØµÙŠÙ„</p>
             </div>
             <div className="bg-amal-grey rounded-2xl p-4">
               <Package className="h-5 w-5 text-foreground mb-2" />
               <p className="text-2xl font-bold text-foreground">{data.pickupOrders}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">استلام من المحل</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Ø§Ø³ØªÙ„Ø§Ù… Ù…Ù† Ø§Ù„Ù…Ø­Ù„</p>
             </div>
           </div>
 
           {/* Avg order */}
           <div className="bg-white rounded-2xl p-4 flex items-center justify-between border border-border/50">
-            <span className="text-2xl font-bold">{data.avgOrderValue} ريال</span>
-            <span className="text-sm text-muted-foreground">متوسط قيمة الطلب</span>
+            <span className="text-2xl font-bold">{data.avgOrderValue} ﷼</span>
+            <span className="text-sm text-muted-foreground">Ù…ØªÙˆØ³Ø· Ù‚ÙŠÙ…Ø© Ø§Ù„Ø·Ù„Ø¨</span>
           </div>
 
-          {/* Daily breakdown — only show for week/month */}
+          {/* Daily breakdown â€” only show for week/month */}
           {range !== "today" && data.dailyTotals.length > 1 && (
             <div className="bg-white rounded-2xl p-4 border border-border/50">
-              <h3 className="font-bold text-right mb-3">المبيعات اليومية</h3>
+              <h3 className="font-bold text-right mb-3">Ø§Ù„Ù…Ø¨ÙŠØ¹Ø§Øª Ø§Ù„ÙŠÙˆÙ…ÙŠØ©</h3>
               <div className="space-y-2">
                 {data.dailyTotals.map((day) => {
                   const maxRevenue = Math.max(...data.dailyTotals.map(d => d.revenue))
@@ -176,7 +176,7 @@ export function SalesDashboard() {
                           style={{ width: `${pct}%` }}
                         />
                       </div>
-                      <span className="text-xs font-medium w-16 text-left">{day.revenue} ر</span>
+                      <span className="text-xs font-medium w-16 text-left">{day.revenue} Ø±</span>
                       <span className="text-xs text-muted-foreground w-16 text-right">{day.date}</span>
                     </div>
                   )
@@ -188,7 +188,7 @@ export function SalesDashboard() {
           {/* Top items */}
           {data.topItems.length > 0 && (
             <div className="bg-white rounded-2xl p-4 border border-border/50">
-              <h3 className="font-bold text-right mb-3">الأكثر طلباً</h3>
+              <h3 className="font-bold text-right mb-3">Ø§Ù„Ø£ÙƒØ«Ø± Ø·Ù„Ø¨Ø§Ù‹</h3>
               <div className="space-y-3">
                 {data.topItems.map((item, i) => (
                   <div key={item.name} className="flex items-center gap-3">
@@ -200,8 +200,8 @@ export function SalesDashboard() {
                       {i + 1}
                     </span>
                     <span className="flex-1 text-sm font-medium text-right truncate">{item.name}</span>
-                    <span className="text-xs text-muted-foreground flex-shrink-0">{item.quantity} قطعة</span>
-                    <span className="text-xs font-bold text-[#1e5631] flex-shrink-0 w-16 text-left">{item.revenue} ر</span>
+                    <span className="text-xs text-muted-foreground flex-shrink-0">{item.quantity} Ù‚Ø·Ø¹Ø©</span>
+                    <span className="text-xs font-bold text-[#1e5631] flex-shrink-0 w-16 text-left">{item.revenue} Ø±</span>
                   </div>
                 ))}
               </div>

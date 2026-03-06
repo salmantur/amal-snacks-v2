@@ -1,25 +1,25 @@
 // Categories matching your Supabase database values
 export const categories = [
-  { id: "eid", label: "باقات العيد 🎁", dbCategories: ["eid"] },
+  { id: "eid", label: "Ø¨Ø§Ù‚Ø§Øª Ø§Ù„Ø¹ÙŠØ¯ ðŸŽ", dbCategories: ["eid"] },
   { 
     id: "platters_breakfast", 
-    label: "بلاتر وسخانات الفطور", 
+    label: "Ø¨Ù„Ø§ØªØ± ÙˆØ³Ø®Ø§Ù†Ø§Øª Ø§Ù„ÙØ·ÙˆØ±", 
     dbCategories: ["platters", "breakfast_heaters"],
     // Sub-sections to display separately within this category
     sections: [
-      { dbCategory: "platters", label: "البلاترات", cols: 2 },
-      { dbCategory: "breakfast_heaters", label: "سخانات الفطور", cols: 3 },
+      { dbCategory: "platters", label: "Ø§Ù„Ø¨Ù„Ø§ØªØ±Ø§Øª", cols: 2 },
+      { dbCategory: "breakfast_heaters", label: "Ø³Ø®Ø§Ù†Ø§Øª Ø§Ù„ÙØ·ÙˆØ±", cols: 3 },
     ]
   },
-  { id: "heaters", label: "سخانات", dbCategories: ["heaters"] },
-  { id: "trays", label: "صواني تقديمات", dbCategories: ["trays"] },
-  { id: "stuffed_dates", label: "تمر محشي", dbCategories: ["stuffed_dates"] },
-  { id: "salads", label: "سلطات", dbCategories: ["salads"] },
-  { id: "appetizers", label: "مقبلات", dbCategories: ["appetizers"] },
-  { id: "sandwiches", label: "ساندوتشات", dbCategories: ["sandwiches"] },
-  { id: "sweets", label: "حلا", dbCategories: ["sweets"] },
-  { id: "bakery", label: "مخبوزات", dbCategories: ["bakery"] },
-  { id: "frozen", label: "مفرزنات", dbCategories: ["frozen"] },
+  { id: "heaters", label: "Ø³Ø®Ø§Ù†Ø§Øª", dbCategories: ["heaters"] },
+  { id: "trays", label: "ØµÙˆØ§Ù†ÙŠ ØªÙ‚Ø¯ÙŠÙ…Ø§Øª", dbCategories: ["trays"] },
+  { id: "stuffed_dates", label: "ØªÙ…Ø± Ù…Ø­Ø´ÙŠ", dbCategories: ["stuffed_dates"] },
+  { id: "salads", label: "Ø³Ù„Ø·Ø§Øª", dbCategories: ["salads"] },
+  { id: "appetizers", label: "Ù…Ù‚Ø¨Ù„Ø§Øª", dbCategories: ["appetizers"] },
+  { id: "sandwiches", label: "Ø³Ø§Ù†Ø¯ÙˆØªØ´Ø§Øª", dbCategories: ["sandwiches"] },
+  { id: "sweets", label: "Ø­Ù„Ø§", dbCategories: ["sweets"] },
+  { id: "bakery", label: "Ù…Ø®Ø¨ÙˆØ²Ø§Øª", dbCategories: ["bakery"] },
+  { id: "frozen", label: "Ù…ÙØ±Ø²Ù†Ø§Øª", dbCategories: ["frozen"] },
 ]
 
 // Mock orders data - Replace with Supabase realtime when connected
@@ -42,29 +42,29 @@ export const mockOrders: Order[] = [
   {
     id: "1",
     orderNumber: 1001,
-    customerName: "أحمد محمد",
+    customerName: "Ø£Ø­Ù…Ø¯ Ù…Ø­Ù…Ø¯",
     customerPhone: "+966501234567",
-    customerAddress: "الرياض، حي النخيل، شارع الملك فهد",
+    customerAddress: "Ø§Ù„Ø±ÙŠØ§Ø¶ØŒ Ø­ÙŠ Ø§Ù„Ù†Ø®ÙŠÙ„ØŒ Ø´Ø§Ø±Ø¹ Ø§Ù„Ù…Ù„Ùƒ ÙÙ‡Ø¯",
     orderType: "delivery",
     items: [
-      { name: "صحن مشكل", quantity: 2, price: 45 },
-      { name: "سمبوسة دجاج", quantity: 3, price: 25 },
+      { name: "ØµØ­Ù† Ù…Ø´ÙƒÙ„", quantity: 2, price: 45 },
+      { name: "Ø³Ù…Ø¨ÙˆØ³Ø© Ø¯Ø¬Ø§Ø¬", quantity: 3, price: 25 },
     ],
     total: 165,
     status: "pending",
-    notes: "بدون بصل",
+    notes: "Ø¨Ø¯ÙˆÙ† Ø¨ØµÙ„",
     scheduledTime: null,
     createdAt: new Date(Date.now() - 5 * 60000),
   },
   {
     id: "2",
     orderNumber: 1002,
-    customerName: "سارة علي",
+    customerName: "Ø³Ø§Ø±Ø© Ø¹Ù„ÙŠ",
     customerPhone: "+966509876543",
-    customerAddress: "جدة، حي الروضة",
+    customerAddress: "Ø¬Ø¯Ø©ØŒ Ø­ÙŠ Ø§Ù„Ø±ÙˆØ¶Ø©",
     orderType: "pickup",
     items: [
-      { name: "كبة مثلجة", quantity: 5, price: 30 },
+      { name: "ÙƒØ¨Ø© Ù…Ø«Ù„Ø¬Ø©", quantity: 5, price: 30 },
     ],
     total: 150,
     status: "preparing",
@@ -99,7 +99,7 @@ export function getAvailableTimeSlots(minMinutes = 0): { date: string; slots: st
       }
     }
 
-    const dayNames = ["الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"]
+    const dayNames = ["Ø§Ù„Ø£Ø­Ø¯", "Ø§Ù„Ø¥Ø«Ù†ÙŠÙ†", "Ø§Ù„Ø«Ù„Ø§Ø«Ø§Ø¡", "Ø§Ù„Ø£Ø±Ø¨Ø¹Ø§Ø¡", "Ø§Ù„Ø®Ù…ÙŠØ³", "Ø§Ù„Ø¬Ù…Ø¹Ø©", "Ø§Ù„Ø³Ø¨Øª"]
     const dayName = dayNames[date.getDay()]
     const dateStr = `${dayName} ${date.getDate()}/${date.getMonth() + 1}`
 
@@ -113,11 +113,11 @@ export function getAvailableTimeSlots(minMinutes = 0): { date: string; slots: st
 
 // Delivery areas with prices
 export const deliveryAreas = [
-  { id: "west-dammam",  name: "غرب الدمام",     price: 30 },
-  { id: "east-dammam",  name: "شرق الدمام",     price: 35 },
-  { id: "dhahran-raka", name: "الظهران الراكة", price: 40 },
-  { id: "khobar",       name: "الخبر",           price: 50 },
-  { id: "aziziyah",     name: "العزيزية",        price: 60 },
+  { id: "west-dammam",  name: "ØºØ±Ø¨ Ø§Ù„Ø¯Ù…Ø§Ù…",     price: 30 },
+  { id: "east-dammam",  name: "Ø´Ø±Ù‚ Ø§Ù„Ø¯Ù…Ø§Ù…",     price: 35 },
+  { id: "dhahran-raka", name: "Ø§Ù„Ø¸Ù‡Ø±Ø§Ù† Ø§Ù„Ø±Ø§ÙƒØ©", price: 40 },
+  { id: "khobar",       name: "Ø§Ù„Ø®Ø¨Ø±",           price: 50 },
+  { id: "aziziyah",     name: "Ø§Ù„Ø¹Ø²ÙŠØ²ÙŠØ©",        price: 60 },
 ]
 
 // WhatsApp message generator
@@ -137,30 +137,30 @@ export function generateWhatsAppMessage(
   const deliveryFee = deliveryArea?.price || 0
   const total = subtotal + deliveryFee
 
-  let message = `*طلب جديد من أمل سناك*\n\n`
-  message += `*الاسم:* ${deliveryInfo.name}\n`
-  message += `*الهاتف:* ${deliveryInfo.phone}\n`
-  message += `*المنطقة:* ${deliveryInfo.area}\n`
-  message += `*العنوان:* ${deliveryInfo.address}\n`
+  let message = `*Ø·Ù„Ø¨ Ø¬Ø¯ÙŠØ¯ Ù…Ù† Ø£Ù…Ù„ Ø³Ù†Ø§Ùƒ*\n\n`
+  message += `*Ø§Ù„Ø§Ø³Ù…:* ${deliveryInfo.name}\n`
+  message += `*Ø§Ù„Ù‡Ø§ØªÙ:* ${deliveryInfo.phone}\n`
+  message += `*Ø§Ù„Ù…Ù†Ø·Ù‚Ø©:* ${deliveryInfo.area}\n`
+  message += `*Ø§Ù„Ø¹Ù†ÙˆØ§Ù†:* ${deliveryInfo.address}\n`
   
   if (deliveryInfo.scheduledTime) {
-    message += `*وقت التسليم:* ${deliveryInfo.scheduledTime}\n`
+    message += `*ÙˆÙ‚Øª Ø§Ù„ØªØ³Ù„ÙŠÙ…:* ${deliveryInfo.scheduledTime}\n`
   }
   
-  message += `\n*الطلبات:*\n`
+  message += `\n*Ø§Ù„Ø·Ù„Ø¨Ø§Øª:*\n`
   items.forEach((item) => {
-    message += `- ${item.name} x ${item.quantity} = ${item.price * item.quantity} ر.س\n`
+    message += `- ${item.name} x ${item.quantity} = ${item.price * item.quantity} ﷼\n`
     if (item.selectedIngredients && item.selectedIngredients.length > 0) {
-      message += `  (${item.selectedIngredients.join("، ")})\n`
+      message += `  (${item.selectedIngredients.join("ØŒ ")})\n`
     }
   })
   
-  message += `\n*المجموع الفرعي:* ${subtotal} ر.س\n`
-  message += `*رسوم التوصيل (${deliveryInfo.area}):* ${deliveryFee} ر.س\n`
-  message += `*الإجمالي:* ${total} ر.س\n`
+  message += `\n*Ø§Ù„Ù…Ø¬Ù…ÙˆØ¹ Ø§Ù„ÙØ±Ø¹ÙŠ:* ${subtotal} ﷼\n`
+  message += `*Ø±Ø³ÙˆÙ… Ø§Ù„ØªÙˆØµÙŠÙ„ (${deliveryInfo.area}):* ${deliveryFee} ﷼\n`
+  message += `*Ø§Ù„Ø¥Ø¬Ù…Ø§Ù„ÙŠ:* ${total} ﷼\n`
   
   if (deliveryInfo.notes) {
-    message += `\n*ملاحظات:* ${deliveryInfo.notes}`
+    message += `\n*Ù…Ù„Ø§Ø­Ø¸Ø§Øª:* ${deliveryInfo.notes}`
   }
   
   return encodeURIComponent(message)
@@ -179,26 +179,26 @@ export function generatePickupWhatsAppMessage(
     notes: string
   }
 ): string {
-  let message = `*طلب استلام من المحل - أمل سناك*\n\n`
-  message += `*الاسم:* ${deliveryInfo.name}\n`
+  let message = `*Ø·Ù„Ø¨ Ø§Ø³ØªÙ„Ø§Ù… Ù…Ù† Ø§Ù„Ù…Ø­Ù„ - Ø£Ù…Ù„ Ø³Ù†Ø§Ùƒ*\n\n`
+  message += `*Ø§Ù„Ø§Ø³Ù…:* ${deliveryInfo.name}\n`
 
   if (deliveryInfo.scheduledTime) {
-    message += `*وقت الاستلام:* ${deliveryInfo.scheduledTime}\n`
+    message += `*ÙˆÙ‚Øª Ø§Ù„Ø§Ø³ØªÙ„Ø§Ù…:* ${deliveryInfo.scheduledTime}\n`
   }
 
-  message += `\n*الطلبات:*\n`
+  message += `\n*Ø§Ù„Ø·Ù„Ø¨Ø§Øª:*\n`
   items.forEach((item) => {
-    message += `- ${item.name} x ${item.quantity} = ${item.price * item.quantity} ر.س\n`
+    message += `- ${item.name} x ${item.quantity} = ${item.price * item.quantity} ﷼\n`
     if (item.selectedIngredients && item.selectedIngredients.length > 0) {
-      message += `  (${item.selectedIngredients.join("، ")})\n`
+      message += `  (${item.selectedIngredients.join("ØŒ ")})\n`
     }
   })
 
-  message += `\n*الإجمالي:* ${subtotal} ر.س\n`
-  message += `*نوع الطلب:* استلام من المحل 🏪\n`
+  message += `\n*Ø§Ù„Ø¥Ø¬Ù…Ø§Ù„ÙŠ:* ${subtotal} ﷼\n`
+  message += `*Ù†ÙˆØ¹ Ø§Ù„Ø·Ù„Ø¨:* Ø§Ø³ØªÙ„Ø§Ù… Ù…Ù† Ø§Ù„Ù…Ø­Ù„ ðŸª\n`
 
   if (deliveryInfo.notes) {
-    message += `\n*ملاحظات:* ${deliveryInfo.notes}`
+    message += `\n*Ù…Ù„Ø§Ø­Ø¸Ø§Øª:* ${deliveryInfo.notes}`
   }
 
   return encodeURIComponent(message)

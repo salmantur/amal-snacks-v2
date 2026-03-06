@@ -33,8 +33,8 @@ const DEFAULT_DRAFT: DraftOrder = {
 
 function normalizeArabicDigits(text: string): string {
   return text
-    .replace(/[٠-٩]/g, (d) => String("٠١٢٣٤٥٦٧٨٩".indexOf(d)))
-    .replace(/[۰-۹]/g, (d) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(d)))
+    .replace(/[Ã™Â -Ã™Â©]/g, (d) => String("Ã™Â Ã™Â¡Ã™Â¢Ã™Â£Ã™Â¤Ã™Â¥Ã™Â¦Ã™Â§Ã™Â¨Ã™Â©".indexOf(d)))
+    .replace(/[Ã›Â°-Ã›Â¹]/g, (d) => String("Ã›Â°Ã›Â±Ã›Â²Ã›Â³Ã›Â´Ã›ÂµÃ›Â¶Ã›Â·Ã›Â¸Ã›Â¹".indexOf(d)))
 }
 
 function parseQuickFromWhatsApp(raw: string): Partial<DraftOrder> {
@@ -46,31 +46,31 @@ function parseQuickFromWhatsApp(raw: string): Partial<DraftOrder> {
 
   const result: Partial<DraftOrder> = { items: [] }
 
-  const nameLine = lines.find((l) => /^(الاسم|name)\s*[:：]/i.test(l))
-  if (nameLine) result.customerName = nameLine.replace(/^(الاسم|name)\s*[:：]\s*/i, "").trim()
+  const nameLine = lines.find((l) => /^(Ã˜Â§Ã™â€žÃ˜Â§Ã˜Â³Ã™â€¦|name)\s*[:Ã¯Â¼Å¡]/i.test(l))
+  if (nameLine) result.customerName = nameLine.replace(/^(Ã˜Â§Ã™â€žÃ˜Â§Ã˜Â³Ã™â€¦|name)\s*[:Ã¯Â¼Å¡]\s*/i, "").trim()
 
-  const areaLine = lines.find((l) => /^(المنطقة|الحي|area)\s*[:：]/i.test(l))
-  if (areaLine) result.customerArea = areaLine.replace(/^(المنطقة|الحي|area)\s*[:：]\s*/i, "").trim()
+  const areaLine = lines.find((l) => /^(Ã˜Â§Ã™â€žÃ™â€¦Ã™â€ Ã˜Â·Ã™â€šÃ˜Â©|Ã˜Â§Ã™â€žÃ˜Â­Ã™Å |area)\s*[:Ã¯Â¼Å¡]/i.test(l))
+  if (areaLine) result.customerArea = areaLine.replace(/^(Ã˜Â§Ã™â€žÃ™â€¦Ã™â€ Ã˜Â·Ã™â€šÃ˜Â©|Ã˜Â§Ã™â€žÃ˜Â­Ã™Å |area)\s*[:Ã¯Â¼Å¡]\s*/i, "").trim()
 
   const phoneMatch = text.match(/(?:\+?966|0)?5\d{8}/)
   if (phoneMatch) result.customerPhone = phoneMatch[0]
 
-  if (/استلام|pickup/i.test(text)) {
+  if (/Ã˜Â§Ã˜Â³Ã˜ÂªÃ™â€žÃ˜Â§Ã™â€¦|pickup/i.test(text)) {
     result.orderType = "pickup"
     result.deliveryFee = 0
   }
 
   // Parse item lines in formats like:
-  // - سمبوسة لحم x 30 = 90
-  // - 2 × حمص 120
-  // - كبة 20 حبة 3.5
+  // - Ã˜Â³Ã™â€¦Ã˜Â¨Ã™Ë†Ã˜Â³Ã˜Â© Ã™â€žÃ˜Â­Ã™â€¦ x 30 = 90
+  // - 2 Ãƒâ€” Ã˜Â­Ã™â€¦Ã˜Âµ 120
+  // - Ã™Æ’Ã˜Â¨Ã˜Â© 20 Ã˜Â­Ã˜Â¨Ã˜Â© 3.5
   const parsedItems: ParsedItem[] = []
   for (const line of lines) {
-    if (/^(الاسم|name|المنطقة|الحي|area|الهاتف|phone)\s*[:：]/i.test(line)) continue
+    if (/^(Ã˜Â§Ã™â€žÃ˜Â§Ã˜Â³Ã™â€¦|name|Ã˜Â§Ã™â€žÃ™â€¦Ã™â€ Ã˜Â·Ã™â€šÃ˜Â©|Ã˜Â§Ã™â€žÃ˜Â­Ã™Å |area|Ã˜Â§Ã™â€žÃ™â€¡Ã˜Â§Ã˜ÂªÃ™Â|phone)\s*[:Ã¯Â¼Å¡]/i.test(line)) continue
 
     const cleaned = line.replace(/^\*+|\*+$/g, "").replace(/^-+\s*/, "").trim()
-    const qtyMatch = cleaned.match(/(?:x|×|\*)?\s*(\d+(?:\.\d+)?)\s*(?:حبة|قطعة|pcs?)?/i)
-    const priceMatch = cleaned.match(/(\d+(?:\.\d+)?)\s*(?:ر\.?س|ريال)?$/i)
+    const qtyMatch = cleaned.match(/(?:x|Ãƒâ€”|\*)?\s*(\d+(?:\.\d+)?)\s*(?:Ã˜Â­Ã˜Â¨Ã˜Â©|Ã™â€šÃ˜Â·Ã˜Â¹Ã˜Â©|pcs?)?/i)
+    const priceMatch = cleaned.match(/(\d+(?:\.\d+)?)\s*(?:\u0631\.?\u0633|\u0631\u064A\u0627\u0644|\uFDFC)?$/i)
 
     if (!qtyMatch || !priceMatch) continue
 
@@ -154,11 +154,11 @@ export function WhatsAppOrderImport({ onOrderCreated }: { onOrderCreated?: () =>
 
   async function handleSave() {
     if (!draft.customerName.trim()) {
-      setError("الاسم مطلوب")
+      setError("Ã˜Â§Ã™â€žÃ˜Â§Ã˜Â³Ã™â€¦ Ã™â€¦Ã˜Â·Ã™â€žÃ™Ë†Ã˜Â¨")
       return
     }
     if (draft.items.length === 0) {
-      setError("أضف صنفًا واحدًا على الأقل")
+      setError("Ã˜Â£Ã˜Â¶Ã™Â Ã˜ÂµÃ™â€ Ã™ÂÃ™â€¹Ã˜Â§ Ã™Ë†Ã˜Â§Ã˜Â­Ã˜Â¯Ã™â€¹Ã˜Â§ Ã˜Â¹Ã™â€žÃ™â€° Ã˜Â§Ã™â€žÃ˜Â£Ã™â€šÃ™â€ž")
       return
     }
 
@@ -182,7 +182,7 @@ export function WhatsAppOrderImport({ onOrderCreated }: { onOrderCreated?: () =>
 
     setSaving(false)
     if (!result) {
-      setError("تعذر حفظ الطلب. تحقق من الاتصال ثم حاول مرة أخرى.")
+      setError("Ã˜ÂªÃ˜Â¹Ã˜Â°Ã˜Â± Ã˜Â­Ã™ÂÃ˜Â¸ Ã˜Â§Ã™â€žÃ˜Â·Ã™â€žÃ˜Â¨. Ã˜ÂªÃ˜Â­Ã™â€šÃ™â€š Ã™â€¦Ã™â€  Ã˜Â§Ã™â€žÃ˜Â§Ã˜ÂªÃ˜ÂµÃ˜Â§Ã™â€ž Ã˜Â«Ã™â€¦ Ã˜Â­Ã˜Â§Ã™Ë†Ã™â€ž Ã™â€¦Ã˜Â±Ã˜Â© Ã˜Â£Ã˜Â®Ã˜Â±Ã™â€°.")
       return
     }
 
@@ -198,7 +198,7 @@ export function WhatsAppOrderImport({ onOrderCreated }: { onOrderCreated?: () =>
       >
         <div className="flex items-center gap-2">
           <MessageCircle className="h-4 w-4" />
-          إضافة طلب واتساب مباشرة
+          Ã˜Â¥Ã˜Â¶Ã˜Â§Ã™ÂÃ˜Â© Ã˜Â·Ã™â€žÃ˜Â¨ Ã™Ë†Ã˜Â§Ã˜ÂªÃ˜Â³Ã˜Â§Ã˜Â¨ Ã™â€¦Ã˜Â¨Ã˜Â§Ã˜Â´Ã˜Â±Ã˜Â©
         </div>
         {open ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
       </button>
@@ -209,9 +209,9 @@ export function WhatsAppOrderImport({ onOrderCreated }: { onOrderCreated?: () =>
             <div className="rounded-2xl border border-green-200 bg-green-50 p-3 flex items-center gap-3">
               <Check className="h-5 w-5 text-green-600" />
               <div>
-                <p className="font-bold text-green-700">تم إنشاء الطلب #{success}</p>
+                <p className="font-bold text-green-700">Ã˜ÂªÃ™â€¦ Ã˜Â¥Ã™â€ Ã˜Â´Ã˜Â§Ã˜Â¡ Ã˜Â§Ã™â€žÃ˜Â·Ã™â€žÃ˜Â¨ #{success}</p>
                 <button onClick={resetAll} className="text-xs text-green-700 underline mt-1">
-                  إضافة طلب جديد
+                  Ã˜Â¥Ã˜Â¶Ã˜Â§Ã™ÂÃ˜Â© Ã˜Â·Ã™â€žÃ˜Â¨ Ã˜Â¬Ã˜Â¯Ã™Å Ã˜Â¯
                 </button>
               </div>
             </div>
@@ -220,11 +220,11 @@ export function WhatsAppOrderImport({ onOrderCreated }: { onOrderCreated?: () =>
           {!success ? (
             <>
               <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-700">الصق رسالة واتساب (اختياري)</label>
+                <label className="text-sm font-bold text-gray-700">Ã˜Â§Ã™â€žÃ˜ÂµÃ™â€š Ã˜Â±Ã˜Â³Ã˜Â§Ã™â€žÃ˜Â© Ã™Ë†Ã˜Â§Ã˜ÂªÃ˜Â³Ã˜Â§Ã˜Â¨ (Ã˜Â§Ã˜Â®Ã˜ÂªÃ™Å Ã˜Â§Ã˜Â±Ã™Å )</label>
                 <textarea
                   value={rawText}
                   onChange={(e) => setRawText(e.target.value)}
-                  placeholder="الصق الرسالة هنا، ثم اضغط: استخراج بيانات أولية"
+                  placeholder="Ã˜Â§Ã™â€žÃ˜ÂµÃ™â€š Ã˜Â§Ã™â€žÃ˜Â±Ã˜Â³Ã˜Â§Ã™â€žÃ˜Â© Ã™â€¡Ã™â€ Ã˜Â§Ã˜Å’ Ã˜Â«Ã™â€¦ Ã˜Â§Ã˜Â¶Ã˜ÂºÃ˜Â·: Ã˜Â§Ã˜Â³Ã˜ÂªÃ˜Â®Ã˜Â±Ã˜Â§Ã˜Â¬ Ã˜Â¨Ã™Å Ã˜Â§Ã™â€ Ã˜Â§Ã˜Âª Ã˜Â£Ã™Ë†Ã™â€žÃ™Å Ã˜Â©"
                   className="w-full h-28 rounded-2xl bg-[#f5f5f5] px-3 py-2 text-sm focus:outline-none resize-none"
                 />
                 <button
@@ -233,7 +233,7 @@ export function WhatsAppOrderImport({ onOrderCreated }: { onOrderCreated?: () =>
                   disabled={!rawText.trim()}
                   className="rounded-xl bg-[#1e293b] text-white text-sm px-4 py-2 font-semibold disabled:opacity-40"
                 >
-                  استخراج بيانات أولية
+                  Ã˜Â§Ã˜Â³Ã˜ÂªÃ˜Â®Ã˜Â±Ã˜Â§Ã˜Â¬ Ã˜Â¨Ã™Å Ã˜Â§Ã™â€ Ã˜Â§Ã˜Âª Ã˜Â£Ã™Ë†Ã™â€žÃ™Å Ã˜Â©
                 </button>
               </div>
 
@@ -241,19 +241,19 @@ export function WhatsAppOrderImport({ onOrderCreated }: { onOrderCreated?: () =>
                 <input
                   value={draft.customerName}
                   onChange={(e) => updateField("customerName", e.target.value)}
-                  placeholder="الاسم *"
+                  placeholder="Ã˜Â§Ã™â€žÃ˜Â§Ã˜Â³Ã™â€¦ *"
                   className="rounded-xl bg-[#f5f5f5] px-3 py-2 text-sm focus:outline-none"
                 />
                 <input
                   value={draft.customerPhone}
                   onChange={(e) => updateField("customerPhone", e.target.value)}
-                  placeholder="رقم الهاتف"
+                  placeholder="Ã˜Â±Ã™â€šÃ™â€¦ Ã˜Â§Ã™â€žÃ™â€¡Ã˜Â§Ã˜ÂªÃ™Â"
                   className="rounded-xl bg-[#f5f5f5] px-3 py-2 text-sm focus:outline-none"
                 />
                 <input
                   value={draft.customerArea}
                   onChange={(e) => updateField("customerArea", e.target.value)}
-                  placeholder="المنطقة"
+                  placeholder="Ã˜Â§Ã™â€žÃ™â€¦Ã™â€ Ã˜Â·Ã™â€šÃ˜Â©"
                   className="rounded-xl bg-[#f5f5f5] px-3 py-2 text-sm focus:outline-none"
                 />
                 <select
@@ -261,17 +261,17 @@ export function WhatsAppOrderImport({ onOrderCreated }: { onOrderCreated?: () =>
                   onChange={(e) => updateField("orderType", e.target.value as "delivery" | "pickup")}
                   className="rounded-xl bg-[#f5f5f5] px-3 py-2 text-sm focus:outline-none"
                 >
-                  <option value="delivery">توصيل</option>
-                  <option value="pickup">استلام</option>
+                  <option value="delivery">Ã˜ÂªÃ™Ë†Ã˜ÂµÃ™Å Ã™â€ž</option>
+                  <option value="pickup">Ã˜Â§Ã˜Â³Ã˜ÂªÃ™â€žÃ˜Â§Ã™â€¦</option>
                 </select>
               </div>
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-sm font-bold text-gray-700">الأصناف</label>
+                  <label className="text-sm font-bold text-gray-700">Ã˜Â§Ã™â€žÃ˜Â£Ã˜ÂµÃ™â€ Ã˜Â§Ã™Â</label>
                   <button onClick={addItem} className="text-xs text-blue-700 flex items-center gap-1">
                     <Plus className="h-3.5 w-3.5" />
-                    إضافة صنف
+                    Ã˜Â¥Ã˜Â¶Ã˜Â§Ã™ÂÃ˜Â© Ã˜ÂµÃ™â€ Ã™Â
                   </button>
                 </div>
                 <div className="space-y-2">
@@ -283,7 +283,7 @@ export function WhatsAppOrderImport({ onOrderCreated }: { onOrderCreated?: () =>
                       <input
                         value={item.name}
                         onChange={(e) => updateItem(idx, { name: e.target.value })}
-                        placeholder="اسم الصنف"
+                        placeholder="Ã˜Â§Ã˜Â³Ã™â€¦ Ã˜Â§Ã™â€žÃ˜ÂµÃ™â€ Ã™Â"
                         className="flex-1 min-w-0 rounded-lg bg-[#f5f5f5] px-2 py-2 text-sm focus:outline-none"
                       />
                       <input
@@ -307,11 +307,11 @@ export function WhatsAppOrderImport({ onOrderCreated }: { onOrderCreated?: () =>
 
               <div className="grid grid-cols-3 gap-2 text-sm">
                 <div className="rounded-xl bg-[#f5f5f5] p-2 text-center">
-                  <p className="text-gray-500 text-xs">الفرعي</p>
-                  <p className="font-bold">{subtotal} ر.س</p>
+                  <p className="text-gray-500 text-xs">Ã˜Â§Ã™â€žÃ™ÂÃ˜Â±Ã˜Â¹Ã™Å </p>
+                  <p className="font-bold">{subtotal} ï·¼</p>
                 </div>
                 <div className={cn("rounded-xl p-2 text-center", draft.orderType === "pickup" ? "bg-gray-100" : "bg-[#f5f5f5]")}>
-                  <p className="text-gray-500 text-xs">التوصيل</p>
+                  <p className="text-gray-500 text-xs">Ã˜Â§Ã™â€žÃ˜ÂªÃ™Ë†Ã˜ÂµÃ™Å Ã™â€ž</p>
                   {draft.orderType === "pickup" ? (
                     <p className="font-bold">0</p>
                   ) : (
@@ -325,15 +325,15 @@ export function WhatsAppOrderImport({ onOrderCreated }: { onOrderCreated?: () =>
                   )}
                 </div>
                 <div className="rounded-xl bg-[#1e293b] text-white p-2 text-center">
-                  <p className="text-xs opacity-80">الإجمالي</p>
-                  <p className="font-bold">{total} ر.س</p>
+                  <p className="text-xs opacity-80">Ã˜Â§Ã™â€žÃ˜Â¥Ã˜Â¬Ã™â€¦Ã˜Â§Ã™â€žÃ™Å </p>
+                  <p className="font-bold">{total} ï·¼</p>
                 </div>
               </div>
 
               <textarea
                 value={draft.notes}
                 onChange={(e) => updateField("notes", e.target.value)}
-                placeholder="ملاحظات (اختياري)"
+                placeholder="Ã™â€¦Ã™â€žÃ˜Â§Ã˜Â­Ã˜Â¸Ã˜Â§Ã˜Âª (Ã˜Â§Ã˜Â®Ã˜ÂªÃ™Å Ã˜Â§Ã˜Â±Ã™Å )"
                 className="w-full h-20 rounded-2xl bg-[#f5f5f5] px-3 py-2 text-sm focus:outline-none resize-none"
               />
 
@@ -345,7 +345,7 @@ export function WhatsAppOrderImport({ onOrderCreated }: { onOrderCreated?: () =>
                 className="w-full rounded-2xl bg-green-600 text-white py-3.5 font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-60"
               >
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                {saving ? "جاري حفظ الطلب..." : "حفظ الطلب"}
+                {saving ? "Ã˜Â¬Ã˜Â§Ã˜Â±Ã™Å  Ã˜Â­Ã™ÂÃ˜Â¸ Ã˜Â§Ã™â€žÃ˜Â·Ã™â€žÃ˜Â¨..." : "Ã˜Â­Ã™ÂÃ˜Â¸ Ã˜Â§Ã™â€žÃ˜Â·Ã™â€žÃ˜Â¨"}
               </button>
             </>
           ) : null}

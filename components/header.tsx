@@ -11,7 +11,7 @@ import { useCategories } from "@/hooks/use-categories"
 import type { MenuItem } from "@/components/cart-provider"
 
 
-// ─── New Products Ticker ──────────────────────────────────────────────────────
+// â”€â”€â”€ New Products Ticker â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function NewProductsTicker({ items }: { items: MenuItem[] }) {
   const newItems = items.filter(i => i.isFeatured)
   if (newItems.length === 0) return null
@@ -32,7 +32,7 @@ function NewProductsTicker({ items }: { items: MenuItem[] }) {
           <span key={`${item.id}-${i}`} className="text-primary-foreground text-xs font-medium flex items-center gap-1.5 flex-shrink-0">
             <Sparkles className="h-3 w-3 flex-shrink-0" />
             {item.name}
-            <span className="opacity-70 mr-1">— {item.price} ر.س</span>
+            <span className="opacity-70 mr-1">â€” {item.price} ﷼</span>
           </span>
         ))}
       </div>
@@ -46,7 +46,7 @@ function NewProductsTicker({ items }: { items: MenuItem[] }) {
   )
 }
 
-// ─── Main Header ──────────────────────────────────────────────────────────────
+// â”€â”€â”€ Main Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export function Header() {
   const [cartOpen, setCartOpen] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -108,7 +108,7 @@ export function Header() {
 
           {/* Center: Brand name */}
           <Link href="/" className="absolute left-1/2 -translate-x-1/2 active:opacity-70 transition-opacity">
-            <p className="text-xl font-black tracking-tight text-foreground" dir="rtl">أمل سناك</p>
+            <p className="text-xl font-black tracking-tight text-foreground" dir="rtl">Ø£Ù…Ù„ Ø³Ù†Ø§Ùƒ</p>
           </Link>
 
           {/* Right: Cart button */}
@@ -132,7 +132,7 @@ export function Header() {
                 className="text-sm font-bold transition-all"
                 style={{ color: "var(--background)" }}
               >
-                {totalPrice} ر.س
+                {totalPrice} ﷼
               </span>
             )}
             {totalItems > 0 && (
@@ -162,10 +162,10 @@ export function Header() {
 
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-3 border-b border-border/50 flex-shrink-0" dir="rtl">
-              <h2 className="text-lg font-bold">سلتك 🛍️</h2>
+              <h2 className="text-lg font-bold">Ø³Ù„ØªÙƒ ðŸ›ï¸</h2>
               <div className="flex items-center gap-3">
                 {totalItems > 0 && (
-                  <span className="text-sm text-muted-foreground">{totalItems} عنصر · {totalPrice} ر.س</span>
+                  <span className="text-sm text-muted-foreground">{totalItems} Ø¹Ù†ØµØ± Â· {totalPrice} ﷼</span>
                 )}
                 <button
                   onClick={() => setCartOpen(false)}
@@ -181,8 +181,8 @@ export function Header() {
               {items.length === 0 ? (
                 <div className="text-center py-16 text-muted-foreground">
                   <ShoppingBag className="h-14 w-14 mx-auto mb-3 opacity-10" />
-                  <p className="font-medium">سلتك فارغة</p>
-                  <p className="text-xs mt-1 opacity-60">أضف أصناف من القائمة</p>
+                  <p className="font-medium">Ø³Ù„ØªÙƒ ÙØ§Ø±ØºØ©</p>
+                  <p className="text-xs mt-1 opacity-60">Ø£Ø¶Ù Ø£ØµÙ†Ø§Ù Ù…Ù† Ø§Ù„Ù‚Ø§Ø¦Ù…Ø©</p>
                 </div>
               ) : (
                 items.map(item => (
@@ -193,10 +193,10 @@ export function Header() {
                         <p className="text-xs text-muted-foreground truncate mt-0.5">
                           {item.selectedIngredients
                             .map(s => s.includes("||") ? s.split("||")[0] : s)
-                            .join("، ")}
+                            .join("ØŒ ")}
                         </p>
                       ) : null}
-                      <p className="text-sm font-bold text-primary mt-1">{item.price * item.quantity} ر.س</p>
+                      <p className="text-sm font-bold text-primary mt-1">{item.price * item.quantity} ﷼</p>
                     </div>
                     {/* Quantity controls */}
                     <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -204,7 +204,7 @@ export function Header() {
                         onClick={() => item.quantity === 1 ? removeItem(item.cartKey) : updateQuantity(item.cartKey, item.quantity - 1)}
                         className="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center active:scale-95 text-base font-bold"
                       >
-                        {item.quantity === 1 ? <X className="h-3 w-3 text-red-400" /> : "−"}
+                        {item.quantity === 1 ? <X className="h-3 w-3 text-red-400" /> : "âˆ’"}
                       </button>
                       <span className="text-sm font-bold w-5 text-center">{item.quantity}</span>
                       <button
@@ -224,21 +224,21 @@ export function Header() {
               <div className="px-4 py-3 border-t border-border/30 flex-shrink-0">
                 {/* Total */}
                 <div className="flex justify-between items-center mb-3 px-1" dir="rtl">
-                  <span className="text-muted-foreground text-sm">المجموع</span>
-                  <span className="font-black text-lg">{totalPrice} ر.س</span>
+                  <span className="text-muted-foreground text-sm">Ø§Ù„Ù…Ø¬Ù…ÙˆØ¹</span>
+                  <span className="font-black text-lg">{totalPrice} ﷼</span>
                 </div>
                 <div className="flex gap-3">
                   <button
                     onClick={() => setCartOpen(false)}
                     className="py-3.5 px-5 rounded-2xl bg-[#f5f5f5] text-foreground font-medium active:scale-95 transition-transform text-sm"
                   >
-                    تسوق أكثر
+                    ØªØ³ÙˆÙ‚ Ø£ÙƒØ«Ø±
                   </button>
                   <button
                     onClick={() => { setCartOpen(false); setOrderModalOpen(true) }}
                     className="flex-1 py-3.5 rounded-2xl bg-foreground text-background font-bold active:scale-95 transition-transform text-sm flex items-center justify-center gap-2"
                   >
-                    تأكيد الطلب
+                    ØªØ£ÙƒÙŠØ¯ Ø§Ù„Ø·Ù„Ø¨
                     <ChevronLeft className="h-4 w-4" />
                   </button>
                 </div>
@@ -257,7 +257,7 @@ export function Header() {
               <button onClick={() => setMenuOpen(false)} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center active:scale-95">
                 <ChevronRight className="h-4 w-4" />
               </button>
-              <p className="font-bold text-base">القائمة</p>
+              <p className="font-bold text-base">Ø§Ù„Ù‚Ø§Ø¦Ù…Ø©</p>
             </div>
             <div className="overflow-y-auto flex-1 py-3">
               {categories.filter(cat => cat.isVisible).map(cat => (

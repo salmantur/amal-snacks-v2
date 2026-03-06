@@ -9,6 +9,7 @@ import {
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { categories } from "@/lib/data"
+import { PriceWithRiyalLogo } from "@/components/ui/price-with-riyal-logo"
 
 interface MenuItem {
   id: string
@@ -367,7 +368,9 @@ export default function ItemsPage() {
                   <div className="flex-1 min-w-0 text-right" dir="rtl">
                     <p className="font-bold text-sm truncate">{item.name}</p>
                     {item.nameEn && <p className="text-xs text-gray-400 truncate">{item.nameEn}</p>}
-                    <p className="text-sm font-bold mt-0.5">{item.price} ﷼</p>
+                    <p className="text-sm font-bold mt-0.5">
+                      <PriceWithRiyalLogo value={item.price} />
+                    </p>
                     <p className="text-xs text-gray-400 truncate">{ALL_CATEGORIES.find(c => c.value === item.category)?.label || item.category}</p>
                   </div>
 
@@ -516,7 +519,7 @@ export default function ItemsPage() {
               {/* Price + Limit */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-semibold mb-1.5 text-right" dir="rtl">Ø§Ù„Ø³Ø¹Ø± (﷼) <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-semibold mb-1.5 text-right" dir="rtl">Ø§Ù„Ø³Ø¹Ø± <span className="text-red-500">*</span></label>
                   <input
                     type="number"
                     inputMode="decimal"

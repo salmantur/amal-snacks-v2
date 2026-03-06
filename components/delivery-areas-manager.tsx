@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { Plus, Trash2, Pencil, Check, X, Loader2, MapPin, RefreshCw } from "lucide-react"
 import { useDeliveryAreas, saveDeliveryArea, deleteDeliveryArea, seedDeliveryAreas, type DeliveryArea } from "@/hooks/use-delivery-areas"
+import { PriceWithRiyalLogo } from "@/components/ui/price-with-riyal-logo"
 
 export function DeliveryAreasManager() {
   const { allAreas, loading, reload } = useDeliveryAreas()
@@ -29,7 +30,7 @@ export function DeliveryAreasManager() {
   }
 
   const handleAdd = async () => {
-    if (!newName.trim() || !newPrice) { setError("Ø§Ø³Ù… Ø§Ù„Ù…Ù†Ø·Ù‚Ø© ÙˆØ§Ù„Ø³Ø¹Ø± Ù…Ø·Ù„ÙˆØ¨Ø§Ù†"); return }
+    if (!newName.trim() || !newPrice) { setError("Ã˜Â§Ã˜Â³Ã™â€¦ Ã˜Â§Ã™â€žÃ™â€¦Ã™â€ Ã˜Â·Ã™â€šÃ˜Â© Ã™Ë†Ã˜Â§Ã™â€žÃ˜Â³Ã˜Â¹Ã˜Â± Ã™â€¦Ã˜Â·Ã™â€žÃ™Ë†Ã˜Â¨Ã˜Â§Ã™â€ "); return }
     setSaving(true)
     setError(null)
     const id = `area-${Date.now()}`
@@ -47,7 +48,7 @@ export function DeliveryAreasManager() {
       setNewPrice("")
       setAdding(false)
     } else {
-      setError("ÙØ´Ù„ Ø§Ù„Ø­ÙØ¸ â€” ØªØ£ÙƒØ¯ Ù…Ù† Ø¥Ù†Ø´Ø§Ø¡ Ø¬Ø¯ÙˆÙ„ delivery_areas ÙÙŠ Supabase")
+      setError("Ã™ÂÃ˜Â´Ã™â€ž Ã˜Â§Ã™â€žÃ˜Â­Ã™ÂÃ˜Â¸ Ã¢â‚¬â€ Ã˜ÂªÃ˜Â£Ã™Æ’Ã˜Â¯ Ã™â€¦Ã™â€  Ã˜Â¥Ã™â€ Ã˜Â´Ã˜Â§Ã˜Â¡ Ã˜Â¬Ã˜Â¯Ã™Ë†Ã™â€ž delivery_areas Ã™ÂÃ™Å  Supabase")
     }
     setSaving(false)
   }
@@ -66,7 +67,7 @@ export function DeliveryAreasManager() {
       setAreas(prev => prev.map(a => a.id === area.id ? updated : a))
       setEditingId(null)
     } else {
-      setError("ÙØ´Ù„ Ø§Ù„Ø­ÙØ¸")
+      setError("Ã™ÂÃ˜Â´Ã™â€ž Ã˜Â§Ã™â€žÃ˜Â­Ã™ÂÃ˜Â¸")
     }
     setSaving(false)
   }
@@ -78,7 +79,7 @@ export function DeliveryAreasManager() {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Ø­Ø°Ù Ù‡Ø°Ù‡ Ø§Ù„Ù…Ù†Ø·Ù‚Ø©ØŸ")) return
+    if (!confirm("Ã˜Â­Ã˜Â°Ã™Â Ã™â€¡Ã˜Â°Ã™â€¡ Ã˜Â§Ã™â€žÃ™â€¦Ã™â€ Ã˜Â·Ã™â€šÃ˜Â©Ã˜Å¸")) return
     await deleteDeliveryArea(id)
     setAreas(prev => prev.filter(a => a.id !== id))
   }
@@ -100,24 +101,24 @@ export function DeliveryAreasManager() {
           className="text-xs text-blue-500 flex items-center gap-1"
         >
           <RefreshCw className={`h-3 w-3 ${seeding ? "animate-spin" : ""}`} />
-          ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ø£Ø³Ø¹Ø§Ø± Ø§Ù„Ø§ÙØªØ±Ø§Ø¶ÙŠØ©
+          Ã˜ÂªÃ˜Â­Ã™â€¦Ã™Å Ã™â€ž Ã˜Â§Ã™â€žÃ˜Â£Ã˜Â³Ã˜Â¹Ã˜Â§Ã˜Â± Ã˜Â§Ã™â€žÃ˜Â§Ã™ÂÃ˜ÂªÃ˜Â±Ã˜Â§Ã˜Â¶Ã™Å Ã˜Â©
         </button>
         <h3 className="font-bold text-base flex items-center gap-2">
           <MapPin className="h-4 w-4 text-primary" />
-          Ù…Ù†Ø§Ø·Ù‚ Ø§Ù„ØªÙˆØµÙŠÙ„
+          Ã™â€¦Ã™â€ Ã˜Â§Ã˜Â·Ã™â€š Ã˜Â§Ã™â€žÃ˜ÂªÃ™Ë†Ã˜ÂµÃ™Å Ã™â€ž
         </h3>
       </div>
 
       {error && (
         <div className="p-3 bg-red-50 border border-red-200 rounded-2xl text-xs text-red-600 text-right">
           {error}
-          <p className="mt-1 opacity-70">Ù‚Ù… Ø¨ØªØ´ØºÙŠÙ„ SQL ÙÙŠ Supabase Ù„Ø¥Ù†Ø´Ø§Ø¡ Ø§Ù„Ø¬Ø¯ÙˆÙ„ Ø£ÙˆÙ„Ø§Ù‹</p>
+          <p className="mt-1 opacity-70">Ã™â€šÃ™â€¦ Ã˜Â¨Ã˜ÂªÃ˜Â´Ã˜ÂºÃ™Å Ã™â€ž SQL Ã™ÂÃ™Å  Supabase Ã™â€žÃ˜Â¥Ã™â€ Ã˜Â´Ã˜Â§Ã˜Â¡ Ã˜Â§Ã™â€žÃ˜Â¬Ã˜Â¯Ã™Ë†Ã™â€ž Ã˜Â£Ã™Ë†Ã™â€žÃ˜Â§Ã™â€¹</p>
         </div>
       )}
 
       {/* SQL hint */}
       <details className="text-xs text-gray-400">
-        <summary className="cursor-pointer">SQL Ù„Ø¥Ù†Ø´Ø§Ø¡ Ø§Ù„Ø¬Ø¯ÙˆÙ„ ÙÙŠ Supabase â†“</summary>
+        <summary className="cursor-pointer">SQL Ã™â€žÃ˜Â¥Ã™â€ Ã˜Â´Ã˜Â§Ã˜Â¡ Ã˜Â§Ã™â€žÃ˜Â¬Ã˜Â¯Ã™Ë†Ã™â€ž Ã™ÂÃ™Å  Supabase Ã¢â€ â€œ</summary>
         <pre className="mt-2 p-3 bg-gray-50 rounded-xl text-[10px] overflow-x-auto text-gray-600 text-left leading-relaxed">{`CREATE TABLE delivery_areas (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
@@ -150,9 +151,9 @@ CREATE POLICY "public_write" ON delivery_areas FOR ALL TO public USING (true) WI
                   onChange={e => setEditPrice(e.target.value)}
                   type="number"
                   className="w-16 px-2 py-1.5 rounded-xl bg-[#f5f5f5] text-sm text-center focus:outline-none"
-                  placeholder="Ø§Ù„Ø³Ø¹Ø±"
+                  placeholder="Ã˜Â§Ã™â€žÃ˜Â³Ã˜Â¹Ã˜Â±"
                 />
-                <span className="text-xs text-gray-400 flex-shrink-0">﷼</span>
+                <span className="text-xs text-gray-400 flex-shrink-0"><PriceWithRiyalLogo value="" /></span>
                 <input
                   value={editName}
                   onChange={e => setEditName(e.target.value)}
@@ -183,7 +184,7 @@ CREATE POLICY "public_write" ON delivery_areas FOR ALL TO public USING (true) WI
                   <Pencil className="h-3.5 w-3.5" />
                 </button>
                 <span className="font-bold text-sm text-primary flex-shrink-0 w-14 text-center">
-                  {area.price} ﷼
+                  <PriceWithRiyalLogo value={area.price} />
                 </span>
                 <span className="flex-1 font-medium text-sm text-right">{area.name}</span>
                 {/* Active toggle */}
@@ -204,7 +205,7 @@ CREATE POLICY "public_write" ON delivery_areas FOR ALL TO public USING (true) WI
 
         {areas.length === 0 && (
           <p className="text-center text-sm text-gray-400 py-4">
-            Ù„Ø§ ØªÙˆØ¬Ø¯ Ù…Ù†Ø§Ø·Ù‚ â€” Ø§Ø¶ØºØ· "ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ø£Ø³Ø¹Ø§Ø± Ø§Ù„Ø§ÙØªØ±Ø§Ø¶ÙŠØ©"
+            Ã™â€žÃ˜Â§ Ã˜ÂªÃ™Ë†Ã˜Â¬Ã˜Â¯ Ã™â€¦Ã™â€ Ã˜Â§Ã˜Â·Ã™â€š Ã¢â‚¬â€ Ã˜Â§Ã˜Â¶Ã˜ÂºÃ˜Â· "Ã˜ÂªÃ˜Â­Ã™â€¦Ã™Å Ã™â€ž Ã˜Â§Ã™â€žÃ˜Â£Ã˜Â³Ã˜Â¹Ã˜Â§Ã˜Â± Ã˜Â§Ã™â€žÃ˜Â§Ã™ÂÃ˜ÂªÃ˜Â±Ã˜Â§Ã˜Â¶Ã™Å Ã˜Â©"
           </p>
         )}
       </div>
@@ -220,15 +221,15 @@ CREATE POLICY "public_write" ON delivery_areas FOR ALL TO public USING (true) WI
             value={newPrice}
             onChange={e => setNewPrice(e.target.value)}
             className="w-16 px-2 py-1.5 rounded-xl bg-white text-sm text-center focus:outline-none border border-blue-200"
-            placeholder="Ø§Ù„Ø³Ø¹Ø±"
+            placeholder="Ã˜Â§Ã™â€žÃ˜Â³Ã˜Â¹Ã˜Â±"
             autoFocus
           />
-          <span className="text-xs text-gray-400 flex-shrink-0">﷼</span>
+          <span className="text-xs text-gray-400 flex-shrink-0"><PriceWithRiyalLogo value="" /></span>
           <input
             value={newName}
             onChange={e => setNewName(e.target.value)}
             className="flex-1 px-3 py-1.5 rounded-xl bg-white text-sm text-right focus:outline-none border border-blue-200"
-            placeholder="Ø§Ø³Ù… Ø§Ù„Ù…Ù†Ø·Ù‚Ø©"
+            placeholder="Ã˜Â§Ã˜Â³Ã™â€¦ Ã˜Â§Ã™â€žÃ™â€¦Ã™â€ Ã˜Â·Ã™â€šÃ˜Â©"
             dir="rtl"
             onKeyDown={e => e.key === "Enter" && handleAdd()}
           />
@@ -246,7 +247,7 @@ CREATE POLICY "public_write" ON delivery_areas FOR ALL TO public USING (true) WI
           className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-dashed border-gray-200 text-gray-500 text-sm font-medium active:scale-95 transition-all hover:border-primary hover:text-primary"
         >
           <Plus className="h-4 w-4" />
-          Ø¥Ø¶Ø§ÙØ© Ù…Ù†Ø·Ù‚Ø© Ø¬Ø¯ÙŠØ¯Ø©
+          Ã˜Â¥Ã˜Â¶Ã˜Â§Ã™ÂÃ˜Â© Ã™â€¦Ã™â€ Ã˜Â·Ã™â€šÃ˜Â© Ã˜Â¬Ã˜Â¯Ã™Å Ã˜Â¯Ã˜Â©
         </button>
       )}
     </div>

@@ -7,6 +7,7 @@ import { type MenuItem } from "@/components/cart-provider"
 import { getEidRequiredHeaters } from "@/lib/eid-packages"
 import { cn } from "@/lib/utils"
 import type { ItemCardVariant } from "@/components/product-card"
+import { PriceWithRiyalLogo } from "@/components/ui/price-with-riyal-logo"
 
 interface PackageCardProps {
   item: MenuItem
@@ -78,7 +79,9 @@ export const PackageCard = memo(function PackageCard({
         )}
 
         <div className="absolute bottom-3 right-3 bg-white/90 backdrop-blur-sm rounded-2xl px-3 py-1.5 shadow">
-          <span className="font-black text-[#1e293b]">{item.price.toLocaleString()} ﷼</span>
+          <span className="font-black text-[#1e293b]">
+            <PriceWithRiyalLogo value={item.price.toLocaleString()} />
+          </span>
         </div>
 
         {item.isFeatured ? (
@@ -138,7 +141,10 @@ export const PackageCard = memo(function PackageCard({
         </div>
 
         <p className="text-sm text-gray-500 text-center">
-          Ø§Ù„Ù…Ø¬Ù…ÙˆØ¹: <span className="font-bold text-[#1e293b]">{(item.price * qty).toLocaleString()} ﷼</span>
+          Ø§Ù„Ù…Ø¬Ù…ÙˆØ¹:{" "}
+          <span className="font-bold text-[#1e293b]">
+            <PriceWithRiyalLogo value={(item.price * qty).toLocaleString()} />
+          </span>
         </p>
       </div>
     </div>

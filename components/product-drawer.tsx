@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/compone
 import { useCart, type MenuItem } from "@/components/cart-provider"
 import { cn } from "@/lib/utils"
 import { getEidRequiredHeaters } from "@/lib/eid-packages"
+import { PriceWithRiyalLogo } from "@/components/ui/price-with-riyal-logo"
 
 interface ProductDrawerProps {
   product: MenuItem | null
@@ -256,7 +257,9 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
                 <Plus className="h-4 w-4" />
               </button>
             </div>
-            <span className="text-xl font-bold text-[#1e293b]">{product.price * quantity} ﷼</span>
+            <span className="text-xl font-bold text-[#1e293b]">
+              <PriceWithRiyalLogo value={product.price * quantity} />
+            </span>
           </div>
 
           <button

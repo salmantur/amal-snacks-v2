@@ -3,64 +3,65 @@
 import { useState } from "react"
 import { Check, Loader2, RotateCcw, Copy } from "lucide-react"
 import { useThemeConfig, DEFAULT_THEME, type ThemeConfig } from "@/hooks/use-theme-config"
+import { PriceWithRiyalLogo } from "@/components/ui/price-with-riyal-logo"
 
 const COLOR_PALETTE = [
   // Reds / Pinks
-  { label: "ÙˆØ±Ø¯ÙŠ Ø²Ø§Ù‡ÙŠ",    color: "#f0526a" },
-  { label: "Ø£Ø­Ù…Ø±",         color: "#ef4444" },
-  { label: "ÙˆØ±Ø¯ÙŠ",         color: "#ec4899" },
-  { label: "ÙÙˆØ´ÙŠØ§",        color: "#d946ef" },
-  { label: "ÙˆØ±Ø¯ÙŠ ÙØ§ØªØ­",    color: "#f9a8d4" },
-  { label: "Ø£Ø­Ù…Ø± Ø¯Ø§ÙƒÙ†",    color: "#991b1b" },
+  { label: "Ã™Ë†Ã˜Â±Ã˜Â¯Ã™Å  Ã˜Â²Ã˜Â§Ã™â€¡Ã™Å ",    color: "#f0526a" },
+  { label: "Ã˜Â£Ã˜Â­Ã™â€¦Ã˜Â±",         color: "#ef4444" },
+  { label: "Ã™Ë†Ã˜Â±Ã˜Â¯Ã™Å ",         color: "#ec4899" },
+  { label: "Ã™ÂÃ™Ë†Ã˜Â´Ã™Å Ã˜Â§",        color: "#d946ef" },
+  { label: "Ã™Ë†Ã˜Â±Ã˜Â¯Ã™Å  Ã™ÂÃ˜Â§Ã˜ÂªÃ˜Â­",    color: "#f9a8d4" },
+  { label: "Ã˜Â£Ã˜Â­Ã™â€¦Ã˜Â± Ã˜Â¯Ã˜Â§Ã™Æ’Ã™â€ ",    color: "#991b1b" },
   // Oranges / Yellows
-  { label: "Ø¨Ø±ØªÙ‚Ø§Ù„ÙŠ",      color: "#f97316" },
-  { label: "Ø¹Ù†Ø¨Ø±ÙŠ",        color: "#f59e0b" },
-  { label: "Ø£ØµÙØ±",         color: "#eab308" },
-  { label: "Ø¨Ø±ØªÙ‚Ø§Ù„ÙŠ ÙØ§ØªØ­", color: "#fed7aa" },
-  { label: "Ø°Ù‡Ø¨ÙŠ",         color: "#ca8a04" },
-  { label: "Ø¨Ù†ÙŠ",          color: "#92400e" },
+  { label: "Ã˜Â¨Ã˜Â±Ã˜ÂªÃ™â€šÃ˜Â§Ã™â€žÃ™Å ",      color: "#f97316" },
+  { label: "Ã˜Â¹Ã™â€ Ã˜Â¨Ã˜Â±Ã™Å ",        color: "#f59e0b" },
+  { label: "Ã˜Â£Ã˜ÂµÃ™ÂÃ˜Â±",         color: "#eab308" },
+  { label: "Ã˜Â¨Ã˜Â±Ã˜ÂªÃ™â€šÃ˜Â§Ã™â€žÃ™Å  Ã™ÂÃ˜Â§Ã˜ÂªÃ˜Â­", color: "#fed7aa" },
+  { label: "Ã˜Â°Ã™â€¡Ã˜Â¨Ã™Å ",         color: "#ca8a04" },
+  { label: "Ã˜Â¨Ã™â€ Ã™Å ",          color: "#92400e" },
   // Greens
-  { label: "Ø£Ø®Ø¶Ø± Ø²ÙŠØªÙŠ",   color: "#1e5631" },
-  { label: "Ø£Ø®Ø¶Ø±",         color: "#16a34a" },
-  { label: "Ø£Ø®Ø¶Ø± ÙØ§ØªØ­",   color: "#4ade80" },
-  { label: "ÙÙŠØ±ÙˆØ²ÙŠ",       color: "#0d9488" },
-  { label: "Ù†Ø¹Ù†Ø§Ø¹ÙŠ",       color: "#10b981" },
-  { label: "Ø£Ø®Ø¶Ø± Ù„ÙŠÙ…ÙˆÙ†ÙŠ",  color: "#65a30d" },
+  { label: "Ã˜Â£Ã˜Â®Ã˜Â¶Ã˜Â± Ã˜Â²Ã™Å Ã˜ÂªÃ™Å ",   color: "#1e5631" },
+  { label: "Ã˜Â£Ã˜Â®Ã˜Â¶Ã˜Â±",         color: "#16a34a" },
+  { label: "Ã˜Â£Ã˜Â®Ã˜Â¶Ã˜Â± Ã™ÂÃ˜Â§Ã˜ÂªÃ˜Â­",   color: "#4ade80" },
+  { label: "Ã™ÂÃ™Å Ã˜Â±Ã™Ë†Ã˜Â²Ã™Å ",       color: "#0d9488" },
+  { label: "Ã™â€ Ã˜Â¹Ã™â€ Ã˜Â§Ã˜Â¹Ã™Å ",       color: "#10b981" },
+  { label: "Ã˜Â£Ã˜Â®Ã˜Â¶Ã˜Â± Ã™â€žÃ™Å Ã™â€¦Ã™Ë†Ã™â€ Ã™Å ",  color: "#65a30d" },
   // Blues / Purples
-  { label: "Ø£Ø²Ø±Ù‚",         color: "#3b82f6" },
-  { label: "Ø³Ù…Ø§ÙˆÙŠ",        color: "#06b6d4" },
-  { label: "Ù†ÙŠÙ„ÙŠ",         color: "#6366f1" },
-  { label: "Ø¨Ù†ÙØ³Ø¬ÙŠ",       color: "#8b5cf6" },
-  { label: "Ø£Ø²Ø±Ù‚ Ø¯Ø§ÙƒÙ†",   color: "#1e3a5f" },
-  { label: "Ø¨Ù†ÙØ³Ø¬ÙŠ Ø¯Ø§ÙƒÙ†",  color: "#4c1d95" },
+  { label: "Ã˜Â£Ã˜Â²Ã˜Â±Ã™â€š",         color: "#3b82f6" },
+  { label: "Ã˜Â³Ã™â€¦Ã˜Â§Ã™Ë†Ã™Å ",        color: "#06b6d4" },
+  { label: "Ã™â€ Ã™Å Ã™â€žÃ™Å ",         color: "#6366f1" },
+  { label: "Ã˜Â¨Ã™â€ Ã™ÂÃ˜Â³Ã˜Â¬Ã™Å ",       color: "#8b5cf6" },
+  { label: "Ã˜Â£Ã˜Â²Ã˜Â±Ã™â€š Ã˜Â¯Ã˜Â§Ã™Æ’Ã™â€ ",   color: "#1e3a5f" },
+  { label: "Ã˜Â¨Ã™â€ Ã™ÂÃ˜Â³Ã˜Â¬Ã™Å  Ã˜Â¯Ã˜Â§Ã™Æ’Ã™â€ ",  color: "#4c1d95" },
   // Neutrals
-  { label: "Ø±Ù…Ø§Ø¯ÙŠ ÙØ§ØªØ­",  color: "#9ca3af" },
-  { label: "Ø±Ù…Ø§Ø¯ÙŠ",        color: "#6b7280" },
-  { label: "Ø±Ù…Ø§Ø¯ÙŠ Ø¯Ø§ÙƒÙ†",  color: "#374151" },
-  { label: "ÙØ­Ù…ÙŠ",         color: "#1f2937" },
-  { label: "Ø£Ø³ÙˆØ¯",         color: "#0f172a" },
-  { label: "Ø£Ø¨ÙŠØ¶",         color: "#ffffff" },
+  { label: "Ã˜Â±Ã™â€¦Ã˜Â§Ã˜Â¯Ã™Å  Ã™ÂÃ˜Â§Ã˜ÂªÃ˜Â­",  color: "#9ca3af" },
+  { label: "Ã˜Â±Ã™â€¦Ã˜Â§Ã˜Â¯Ã™Å ",        color: "#6b7280" },
+  { label: "Ã˜Â±Ã™â€¦Ã˜Â§Ã˜Â¯Ã™Å  Ã˜Â¯Ã˜Â§Ã™Æ’Ã™â€ ",  color: "#374151" },
+  { label: "Ã™ÂÃ˜Â­Ã™â€¦Ã™Å ",         color: "#1f2937" },
+  { label: "Ã˜Â£Ã˜Â³Ã™Ë†Ã˜Â¯",         color: "#0f172a" },
+  { label: "Ã˜Â£Ã˜Â¨Ã™Å Ã˜Â¶",         color: "#ffffff" },
 ]
 
 const BG_PALETTE = [
-  { label: "Ø£Ø¨ÙŠØ¶ Ù†Ù‚ÙŠ",      color: "#ffffff" },
-  { label: "Ø£Ø¨ÙŠØ¶ Ù…ÙƒØ³Ø±",     color: "#fafafa" },
-  { label: "Ø±Ù…Ø§Ø¯ÙŠ Ù†Ø§Ø¹Ù…",    color: "#f5f5f5" },
-  { label: "Ø±Ù…Ø§Ø¯ÙŠ ÙØ§ØªØ­",    color: "#f0f0f0" },
-  { label: "ÙƒØ±ÙŠÙ…ÙŠ",          color: "#fef9f0" },
-  { label: "Ø¨ÙŠØ¬",            color: "#fdf6e3" },
-  { label: "ÙˆØ±Ø¯ÙŠ Ù†Ø§Ø¹Ù…",     color: "#fff0f3" },
-  { label: "Ø®ÙˆØ®ÙŠ",           color: "#fff4ed" },
-  { label: "Ù„Ø§ÙÙ†Ø¯Ø± ÙØ§ØªØ­",   color: "#f5f0ff" },
-  { label: "Ø£Ø²Ø±Ù‚ Ù†Ø§Ø¹Ù…",     color: "#eff6ff" },
-  { label: "Ø³Ù…Ø§ÙˆÙŠ ÙØ§ØªØ­",    color: "#ecfeff" },
-  { label: "Ø£Ø®Ø¶Ø± Ù†Ø§Ø¹Ù…",     color: "#f0fdf4" },
-  { label: "Ù†Ø¹Ù†Ø§Ø¹ÙŠ ÙØ§ØªØ­",   color: "#ecfdf5" },
-  { label: "Ø£ØµÙØ± Ù†Ø§Ø¹Ù…",     color: "#fefce8" },
-  { label: "ÙˆØ±Ø¯ÙŠ ØºØ§Ù…Ù‚",     color: "#fce7f3" },
-  { label: "Ø±Ù…Ø§Ø¯ÙŠ Ù…Ø²Ø±Ù‚",    color: "#f1f5f9" },
-  { label: "Ø¨ÙŠØ¬ Ø¯Ø§ÙƒÙ†",      color: "#fdf4dc" },
-  { label: "Ø²ÙŠØªÙŠ ÙØ§ØªØ­",     color: "#f7fee7" },
+  { label: "Ã˜Â£Ã˜Â¨Ã™Å Ã˜Â¶ Ã™â€ Ã™â€šÃ™Å ",      color: "#ffffff" },
+  { label: "Ã˜Â£Ã˜Â¨Ã™Å Ã˜Â¶ Ã™â€¦Ã™Æ’Ã˜Â³Ã˜Â±",     color: "#fafafa" },
+  { label: "Ã˜Â±Ã™â€¦Ã˜Â§Ã˜Â¯Ã™Å  Ã™â€ Ã˜Â§Ã˜Â¹Ã™â€¦",    color: "#f5f5f5" },
+  { label: "Ã˜Â±Ã™â€¦Ã˜Â§Ã˜Â¯Ã™Å  Ã™ÂÃ˜Â§Ã˜ÂªÃ˜Â­",    color: "#f0f0f0" },
+  { label: "Ã™Æ’Ã˜Â±Ã™Å Ã™â€¦Ã™Å ",          color: "#fef9f0" },
+  { label: "Ã˜Â¨Ã™Å Ã˜Â¬",            color: "#fdf6e3" },
+  { label: "Ã™Ë†Ã˜Â±Ã˜Â¯Ã™Å  Ã™â€ Ã˜Â§Ã˜Â¹Ã™â€¦",     color: "#fff0f3" },
+  { label: "Ã˜Â®Ã™Ë†Ã˜Â®Ã™Å ",           color: "#fff4ed" },
+  { label: "Ã™â€žÃ˜Â§Ã™ÂÃ™â€ Ã˜Â¯Ã˜Â± Ã™ÂÃ˜Â§Ã˜ÂªÃ˜Â­",   color: "#f5f0ff" },
+  { label: "Ã˜Â£Ã˜Â²Ã˜Â±Ã™â€š Ã™â€ Ã˜Â§Ã˜Â¹Ã™â€¦",     color: "#eff6ff" },
+  { label: "Ã˜Â³Ã™â€¦Ã˜Â§Ã™Ë†Ã™Å  Ã™ÂÃ˜Â§Ã˜ÂªÃ˜Â­",    color: "#ecfeff" },
+  { label: "Ã˜Â£Ã˜Â®Ã˜Â¶Ã˜Â± Ã™â€ Ã˜Â§Ã˜Â¹Ã™â€¦",     color: "#f0fdf4" },
+  { label: "Ã™â€ Ã˜Â¹Ã™â€ Ã˜Â§Ã˜Â¹Ã™Å  Ã™ÂÃ˜Â§Ã˜ÂªÃ˜Â­",   color: "#ecfdf5" },
+  { label: "Ã˜Â£Ã˜ÂµÃ™ÂÃ˜Â± Ã™â€ Ã˜Â§Ã˜Â¹Ã™â€¦",     color: "#fefce8" },
+  { label: "Ã™Ë†Ã˜Â±Ã˜Â¯Ã™Å  Ã˜ÂºÃ˜Â§Ã™â€¦Ã™â€š",     color: "#fce7f3" },
+  { label: "Ã˜Â±Ã™â€¦Ã˜Â§Ã˜Â¯Ã™Å  Ã™â€¦Ã˜Â²Ã˜Â±Ã™â€š",    color: "#f1f5f9" },
+  { label: "Ã˜Â¨Ã™Å Ã˜Â¬ Ã˜Â¯Ã˜Â§Ã™Æ’Ã™â€ ",      color: "#fdf4dc" },
+  { label: "Ã˜Â²Ã™Å Ã˜ÂªÃ™Å  Ã™ÂÃ˜Â§Ã˜ÂªÃ˜Â­",     color: "#f7fee7" },
 ]
 
 function isLightColor(hex: string): boolean {
@@ -114,7 +115,7 @@ function ColorSection({
           onChange={e => onChange(e.target.value)}
           className="w-10 h-9 rounded-lg cursor-pointer border-0 bg-transparent flex-shrink-0"
         />
-        <p className="text-xs text-gray-500">Ø§Ø®ØªØ± Ù„ÙˆÙ†Ø§Ù‹ Ù…Ø®ØµØµØ§Ù‹</p>
+        <p className="text-xs text-gray-500">Ã˜Â§Ã˜Â®Ã˜ÂªÃ˜Â± Ã™â€žÃ™Ë†Ã™â€ Ã˜Â§Ã™â€¹ Ã™â€¦Ã˜Â®Ã˜ÂµÃ˜ÂµÃ˜Â§Ã™â€¹</p>
       </div>
     </div>
   )
@@ -160,20 +161,22 @@ export function ThemeEditor() {
 
       {/* Live Preview */}
       <div className="p-4 rounded-2xl border border-gray-200 space-y-3" style={{ backgroundColor: bg }}>
-        <p className="text-xs font-medium text-gray-400 text-center">Ù…Ø¹Ø§ÙŠÙ†Ø© Ù…Ø¨Ø§Ø´Ø±Ø©</p>
+        <p className="text-xs font-medium text-gray-400 text-center">Ã™â€¦Ã˜Â¹Ã˜Â§Ã™Å Ã™â€ Ã˜Â© Ã™â€¦Ã˜Â¨Ã˜Â§Ã˜Â´Ã˜Â±Ã˜Â©</p>
         <div className="flex gap-3 items-center justify-center flex-wrap">
           <div className="rounded-full px-5 py-2.5" style={{ backgroundColor: current.primary }}>
-            <span className="text-sm font-bold" style={{ color: current.primary_foreground }}>ðŸ›’ Ø§Ù„Ø³Ù„Ø© Â· 50 ﷼</span>
+            <span className="text-sm font-bold inline-flex items-center gap-1" style={{ color: current.primary_foreground }}>
+              Ã°Å¸â€ºâ€™ Ã˜Â§Ã™â€žÃ˜Â³Ã™â€žÃ˜Â© Ã‚Â· <PriceWithRiyalLogo value={50} />
+            </span>
           </div>
           <div className="rounded-2xl px-5 py-2.5" style={{ backgroundColor: current.checkout_green }}>
-            <span className="text-sm font-bold text-white">âœ… Ø§Ø³ØªÙ„Ø§Ù…</span>
+            <span className="text-sm font-bold text-white">Ã¢Å“â€¦ Ã˜Â§Ã˜Â³Ã˜ÂªÃ™â€žÃ˜Â§Ã™â€¦</span>
           </div>
         </div>
         <div className="h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: current.bar_background ?? "#f5f5f5" }}>
-          <span className="text-xs text-gray-500">Ø´Ø±ÙŠØ· Ø§Ù„ÙØ¦Ø§Øª ÙˆØ§Ù„Ø¨Ø­Ø«</span>
+          <span className="text-xs text-gray-500">Ã˜Â´Ã˜Â±Ã™Å Ã˜Â· Ã˜Â§Ã™â€žÃ™ÂÃ˜Â¦Ã˜Â§Ã˜Âª Ã™Ë†Ã˜Â§Ã™â€žÃ˜Â¨Ã˜Â­Ã˜Â«</span>
         </div>
         <div className="h-8 rounded-lg border border-dashed border-gray-300 flex items-center justify-center">
-          <span className="text-xs text-gray-400">Ø®Ù„ÙÙŠØ© Ø§Ù„ØµÙØ­Ø©</span>
+          <span className="text-xs text-gray-400">Ã˜Â®Ã™â€žÃ™ÂÃ™Å Ã˜Â© Ã˜Â§Ã™â€žÃ˜ÂµÃ™ÂÃ˜Â­Ã˜Â©</span>
         </div>
       </div>
 
@@ -183,22 +186,22 @@ export function ThemeEditor() {
           onClick={() => setTab("buttons")}
           className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${tab === "buttons" ? "bg-white shadow text-gray-900" : "text-gray-500"}`}
         >
-          ðŸŽ¨ Ø£Ù„ÙˆØ§Ù† Ø§Ù„Ø£Ø²Ø±Ø§Ø±
+          Ã°Å¸Å½Â¨ Ã˜Â£Ã™â€žÃ™Ë†Ã˜Â§Ã™â€  Ã˜Â§Ã™â€žÃ˜Â£Ã˜Â²Ã˜Â±Ã˜Â§Ã˜Â±
         </button>
         <button
           onClick={() => setTab("background")}
           className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${tab === "background" ? "bg-white shadow text-gray-900" : "text-gray-500"}`}
         >
-          ðŸ–¼ Ø§Ù„Ø®Ù„ÙÙŠØ©
+          Ã°Å¸â€“Â¼ Ã˜Â§Ã™â€žÃ˜Â®Ã™â€žÃ™ÂÃ™Å Ã˜Â©
         </button>
       </div>
 
       {/* Buttons tab */}
       {tab === "buttons" && (
         <div className="space-y-6">
-          <ColorSection title="ðŸ›’ Ø²Ø± Ø§Ù„Ø³Ù„Ø©" value={current.primary} palette={COLOR_PALETTE} onChange={c => update({ primary: c })} />
+          <ColorSection title="Ã°Å¸â€ºâ€™ Ã˜Â²Ã˜Â± Ã˜Â§Ã™â€žÃ˜Â³Ã™â€žÃ˜Â©" value={current.primary} palette={COLOR_PALETTE} onChange={c => update({ primary: c })} />
           <div className="border-t border-gray-100" />
-          <ColorSection title="âœ… Ø²Ø± Ø®ÙŠØ§Ø±Ø§Øª Ø§Ù„Ø·Ù„Ø¨" value={current.checkout_green} palette={COLOR_PALETTE} onChange={c => update({ checkout_green: c })} />
+          <ColorSection title="Ã¢Å“â€¦ Ã˜Â²Ã˜Â± Ã˜Â®Ã™Å Ã˜Â§Ã˜Â±Ã˜Â§Ã˜Âª Ã˜Â§Ã™â€žÃ˜Â·Ã™â€žÃ˜Â¨" value={current.checkout_green} palette={COLOR_PALETTE} onChange={c => update({ checkout_green: c })} />
         </div>
       )}
 
@@ -206,9 +209,9 @@ export function ThemeEditor() {
       {tab === "background" && (
         <div className="space-y-4">
           <div className="p-3 bg-blue-50 rounded-xl border border-blue-100 flex items-start gap-2">
-            <span className="text-base">ðŸ’¡</span>
+            <span className="text-base">Ã°Å¸â€™Â¡</span>
             <p className="text-xs text-blue-700 leading-relaxed">
-              Ø§Ø®ØªØ± Ù„ÙˆÙ† Ø§Ù„Ø®Ù„ÙÙŠØ© ÙˆØ³ÙŠØªÙ… ØªØ·Ø¨ÙŠÙ‚Ù‡ Ø¹Ù„Ù‰ Ø§Ù„ØµÙØ­Ø© ÙƒØ§Ù…Ù„Ù‡Ø§ â€” Ø§Ù„Ù‡ÙŠØ¯Ø± ÙˆØ§Ù„Ø¨Ø·Ø§Ù‚Ø§Øª ÙˆØ§Ù„Ø®Ù„ÙÙŠØ© Ø§Ù„Ø±Ø¦ÙŠØ³ÙŠØ© ÙƒÙ„Ù‡Ø§ ÙÙŠ Ù†ÙØ³ Ø§Ù„Ù„ÙˆÙ†.
+              Ã˜Â§Ã˜Â®Ã˜ÂªÃ˜Â± Ã™â€žÃ™Ë†Ã™â€  Ã˜Â§Ã™â€žÃ˜Â®Ã™â€žÃ™ÂÃ™Å Ã˜Â© Ã™Ë†Ã˜Â³Ã™Å Ã˜ÂªÃ™â€¦ Ã˜ÂªÃ˜Â·Ã˜Â¨Ã™Å Ã™â€šÃ™â€¡ Ã˜Â¹Ã™â€žÃ™â€° Ã˜Â§Ã™â€žÃ˜ÂµÃ™ÂÃ˜Â­Ã˜Â© Ã™Æ’Ã˜Â§Ã™â€¦Ã™â€žÃ™â€¡Ã˜Â§ Ã¢â‚¬â€ Ã˜Â§Ã™â€žÃ™â€¡Ã™Å Ã˜Â¯Ã˜Â± Ã™Ë†Ã˜Â§Ã™â€žÃ˜Â¨Ã˜Â·Ã˜Â§Ã™â€šÃ˜Â§Ã˜Âª Ã™Ë†Ã˜Â§Ã™â€žÃ˜Â®Ã™â€žÃ™ÂÃ™Å Ã˜Â© Ã˜Â§Ã™â€žÃ˜Â±Ã˜Â¦Ã™Å Ã˜Â³Ã™Å Ã˜Â© Ã™Æ’Ã™â€žÃ™â€¡Ã˜Â§ Ã™ÂÃ™Å  Ã™â€ Ã™ÂÃ˜Â³ Ã˜Â§Ã™â€žÃ™â€žÃ™Ë†Ã™â€ .
             </p>
           </div>
           <button
@@ -216,11 +219,11 @@ export function ThemeEditor() {
             className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-dashed border-gray-300 text-sm font-medium text-gray-600 active:scale-95 transition-all hover:border-gray-400 hover:bg-gray-50"
           >
             <Copy className="h-4 w-4" />
-            ØªØ·Ø¨ÙŠÙ‚ Ø§Ù„Ù„ÙˆÙ† Ø§Ù„Ø­Ø§Ù„ÙŠ Ø¹Ù„Ù‰ ÙƒÙ„ Ø§Ù„Ø®Ù„ÙÙŠØ§Øª
+            Ã˜ÂªÃ˜Â·Ã˜Â¨Ã™Å Ã™â€š Ã˜Â§Ã™â€žÃ™â€žÃ™Ë†Ã™â€  Ã˜Â§Ã™â€žÃ˜Â­Ã˜Â§Ã™â€žÃ™Å  Ã˜Â¹Ã™â€žÃ™â€° Ã™Æ’Ã™â€ž Ã˜Â§Ã™â€žÃ˜Â®Ã™â€žÃ™ÂÃ™Å Ã˜Â§Ã˜Âª
           </button>
-          <ColorSection title="ðŸ–¼ Ù„ÙˆÙ† Ø§Ù„Ø®Ù„ÙÙŠØ© Ø§Ù„Ø±Ø¦ÙŠØ³ÙŠØ©" value={bg} palette={BG_PALETTE} onChange={c => update({ background: c })} />
+          <ColorSection title="Ã°Å¸â€“Â¼ Ã™â€žÃ™Ë†Ã™â€  Ã˜Â§Ã™â€žÃ˜Â®Ã™â€žÃ™ÂÃ™Å Ã˜Â© Ã˜Â§Ã™â€žÃ˜Â±Ã˜Â¦Ã™Å Ã˜Â³Ã™Å Ã˜Â©" value={bg} palette={BG_PALETTE} onChange={c => update({ background: c })} />
           <div className="border-t border-gray-100" />
-          <ColorSection title="ðŸ“Š Ù„ÙˆÙ† Ø´Ø±ÙŠØ· Ø§Ù„ÙØ¦Ø§Øª ÙˆØ®Ø§Ù†Ø© Ø§Ù„Ø¨Ø­Ø«" value={current.bar_background ?? "#f5f5f5"} palette={BG_PALETTE} onChange={c => update({ bar_background: c })} />
+          <ColorSection title="Ã°Å¸â€œÅ  Ã™â€žÃ™Ë†Ã™â€  Ã˜Â´Ã˜Â±Ã™Å Ã˜Â· Ã˜Â§Ã™â€žÃ™ÂÃ˜Â¦Ã˜Â§Ã˜Âª Ã™Ë†Ã˜Â®Ã˜Â§Ã™â€ Ã˜Â© Ã˜Â§Ã™â€žÃ˜Â¨Ã˜Â­Ã˜Â«" value={current.bar_background ?? "#f5f5f5"} palette={BG_PALETTE} onChange={c => update({ bar_background: c })} />
         </div>
       )}
 
@@ -231,7 +234,7 @@ export function ThemeEditor() {
           className="flex items-center gap-2 px-4 py-3 rounded-xl bg-gray-100 text-gray-500 text-sm font-medium active:scale-95 transition-transform"
         >
           <RotateCcw className="h-4 w-4" />
-          Ø¥Ø¹Ø§Ø¯Ø© ØªØ¹ÙŠÙŠÙ†
+          Ã˜Â¥Ã˜Â¹Ã˜Â§Ã˜Â¯Ã˜Â© Ã˜ÂªÃ˜Â¹Ã™Å Ã™Å Ã™â€ 
         </button>
         <button
           onClick={handleSave}
@@ -240,7 +243,7 @@ export function ThemeEditor() {
           style={{ backgroundColor: saved ? "#1e5631" : current.primary, color: current.primary_foreground }}
         >
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-          {saved ? "ØªÙ… Ø§Ù„Ø­ÙØ¸! âœ“" : "Ø­ÙØ¸ Ø§Ù„Ø£Ù„ÙˆØ§Ù†"}
+          {saved ? "Ã˜ÂªÃ™â€¦ Ã˜Â§Ã™â€žÃ˜Â­Ã™ÂÃ˜Â¸! Ã¢Å“â€œ" : "Ã˜Â­Ã™ÂÃ˜Â¸ Ã˜Â§Ã™â€žÃ˜Â£Ã™â€žÃ™Ë†Ã˜Â§Ã™â€ "}
         </button>
       </div>
 

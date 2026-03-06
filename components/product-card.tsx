@@ -5,6 +5,7 @@ import Image from "next/image"
 import { ShoppingBag, Star } from "lucide-react"
 import { type MenuItem } from "@/components/cart-provider"
 import { cn } from "@/lib/utils"
+import { PriceWithRiyalLogo } from "@/components/ui/price-with-riyal-logo"
 
 export type ItemCardVariant = "neo" | "glass" | "editorial" | "warm" | "minimal"
 
@@ -85,7 +86,7 @@ export const ProductCard = memo(function ProductCard({
       role="button"
       tabIndex={0}
       onKeyDown={(e) => e.key === "Enter" && onSelect(item)}
-      aria-label={`${item.name} - ${item.price} ﷼`}
+      aria-label={`${item.name} - ${item.price}`}
     >
       <div className={cn("relative aspect-square overflow-hidden bg-[#e8e8e8]", v.image)}>
         {item.image && !imgError ? (
@@ -109,13 +110,13 @@ export const ProductCard = memo(function ProductCard({
         {item.isFeatured ? (
           <div className="absolute top-2 right-2 bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-0.5">
             <Star className="h-2.5 w-2.5 fill-yellow-900" />
-            Ø§Ù„Ø£ÙƒØ«Ø±
+            Ã˜Â§Ã™â€žÃ˜Â£Ã™Æ’Ã˜Â«Ã˜Â±
           </div>
         ) : null}
 
         {item.inStock === false ? (
           <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-            <span className="bg-white text-gray-800 text-xs font-bold px-3 py-1 rounded-full">Ù†ÙØ°Øª Ø§Ù„ÙƒÙ…ÙŠØ©</span>
+            <span className="bg-white text-gray-800 text-xs font-bold px-3 py-1 rounded-full">Ã™â€ Ã™ÂÃ˜Â°Ã˜Âª Ã˜Â§Ã™â€žÃ™Æ’Ã™â€¦Ã™Å Ã˜Â©</span>
           </div>
         ) : null}
       </div>
@@ -128,12 +129,12 @@ export const ProductCard = memo(function ProductCard({
           {item.isFeatured ? (
             <span className="inline-flex items-center gap-1 rounded-full bg-yellow-100 text-yellow-800 text-[11px] font-semibold px-2.5 py-1">
               <Star className="h-3 w-3 fill-yellow-700 text-yellow-700" />
-              Ø§Ù„Ø£ÙƒØ«Ø± Ø·Ù„Ø¨Ù‹Ø§
+              Ã˜Â§Ã™â€žÃ˜Â£Ã™Æ’Ã˜Â«Ã˜Â± Ã˜Â·Ã™â€žÃ˜Â¨Ã™â€¹Ã˜Â§
             </span>
           ) : null}
         </div>
 
-        <p className={cn("font-bold mt-2", v.price)}>{item.price} ﷼</p>
+        <p className={cn("font-bold mt-2", v.price)}><PriceWithRiyalLogo value={item.price} /></p>
       </div>
     </div>
   )

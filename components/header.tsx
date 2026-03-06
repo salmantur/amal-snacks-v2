@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation"
 import { useMenu } from "@/hooks/use-menu"
 import { useCategories } from "@/hooks/use-categories"
 import type { MenuItem } from "@/components/cart-provider"
+import { PriceWithRiyalLogo } from "@/components/ui/price-with-riyal-logo"
 
 
 // â”€â”€â”€ New Products Ticker â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -32,7 +33,7 @@ function NewProductsTicker({ items }: { items: MenuItem[] }) {
           <span key={`${item.id}-${i}`} className="text-primary-foreground text-xs font-medium flex items-center gap-1.5 flex-shrink-0">
             <Sparkles className="h-3 w-3 flex-shrink-0" />
             {item.name}
-            <span className="opacity-70 mr-1">â€” {item.price} ﷼</span>
+            <span className="opacity-70 mr-1">â€” <PriceWithRiyalLogo value={item.price} /></span>
           </span>
         ))}
       </div>
@@ -132,7 +133,7 @@ export function Header() {
                 className="text-sm font-bold transition-all"
                 style={{ color: "var(--background)" }}
               >
-                {totalPrice} ﷼
+                <PriceWithRiyalLogo value={totalPrice} />
               </span>
             )}
             {totalItems > 0 && (
@@ -165,7 +166,9 @@ export function Header() {
               <h2 className="text-lg font-bold">Ø³Ù„ØªÙƒ ðŸ›ï¸</h2>
               <div className="flex items-center gap-3">
                 {totalItems > 0 && (
-                  <span className="text-sm text-muted-foreground">{totalItems} Ø¹Ù†ØµØ± Â· {totalPrice} ﷼</span>
+                  <span className="text-sm text-muted-foreground">
+                    {totalItems} Ø¹Ù†ØµØ± Â· <PriceWithRiyalLogo value={totalPrice} />
+                  </span>
                 )}
                 <button
                   onClick={() => setCartOpen(false)}
@@ -196,7 +199,9 @@ export function Header() {
                             .join("ØŒ ")}
                         </p>
                       ) : null}
-                      <p className="text-sm font-bold text-primary mt-1">{item.price * item.quantity} ﷼</p>
+                      <p className="text-sm font-bold text-primary mt-1">
+                        <PriceWithRiyalLogo value={item.price * item.quantity} />
+                      </p>
                     </div>
                     {/* Quantity controls */}
                     <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -225,7 +230,9 @@ export function Header() {
                 {/* Total */}
                 <div className="flex justify-between items-center mb-3 px-1" dir="rtl">
                   <span className="text-muted-foreground text-sm">Ø§Ù„Ù…Ø¬Ù…ÙˆØ¹</span>
-                  <span className="font-black text-lg">{totalPrice} ﷼</span>
+                  <span className="font-black text-lg">
+                    <PriceWithRiyalLogo value={totalPrice} />
+                  </span>
                 </div>
                 <div className="flex gap-3">
                   <button

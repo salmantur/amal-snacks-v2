@@ -5,6 +5,7 @@ import { useState } from "react"
 import { cn } from "@/lib/utils"
 import type { Order } from "@/lib/data"
 import { printOrder, setPrinterIp } from "@/lib/thermal-printer"
+import { PriceWithRiyalLogo } from "@/components/ui/price-with-riyal-logo"
 
 interface KitchenTicketProps {
   order: Order
@@ -13,22 +14,22 @@ interface KitchenTicketProps {
 
 const statusConfig = {
   pending: {
-    label: "Ø¬Ø¯ÙŠØ¯",
+    label: "Ã˜Â¬Ã˜Â¯Ã™Å Ã˜Â¯",
     color: "bg-primary text-primary-foreground",
     icon: Clock,
   },
   preparing: {
-    label: "Ù‚ÙŠØ¯ Ø§Ù„ØªØ­Ø¶ÙŠØ±",
+    label: "Ã™â€šÃ™Å Ã˜Â¯ Ã˜Â§Ã™â€žÃ˜ÂªÃ˜Â­Ã˜Â¶Ã™Å Ã˜Â±",
     color: "bg-amal-yellow text-foreground",
     icon: ChefHat,
   },
   ready: {
-    label: "Ø¬Ø§Ù‡Ø²",
+    label: "Ã˜Â¬Ã˜Â§Ã™â€¡Ã˜Â²",
     color: "bg-green-500 text-white",
     icon: CheckCircle,
   },
   delivered: {
-    label: "Ù…ÙƒØªÙ…Ù„",
+    label: "Ã™â€¦Ã™Æ’Ã˜ÂªÃ™â€¦Ã™â€ž",
     color: "bg-muted text-muted-foreground",
     icon: Truck,
   },
@@ -55,7 +56,7 @@ export function KitchenTicket({ order, onStatusChange }: KitchenTicketProps) {
       setPrintSuccess(true)
       setTimeout(() => setPrintSuccess(false), 3000)
     } catch (err) {
-      setPrintError(err instanceof Error ? err.message : "ÙØ´Ù„ Ø§Ù„Ø§ØªØµØ§Ù„ Ø¨Ø§Ù„Ø·Ø§Ø¨Ø¹Ø©")
+      setPrintError(err instanceof Error ? err.message : "Ã™ÂÃ˜Â´Ã™â€ž Ã˜Â§Ã™â€žÃ˜Â§Ã˜ÂªÃ˜ÂµÃ˜Â§Ã™â€ž Ã˜Â¨Ã˜Â§Ã™â€žÃ˜Â·Ã˜Â§Ã˜Â¨Ã˜Â¹Ã˜Â©")
     } finally {
       setPrinting(false)
     }
@@ -100,7 +101,7 @@ export function KitchenTicket({ order, onStatusChange }: KitchenTicketProps) {
             {status.label}
           </span>
           <span className={cn("px-2.5 py-1 rounded-full text-xs font-semibold border", isPickup ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-emerald-50 text-emerald-700 border-emerald-200")}>
-            {isPickup ? "Ø§Ø³ØªÙ„Ø§Ù…" : "ØªÙˆØµÙŠÙ„"}
+            {isPickup ? "Ã˜Â§Ã˜Â³Ã˜ÂªÃ™â€žÃ˜Â§Ã™â€¦" : "Ã˜ÂªÃ™Ë†Ã˜ÂµÃ™Å Ã™â€ž"}
           </span>
         </div>
         <span className="text-sm text-muted-foreground">{timeAgo}</span>
@@ -115,7 +116,7 @@ export function KitchenTicket({ order, onStatusChange }: KitchenTicketProps) {
           </p>
           <p className="text-sm text-muted-foreground flex items-center gap-1">
             {isPickup ? <Store className="h-3 w-3" /> : <MapPin className="h-3 w-3" />}
-            {isPickup ? "Ø§Ø³ØªÙ„Ø§Ù… Ù…Ù† Ø§Ù„Ù…Ø­Ù„" : (order.customerAddress || "-")}
+            {isPickup ? "Ã˜Â§Ã˜Â³Ã˜ÂªÃ™â€žÃ˜Â§Ã™â€¦ Ã™â€¦Ã™â€  Ã˜Â§Ã™â€žÃ™â€¦Ã˜Â­Ã™â€ž" : (order.customerAddress || "-")}
           </p>
         </div>
 
@@ -123,20 +124,23 @@ export function KitchenTicket({ order, onStatusChange }: KitchenTicketProps) {
           <div className="flex items-center gap-2 p-2 bg-amal-yellow-light rounded-lg">
             <Clock className="h-4 w-4 text-foreground" />
             <span className="text-sm font-medium">
-              {isPickup ? "Ù…ÙˆØ¹Ø¯ Ø§Ù„Ø§Ø³ØªÙ„Ø§Ù…" : "Ù…ÙˆØ¹Ø¯ Ø§Ù„ØªÙˆØµÙŠÙ„"}: {order.scheduledTime}
+              {isPickup ? "Ã™â€¦Ã™Ë†Ã˜Â¹Ã˜Â¯ Ã˜Â§Ã™â€žÃ˜Â§Ã˜Â³Ã˜ÂªÃ™â€žÃ˜Â§Ã™â€¦" : "Ã™â€¦Ã™Ë†Ã˜Â¹Ã˜Â¯ Ã˜Â§Ã™â€žÃ˜ÂªÃ™Ë†Ã˜ÂµÃ™Å Ã™â€ž"}: {order.scheduledTime}
             </span>
           </div>
         ) : null}
 
         <div className="border-t border-border pt-4">
-          <h4 className="font-medium mb-2">Ø§Ù„Ø·Ù„Ø¨Ø§Øª:</h4>
+          <h4 className="font-medium mb-2">Ã˜Â§Ã™â€žÃ˜Â·Ã™â€žÃ˜Â¨Ã˜Â§Ã˜Âª:</h4>
           <ul className="space-y-2">
             {order.items.map((item, index) => (
               <li key={index} className="flex justify-between text-sm gap-2">
                 <span className="min-w-0">
                   <span className="font-bold text-primary">{item.quantity}x</span> {item.name}
                 </span>
-                <span className="text-muted-foreground whitespace-nowrap">{item.price * item.quantity} ﷼</span>
+                <PriceWithRiyalLogo
+                  value={item.price * item.quantity}
+                  className="text-muted-foreground whitespace-nowrap"
+                />
               </li>
             ))}
           </ul>
@@ -145,14 +149,14 @@ export function KitchenTicket({ order, onStatusChange }: KitchenTicketProps) {
         {order.notes ? (
           <div className="p-3 bg-amal-pink-light rounded-lg">
             <p className="text-sm">
-              <span className="font-medium">Ù…Ù„Ø§Ø­Ø¸Ø§Øª:</span> {order.notes}
+              <span className="font-medium">Ã™â€¦Ã™â€žÃ˜Â§Ã˜Â­Ã˜Â¸Ã˜Â§Ã˜Âª:</span> {order.notes}
             </p>
           </div>
         ) : null}
 
         <div className="flex justify-between items-center pt-2 border-t border-border">
-          <span className="font-bold">Ø§Ù„Ø¥Ø¬Ù…Ø§Ù„ÙŠ</span>
-          <span className="text-xl font-bold text-primary">{order.total} ﷼</span>
+          <span className="font-bold">Ã˜Â§Ã™â€žÃ˜Â¥Ã˜Â¬Ã™â€¦Ã˜Â§Ã™â€žÃ™Å </span>
+          <PriceWithRiyalLogo value={order.total} className="text-xl font-bold text-primary" />
         </div>
 
         {nextStatus[order.status] ? (
@@ -165,9 +169,9 @@ export function KitchenTicket({ order, onStatusChange }: KitchenTicketProps) {
               order.status === "ready" && "bg-muted text-muted-foreground hover:bg-muted/80"
             )}
           >
-            {order.status === "pending" && "Ø¨Ø¯Ø¡ Ø§Ù„ØªØ­Ø¶ÙŠØ±"}
-            {order.status === "preparing" && "Ø¬Ø§Ù‡Ø² Ù„Ù„ØªØ³Ù„ÙŠÙ…"}
-            {order.status === "ready" && "ØªÙ… Ø§Ù„ØªØ³Ù„ÙŠÙ…"}
+            {order.status === "pending" && "Ã˜Â¨Ã˜Â¯Ã˜Â¡ Ã˜Â§Ã™â€žÃ˜ÂªÃ˜Â­Ã˜Â¶Ã™Å Ã˜Â±"}
+            {order.status === "preparing" && "Ã˜Â¬Ã˜Â§Ã™â€¡Ã˜Â² Ã™â€žÃ™â€žÃ˜ÂªÃ˜Â³Ã™â€žÃ™Å Ã™â€¦"}
+            {order.status === "ready" && "Ã˜ÂªÃ™â€¦ Ã˜Â§Ã™â€žÃ˜ÂªÃ˜Â³Ã™â€žÃ™Å Ã™â€¦"}
           </button>
         ) : null}
 
@@ -180,12 +184,12 @@ export function KitchenTicket({ order, onStatusChange }: KitchenTicketProps) {
           )}
         >
           <Printer className="h-4 w-4" />
-          {printing ? "Ø¬Ø§Ø±ÙŠ Ø§Ù„Ø·Ø¨Ø§Ø¹Ø©..." : printSuccess ? "ØªÙ…Øª Ø§Ù„Ø·Ø¨Ø§Ø¹Ø©" : "Ø·Ø¨Ø§Ø¹Ø© Ø§Ù„Ø¢Ù†"}
+          {printing ? "Ã˜Â¬Ã˜Â§Ã˜Â±Ã™Å  Ã˜Â§Ã™â€žÃ˜Â·Ã˜Â¨Ã˜Â§Ã˜Â¹Ã˜Â©..." : printSuccess ? "Ã˜ÂªÃ™â€¦Ã˜Âª Ã˜Â§Ã™â€žÃ˜Â·Ã˜Â¨Ã˜Â§Ã˜Â¹Ã˜Â©" : "Ã˜Â·Ã˜Â¨Ã˜Â§Ã˜Â¹Ã˜Â© Ã˜Â§Ã™â€žÃ˜Â¢Ã™â€ "}
         </button>
 
         <div className="flex items-center justify-between">
           <button onClick={() => setShowIpEdit((v) => !v)} className="text-xs text-muted-foreground underline">
-            IP Ø§Ù„Ø·Ø§Ø¨Ø¹Ø©: {printerIp}
+            IP Ã˜Â§Ã™â€žÃ˜Â·Ã˜Â§Ã˜Â¨Ã˜Â¹Ã˜Â©: {printerIp}
           </button>
         </div>
 
@@ -208,7 +212,7 @@ export function KitchenTicket({ order, onStatusChange }: KitchenTicketProps) {
               }}
               className="px-3 py-1.5 text-sm bg-primary text-primary-foreground rounded-lg"
             >
-              Ø­ÙØ¸
+              Ã˜Â­Ã™ÂÃ˜Â¸
             </button>
           </div>
         ) : null}
@@ -225,9 +229,9 @@ export function KitchenTicket({ order, onStatusChange }: KitchenTicketProps) {
 
 function getTimeAgo(date: Date): string {
   const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000)
-  if (seconds < 60) return "Ø§Ù„Ø¢Ù†"
-  if (seconds < 3600) return `Ù…Ù†Ø° ${Math.floor(seconds / 60)} Ø¯Ù‚ÙŠÙ‚Ø©`
-  if (seconds < 86400) return `Ù…Ù†Ø° ${Math.floor(seconds / 3600)} Ø³Ø§Ø¹Ø©`
-  return `Ù…Ù†Ø° ${Math.floor(seconds / 86400)} ÙŠÙˆÙ…`
+  if (seconds < 60) return "Ã˜Â§Ã™â€žÃ˜Â¢Ã™â€ "
+  if (seconds < 3600) return `Ã™â€¦Ã™â€ Ã˜Â° ${Math.floor(seconds / 60)} Ã˜Â¯Ã™â€šÃ™Å Ã™â€šÃ˜Â©`
+  if (seconds < 86400) return `Ã™â€¦Ã™â€ Ã˜Â° ${Math.floor(seconds / 3600)} Ã˜Â³Ã˜Â§Ã˜Â¹Ã˜Â©`
+  return `Ã™â€¦Ã™â€ Ã˜Â° ${Math.floor(seconds / 86400)} Ã™Å Ã™Ë†Ã™â€¦`
 }
 

@@ -6,6 +6,7 @@ import { useMenu } from "@/hooks/use-menu"
 import { useState } from "react"
 import { ProductDrawer } from "@/components/product-drawer"
 import type { MenuItem } from "@/components/cart-provider"
+import { PriceWithRiyalLogo } from "@/components/ui/price-with-riyal-logo"
 
 export function BestSellers() {
   const { menuItems } = useMenu()
@@ -22,8 +23,8 @@ export function BestSellers() {
             <Star className="h-4 w-4 text-yellow-500 fill-yellow-400" />
           </div>
           <div>
-            <h2 className="font-bold text-base">Ø§Ù„Ø£ÙƒØ«Ø± Ø·Ù„Ø¨Ø§Ù‹</h2>
-            <p className="text-xs text-muted-foreground">Ø£Ø¨Ø±Ø² Ù…Ø§ ÙŠØ·Ù„Ø¨Ù‡ Ø¹Ù…Ù„Ø§Ø¤Ù†Ø§</p>
+            <h2 className="font-bold text-base">Ã˜Â§Ã™â€žÃ˜Â£Ã™Æ’Ã˜Â«Ã˜Â± Ã˜Â·Ã™â€žÃ˜Â¨Ã˜Â§Ã™â€¹</h2>
+            <p className="text-xs text-muted-foreground">Ã˜Â£Ã˜Â¨Ã˜Â±Ã˜Â² Ã™â€¦Ã˜Â§ Ã™Å Ã˜Â·Ã™â€žÃ˜Â¨Ã™â€¡ Ã˜Â¹Ã™â€¦Ã™â€žÃ˜Â§Ã˜Â¤Ã™â€ Ã˜Â§</p>
           </div>
         </div>
 
@@ -40,13 +41,13 @@ export function BestSellers() {
                   : <div className="absolute inset-0 flex items-center justify-center"><ShoppingBag className="h-8 w-8 text-gray-200" /></div>
                 }
                 <span className="absolute top-2 right-2 bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                  <Star className="h-2.5 w-2.5 fill-yellow-900" /> Ø§Ù„Ø£ÙƒØ«Ø±
+                  <Star className="h-2.5 w-2.5 fill-yellow-900" /> Ã˜Â§Ã™â€žÃ˜Â£Ã™Æ’Ã˜Â«Ã˜Â±
                 </span>
               </div>
               <div className="p-2.5" dir="rtl">
                 <p className="font-bold text-sm truncate">{item.name}</p>
                 {item.nameEn && <p className="text-xs text-muted-foreground truncate">{item.nameEn}</p>}
-                <p className="text-sm font-bold text-primary mt-1">{item.price} ﷼</p>
+                <p className="text-sm font-bold text-primary mt-1"><PriceWithRiyalLogo value={item.price} /></p>
               </div>
             </button>
           ))}

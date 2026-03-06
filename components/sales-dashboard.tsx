@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
+import { PriceWithRiyalLogo } from "@/components/ui/price-with-riyal-logo"
 import { TrendingUp, ShoppingBag, Truck, Package } from "lucide-react"
 
 interface SalesData {
@@ -17,9 +18,9 @@ interface SalesData {
 type Range = "today" | "week" | "month"
 
 const RANGE_LABELS: Record<Range, string> = {
-  today: "Ø§Ù„ÙŠÙˆÙ…",
-  week: "Ù‡Ø°Ø§ Ø§Ù„Ø£Ø³Ø¨ÙˆØ¹",
-  month: "Ù‡Ø°Ø§ Ø§Ù„Ø´Ù‡Ø±",
+  today: "Ã˜Â§Ã™â€žÃ™Å Ã™Ë†Ã™â€¦",
+  week: "Ã™â€¡Ã˜Â°Ã˜Â§ Ã˜Â§Ã™â€žÃ˜Â£Ã˜Â³Ã˜Â¨Ã™Ë†Ã˜Â¹",
+  month: "Ã™â€¡Ã˜Â°Ã˜Â§ Ã˜Â§Ã™â€žÃ˜Â´Ã™â€¡Ã˜Â±",
 }
 
 function getStartDate(range: Range): string {
@@ -126,7 +127,7 @@ export function SalesDashboard() {
       ) : !data || data.totalOrders === 0 ? (
         <div className="text-center py-12 text-muted-foreground">
           <ShoppingBag className="h-10 w-10 mx-auto mb-3 opacity-30" />
-          <p>Ù„Ø§ ØªÙˆØ¬Ø¯ Ø·Ù„Ø¨Ø§Øª ÙÙŠ Ù‡Ø°Ù‡ Ø§Ù„ÙØªØ±Ø©</p>
+          <p>Ã™â€žÃ˜Â§ Ã˜ÂªÃ™Ë†Ã˜Â¬Ã˜Â¯ Ã˜Â·Ã™â€žÃ˜Â¨Ã˜Â§Ã˜Âª Ã™ÂÃ™Å  Ã™â€¡Ã˜Â°Ã™â€¡ Ã˜Â§Ã™â€žÃ™ÂÃ˜ÂªÃ˜Â±Ã˜Â©</p>
         </div>
       ) : (
         <>
@@ -134,36 +135,39 @@ export function SalesDashboard() {
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-[#1e5631]/10 rounded-2xl p-4">
               <TrendingUp className="h-5 w-5 text-[#1e5631] mb-2" />
-              <p className="text-2xl font-bold text-[#1e5631]">{data.totalRevenue.toLocaleString()}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø§Ù„Ù…Ø¨ÙŠØ¹Ø§Øª (﷼)</p>
+              <PriceWithRiyalLogo
+                value={data.totalRevenue.toLocaleString()}
+                className="text-2xl font-bold text-[#1e5631]"
+              />
+              <p className="text-xs text-muted-foreground mt-0.5">Ã˜Â¥Ã˜Â¬Ã™â€¦Ã˜Â§Ã™â€žÃ™Å  Ã˜Â§Ã™â€žÃ™â€¦Ã˜Â¨Ã™Å Ã˜Â¹Ã˜Â§Ã˜Âª</p>
             </div>
             <div className="bg-amal-yellow/20 rounded-2xl p-4">
               <ShoppingBag className="h-5 w-5 text-foreground mb-2" />
               <p className="text-2xl font-bold text-foreground">{data.totalOrders}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Ø¹Ø¯Ø¯ Ø§Ù„Ø·Ù„Ø¨Ø§Øª</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Ã˜Â¹Ã˜Â¯Ã˜Â¯ Ã˜Â§Ã™â€žÃ˜Â·Ã™â€žÃ˜Â¨Ã˜Â§Ã˜Âª</p>
             </div>
             <div className="bg-amal-pink-light rounded-2xl p-4">
               <Truck className="h-5 w-5 text-primary mb-2" />
               <p className="text-2xl font-bold text-foreground">{data.deliveryOrders}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">ØªÙˆØµÙŠÙ„</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Ã˜ÂªÃ™Ë†Ã˜ÂµÃ™Å Ã™â€ž</p>
             </div>
             <div className="bg-amal-grey rounded-2xl p-4">
               <Package className="h-5 w-5 text-foreground mb-2" />
               <p className="text-2xl font-bold text-foreground">{data.pickupOrders}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Ø§Ø³ØªÙ„Ø§Ù… Ù…Ù† Ø§Ù„Ù…Ø­Ù„</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Ã˜Â§Ã˜Â³Ã˜ÂªÃ™â€žÃ˜Â§Ã™â€¦ Ã™â€¦Ã™â€  Ã˜Â§Ã™â€žÃ™â€¦Ã˜Â­Ã™â€ž</p>
             </div>
           </div>
 
           {/* Avg order */}
           <div className="bg-white rounded-2xl p-4 flex items-center justify-between border border-border/50">
-            <span className="text-2xl font-bold">{data.avgOrderValue} ﷼</span>
-            <span className="text-sm text-muted-foreground">Ù…ØªÙˆØ³Ø· Ù‚ÙŠÙ…Ø© Ø§Ù„Ø·Ù„Ø¨</span>
+            <PriceWithRiyalLogo value={data.avgOrderValue} className="text-2xl font-bold" />
+            <span className="text-sm text-muted-foreground">Ã™â€¦Ã˜ÂªÃ™Ë†Ã˜Â³Ã˜Â· Ã™â€šÃ™Å Ã™â€¦Ã˜Â© Ã˜Â§Ã™â€žÃ˜Â·Ã™â€žÃ˜Â¨</span>
           </div>
 
-          {/* Daily breakdown â€” only show for week/month */}
+          {/* Daily breakdown Ã¢â‚¬â€ only show for week/month */}
           {range !== "today" && data.dailyTotals.length > 1 && (
             <div className="bg-white rounded-2xl p-4 border border-border/50">
-              <h3 className="font-bold text-right mb-3">Ø§Ù„Ù…Ø¨ÙŠØ¹Ø§Øª Ø§Ù„ÙŠÙˆÙ…ÙŠØ©</h3>
+              <h3 className="font-bold text-right mb-3">Ã˜Â§Ã™â€žÃ™â€¦Ã˜Â¨Ã™Å Ã˜Â¹Ã˜Â§Ã˜Âª Ã˜Â§Ã™â€žÃ™Å Ã™Ë†Ã™â€¦Ã™Å Ã˜Â©</h3>
               <div className="space-y-2">
                 {data.dailyTotals.map((day) => {
                   const maxRevenue = Math.max(...data.dailyTotals.map(d => d.revenue))
@@ -176,7 +180,10 @@ export function SalesDashboard() {
                           style={{ width: `${pct}%` }}
                         />
                       </div>
-                      <span className="text-xs font-medium w-16 text-left">{day.revenue} Ø±</span>
+                      <PriceWithRiyalLogo
+                        value={day.revenue}
+                        className="text-xs font-medium w-16 justify-end"
+                      />
                       <span className="text-xs text-muted-foreground w-16 text-right">{day.date}</span>
                     </div>
                   )
@@ -188,7 +195,7 @@ export function SalesDashboard() {
           {/* Top items */}
           {data.topItems.length > 0 && (
             <div className="bg-white rounded-2xl p-4 border border-border/50">
-              <h3 className="font-bold text-right mb-3">Ø§Ù„Ø£ÙƒØ«Ø± Ø·Ù„Ø¨Ø§Ù‹</h3>
+              <h3 className="font-bold text-right mb-3">Ã˜Â§Ã™â€žÃ˜Â£Ã™Æ’Ã˜Â«Ã˜Â± Ã˜Â·Ã™â€žÃ˜Â¨Ã˜Â§Ã™â€¹</h3>
               <div className="space-y-3">
                 {data.topItems.map((item, i) => (
                   <div key={item.name} className="flex items-center gap-3">
@@ -200,8 +207,11 @@ export function SalesDashboard() {
                       {i + 1}
                     </span>
                     <span className="flex-1 text-sm font-medium text-right truncate">{item.name}</span>
-                    <span className="text-xs text-muted-foreground flex-shrink-0">{item.quantity} Ù‚Ø·Ø¹Ø©</span>
-                    <span className="text-xs font-bold text-[#1e5631] flex-shrink-0 w-16 text-left">{item.revenue} Ø±</span>
+                    <span className="text-xs text-muted-foreground flex-shrink-0">{item.quantity} Ã™â€šÃ˜Â·Ã˜Â¹Ã˜Â©</span>
+                    <PriceWithRiyalLogo
+                      value={item.revenue}
+                      className="text-xs font-bold text-[#1e5631] flex-shrink-0 w-16 justify-end"
+                    />
                   </div>
                 ))}
               </div>

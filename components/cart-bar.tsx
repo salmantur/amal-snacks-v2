@@ -5,15 +5,7 @@ import { ShoppingBag, ChevronLeft, X } from "lucide-react"
 import { useState } from "react"
 import { useCart } from "@/components/cart-provider"
 import { OrderTypeModal } from "@/components/order-type-modal"
-import { SaudiRiyalIcon } from "@/components/ui/saudi-riyal-icon"
-function RiyalAmount({ value, className = "" }: { value: number; className?: string }) {
-  return (
-    <span className={`inline-flex items-center gap-1 ${className}`}>
-      <span>{value}</span>
-      <SaudiRiyalIcon className="h-[0.9em] w-[0.9em]" />
-    </span>
-  )
-}
+import { PriceWithRiyalLogo } from "@/components/ui/price-with-riyal-logo"
 
 export function CartBar() {
   const { items, totalItems, totalPrice, removeItem, updateQuantity } = useCart()
@@ -54,7 +46,7 @@ export function CartBar() {
               <div className="min-w-0 text-right">
                 <p className="text-[11px] leading-4 text-foreground/65">ملخص السلة</p>
                 <p className="font-extrabold text-[15px] leading-5 truncate">
-                  {totalItems} منتجات · <RiyalAmount value={totalPrice} />
+                  {totalItems} منتجات · <PriceWithRiyalLogo value={totalPrice} />
                 </p>
               </div>
               <div className="w-10 h-10 rounded-full bg-primary/90 flex items-center justify-center border border-primary/30 shadow-sm shrink-0">
@@ -78,7 +70,7 @@ export function CartBar() {
             <div className="flex items-center justify-between mb-4" dir="rtl">
               <h2 className="text-lg font-bold">سلتك</h2>
               <span className="text-sm text-muted-foreground">
-                {totalItems} عنصر · <RiyalAmount value={totalPrice} />
+                {totalItems} عنصر · <PriceWithRiyalLogo value={totalPrice} />
               </span>
             </div>
 
@@ -89,7 +81,7 @@ export function CartBar() {
                     <p className="font-medium text-sm truncate">{item.name}</p>
                     {item.selectedIngredients?.length ? <p className="text-xs text-muted-foreground truncate">{item.selectedIngredients.join("، ")}</p> : null}
                     <p className="text-sm font-bold text-primary mt-0.5">
-                      <RiyalAmount value={item.price * item.quantity} />
+                      <PriceWithRiyalLogo value={item.price * item.quantity} />
                     </p>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">

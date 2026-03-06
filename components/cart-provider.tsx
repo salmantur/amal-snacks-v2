@@ -50,6 +50,8 @@ export function getCartKey(id: string, selectedIngredients?: string[]): string {
 
 const CART_STORAGE_KEY = "amal_cart_items"
 const DELIVERY_STORAGE_KEY = "amal_delivery_info"
+const CART_UPDATED_AT_KEY = "amal_cart_updated_at"
+const CART_TTL_MS = 1000 * 60 * 60 * 24 * 7 // 7 days
 
 function loadFromStorage<T>(key: string, fallback: T): T {
   if (typeof window === "undefined") return fallback
@@ -68,6 +70,49 @@ function saveToStorage<T>(key: string, value: T): void {
   } catch {
     // Storage full or unavailable — fail silently
   }
+}
+
+function isValidCartItem(value: unknown): value is CartItem {
+  if (!value || typeof value !== "object") return false
+  const item = value as Partial<CartItem>
+  return (
+    typeof item.id === "string" &&
+    typeof item.name === "string" &&
+    typeof item.description === "string" &&
+    typeof item.price === "number" &&
+    typeof item.image === "string" &&
+    typeof item.category === "string" &&
+    typeof item.quantity === "number" &&
+    item.quantity > 0 &&
+    typeof item.cartKey === "string"
+  )
+}
+
+function sanitizeCartItems(value: unknown): CartItem[] {
+  if (!Array.isArray(value)) return []
+  return value.filter(isValidCartItem)
+}
+
+function isValidDeliveryInfo(value: unknown): value is DeliveryInfo {
+  if (!value || typeof value !== "object") return false
+  const info = value as Partial<DeliveryInfo>
+  const scheduledTimeOk = info.scheduledTime === null || typeof info.scheduledTime === "string"
+  return (
+    typeof info.name === "string" &&
+    typeof info.phone === "string" &&
+    typeof info.address === "string" &&
+    typeof info.area === "string" &&
+    typeof info.notes === "string" &&
+    scheduledTimeOk
+  )
+}
+
+function isStorageStale(): boolean {
+  if (typeof window === "undefined") return false
+  const raw = localStorage.getItem(CART_UPDATED_AT_KEY)
+  const updatedAt = raw ? Number(raw) : NaN
+  if (!Number.isFinite(updatedAt)) return false
+  return Date.now() - updatedAt > CART_TTL_MS
 }
 
 const DEFAULT_DELIVERY_INFO: DeliveryInfo = {
@@ -94,16 +139,20 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined)
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>(() =>
-    loadFromStorage<CartItem[]>(CART_STORAGE_KEY, [])
-  )
-  const [deliveryInfo, setDeliveryInfoState] = useState<DeliveryInfo>(() =>
-    loadFromStorage<DeliveryInfo>(DELIVERY_STORAGE_KEY, DEFAULT_DELIVERY_INFO)
-  )
+  const [items, setItems] = useState<CartItem[]>(() => {
+    if (isStorageStale()) return []
+    return sanitizeCartItems(loadFromStorage<unknown>(CART_STORAGE_KEY, []))
+  })
+  const [deliveryInfo, setDeliveryInfoState] = useState<DeliveryInfo>(() => {
+    if (isStorageStale()) return DEFAULT_DELIVERY_INFO
+    const stored = loadFromStorage<unknown>(DELIVERY_STORAGE_KEY, DEFAULT_DELIVERY_INFO)
+    return isValidDeliveryInfo(stored) ? stored : DEFAULT_DELIVERY_INFO
+  })
 
   // Persist cart items whenever they change
   useEffect(() => {
     saveToStorage(CART_STORAGE_KEY, items)
+    saveToStorage(CART_UPDATED_AT_KEY, Date.now())
   }, [items])
 
   // Persist delivery info whenever it changes
@@ -141,6 +190,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const clearCart = useCallback(() => {
     setItems([])
     saveToStorage(CART_STORAGE_KEY, [])
+    saveToStorage(CART_UPDATED_AT_KEY, Date.now())
   }, [])
 
   const setDeliveryInfo = useCallback((info: DeliveryInfo) => {

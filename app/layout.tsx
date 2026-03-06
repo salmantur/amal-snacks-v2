@@ -41,6 +41,49 @@ export const viewport: Viewport = {
 }
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const themePreloadScript = `
+    (function () {
+      try {
+        var raw = localStorage.getItem("amal_theme_colors");
+        if (!raw) return;
+        var cfg = JSON.parse(raw);
+        if (!cfg) return;
+        var root = document.documentElement;
+        function hexToHsl(hex) {
+          if (!hex || typeof hex !== "string" || hex.length < 7) return null;
+          var r = parseInt(hex.slice(1, 3), 16) / 255;
+          var g = parseInt(hex.slice(3, 5), 16) / 255;
+          var b = parseInt(hex.slice(5, 7), 16) / 255;
+          var max = Math.max(r, g, b), min = Math.min(r, g, b);
+          var h = 0, s = 0, l = (max + min) / 2;
+          if (max !== min) {
+            var d = max - min;
+            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+            if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+            else if (max === g) h = ((b - r) / d + 2) / 6;
+            else h = ((r - g) / d + 4) / 6;
+          }
+          return Math.round(h * 360) + " " + Math.round(s * 100) + "% " + Math.round(l * 100) + "%";
+        }
+        if (cfg.primary) root.style.setProperty("--primary", hexToHsl(cfg.primary));
+        if (cfg.primary_foreground) root.style.setProperty("--primary-foreground", hexToHsl(cfg.primary_foreground));
+        if (cfg.primary) root.style.setProperty("--ring", hexToHsl(cfg.primary));
+        if (cfg.checkout_green) root.style.setProperty("--checkout-green", cfg.checkout_green);
+        if (cfg.background) {
+          var bg = hexToHsl(cfg.background);
+          root.style.setProperty("--background", bg);
+          root.style.setProperty("--card", bg);
+        }
+        if (cfg.bar_background) {
+          root.style.setProperty("--bar-background", cfg.bar_background);
+          var bar = hexToHsl(cfg.bar_background);
+          root.style.setProperty("--muted", bar);
+          root.style.setProperty("--amal-grey", bar);
+        }
+      } catch (e) {}
+    })();
+  `
+
   return (
     <html lang="ar" dir="rtl">
       <head>
@@ -48,6 +91,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <link rel="dns-prefetch" href="https://eejlqdydoilbjpegxvbq.supabase.co" />
         <link rel="preconnect" href="https://wa.me" />
         <link rel="dns-prefetch" href="https://wa.me" />
+        <script dangerouslySetInnerHTML={{ __html: themePreloadScript }} />
       </head>
       <body className={`${tajawal.variable} font-sans antialiased`}>
         <CartProvider>

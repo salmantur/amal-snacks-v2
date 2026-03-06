@@ -19,6 +19,8 @@ export const DEFAULT_THEME: ThemeConfig = {
   bar_background: "#f5f5f5", // default light grey bars
 }
 
+export const THEME_STORAGE_KEY = "amal_theme_colors"
+
 const TABLE = "app_settings"
 const KEY = "theme_colors"
 
@@ -57,6 +59,27 @@ export function applyTheme(config: ThemeConfig) {
   }
 }
 
+export function loadCachedTheme(): ThemeConfig | null {
+  if (typeof window === "undefined") return null
+  try {
+    const raw = localStorage.getItem(THEME_STORAGE_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as Partial<ThemeConfig>
+    return { ...DEFAULT_THEME, ...parsed }
+  } catch {
+    return null
+  }
+}
+
+export function saveCachedTheme(config: ThemeConfig) {
+  if (typeof window === "undefined") return
+  try {
+    localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(config))
+  } catch {
+    // Ignore storage failures.
+  }
+}
+
 export function useThemeConfig() {
   const [config, setConfig] = useState<ThemeConfig>(DEFAULT_THEME)
   const [loading, setLoading] = useState(true)
@@ -64,6 +87,12 @@ export function useThemeConfig() {
   useEffect(() => {
     const supabase = createClient()
     async function load() {
+      const cached = loadCachedTheme()
+      if (cached) {
+        setConfig(cached)
+        applyTheme(cached)
+      }
+
       const { data } = await supabase
         .from(TABLE)
         .select("value")
@@ -72,6 +101,7 @@ export function useThemeConfig() {
       const cfg = data?.value ? { ...DEFAULT_THEME, ...data.value } : DEFAULT_THEME
       setConfig(cfg)
       applyTheme(cfg)
+      saveCachedTheme(cfg)
       setLoading(false)
     }
     load()
@@ -82,6 +112,7 @@ export function useThemeConfig() {
     await supabase.from(TABLE).upsert({ key: KEY, value: newConfig })
     setConfig(newConfig)
     applyTheme(newConfig)
+    saveCachedTheme(newConfig)
   }
 
   return { config, loading, saveConfig }

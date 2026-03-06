@@ -11,6 +11,7 @@ import { useCategories } from "@/hooks/use-categories"
 import { useMenu } from "@/hooks/use-menu"
 import type { MenuItem } from "@/components/cart-provider"
 import { smartFilterMenuItems } from "@/lib/smart-search"
+import { cn } from "@/lib/utils"
 
 const ProductDrawer = dynamic(
   () => import("@/components/product-drawer").then((mod) => ({ default: mod.ProductDrawer })),
@@ -172,14 +173,14 @@ export function MenuGrid() {
               if (sectionItems.length === 0) return null
 
               return (
-                <div key={section.dbCategory}>
+                <div key={section.dbCategory} className={cn("contain-layout", section.dbCategory !== sections[0]?.dbCategory && "[content-visibility:auto] [contain-intrinsic-size:1px_1200px]")}>
                   <h2 className="text-xl md:text-2xl font-bold text-[#1e293b] text-right mb-4 md:mb-8">{section.label}</h2>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8">
                     {visibleSectionItems.map((item, idx) =>
                       item.category === "eid" ? (
-                        <PackageCard key={item.id} item={item} onSelect={setSelectedProduct} priority={idx < 2 && section.dbCategory === sections[0]?.dbCategory} variant={itemVariant} />
+                        <PackageCard key={item.id} item={item} onSelect={setSelectedProduct} priority={idx < 4 && section.dbCategory === sections[0]?.dbCategory} variant={itemVariant} />
                       ) : (
-                        <ProductCard key={item.id} item={item} onSelect={setSelectedProduct} priority={idx < 2 && section.dbCategory === sections[0]?.dbCategory} variant={itemVariant} />
+                        <ProductCard key={item.id} item={item} onSelect={setSelectedProduct} priority={idx < 4 && section.dbCategory === sections[0]?.dbCategory} variant={itemVariant} />
                       )
                     )}
                   </div>

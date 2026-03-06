@@ -28,15 +28,15 @@ export function BestSellers() {
         </div>
 
         <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4" style={{ scrollbarWidth: "none" }}>
-          {featured.map(item => (
+          {featured.map((item, idx) => (
             <button
               key={item.id}
               onClick={() => setSelected(item)}
-              className="flex-shrink-0 w-40 bg-white rounded-2xl overflow-hidden shadow-sm active:scale-95 transition-transform text-right"
+              className="flex-shrink-0 w-40 bg-white rounded-2xl overflow-hidden border border-black/5 shadow-sm active:scale-95 transition-transform text-right"
             >
               <div className="relative w-full bg-[#f5f5f5]" style={{ aspectRatio: "4/3" }}>
                 {item.image
-                  ? <Image src={item.image} alt={item.name} fill sizes="160px" quality={70} loading="lazy" className="object-cover" />
+                  ? <Image src={item.image} alt={item.name} fill sizes="160px" quality={72} priority={idx < 2} loading={idx < 2 ? "eager" : "lazy"} className="object-cover" />
                   : <div className="absolute inset-0 flex items-center justify-center"><ShoppingBag className="h-8 w-8 text-gray-200" /></div>
                 }
                 <span className="absolute top-2 right-2 bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-1">

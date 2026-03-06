@@ -14,7 +14,6 @@ import { CategoryManager } from "@/components/category-manager"
 import { SalesDashboard } from "@/components/sales-dashboard"
 import { ThemeEditor } from "@/components/theme-editor"
 import { DeliveryAreasManager } from "@/components/delivery-areas-manager"
-import { WhatsAppOrderImport } from "@/components/whatsapp-order-import"
 import { cn } from "@/lib/utils"
 
 type AdminTab = "orders" | "banner" | "stock" | "categories" | "sales" | "colors" | "delivery"
@@ -314,8 +313,6 @@ export default function AdminPage() {
 
       {activeTab === "orders" ? (
         <div className="p-4">
-          <WhatsAppOrderImport onOrderCreated={refreshOrders} />
-
           {loading ? (
             <div className="text-center py-12">
               <div className="w-16 h-16 rounded-full bg-gray-100 mx-auto mb-4 flex items-center justify-center animate-pulse">
@@ -342,4 +339,3 @@ export default function AdminPage() {
     </main>
   )
 }
-

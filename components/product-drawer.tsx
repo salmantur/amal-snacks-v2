@@ -77,6 +77,7 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
   const isEidPackage = product?.category === "eid"
   const hasIngredients = (product?.ingredients?.length || 0) > 0
   const maxSelections = product?.limit || 0
+  const isTraySizeVariant = isTray && maxSelections === 1 && hasIngredients && (product?.ingredients || []).some((i) => i.includes("::"))
 
   useEffect(() => {
     if (!open) return
@@ -89,10 +90,10 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
 
   useEffect(() => {
     if (!open || !product) return
-    if (isTray || isEidPackage) return
+    if ((isTray && !isTraySizeVariant) || isEidPackage) return
     if (!hasIngredients || maxSelections !== 1 || !product.ingredients?.length) return
     setSelectedIngredients([product.ingredients[0]])
-  }, [open, product, isTray, isEidPackage, hasIngredients, maxSelections])
+  }, [open, product, isTray, isTraySizeVariant, isEidPackage, hasIngredients, maxSelections])
 
   if (!product) return null
 
@@ -120,18 +121,18 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
   const eidComplete = traySelections.length === eidRequired
 
   const handleAddToCart = () => {
-    const selections = (isTray || isEidPackage)
+    const selections = ((isTray && !isTraySizeVariant) || isEidPackage)
       ? traySelections
       : selectedIngredients.length > 0
       ? selectedIngredients
       : undefined
 
     const displaySelections =
-      isTray || isEidPackage
+      (isTray && !isTraySizeVariant) || isEidPackage
         ? selections
         : selections?.map((raw) => parseVariantOption(raw, product.price).label).filter(Boolean)
     const selectedVariantPrice =
-      !isTray && !isEidPackage && maxSelections === 1 && selectedIngredients.length === 1
+      ((isTray && isTraySizeVariant) || (!isTray && !isEidPackage)) && maxSelections === 1 && selectedIngredients.length === 1
         ? parseVariantOption(selectedIngredients[0], product.price).price
         : product.price
 
@@ -141,7 +142,7 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
   }
 
   const selectedVariantPrice =
-    !isTray && !isEidPackage && maxSelections === 1 && selectedIngredients.length === 1
+    ((isTray && isTraySizeVariant) || (!isTray && !isEidPackage)) && maxSelections === 1 && selectedIngredients.length === 1
       ? parseVariantOption(selectedIngredients[0], product.price).price
       : product.price
 
@@ -192,7 +193,7 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
             )
           })()}
 
-          {isTray ? (
+          {isTray && !isTraySizeVariant ? (
             <div className="pb-4">
               <div className="flex items-center justify-between mb-3">
                 <span className={cn("text-sm font-medium px-3 py-1 rounded-full", trayComplete ? "bg-[#1e5631]/10 text-[#1e5631]" : "bg-amal-yellow/20 text-foreground")}>
@@ -298,12 +299,12 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
 
           <button
             onClick={handleAddToCart}
-            disabled={((isTray && !trayComplete) || (isEidPackage && !eidComplete)) || product.inStock === false || isAddedFeedback}
+            disabled={(((isTray && !isTraySizeVariant) && !trayComplete) || (isEidPackage && !eidComplete)) || product.inStock === false || isAddedFeedback}
             className={cn(
               "w-full py-4 rounded-full text-lg font-medium transition-all duration-300",
               product.inStock === false
                 ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                : (isTray && !trayComplete) || (isEidPackage && !eidComplete)
+                : ((isTray && !isTraySizeVariant) && !trayComplete) || (isEidPackage && !eidComplete)
                 ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                 : isAddedFeedback
                 ? "bg-[#1e5631] text-white scale-[1.02]"
@@ -314,7 +315,7 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
               ? "تمت الإضافة ✓"
               : product.inStock === false
               ? "نفذت الكمية"
-              : isTray && !trayComplete
+              : (isTray && !isTraySizeVariant) && !trayComplete
               ? `اختر ${TRAY_REQUIRED - traySelections.length} أصناف أخرى`
               : isEidPackage && !eidComplete
               ? `اختر ${eidRequired - traySelections.length} سخانات`

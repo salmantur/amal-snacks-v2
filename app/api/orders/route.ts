@@ -162,9 +162,21 @@ export async function POST(req: Request) {
         const telegramMessage = formatNewOrderTelegramMessage({
           orderNumber: insertedOrder.order_number,
           customerName: payload.customerName,
+          customerPhone: payload.customerPhone,
           orderType: payload.orderType,
           total,
+          subtotal,
+          deliveryFee,
+          discountAmount: discountResult.totalDiscount,
+          discountCode: discountResult.codeApplied,
           itemsCount: normalizedItems.length,
+          items: normalizedItems.map((item) => ({
+            name: item.name,
+            quantity: item.quantity,
+            price: item.price,
+            selectedIngredients: item.selectedIngredients,
+          })),
+          notes: payload.notes,
           scheduledTime: payload.scheduledTime ?? null,
           area: payload.customerArea,
         })

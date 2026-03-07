@@ -1,4 +1,4 @@
-export interface TelegramConfig {
+﻿export interface TelegramConfig {
   enabled: boolean
   notifyOnNewOrder: boolean
   botToken: string
@@ -59,9 +59,21 @@ export async function sendTelegramMessage(config: TelegramConfig, text: string):
 export function formatNewOrderTelegramMessage(input: {
   orderNumber: number
   customerName: string
+  customerPhone: string
   orderType: "pickup" | "delivery"
   total: number
+  subtotal: number
+  deliveryFee: number
+  discountAmount?: number
+  discountCode?: string | null
   itemsCount: number
+  items: Array<{
+    name: string
+    quantity: number
+    price: number
+    selectedIngredients?: string[]
+  }>
+  notes?: string
   scheduledTime?: string | null
   area?: string
 }): string {
@@ -69,13 +81,39 @@ export function formatNewOrderTelegramMessage(input: {
   const timeLabel = input.scheduledTime?.trim() ? input.scheduledTime : "في أقرب وقت"
   const areaLine = input.orderType === "delivery" && input.area ? `\nالمنطقة: ${input.area}` : ""
 
-  return [
+  const itemLines = input.items.flatMap((item) => {
+    const base = `- ${item.name} × ${item.quantity} = ${item.price * item.quantity} SAR`
+    if (!item.selectedIngredients?.length) return [base]
+    return [base, `  • خيارات: ${item.selectedIngredients.join("، ")}`]
+  })
+
+  const lines: string[] = [
     "🛎️ طلب جديد",
     `رقم الطلب: #${input.orderNumber}`,
     `العميل: ${input.customerName}`,
+    `الجوال: ${input.customerPhone}`,
     `النوع: ${orderTypeLabel}${areaLine}`,
-    `العناصر: ${input.itemsCount}`,
-    `الإجمالي: ${input.total} SAR`,
     `الموعد: ${timeLabel}`,
-  ].join("\n")
+    "",
+    `العناصر (${input.itemsCount}):`,
+    ...itemLines,
+    "",
+    `المجموع الفرعي: ${input.subtotal} SAR`,
+    `رسوم التوصيل: ${input.deliveryFee} SAR`,
+  ]
+
+  if ((input.discountAmount ?? 0) > 0) {
+    const codeLine = input.discountCode ? ` (${input.discountCode})` : ""
+    lines.push(`الخصم${codeLine}: -${input.discountAmount} SAR`)
+  }
+
+  lines.push(`الإجمالي: ${input.total} SAR`)
+
+  if (input.notes?.trim()) {
+    lines.push("", `ملاحظات: ${input.notes.trim()}`)
+  }
+
+  const message = lines.join("\n")
+  if (message.length <= 3900) return message
+  return `${message.slice(0, 3890)}\n…`
 }

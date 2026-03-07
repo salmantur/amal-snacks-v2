@@ -2,6 +2,7 @@
 import { createClient } from "@supabase/supabase-js"
 import { z } from "zod"
 import { normalizeDiscountConfig, resolveDiscount } from "@/lib/discounts"
+import { formatNewOrderTelegramMessage, normalizeTelegramConfig, sendTelegramMessage } from "@/lib/telegram"
 
 const orderItemSchema = z.object({
   id: z.string().min(1),
@@ -146,6 +147,31 @@ export async function POST(req: Request) {
 
     if (insertError || !insertedOrder) {
       return NextResponse.json({ error: "Failed to save order" }, { status: 500 })
+    }
+
+    // Best-effort notification: never block order creation if Telegram fails.
+    try {
+      const { data: telegramSetting } = await supabase
+        .from("app_settings")
+        .select("value")
+        .eq("key", "telegram_alerts")
+        .maybeSingle<AppSettingsRow>()
+
+      const telegramConfig = normalizeTelegramConfig(telegramSetting?.value)
+      if (telegramConfig.enabled && telegramConfig.notifyOnNewOrder && telegramConfig.botToken && telegramConfig.chatId) {
+        const telegramMessage = formatNewOrderTelegramMessage({
+          orderNumber: insertedOrder.order_number,
+          customerName: payload.customerName,
+          orderType: payload.orderType,
+          total,
+          itemsCount: normalizedItems.length,
+          scheduledTime: payload.scheduledTime ?? null,
+          area: payload.customerArea,
+        })
+        await sendTelegramMessage(telegramConfig, telegramMessage)
+      }
+    } catch {
+      // Ignore notification errors.
     }
 
     return NextResponse.json({

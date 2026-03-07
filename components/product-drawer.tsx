@@ -15,6 +15,18 @@ interface ProductDrawerProps {
   onClose: () => void
 }
 
+function parseVariantOption(raw: string, fallbackPrice: number): { label: string; price: number } {
+  const value = (raw || "").trim()
+  if (!value) return { label: "", price: fallbackPrice }
+  const [labelPart, pricePart] = value.split("::")
+  const label = (labelPart || value).trim()
+  const parsedPrice = Number((pricePart || "").replace(/[^\d.]/g, ""))
+  return {
+    label,
+    price: Number.isFinite(parsedPrice) && parsedPrice > 0 ? parsedPrice : fallbackPrice,
+  }
+}
+
 const TRAY_ITEMS: { ar: string; en: string }[] = [
   { ar: "كبة", en: "Kibbeh" },
   { ar: "سبرنق رول", en: "Spring Roll" },
@@ -114,10 +126,24 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
       ? selectedIngredients
       : undefined
 
-    addItem(product, quantity, selections)
+    const displaySelections =
+      isTray || isEidPackage
+        ? selections
+        : selections?.map((raw) => parseVariantOption(raw, product.price).label).filter(Boolean)
+    const selectedVariantPrice =
+      !isTray && !isEidPackage && maxSelections === 1 && selectedIngredients.length === 1
+        ? parseVariantOption(selectedIngredients[0], product.price).price
+        : product.price
+
+    addItem({ ...product, price: selectedVariantPrice }, quantity, displaySelections)
     setIsAddedFeedback(true)
     setTimeout(() => onClose(), 550)
   }
+
+  const selectedVariantPrice =
+    !isTray && !isEidPackage && maxSelections === 1 && selectedIngredients.length === 1
+      ? parseVariantOption(selectedIngredients[0], product.price).price
+      : product.price
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
@@ -234,10 +260,18 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
                 {product.ingredients?.map((ingredient) => {
                   const isSelected = selectedIngredients.includes(ingredient)
                   const isDisabled = !isSelected && maxSelections > 0 && selectedIngredients.length >= maxSelections
+                  const parsed = parseVariantOption(ingredient, product.price)
                   return (
                     <button key={ingredient} onClick={() => toggleIngredient(ingredient)} disabled={isDisabled} className={cn("flex items-center justify-between p-4 min-h-14 rounded-xl border-2 transition-all text-base", isSelected ? "border-[#1e5631] bg-[#1e5631]/10 text-[#1e5631]" : "border-gray-200 bg-white text-[#1e293b]", isDisabled && "opacity-50 cursor-not-allowed")}>
                       {isSelected ? <Check className="h-4 w-4 flex-shrink-0" /> : null}
-                      <span className="flex-1 text-right">{ingredient}</span>
+                      <div className="flex-1 text-right">
+                        <div>{parsed.label}</div>
+                        {ingredient.includes("::") ? (
+                          <div className="text-xs text-gray-500 mt-0.5">
+                            <PriceWithRiyalLogo value={parsed.price} />
+                          </div>
+                        ) : null}
+                      </div>
                     </button>
                   )
                 })}
@@ -258,7 +292,7 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
               </button>
             </div>
             <span className="text-xl font-bold text-[#1e293b]">
-              <PriceWithRiyalLogo value={product.price * quantity} />
+              <PriceWithRiyalLogo value={selectedVariantPrice * quantity} />
             </span>
           </div>
 

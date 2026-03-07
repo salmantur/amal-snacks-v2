@@ -26,6 +26,8 @@ interface MenuRow {
   name: string
   name_en?: string | null
   price: number
+  ingredients?: string[] | string | null
+  limit?: number | null
 }
 
 interface DeliveryAreaRow {
@@ -36,6 +38,29 @@ interface DeliveryAreaRow {
 
 interface AppSettingsRow {
   value: unknown
+}
+
+function parseMenuIngredientOptions(value: MenuRow["ingredients"]): string[] {
+  if (Array.isArray(value)) return value.map((v) => String(v).trim()).filter(Boolean)
+  if (typeof value === "string") {
+    return value
+      .split(",")
+      .map((v) => v.trim())
+      .filter(Boolean)
+  }
+  return []
+}
+
+function parseVariantOption(raw: string, fallbackPrice: number): { label: string; price: number } {
+  const value = (raw || "").trim()
+  if (!value) return { label: "", price: fallbackPrice }
+  const [labelPart, pricePart] = value.split("::")
+  const label = (labelPart || value).trim()
+  const parsedPrice = Number((pricePart || "").replace(/[^\d.]/g, ""))
+  return {
+    label,
+    price: Number.isFinite(parsedPrice) && parsedPrice > 0 ? parsedPrice : fallbackPrice,
+  }
 }
 
 export async function POST(req: Request) {
@@ -61,7 +86,7 @@ export async function POST(req: Request) {
     const itemIds = Array.from(new Set(payload.items.map((item) => item.id)))
     const { data: menuRows, error: menuError } = await supabase
       .from("menu")
-      .select("id,name,name_en,price")
+      .select("id,name,name_en,price,ingredients,limit")
       .in("id", itemIds)
 
     if (menuError || !menuRows) {
@@ -75,6 +100,8 @@ export async function POST(req: Request) {
         name: String(row.name ?? ""),
         name_en: row.name_en ?? "",
         price: Number(row.price) || 0,
+        ingredients: row.ingredients ?? null,
+        limit: Number(row.limit) || 0,
       })
     }
 
@@ -101,13 +128,23 @@ export async function POST(req: Request) {
 
     const normalizedItems = payload.items.map((item) => {
       const menuItem = menuById.get(item.id)!
+      const selectedIngredients = (item.selectedIngredients ?? []).map((v) => String(v).trim()).filter(Boolean)
+      let unitPrice = menuItem.price
+
+      if ((menuItem.limit || 0) === 1 && selectedIngredients.length === 1) {
+        const selectedLabel = selectedIngredients[0]
+        const options = parseMenuIngredientOptions(menuItem.ingredients).map((raw) => parseVariantOption(raw, menuItem.price))
+        const matched = options.find((option) => option.label === selectedLabel)
+        if (matched) unitPrice = matched.price
+      }
+
       return {
         id: menuItem.id,
         name: menuItem.name,
         nameEn: menuItem.name_en ?? "",
         quantity: item.quantity,
-        price: menuItem.price,
-        selectedIngredients: item.selectedIngredients,
+        price: unitPrice,
+        selectedIngredients,
       }
     })
 

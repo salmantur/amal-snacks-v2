@@ -672,7 +672,7 @@ export default function ItemsPage() {
                     value={ingredientInput}
                     onChange={e => setIngredientInput(e.target.value)}
                     onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addIngredient(ingredientInput) } }}
-                    placeholder="مثال: جبن، لحم..."
+                    placeholder="Example: Small (84 pcs)::300"
                     dir="rtl"
                     className="flex-1 px-4 py-3.5 rounded-2xl bg-[#f5f5f5] focus:outline-none text-right text-base" style={{fontSize: "16px"}}
                   />
@@ -683,7 +683,11 @@ export default function ItemsPage() {
                     <Plus className="h-5 w-5" />
                   </button>
                 </div>
-                <p className="text-xs text-gray-400 mt-1.5 text-right" dir="rtl">اكتب الخيار واضغط Enter أو +</p>
+                <p className="text-xs text-gray-400 mt-1.5 text-right" dir="rtl">Type option then press Enter or +</p>
+                <p className="text-[11px] text-gray-500 mt-1 text-right" dir="rtl">
+                  For size pricing use: <span dir="ltr">Option Name::Price</span> e.g.
+                  <span className="mx-1" dir="ltr">L (200 pcs)::500</span>
+                </p>
               </div>
 
 

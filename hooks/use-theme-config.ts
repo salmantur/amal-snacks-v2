@@ -13,6 +13,7 @@ export interface ThemeConfig {
   checkout_green: string   // order type modal green
   background: string       // page background color
   bar_background: string   // category filter bar + search bar background
+  tray_variant_design?: "design_c" | "floating_3"
 }
 
 export const DEFAULT_THEME: ThemeConfig = {
@@ -25,6 +26,7 @@ export const DEFAULT_THEME: ThemeConfig = {
   checkout_green: "#1e5631",
   background: "#ffffff",    // default white
   bar_background: "#f5f5f5", // default light grey bars
+  tray_variant_design: "design_c",
 }
 
 export const THEME_STORAGE_KEY = "amal_theme_colors"

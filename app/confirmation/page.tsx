@@ -35,6 +35,8 @@ function ConfirmationContent() {
   const name = searchParams.get("name") || ""
   const area = searchParams.get("area") || ""
   const total = searchParams.get("total") || ""
+  const discount = searchParams.get("discount") || "0"
+  const couponCode = searchParams.get("code") || ""
   const type = searchParams.get("type") || "delivery"
   const time = searchParams.get("time") || "في أقرب وقت"
   const wa = searchParams.get("wa") || ""
@@ -71,10 +73,11 @@ function ConfirmationContent() {
       `الاسم: ${name || "-"}`,
       `نوع الطلب: ${isPickup ? "استلام من المحل" : `توصيل إلى ${area || "-"}`}`,
       `${isPickup ? "وقت الاستلام" : "وقت التسليم"}: ${time || "في أقرب وقت"}`,
+      Number(discount) > 0 ? `الخصم: ${discount}${couponCode ? ` (${couponCode})` : ""}` : null,
       `الإجمالي: ${total ? `${total} SAR` : "-"}`,
     ]
-    return lines.join("\n")
-  }, [name, isPickup, area, time, total])
+    return lines.filter(Boolean).join("\n")
+  }, [name, isPickup, area, time, total, discount, couponCode])
 
   const handleCopySummary = async () => {
     try {

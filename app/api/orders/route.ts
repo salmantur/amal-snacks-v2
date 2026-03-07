@@ -1,6 +1,7 @@
 ﻿import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { z } from "zod"
+import { normalizeDiscountConfig, resolveDiscount } from "@/lib/discounts"
 
 const orderItemSchema = z.object({
   id: z.string().min(1),
@@ -16,6 +17,7 @@ const orderPayloadSchema = z.object({
   items: z.array(orderItemSchema).min(1).max(50),
   notes: z.string().trim().max(1000).optional().default(""),
   scheduledTime: z.string().trim().max(60).nullable().optional(),
+  couponCode: z.string().trim().max(40).optional().nullable(),
 })
 
 interface MenuRow {
@@ -29,6 +31,10 @@ interface DeliveryAreaRow {
   name: string
   price: number
   is_active: boolean
+}
+
+interface AppSettingsRow {
+  value: unknown
 }
 
 export async function POST(req: Request) {
@@ -49,7 +55,6 @@ export async function POST(req: Request) {
     }
 
     const payload = parsed.data
-
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
     const itemIds = Array.from(new Set(payload.items.map((item) => item.id)))
@@ -106,7 +111,20 @@ export async function POST(req: Request) {
     })
 
     const subtotal = normalizedItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
-    const total = subtotal + deliveryFee
+    const { data: discountSetting } = await supabase
+      .from("app_settings")
+      .select("value")
+      .eq("key", "discount_config")
+      .maybeSingle<AppSettingsRow>()
+
+    const discountConfig = normalizeDiscountConfig(discountSetting?.value)
+    const discountResult = resolveDiscount({
+      config: discountConfig,
+      subtotal,
+      deliveryFee,
+      couponCode: payload.couponCode ?? null,
+    })
+    const total = discountResult.finalTotal
 
     const { data: insertedOrder, error: insertError } = await supabase
       .from("orders")
@@ -135,6 +153,8 @@ export async function POST(req: Request) {
       orderNumber: insertedOrder.order_number,
       subtotal,
       deliveryFee,
+      totalDiscount: discountResult.totalDiscount,
+      codeApplied: discountResult.codeApplied,
       total,
     })
   } catch {

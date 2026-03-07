@@ -21,6 +21,8 @@ import {
 import { useCart } from "@/components/cart-provider"
 import type { CartItem } from "@/components/cart-provider"
 import { TimePicker } from "@/components/time-picker"
+import { useDiscountConfig } from "@/hooks/use-discount-config"
+import { resolveDiscount } from "@/lib/discounts"
 import {
   generateWhatsAppMessage,
   generatePickupWhatsAppMessage,
@@ -160,12 +162,16 @@ function CheckoutContent() {
 
   const router = useRouter()
   const { items, totalPrice, updateQuantity, removeItem, deliveryInfo, setDeliveryInfo, clearCart } = useCart()
+  const { config: discountConfig } = useDiscountConfig()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errors, setErrors] = useState<CheckoutErrors>({})
   const [submitted, setSubmitted] = useState(false)
   const [areaFocused, setAreaFocused] = useState(false)
   const [actionFeedback, setActionFeedback] = useState<string | null>(null)
   const [highlightedCartKey, setHighlightedCartKey] = useState<string | null>(null)
+  const [couponInput, setCouponInput] = useState("")
+  const [appliedCouponCode, setAppliedCouponCode] = useState<string | null>(null)
+  const [couponStatus, setCouponStatus] = useState<string | null>(null)
 
   const showActionFeedback = useCallback((message: string) => {
     setActionFeedback(message)
@@ -229,7 +235,17 @@ function CheckoutContent() {
 
   const selectedArea = deliveryAreas.find((a) => a.name === deliveryInfo.area)
   const deliveryFee = isPickup ? 0 : selectedArea?.price || 0
-  const grandTotal = totalPrice + deliveryFee
+  const discountResult = useMemo(
+    () =>
+      resolveDiscount({
+        config: discountConfig,
+        subtotal: totalPrice,
+        deliveryFee,
+        couponCode: appliedCouponCode,
+      }),
+    [discountConfig, totalPrice, deliveryFee, appliedCouponCode]
+  )
+  const grandTotal = discountResult.finalTotal
   const maxMakingTime = items.reduce((max, item) => Math.max(max, normalizeMakingTimeMinutes(item.makingTime || 0)), 0)
   const earliestSlot = useMemo(() => getEarliestDeliverySlot(maxMakingTime), [maxMakingTime])
 
@@ -241,6 +257,41 @@ function CheckoutContent() {
   }, [deliveryInfo.area, isPickup])
 
   const quickAreas = useMemo(() => deliveryAreas.slice(0, 6), [])
+
+  const applyCoupon = useCallback(() => {
+    const normalized = couponInput.trim().toUpperCase()
+    if (!normalized) {
+      setAppliedCouponCode(null)
+      setCouponStatus("اكتب كود الخصم أولا")
+      return
+    }
+    if (!discountConfig.enabled) {
+      setAppliedCouponCode(null)
+      setCouponStatus("الخصومات غير مفعلة حاليا")
+      return
+    }
+    const matched = discountConfig.codes.find((code) => code.code === normalized && code.active)
+    if (!matched) {
+      setAppliedCouponCode(null)
+      setCouponStatus("كود الخصم غير صحيح أو غير فعال")
+      return
+    }
+    const currentTotal = totalPrice + deliveryFee
+    if (matched.minOrder && currentTotal < matched.minOrder) {
+      setAppliedCouponCode(null)
+      setCouponStatus(`هذا الكود يتطلب حد أدنى ${matched.minOrder}`)
+      return
+    }
+    setAppliedCouponCode(normalized)
+    setCouponStatus("تم تطبيق الكود")
+    showActionFeedback("تم تطبيق كود الخصم")
+  }, [couponInput, discountConfig, totalPrice, deliveryFee, showActionFeedback])
+
+  const clearCoupon = useCallback(() => {
+    setAppliedCouponCode(null)
+    setCouponInput("")
+    setCouponStatus(null)
+  }, [])
 
   useEffect(() => {
     if (isPickup || !deliveryInfo.area || selectedArea) return
@@ -321,18 +372,22 @@ function CheckoutContent() {
           items: cartItems.map((item) => ({ id: item.id, quantity: item.quantity, selectedIngredients: item.selectedIngredients })),
           notes: deliveryInfo.notes,
           scheduledTime: deliveryInfo.scheduledTime,
+          couponCode: appliedCouponCode,
         }),
       })
 
       if (!orderResponse.ok) throw new Error("save failed")
-      const orderData: { total?: number } = await orderResponse.json()
+      const orderData: { total?: number; totalDiscount?: number; codeApplied?: string | null } = await orderResponse.json()
       const confirmedTotal = typeof orderData.total === "number" ? orderData.total : grandTotal
+      const confirmedDiscount = typeof orderData.totalDiscount === "number" ? orderData.totalDiscount : discountResult.totalDiscount
 
       clearCart()
       const params = new URLSearchParams({
         name: deliveryInfo.name,
         area: isPickup ? "" : selectedArea?.name || "",
         total: String(confirmedTotal),
+        discount: String(confirmedDiscount),
+        code: orderData.codeApplied ?? appliedCouponCode ?? "",
         type: isPickup ? "pickup" : "delivery",
         time: deliveryInfo.scheduledTime ?? "في أقرب وقت",
         wa: whatsappUrl,
@@ -643,6 +698,28 @@ function CheckoutContent() {
         </section>
 
         <section className={theme.summary}>
+          <div className="mb-3">
+            <label className="block text-sm font-medium mb-2">كود الخصم</label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={couponInput}
+                onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                placeholder="WELCOME10"
+                className={cn("flex-1 h-11 rounded-xl px-3 border border-border", theme.input)}
+              />
+              <Button type="button" onClick={applyCoupon} className="h-11 rounded-xl px-4">
+                تطبيق
+              </Button>
+            </div>
+            {couponStatus ? <p className="mt-2 text-xs text-muted-foreground">{couponStatus}</p> : null}
+            {appliedCouponCode ? (
+              <button type="button" onClick={clearCoupon} className="mt-1 text-xs text-primary font-semibold">
+                إلغاء الكود {appliedCouponCode}
+              </button>
+            ) : null}
+          </div>
+
           <div className="flex justify-between mb-2">
             <span className={cn(activeCheckoutTheme === "contrast" ? "text-slate-300" : "text-muted-foreground")}>المجموع الفرعي</span>
             <span className="font-medium">
@@ -658,6 +735,26 @@ function CheckoutContent() {
               {isPickup ? "مجاني" : selectedArea ? <PriceWithRiyalLogo value={selectedArea.price} /> : "اختر المنطقة"}
             </span>
           </div>
+
+          {discountResult.autoDiscountAmount > 0 ? (
+            <div className="flex justify-between mb-2">
+              <span className={cn(activeCheckoutTheme === "contrast" ? "text-slate-300" : "text-muted-foreground")}>خصم عام</span>
+              <span className="font-medium text-green-600">
+                -<PriceWithRiyalLogo value={discountResult.autoDiscountAmount} />
+              </span>
+            </div>
+          ) : null}
+
+          {discountResult.codeDiscountAmount > 0 ? (
+            <div className="flex justify-between mb-2">
+              <span className={cn(activeCheckoutTheme === "contrast" ? "text-slate-300" : "text-muted-foreground")}>
+                خصم الكود {discountResult.codeApplied ? `(${discountResult.codeApplied})` : ""}
+              </span>
+              <span className="font-medium text-green-600">
+                -<PriceWithRiyalLogo value={discountResult.codeDiscountAmount} />
+              </span>
+            </div>
+          ) : null}
 
           <div className={cn("pt-2 mt-2 border-t", activeCheckoutTheme === "contrast" ? "border-slate-700" : "border-primary/20")}>
             <div className="flex justify-between">

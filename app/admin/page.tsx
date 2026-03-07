@@ -14,9 +14,10 @@ import { CategoryManager } from "@/components/category-manager"
 import { SalesDashboard } from "@/components/sales-dashboard"
 import { ThemeEditor } from "@/components/theme-editor"
 import { DeliveryAreasManager } from "@/components/delivery-areas-manager"
+import { DiscountManager } from "@/components/discount-manager"
 import { cn } from "@/lib/utils"
 
-type AdminTab = "orders" | "banner" | "stock" | "categories" | "sales" | "colors" | "delivery"
+type AdminTab = "orders" | "banner" | "stock" | "categories" | "sales" | "colors" | "delivery" | "discounts"
 type OrderFilter = Order["status"] | "all"
 type TypeFilter = "all" | "delivery" | "pickup"
 type SortBy = "newest" | "oldest" | "highest" | "status"
@@ -152,6 +153,7 @@ export default function AdminPage() {
     { id: "sales", label: "المبيعات" },
     { id: "colors", label: "المظهر" },
     { id: "delivery", label: "التوصيل" },
+    { id: "discounts", label: "الخصومات" },
   ]
 
   const tabEmojiMap: Record<AdminTab, string> = {
@@ -162,6 +164,7 @@ export default function AdminPage() {
     sales: "📈",
     colors: "🎨",
     delivery: "🚚",
+    discounts: "🏷️",
   }
 
   const designStyles = {
@@ -413,6 +416,13 @@ export default function AdminPage() {
         <div className={cn(designStyles.content, "max-w-lg mx-auto", adminDesign === "design3" && "text-white")}>
           <h2 className="text-lg font-bold mb-4">تخصيص المظهر</h2>
           <ThemeEditor />
+        </div>
+      ) : null}
+
+      {activeTab === "discounts" ? (
+        <div className={cn(designStyles.content, "max-w-lg mx-auto", adminDesign === "design3" && "text-white")}>
+          <h2 className="text-lg font-bold mb-4">إدارة الخصومات</h2>
+          <DiscountManager />
         </div>
       ) : null}
 

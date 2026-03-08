@@ -215,6 +215,16 @@ export const ProductCard = memo(function ProductCard({
   const titleColorStyle = useThemeCardColors ? { color: "var(--item-card-title)" } : undefined
   const descColorStyle = useThemeCardColors ? { color: "var(--item-card-desc)" } : undefined
   const priceColorStyle = useThemeCardColors ? { color: "var(--item-card-price)" } : undefined
+  const floatingShellStyle = useThemeCardColors
+    ? { backgroundColor: "var(--item-card-bg)", backgroundImage: "none", borderColor: "rgba(15, 23, 42, 0.10)" }
+    : undefined
+  const floatingCircleShellStyle = useThemeCardColors
+    ? { backgroundColor: "var(--item-card-bg)", backgroundImage: "none", boxShadow: "0 6px 14px rgba(0,0,0,0.08)" }
+    : undefined
+  const floatingCircleInsetStyle = useThemeCardColors ? { backgroundColor: "var(--item-card-bg)" } : undefined
+  const floatingPriceStyle = useThemeCardColors
+    ? { color: "var(--item-card-price)", backgroundColor: "var(--item-card-bg)", borderColor: "rgba(15, 23, 42, 0.12)" }
+    : priceColorStyle
 
   return (
     <div
@@ -233,21 +243,21 @@ export const ProductCard = memo(function ProductCard({
     >
       {useFloatingTrayStyle ? (
         <>
-          <div className={trayStyle.shell}>
+          <div className={trayStyle.shell} style={floatingShellStyle}>
             <div className="flex items-center gap-3">
               <div className={cn("min-w-0 flex-1 text-right", v.content)}>
                 <h3 className={cn("font-bold text-base leading-tight", trayStyle.title)} style={titleColorStyle}>{item.name}</h3>
                 <p className={cn("text-sm mt-1 line-clamp-2 leading-relaxed", trayStyle.desc)} style={descColorStyle}>{item.description}</p>
                 <div className="mt-2">
-                  <p className={trayStyle.price} style={priceColorStyle}>
+                  <p className={trayStyle.price} style={floatingPriceStyle}>
                     <PriceWithRiyalLogo value={displayPrice} />
                   </p>
                 </div>
               </div>
 
               <div className="relative h-[120px] w-[120px] shrink-0">
-                <div className={trayStyle.circleShell} />
-                <div className={trayStyle.circleInset}>
+                <div className={trayStyle.circleShell} style={floatingCircleShellStyle} />
+                <div className={trayStyle.circleInset} style={floatingCircleInsetStyle}>
                   {(isTraySizeVariantCard ? selectedTrayImage : mainImage) ? (
                     <Image
                       src={isTraySizeVariantCard ? selectedTrayImage : mainImage}

@@ -1,13 +1,15 @@
 "use client"
 
-import React, { useState, useEffect, useRef } from "react"
+import React, { useState, useEffect, useMemo, useRef } from "react"
 import Link from "next/link"
 import {
   ArrowRight, Plus, Pencil, Trash2, Search, X, Check,
-  Upload, Loader2, ChevronDown, ImageIcon, Star
+  Upload, Loader2, ChevronDown, ImageIcon, Star, ArrowUp, ArrowDown
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { categories } from "@/lib/data"
+import { useBestSellersConfig } from "@/hooks/use-best-sellers-config"
+import { getBestSellerCandidates } from "@/lib/best-sellers"
 import { PriceWithRiyalLogo } from "@/components/ui/price-with-riyal-logo"
 
 interface MenuItem {
@@ -60,6 +62,7 @@ export default function ItemsPage() {
   const [pkgQtyInput, setPkgQtyInput] = useState(1)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const supabase = createClient()
+  const { orderIds: bestSellerOrderIds, loading: bestSellerOrderLoading, saveOrder } = useBestSellersConfig()
 
   function decodePossibleMojibake(value: string): string {
     if (!value) return value
@@ -316,6 +319,25 @@ export default function ItemsPage() {
     return matchSearch && matchCat
   })
 
+  const bestSellerItems = useMemo(
+    () => getBestSellerCandidates(items, bestSellerOrderIds),
+    [items, bestSellerOrderIds]
+  )
+
+  async function moveBestSeller(itemId: string, direction: "up" | "down") {
+    const currentIds = bestSellerItems.map((item) => item.id)
+    const fromIndex = currentIds.indexOf(itemId)
+    if (fromIndex === -1) return
+
+    const toIndex = direction === "up" ? fromIndex - 1 : fromIndex + 1
+    if (toIndex < 0 || toIndex >= currentIds.length) return
+
+    const nextIds = [...currentIds]
+    ;[nextIds[fromIndex], nextIds[toIndex]] = [nextIds[toIndex], nextIds[fromIndex]]
+    await saveOrder(nextIds)
+    flash("تم تحديث ترتيب صفحة الأكثر طلبًا")
+  }
+
   const tags = (modalItem?.ingredients || "").split(",").map(t => t.trim()).filter(Boolean)
   const modalMainImage = getDisplayImage(modalItem?.image || "")
 
@@ -382,8 +404,82 @@ export default function ItemsPage() {
         </div>
       )}
 
+      <div className="w-full max-w-full p-4 pb-32 overflow-x-hidden space-y-4">
+        <section className="bg-white rounded-2xl p-4 shadow-sm" dir="rtl">
+          <div className="flex items-start justify-between gap-3 mb-3">
+            <div className="text-right">
+              <h2 className="font-bold text-base">ترتيب صفحة الأكثر طلبًا</h2>
+              <p className="text-xs text-gray-400 mt-1">غيّر مكان الأصناف في صفحة الأكثر طلبًا باستخدام الأسهم</p>
+            </div>
+            <div className="w-10 h-10 rounded-2xl bg-yellow-100 text-yellow-700 flex items-center justify-center flex-shrink-0">
+              <Star className="h-4 w-4 fill-yellow-500" />
+            </div>
+          </div>
+
+          {bestSellerOrderLoading ? (
+            <div className="flex items-center justify-center py-6 text-sm text-gray-400">
+              <Loader2 className="h-4 w-4 animate-spin ml-2" />
+              جاري تحميل الترتيب...
+            </div>
+          ) : bestSellerItems.length === 0 ? (
+            <div className="rounded-2xl bg-[#f5f5f5] px-4 py-5 text-sm text-gray-500 text-center">
+              لا توجد أصناف مفعلة في صفحة الأكثر طلبًا
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {bestSellerItems.map((item, index) => {
+                const imageSrc = getDisplayImage(item.image)
+                return (
+                  <div key={`featured-order-${item.id}`} className="flex items-center gap-3 rounded-2xl bg-[#f5f5f5] p-3">
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => moveBestSeller(item.id, "up")}
+                        disabled={index === 0}
+                        className="w-9 h-9 rounded-xl bg-white flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 transition-transform"
+                        aria-label="نقل للأعلى"
+                      >
+                        <ArrowUp className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => moveBestSeller(item.id, "down")}
+                        disabled={index === bestSellerItems.length - 1}
+                        className="w-9 h-9 rounded-xl bg-white flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 transition-transform"
+                        aria-label="نقل للأسفل"
+                      >
+                        <ArrowDown className="h-4 w-4" />
+                      </button>
+                    </div>
+
+                    <div className="flex-1 min-w-0 text-right">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-bold text-gray-400">#{index + 1}</span>
+                        <p className="font-semibold text-sm truncate">{item.name}</p>
+                      </div>
+                      <p className="text-xs text-gray-400 truncate mt-1">
+                        {ALL_CATEGORIES.find((category) => category.value === item.category)?.label || item.category}
+                      </p>
+                    </div>
+
+                    <div className="relative w-12 h-12 rounded-xl bg-white overflow-hidden flex-shrink-0">
+                      {imageSrc ? (
+                        <img src={imageSrc} alt={item.name} className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <ImageIcon className="h-4 w-4 text-gray-300" />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </section>
+
       {/* Items list */}
-      <div className="w-full max-w-full p-4 pb-32 overflow-x-hidden">
+      <div className="w-full max-w-full overflow-x-hidden">
         {loading ? (
           <div className="grid w-full gap-3">
             {[1,2,3,4].map(i => (
@@ -473,6 +569,7 @@ export default function ItemsPage() {
             })}
           </div>
         )}
+      </div>
       </div>
 
       {/* Delete confirmation */}

@@ -8,8 +8,10 @@ import { PackageCard } from "@/components/package-card"
 import { CategoryFilter } from "@/components/category-filter"
 import { SearchBar } from "@/components/search-bar"
 import { useCategories, type Category } from "@/hooks/use-categories"
+import { useBestSellersConfig } from "@/hooks/use-best-sellers-config"
 import { useMenu } from "@/hooks/use-menu"
 import type { MenuItem } from "@/components/cart-provider"
+import { getBestSellerCandidates } from "@/lib/best-sellers"
 import { smartFilterMenuItems } from "@/lib/smart-search"
 import { cn } from "@/lib/utils"
 
@@ -53,6 +55,7 @@ export function MenuGrid() {
     trayUiParam === "d2" || trayUiParam === "d3" || trayUiParam === "d1" ? trayUiParam : "d1"
 
   const { menuItems, error, isLoading: loading } = useMenu()
+  const { orderIds: bestSellerOrder } = useBestSellersConfig()
 
   const [selectedCategory, setSelectedCategory] = useState(BEST_SELLERS_CATEGORY_ID)
   const [searchQuery, setSearchQuery] = useState("")
@@ -126,42 +129,8 @@ export function MenuGrid() {
   )
 
   const featuredItems = useMemo(() => {
-    const isMusakhan = (item: MenuItem) => {
-      const ar = (item.name || "").replace(/\s+/g, "")
-      const en = (item.nameEn || "").trim().toLowerCase()
-      return ar.includes("مسخن") || en.includes("musakhan") || en.includes("muskhan")
-    }
-    const originalIndex = new Map(menuItems.map((item, index) => [item.id, index]))
-    const musakhanCandidates = menuItems.filter((item) => isMusakhan(item) && item.category !== "frozen")
-    const musakhanCategoryPriority = (category: string): number => {
-      if (category === "trays") return 0
-      if (category === "sandwiches") return 1
-      if (category === "appetizers") return 2
-      return 3
-    }
-
-    const selectedMusakhan = [...musakhanCandidates].sort((a, b) => {
-      const p = musakhanCategoryPriority(a.category) - musakhanCategoryPriority(b.category)
-      if (p !== 0) return p
-      return (originalIndex.get(a.id) ?? 0) - (originalIndex.get(b.id) ?? 0)
-    })[0]
-
-    const selected = menuItems.filter(
-      (item) => item.category === "trays" || item.isFeatured || (selectedMusakhan ? item.id === selectedMusakhan.id : false)
-    )
-
-    return Array.from(new Map(selected.map((item) => [item.id, item])).values()).sort((a, b) => {
-      const aIsTray = a.category === "trays"
-      const bIsTray = b.category === "trays"
-      if (aIsTray && !bIsTray) return -1
-      if (!aIsTray && bIsTray) return 1
-      if (selectedMusakhan && a.id === selectedMusakhan.id && b.id !== selectedMusakhan.id) return -1
-      if (selectedMusakhan && b.id === selectedMusakhan.id && a.id !== selectedMusakhan.id) return 1
-      if (a.isFeatured && !b.isFeatured) return -1
-      if (!a.isFeatured && b.isFeatured) return 1
-      return (originalIndex.get(a.id) ?? 0) - (originalIndex.get(b.id) ?? 0)
-    })
-  }, [menuItems])
+    return getBestSellerCandidates(menuItems, bestSellerOrder)
+  }, [menuItems, bestSellerOrder])
 
   const filteredItems = useMemo(
     () => (isBestSellersCategory ? featuredItems : menuItems.filter((item) => dbCategories.includes(item.category))),

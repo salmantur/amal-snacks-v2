@@ -245,9 +245,7 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
               </div>
             ) : (
               <div className="flex-1 pt-1">
-                <div className={cn("mx-auto mt-2 w-fit rounded-full border px-3 py-1 text-xs font-semibold", trayStep === 1 ? "border-[#e9d4d8] bg-white/80 text-[#7a3f51]" : "border-[#d9e3d2] bg-white/85 text-[#1e5631]")}>
-                  {trayStep === 1 ? "الخطوة 1: اختر الحجم" : "الخطوة 2: اختر 7 أصناف"} {trayDesign === "floating_3" ? "• FLOATING-3" : "• DESIGN C"}
-                </div>
+                <div className="h-1" />
               </div>
             )}
             <button onClick={onClose} className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors flex-shrink-0" aria-label="إغلاق">
@@ -262,9 +260,6 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
               if (trayDesign === "floating_3") {
                 return (
                   <div className="-mx-2 mb-4">
-                    <div className="text-center mb-3">
-                      <p className="text-sm tracking-[0.16em] text-[#7d879f] font-semibold">FLOATING — ٣</p>
-                    </div>
                     <div className="relative mx-auto mb-3 h-[238px] w-[238px] md:h-[258px] md:w-[258px]">
                       <div className="absolute inset-0 rounded-full bg-[linear-gradient(140deg,#f6e0e7_0%,#f8f3ea_100%)] shadow-[0_8px_20px_rgba(0,0,0,0.08)]" />
                       <div className="absolute inset-[7px] rounded-full overflow-hidden">

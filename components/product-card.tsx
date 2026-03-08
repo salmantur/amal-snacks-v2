@@ -46,6 +46,23 @@ function getTraySizeOrder(label: string): number {
   return 99
 }
 
+function getMenuStorageBase(image: string): string {
+  const marker = "/storage/v1/object/public/Menu/"
+  const idx = image.indexOf(marker)
+  if (idx === -1) return ""
+  return image.slice(0, idx + marker.length)
+}
+
+function normalizeMenuImageSrc(src: string, base: string): string | null {
+  const value = (src || "").trim()
+  if (!value) return null
+  if (value.startsWith("http://") || value.startsWith("https://") || value.startsWith("data:") || value.startsWith("blob:")) {
+    return value
+  }
+  if (value.startsWith("/")) return value
+  return base ? `${base}${value}` : null
+}
+
 function getVariantStyles(variant: ItemCardVariant) {
   switch (variant) {
     case "glass":
@@ -139,10 +156,18 @@ export const ProductCard = memo(function ProductCard({
   variant = "neo",
   trayDesign = "d1",
 }: ProductCardProps) {
-  const [imgError, setImgError] = useState(false)
+  const [brokenImages, setBrokenImages] = useState<Record<string, boolean>>({})
   const [traySizeIndex, setTraySizeIndex] = useState(0)
   const v = getVariantStyles(variant)
   const trayStyle = getTrayCardStyles(trayDesign)
+  const menuStorageBase = getMenuStorageBase(item.image || "")
+  const normalizedAllImages = Array.from(
+    new Set(
+      [item.image, ...(item.images || [])]
+        .map((img) => normalizeMenuImageSrc(String(img || ""), menuStorageBase))
+        .filter((img): img is string => Boolean(img))
+    )
+  )
   const variantOptions = (item.ingredients || []).map((raw) => parseVariantOption(raw, item.price))
   const variantPrices = variantOptions.map((option) => option.price).filter((price): price is number => typeof price === "number")
   const hasVariantPricing = (item.limit || 0) === 1 && variantPrices.length > 0
@@ -153,13 +178,26 @@ export const ProductCard = memo(function ProductCard({
     ? variantOptions
         .map((option, index) => ({
           ...option,
-          image: [item.image, ...(item.images || [])].filter(Boolean)[index] || item.image || "",
+          image: normalizedAllImages[index] || normalizedAllImages[0] || "",
         }))
         .sort((a, b) => getTraySizeOrder(a.label) - getTraySizeOrder(b.label))
     : []
   const safeTrayIndex = Math.min(traySizeIndex, Math.max(0, trayCardOptions.length - 1))
   const selectedTrayOption = trayCardOptions[safeTrayIndex]
-  const selectedTrayImage = selectedTrayOption?.image || item.image
+  const isImageBroken = (src: string) => Boolean(src && brokenImages[src])
+  const markImageBroken = (src: string) => {
+    if (!src) return
+    setBrokenImages((prev) => (prev[src] ? prev : { ...prev, [src]: true }))
+  }
+  const trayImageCandidates = [
+    selectedTrayOption?.image || "",
+    ...trayCardOptions.map((option) => option.image || ""),
+    ...normalizedAllImages,
+  ].filter(Boolean)
+  const selectedTrayImage =
+    trayImageCandidates.find((src) => !isImageBroken(src)) || trayImageCandidates[0] || ""
+  const mainImage =
+    normalizedAllImages.find((src) => !isImageBroken(src)) || normalizedAllImages[0] || ""
   const displayPrice = isTraySizeVariantCard
     ? selectedTrayOption?.price || item.price
     : hasVariantPricing
@@ -186,7 +224,7 @@ export const ProductCard = memo(function ProductCard({
             <div className="relative mx-auto h-[120px] w-[120px]">
               <div className={trayStyle.circleShell} />
               <div className={trayStyle.circleInset}>
-                {selectedTrayImage && !imgError ? (
+                {selectedTrayImage && !isImageBroken(selectedTrayImage) ? (
                   <Image
                     src={selectedTrayImage}
                     alt={item.name}
@@ -194,7 +232,7 @@ export const ProductCard = memo(function ProductCard({
                     sizes="140px"
                     quality={72}
                     className="object-cover"
-                    onError={() => setImgError(true)}
+                    onError={() => markImageBroken(selectedTrayImage)}
                     priority={priority}
                     loading={priority ? "eager" : "lazy"}
                   />
@@ -257,15 +295,15 @@ export const ProductCard = memo(function ProductCard({
       ) : (
       <>
       <div className={cn("relative aspect-square overflow-hidden bg-[#e8e8e8]", v.image)}>
-        {item.image && !imgError ? (
+        {mainImage ? (
           <Image
-            src={item.image}
+            src={mainImage}
             alt={item.name}
             fill
             sizes="(max-width: 640px) 46vw, (max-width: 1024px) 30vw, 280px"
             quality={72}
             className="object-cover group-hover:scale-105 transition-transform duration-300"
-            onError={() => setImgError(true)}
+            onError={() => markImageBroken(mainImage)}
             priority={priority}
             loading={priority ? "eager" : "lazy"}
           />

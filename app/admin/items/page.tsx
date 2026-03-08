@@ -95,6 +95,36 @@ export default function ItemsPage() {
     return `${SUPABASE_URL}/storage/v1/object/public/Menu/${encodeURI(cleaned)}`
   }
 
+  function sanitizeModalItem(input: Partial<MenuItem>): Partial<MenuItem> {
+    const safeImage = getDisplayImage(input.image || "") || ""
+    const safeImages = Array.isArray(input.images)
+      ? input.images.map((img) => getDisplayImage(String(img || ""))).filter((img): img is string => Boolean(img))
+      : []
+    const safePackageItems = Array.isArray(input.packageItems)
+      ? input.packageItems.map((pkg) => ({
+          label: String(pkg?.label || ""),
+          quantity: Number(pkg?.quantity) > 0 ? Number(pkg.quantity) : 1,
+          included: pkg?.included === true,
+        }))
+      : []
+    return {
+      ...input,
+      name: String(input.name || ""),
+      nameEn: String(input.nameEn || ""),
+      description: String(input.description || ""),
+      ingredients: String(input.ingredients || ""),
+      category: String(input.category || ""),
+      price: Number(input.price) || 0,
+      limit: Number(input.limit) || 0,
+      makingTime: Number(input.makingTime) || 0,
+      inStock: input.inStock !== false,
+      isFeatured: input.isFeatured === true,
+      image: safeImage,
+      images: safeImages,
+      packageItems: safePackageItems,
+    }
+  }
+
   function normalize(raw: Record<string, unknown>): MenuItem {
     let img = String(raw.image || raw.img || raw.image_url || "")
     if (img.includes(",")) img = img.split(",")[0].trim()
@@ -160,7 +190,7 @@ export default function ItemsPage() {
   }
 
   function openModal(item: Partial<MenuItem>, isNewItem: boolean) {
-    setModalItem(item)
+    setModalItem(sanitizeModalItem(item))
     setIsNew(isNewItem)
     setError(null)
     setIngredientInput("")
@@ -407,14 +437,19 @@ export default function ItemsPage() {
                   </div>
 
                   {/* Info */}
-                  <div className="flex-1 min-w-0 text-right" dir="rtl">
+                  <button
+                    type="button"
+                    onClick={() => openModal({ ...item }, false)}
+                    className="flex-1 min-w-0 text-right bg-transparent border-0 p-0 m-0 cursor-pointer"
+                    dir="rtl"
+                  >
                     <p className="font-bold text-sm truncate">{item.name}</p>
                     {item.nameEn && <p className="text-xs text-gray-400 truncate">{item.nameEn}</p>}
                     <p className="text-sm font-bold mt-0.5">
                       <PriceWithRiyalLogo value={item.price} />
                     </p>
                     <p className="text-xs text-gray-400 truncate">{ALL_CATEGORIES.find(c => c.value === item.category)?.label || item.category}</p>
-                  </div>
+                  </button>
 
                   {/* Actions */}
                   <div className="flex items-center gap-2 flex-shrink-0">

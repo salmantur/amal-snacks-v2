@@ -29,6 +29,7 @@ import {
   WHATSAPP_NUMBER,
   deliveryAreas,
 } from "@/lib/data"
+import { getEarliestDeliverySlotLabel } from "@/lib/checkout-schedule"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { PriceWithRiyalLogo } from "@/components/ui/price-with-riyal-logo"
@@ -80,6 +81,7 @@ function normalizeText(value: string): string {
     .trim()
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function getEarliestDeliverySlot(minMinutes: number): string | null {
   const now = new Date()
   const saudiNow = new Date(now.getTime() + (3 * 60 - now.getTimezoneOffset()) * 60000)
@@ -247,7 +249,7 @@ function CheckoutContent() {
   )
   const grandTotal = discountResult.finalTotal
   const maxMakingTime = items.reduce((max, item) => Math.max(max, normalizeMakingTimeMinutes(item.makingTime || 0)), 0)
-  const earliestSlot = useMemo(() => getEarliestDeliverySlot(maxMakingTime), [maxMakingTime])
+  const earliestSlot = useMemo(() => getEarliestDeliverySlotLabel(maxMakingTime), [maxMakingTime])
 
   const filteredAreas = useMemo(() => {
     if (isPickup) return []

@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react"
 import { ChevronDown, ChevronLeft, CalendarDays } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { CLOSE_HOUR, OPEN_HOUR, generateDeliveryDaySlots, isSaudiStoreOpen } from "@/lib/checkout-schedule"
 
 interface TimePickerProps {
   value: string | null
@@ -11,68 +12,17 @@ interface TimePickerProps {
   required?: boolean
 }
 
-// Working hours: 3pm-10pm (15:00-22:00), 7 days a week
-const OPEN_HOUR = 15
-const CLOSE_HOUR = 22
-
-function generateSlots(minMinutes: number): { date: string; dayLabel: string; dateLabel: string; slots: string[]; isToday: boolean }[] {
-  const result = []
-  const now = new Date()
-  // Saudi time offset (UTC+3)
-  const saudiNow = new Date(now.getTime() + (3 * 60 - now.getTimezoneOffset()) * 60000)
-  const earliest = new Date(saudiNow.getTime() + (minMinutes + 45) * 60 * 1000)
-
-  const dayNames = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"]
-  const monthNames = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"]
-
-  for (let i = 0; i < 7; i++) {
-    const day = new Date(saudiNow)
-    day.setDate(saudiNow.getDate() + i)
-
-    const slots: string[] = []
-    for (let hour = OPEN_HOUR; hour < CLOSE_HOUR; hour++) {
-      for (const min of [0, 30]) {
-        const slotTime = new Date(day)
-        slotTime.setHours(hour, min, 0, 0)
-        if (slotTime > earliest) {
-          const h12 = hour > 12 ? hour - 12 : hour
-          const period = hour >= 12 ? "م" : "ص"
-          const minStr = min === 0 ? ":00" : ":30"
-          slots.push(`${h12}${minStr} ${period}`)
-        }
-      }
-    }
-
-    if (slots.length > 0) {
-      const isToday = i === 0
-      const isTomorrow = i === 1
-      const dayLabel = isToday ? "اليوم" : isTomorrow ? "غدًا" : dayNames[day.getDay()]
-      const dateLabel = `${day.getDate()} ${monthNames[day.getMonth()]}`
-      result.push({
-        date: `${dayLabel} ${dateLabel}`,
-        dayLabel,
-        dateLabel,
-        slots,
-        isToday,
-      })
-    }
-  }
-  return result
-}
-
 export function TimePicker({ value, onChange, minMinutes = 0, required = false }: TimePickerProps) {
   const [open, setOpen] = useState(false)
   const [selectedDayIdx, setSelectedDayIdx] = useState(0)
 
-  const days = useMemo(() => generateSlots(minMinutes), [minMinutes])
-
-  // Check if currently in working hours
-  const now = new Date()
-  const saudiHour = (now.getUTCHours() + 3) % 24
-  const isOpen = saudiHour >= OPEN_HOUR && saudiHour < CLOSE_HOUR
+  const days = useMemo(() => generateDeliveryDaySlots(minMinutes), [minMinutes])
+  const safeSelectedDayIdx = days.length === 0 ? 0 : Math.min(selectedDayIdx, days.length - 1)
+  const isOpen = isSaudiStoreOpen()
 
   const handleSelect = (slot: string) => {
-    const day = days[selectedDayIdx]
+    const day = days[safeSelectedDayIdx]
+    if (!day) return
     onChange(`${day.dayLabel} ${day.dateLabel} - ${slot}`)
     setOpen(false)
   }
@@ -188,13 +138,13 @@ export function TimePicker({ value, onChange, minMinutes = 0, required = false }
                     onClick={() => setSelectedDayIdx(idx)}
                     className={cn(
                       "flex-shrink-0 px-4 py-2.5 rounded-2xl text-sm font-semibold transition-all",
-                      selectedDayIdx === idx
+                      safeSelectedDayIdx === idx
                         ? "bg-[#1e293b] text-white"
                         : "bg-[#f5f5f5] text-gray-600"
                     )}
                   >
                     <span className="block">{day.dayLabel}</span>
-                    <span className={cn("block text-xs mt-0.5 font-normal", selectedDayIdx === idx ? "opacity-70" : "text-gray-400")}>
+                    <span className={cn("block text-xs mt-0.5 font-normal", safeSelectedDayIdx === idx ? "opacity-70" : "text-gray-400")}>
                       {day.dateLabel}
                     </span>
                   </button>
@@ -204,11 +154,12 @@ export function TimePicker({ value, onChange, minMinutes = 0, required = false }
               {/* Time grid */}
               <div>
                 <p className="text-xs text-gray-400 mb-3 font-medium">
-                  {days[selectedDayIdx]?.slots.length} موعد متاح
+                  {days[safeSelectedDayIdx]?.slots.length ?? 0} موعد متاح
                 </p>
                 <div className="grid grid-cols-3 gap-2">
-                  {days[selectedDayIdx]?.slots.map((slot) => {
-                    const isSelected = value?.includes(slot) && value?.includes(days[selectedDayIdx].dayLabel)
+                  {days[safeSelectedDayIdx]?.slots.map((slot) => {
+                    const activeDay = days[safeSelectedDayIdx]
+                    const isSelected = activeDay ? value?.includes(slot) && value?.includes(activeDay.dayLabel) : false
                     return (
                       <button
                         key={slot}

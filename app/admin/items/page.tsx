@@ -84,9 +84,21 @@ export default function ItemsPage() {
     setLoading(false)
   }
 
+  function getDisplayImage(img?: string | null) {
+    const raw = String(img ?? "").trim()
+    if (!raw || raw === "null" || raw === "undefined") return null
+    if (raw.startsWith("http://") || raw.startsWith("https://") || raw.startsWith("data:image/") || raw.startsWith("blob:")) {
+      return raw
+    }
+    if (raw.startsWith("/")) return raw
+    const cleaned = raw.replace(/^\/+/, "")
+    return `${SUPABASE_URL}/storage/v1/object/public/Menu/${encodeURI(cleaned)}`
+  }
+
   function normalize(raw: Record<string, unknown>): MenuItem {
     let img = String(raw.image || raw.img || raw.image_url || "")
     if (img.includes(",")) img = img.split(",")[0].trim()
+    const normalizedImage = getDisplayImage(img) || ""
     const ingredientsText = Array.isArray(raw.ingredients)
       ? raw.ingredients.map((item) => decodePossibleMojibake(String(item || ""))).join(", ")
       : decodePossibleMojibake(String(raw.ingredients || ""))
@@ -96,20 +108,25 @@ export default function ItemsPage() {
           label: decodePossibleMojibake(String((item as { label?: string }).label || "")),
         }))
       : []
+    const normalizedGalleryImages = Array.isArray(raw.images)
+      ? raw.images
+          .map((item) => getDisplayImage(String(item || "")))
+          .filter((item): item is string => Boolean(item))
+      : []
     return {
       id: String(raw.id),
       name: decodePossibleMojibake(String(raw.name || "")),
       nameEn: decodePossibleMojibake(String(raw.name_en || "")),
       description: decodePossibleMojibake(String(raw.description || "")),
       price: Number(raw.price) || 0,
-      image: img,
+      image: normalizedImage,
       category: String(raw.category || ""),
       ingredients: ingredientsText,
       limit: Number(raw.limit) || 0,
       inStock: raw.in_stock !== false,
       makingTime: Number(raw.making_time) || 0,
       isFeatured: raw.is_featured === true,
-      images: Array.isArray(raw.images) ? raw.images : [],
+      images: normalizedGalleryImages,
       packageItems,
     }
   }
@@ -230,14 +247,16 @@ export default function ItemsPage() {
       name_en: modalItem.nameEn || "",
       description: modalItem.description || "",
       price: modalItem.price,
-      image: modalItem.image || "",
+      image: getDisplayImage(modalItem.image || "") || "",
       category: modalItem.category,
       ingredients: modalItem.ingredients || "",
       limit: modalItem.limit || 0,
       in_stock: modalItem.inStock !== false,
       making_time: modalItem.makingTime || 0,
       is_featured: modalItem.isFeatured === true,
-      images: modalItem.images || [],
+      images: (modalItem.images || [])
+        .map((img) => getDisplayImage(String(img || "")))
+        .filter((img): img is string => Boolean(img)),
       package_items: modalItem.packageItems || [],
     }
     if (isNew) {
@@ -277,13 +296,8 @@ export default function ItemsPage() {
     return matchSearch && matchCat
   })
 
-  function getDisplayImage(img: string) {
-    if (!img) return null
-    if (img.startsWith("http")) return img
-    return `${SUPABASE_URL}/storage/v1/object/public/Menu/${img}`
-  }
-
   const tags = (modalItem?.ingredients || "").split(",").map(t => t.trim()).filter(Boolean)
+  const modalMainImage = getDisplayImage(modalItem?.image || "")
 
   return (
     <main className="min-h-screen bg-[#f5f5f5] overflow-x-hidden">
@@ -369,10 +383,10 @@ export default function ItemsPage() {
           </div>
         ) : (
           <div className="grid gap-3">
-            {filtered.map(item => {
+            {filtered.map((item, idx) => {
               const imgSrc = getDisplayImage(item.image)
               return (
-                <div key={item.id} className="w-full max-w-full bg-white rounded-2xl p-3 flex items-center gap-3 shadow-sm overflow-hidden">
+                <div key={`${item.id}-${idx}`} className="w-full max-w-full bg-white rounded-2xl p-3 flex items-center gap-3 shadow-sm overflow-hidden">
 
                   {/* Image */}
                   <div className="relative w-20 h-20 rounded-2xl bg-[#f5f5f5] overflow-hidden flex-shrink-0">
@@ -487,8 +501,8 @@ export default function ItemsPage() {
                 <label className="block text-sm font-semibold mb-2 text-right" dir="rtl">الصورة الرئيسية</label>
                 <div className="flex items-center gap-3">
                   <div className="relative w-24 h-24 rounded-2xl bg-[#f5f5f5] flex items-center justify-center overflow-hidden flex-shrink-0">
-                    {modalItem.image
-                      ? <Image src={getDisplayImage(modalItem.image) || modalItem.image || ""} alt="preview" fill sizes="96px" quality={70} className="object-cover" />
+                    {modalMainImage
+                      ? <Image src={modalMainImage} alt="preview" fill sizes="96px" quality={70} className="object-cover" />
                       : <ImageIcon className="h-7 w-7 text-gray-300" />
                     }
                   </div>
@@ -660,17 +674,21 @@ export default function ItemsPage() {
               <div dir="rtl">
                 <p className="font-semibold text-sm mb-2">🖼️ صور إضافية (جاليري)</p>
                 <div className="flex gap-2 flex-wrap mb-2">
-                  {(modalItem.images || []).map((url, idx) => (
-                    <div key={idx} className="relative w-16 h-16 rounded-xl overflow-hidden bg-[#f5f5f5] flex-shrink-0">
-                      <Image src={url} alt="" fill sizes="64px" quality={70} className="object-cover" />
-                      <button
-                        onClick={() => setModalItem(prev => prev ? ({ ...prev, images: (prev.images || []).filter((_, i) => i !== idx) }) : prev)}
-                        className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-xs"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
+                  {(modalItem.images || []).map((url, idx) => {
+                    const gallerySrc = getDisplayImage(String(url || ""))
+                    if (!gallerySrc) return null
+                    return (
+                      <div key={idx} className="relative w-16 h-16 rounded-xl overflow-hidden bg-[#f5f5f5] flex-shrink-0">
+                        <Image src={gallerySrc} alt="" fill sizes="64px" quality={70} className="object-cover" />
+                        <button
+                          onClick={() => setModalItem(prev => prev ? ({ ...prev, images: (prev.images || []).filter((_, i) => i !== idx) }) : prev)}
+                          className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-xs"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    )
+                  })}
                   <label className="w-16 h-16 rounded-xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:border-gray-400 transition-colors flex-shrink-0">
                     {galleryUploading
                       ? <Loader2 className="h-5 w-5 animate-spin text-gray-400" />

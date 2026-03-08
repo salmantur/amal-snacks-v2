@@ -339,14 +339,7 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
               )
             }
 
-            if (showTrayOptionsStep) {
-              return (
-                <div className="mb-4 rounded-2xl border border-[#e8e2e4] bg-white/90 px-4 py-3 text-right">
-                  <p className="text-xs text-[#8f959f]">الحجم المختار</p>
-                  <p className="text-lg font-bold text-[#1f2333]">{selectedVariantLabel || "لم يتم اختيار الحجم"}</p>
-                </div>
-              )
-            }
+            if (showTrayOptionsStep) return null
 
             const current = allImages[imgIndex] || null
             return (
@@ -376,10 +369,6 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
               </div>
             )
           })()}
-
-          {isTraySizeVariant ? (
-            <div className="text-center pb-1" dir="rtl" />
-          ) : null}
 
           {isTray && (!isTraySizeVariant || showTrayOptionsStep) ? (
             <div className="pb-4">

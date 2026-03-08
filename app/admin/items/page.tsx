@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useRef } from "react"
 import Link from "next/link"
-import Image from "next/image"
 import {
   ArrowRight, Plus, Pencil, Trash2, Search, X, Check,
   Upload, Loader2, ChevronDown, ImageIcon, Star
@@ -421,7 +420,7 @@ export default function ItemsPage() {
                   {/* Image */}
                   <div className="relative w-20 h-20 rounded-2xl bg-[#f5f5f5] overflow-hidden flex-shrink-0">
                     {imgSrc
-                      ? <Image src={imgSrc} alt={item.name} fill sizes="80px" quality={70} className="object-cover" />
+                      ? <img src={imgSrc} alt={item.name} className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
                       : <div className="absolute inset-0 flex items-center justify-center"><ImageIcon className="h-6 w-6 text-gray-300" /></div>
                     }
                     {item.isFeatured && (
@@ -537,7 +536,7 @@ export default function ItemsPage() {
                 <div className="flex items-center gap-3">
                   <div className="relative w-24 h-24 rounded-2xl bg-[#f5f5f5] flex items-center justify-center overflow-hidden flex-shrink-0">
                     {modalMainImage
-                      ? <Image src={modalMainImage} alt="preview" fill sizes="96px" quality={70} className="object-cover" />
+                      ? <img src={modalMainImage} alt="preview" className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
                       : <ImageIcon className="h-7 w-7 text-gray-300" />
                     }
                   </div>
@@ -714,7 +713,7 @@ export default function ItemsPage() {
                     if (!gallerySrc) return null
                     return (
                       <div key={idx} className="relative w-16 h-16 rounded-xl overflow-hidden bg-[#f5f5f5] flex-shrink-0">
-                        <Image src={gallerySrc} alt="" fill sizes="64px" quality={70} className="object-cover" />
+                        <img src={gallerySrc} alt="" className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
                         <button
                           onClick={() => setModalItem(prev => prev ? ({ ...prev, images: (prev.images || []).filter((_, i) => i !== idx) }) : prev)}
                           className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-xs"

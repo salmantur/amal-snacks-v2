@@ -90,8 +90,17 @@ export default function ItemsPage() {
       return raw
     }
     if (raw.startsWith("/")) return raw
-    const cleaned = raw.replace(/^\/+/, "")
-    return `${SUPABASE_URL}/storage/v1/object/public/Menu/${encodeURI(cleaned)}`
+    const cleaned = raw
+      .replace(/^\/+/, "")
+      .replace(/[\u0000-\u001F\u007F]/g, "")
+      .trim()
+    if (!cleaned) return null
+    try {
+      return `${SUPABASE_URL}/storage/v1/object/public/Menu/${encodeURI(cleaned)}`
+    } catch {
+      // Fallback for malformed unicode sequences in legacy data.
+      return `${SUPABASE_URL}/storage/v1/object/public/Menu/${cleaned}`
+    }
   }
 
   function sanitizeModalItem(input: Partial<MenuItem>): Partial<MenuItem> {

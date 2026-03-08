@@ -149,12 +149,20 @@ export default function ItemsPage() {
     setIngredientInput("")
     setPkgLabelInput("")
     setPkgQtyInput(1)
-    lockBodyScroll()
+    try {
+      lockBodyScroll()
+    } catch {
+      // Prevent iOS/Safari edge-case failures from blocking modal open.
+    }
   }
 
   function closeModal() {
     setModalItem(null)
-    unlockBodyScroll()
+    try {
+      unlockBodyScroll()
+    } catch {
+      // Ignore body unlock errors to keep modal close responsive.
+    }
   }
 
   useEffect(() => {
@@ -294,6 +302,7 @@ export default function ItemsPage() {
             <p className="text-xs text-gray-400">{items.length} {"\u0635\u0646\u0641"}</p>
           </div>
           <button
+            type="button"
             onClick={() => openModal({ ...EMPTY_ITEM }, true)}
             className="flex items-center gap-1.5 px-4 py-2.5 bg-black text-white rounded-full font-medium text-sm active:scale-95 transition-transform flex-shrink-0"
           >
@@ -396,13 +405,21 @@ export default function ItemsPage() {
                   {/* Actions */}
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <button
-                      onClick={() => openModal({ ...item }, false)}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        openModal({ ...item }, false)
+                      }}
                       className="w-10 h-10 rounded-xl bg-[#f5f5f5] flex items-center justify-center active:scale-95 transition-transform"
                     >
                       <Pencil className="h-4 w-4 text-gray-600" />
                     </button>
                     <button
-                      onClick={() => setDeleteConfirm(item.id)}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setDeleteConfirm(item.id)
+                      }}
                       className="w-10 h-10 rounded-xl bg-[#f5f5f5] flex items-center justify-center active:scale-95 transition-transform"
                     >
                       {deleting === item.id

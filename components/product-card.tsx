@@ -2,7 +2,7 @@
 
 import React, { memo, useState } from "react"
 import Image from "next/image"
-import { ShoppingBag, Star } from "lucide-react"
+import { ShoppingBag } from "lucide-react"
 import { type MenuItem } from "@/components/cart-provider"
 import { cn } from "@/lib/utils"
 import { PriceWithRiyalLogo } from "@/components/ui/price-with-riyal-logo"
@@ -310,13 +310,6 @@ export const ProductCard = memo(function ProductCard({
                 })}
               </div>
             ) : null}
-
-            {item.isFeatured ? (
-              <div className="absolute top-2 right-2 bg-yellow-400 text-yellow-900 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-0.5">
-                <Star className="h-2.5 w-2.5 fill-yellow-900" />
-                الأكثر
-              </div>
-            ) : null}
           </div>
         </>
       ) : (
@@ -340,13 +333,6 @@ export const ProductCard = memo(function ProductCard({
           </div>
         )}
 
-        {item.isFeatured ? (
-          <div className="absolute top-2 right-2 bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-0.5">
-            <Star className="h-2.5 w-2.5 fill-yellow-900" />
-            الأكثر
-          </div>
-        ) : null}
-
         {item.inStock === false ? (
           <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
             <span className="bg-white text-gray-800 text-xs font-bold px-3 py-1 rounded-full">نفذت الكمية</span>
@@ -357,16 +343,6 @@ export const ProductCard = memo(function ProductCard({
       <div className={cn("mt-4 text-right", v.content)}>
         <h3 className={cn("font-bold text-base leading-tight", v.title)} style={titleColorStyle}>{item.name}</h3>
         <p className={cn("text-sm mt-1 line-clamp-2 leading-relaxed", v.desc)} style={descColorStyle}>{item.description}</p>
-
-        <div className="mt-2 flex flex-wrap justify-end gap-2">
-          {item.isFeatured ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-yellow-100 text-yellow-800 text-[11px] font-semibold px-2.5 py-1">
-              <Star className="h-3 w-3 fill-yellow-700 text-yellow-700" />
-              الأكثر طلبًا
-            </span>
-          ) : null}
-        </div>
-
         <div className="mt-2 text-right">
           {hasVariantPricing ? (
             <p className="text-xs text-muted-foreground mb-0.5">يبدأ من</p>

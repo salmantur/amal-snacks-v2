@@ -2,7 +2,7 @@
 
 import React, { memo, useState } from "react"
 import Image from "next/image"
-import { Star, Search, Plus, Minus, ShoppingBag } from "lucide-react"
+import { Search, Plus, Minus, ShoppingBag } from "lucide-react"
 import { type MenuItem } from "@/components/cart-provider"
 import { getEidRequiredHeaters } from "@/lib/eid-packages"
 import { cn } from "@/lib/utils"
@@ -88,13 +88,6 @@ export const PackageCard = memo(function PackageCard({
             <PriceWithRiyalLogo value={item.price.toLocaleString()} />
           </span>
         </div>
-
-        {item.isFeatured ? (
-          <div className="absolute top-3 left-3 bg-yellow-400 text-yellow-900 text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
-            <Star className="h-3 w-3 fill-yellow-900" />
-            الأكثر طلبًا
-          </div>
-        ) : null}
 
         {isOutOfStock ? (
           <div className="absolute inset-0 bg-black/50 flex items-center justify-center">

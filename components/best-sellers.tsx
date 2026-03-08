@@ -40,9 +40,6 @@ export function BestSellers() {
                   ? <Image src={item.image} alt={item.name} fill sizes="160px" quality={72} priority={idx < 2} loading={idx < 2 ? "eager" : "lazy"} className="object-cover" />
                   : <div className="absolute inset-0 flex items-center justify-center"><ShoppingBag className="h-8 w-8 text-gray-200" /></div>
                 }
-                <span className="absolute top-2 right-2 bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                  <Star className="h-2.5 w-2.5 fill-yellow-900" /> الأكثر
-                </span>
               </div>
               <div className="p-2.5" dir="rtl">
                 <p className="font-bold text-sm truncate">{item.name}</p>

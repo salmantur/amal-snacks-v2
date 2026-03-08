@@ -116,6 +116,7 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
   const [selectedIngredients, setSelectedIngredients] = useState<string[]>([])
   const [traySelections, setTraySelections] = useState<string[]>([])
   const [imgIndex, setImgIndex] = useState(0)
+  const [trayPreviewIndex, setTrayPreviewIndex] = useState(0)
   const [isAddedFeedback, setIsAddedFeedback] = useState(false)
   const [trayDesign, setTrayDesign] = useState<TrayDesign>("design_c")
   const [trayStep, setTrayStep] = useState<1 | 2>(1)
@@ -133,6 +134,7 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
     setSelectedIngredients([])
     setTraySelections([])
     setImgIndex(0)
+    setTrayPreviewIndex(0)
     setIsAddedFeedback(false)
     setTrayDesign(getTrayDesignFromTheme())
     setTrayStep(1)
@@ -226,10 +228,16 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
         }))
         .sort((a, b) => getTraySizeOrder(a.parsed.label) - getTraySizeOrder(b.parsed.label))
     : []
+  const trayPreviewImages = Array.from(
+    new Set([...trayVariantOptions.map((option) => option.image).filter(Boolean), ...allImages])
+  )
   const selectedTrayIndex = Math.max(
     0,
     trayVariantOptions.findIndex((opt) => selectedIngredients.includes(opt.raw))
   )
+  const safeTrayPreviewIndex = Math.min(trayPreviewIndex, Math.max(0, trayPreviewImages.length - 1))
+  const selectedTrayImage = trayPreviewImages[safeTrayPreviewIndex] || trayPreviewImages[0] || ""
+  const selectedTrayAlt = product.name
   const showTrayDesignStep = isTraySizeVariant && trayStep === 1
   const showTrayOptionsStep = isTraySizeVariant && trayStep === 2
 
@@ -262,43 +270,41 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
                   <div className="-mx-2 mb-4">
                     <div className="relative mx-auto mb-3 h-[238px] w-[238px] md:h-[258px] md:w-[258px]">
                       <div className="absolute inset-0 rounded-full bg-[linear-gradient(140deg,#f6e0e7_0%,#f8f3ea_100%)] shadow-[0_8px_20px_rgba(0,0,0,0.08)]" />
-                      <div className="absolute inset-[7px] rounded-full overflow-hidden">
-                        <div className="absolute inset-0">
-                          {[-1, 0, 1].map((offset) => {
-                            const optionCount = trayVariantOptions.length || 1
-                            const idx = (selectedTrayIndex + offset + optionCount) % optionCount
-                            const option = trayVariantOptions[idx]
-                            if (!option?.image) return null
-                            const isCenter = offset === 0
-
-                            return (
-                              <button
-                                key={`${option.raw}-${offset}`}
-                                onClick={() => toggleIngredient(option.raw)}
-                                className={cn(
-                                  "absolute inset-y-0 overflow-hidden transition-all",
-                                  isCenter
-                                    ? "left-1/2 -translate-x-1/2 w-[42%] z-20 shadow-[0_6px_12px_rgba(0,0,0,0.2)]"
-                                    : "w-[36%] z-10 opacity-95",
-                                  offset === -1 && "left-0",
-                                  offset === 1 && "right-0"
-                                )}
-                                aria-label={option.parsed.label}
-                              >
-                                <Image
-                                  src={option.image}
-                                  alt={option.parsed.label}
-                                  fill
-                                  sizes="160px"
-                                  quality={76}
-                                  className="object-cover"
-                                />
-                              </button>
-                            )
-                          })}
-                        </div>
+                      <div className="absolute inset-[7px] rounded-full overflow-hidden bg-white/80">
+                        {selectedTrayImage ? (
+                          <Image
+                            src={selectedTrayImage}
+                            alt={selectedTrayAlt}
+                            fill
+                            sizes="260px"
+                            quality={76}
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-xs text-[#8f959f]">لا توجد صورة</div>
+                        )}
                       </div>
                     </div>
+                    {trayPreviewImages.length > 1 ? (
+                      <div className="flex items-center justify-center gap-2">
+                        {trayPreviewImages.map((image, index) => {
+                          const active = safeTrayPreviewIndex === index
+                          return (
+                            <button
+                              key={`${image}-${index}`}
+                              onClick={() => setTrayPreviewIndex(index)}
+                              className={cn(
+                                "relative w-10 h-10 rounded-full overflow-hidden border transition-all",
+                                active ? "border-[#8a5064] ring-2 ring-[#e8bfcc]" : "border-[#e5dbe0]"
+                              )}
+                              aria-label={`صورة ${index + 1}`}
+                            >
+                              <Image src={image} alt={`Tray preview ${index + 1}`} fill sizes="40px" className="object-cover" />
+                            </button>
+                          )
+                        })}
+                      </div>
+                    ) : null}
                   </div>
                 )
               }

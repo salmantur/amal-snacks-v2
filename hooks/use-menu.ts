@@ -7,12 +7,21 @@
 import useSWR from "swr"
 import type { MenuItem } from "@/components/cart-provider"
 
-const fetcher = (url: string) => fetch(url).then(r => r.json())
+const IS_DEV = process.env.NODE_ENV !== "production"
+
+const fetcher = async (url: string) => {
+  const cacheBustUrl = `${url}${url.includes("?") ? "&" : "?"}_t=${Date.now()}`
+  const response = await fetch(cacheBustUrl, {
+    cache: "no-store",
+    headers: { "Cache-Control": "no-cache" },
+  })
+  return response.json()
+}
 
 const SWR_OPTIONS = {
-  revalidateOnFocus: false,
-  revalidateOnReconnect: false,
-  dedupingInterval: 300000, // 5 minutes
+  revalidateOnFocus: true,
+  revalidateOnReconnect: true,
+  dedupingInterval: IS_DEV ? 1000 : 5000,
 }
 
 export function useMenu() {

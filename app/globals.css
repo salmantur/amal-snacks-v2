@@ -39,6 +39,10 @@
     --amal-yellow-light: 45 100% 90%;
     --amal-grey: 0 0% 96%;
     --amal-grey-dark: 0 0% 45%;
+    --item-card-bg: #ffffff;
+    --item-card-title: #1e293b;
+    --item-card-desc: #6b7280;
+    --item-card-price: #1e293b;
   }
 }
 

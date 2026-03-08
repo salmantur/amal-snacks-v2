@@ -13,6 +13,10 @@ export interface ThemeConfig {
   checkout_green: string   // order type modal green
   background: string       // page background color
   bar_background: string   // category filter bar + search bar background
+  item_card_background: string
+  item_card_title: string
+  item_card_description: string
+  item_card_price: string
   tray_variant_design?: "design_c" | "floating_3"
 }
 
@@ -26,6 +30,10 @@ export const DEFAULT_THEME: ThemeConfig = {
   checkout_green: "#1e5631",
   background: "#ffffff",    // default white
   bar_background: "#f5f5f5", // default light grey bars
+  item_card_background: "#ffffff",
+  item_card_title: "#1e293b",
+  item_card_description: "#6b7280",
+  item_card_price: "#1e293b",
   tray_variant_design: "design_c",
 }
 
@@ -73,6 +81,10 @@ export function applyTheme(config: ThemeConfig) {
     root.style.setProperty("--muted", hexToHsl(config.bar_background))
     root.style.setProperty("--amal-grey", hexToHsl(config.bar_background))
   }
+  root.style.setProperty("--item-card-bg", config.item_card_background || DEFAULT_THEME.item_card_background)
+  root.style.setProperty("--item-card-title", config.item_card_title || DEFAULT_THEME.item_card_title)
+  root.style.setProperty("--item-card-desc", config.item_card_description || DEFAULT_THEME.item_card_description)
+  root.style.setProperty("--item-card-price", config.item_card_price || DEFAULT_THEME.item_card_price)
 }
 
 export function loadCachedTheme(): ThemeConfig | null {

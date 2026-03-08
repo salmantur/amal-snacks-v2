@@ -80,12 +80,16 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           root.style.setProperty("--muted", bar);
           root.style.setProperty("--amal-grey", bar);
         }
+        if (cfg.item_card_background) root.style.setProperty("--item-card-bg", cfg.item_card_background);
+        if (cfg.item_card_title) root.style.setProperty("--item-card-title", cfg.item_card_title);
+        if (cfg.item_card_description) root.style.setProperty("--item-card-desc", cfg.item_card_description);
+        if (cfg.item_card_price) root.style.setProperty("--item-card-price", cfg.item_card_price);
       } catch (e) {}
     })();
   `
 
   return (
-    <html lang="ar" dir="rtl">
+    <html lang="ar" dir="rtl" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://eejlqdydoilbjpegxvbq.supabase.co" />
         <link rel="dns-prefetch" href="https://eejlqdydoilbjpegxvbq.supabase.co" />

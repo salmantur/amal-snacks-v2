@@ -57,9 +57,14 @@ export const PackageCard = memo(function PackageCard({
   const isOutOfStock = item.inStock === false
   const required = getEidRequiredHeaters(item)
   const v = getVariantStyles(variant)
+  const useThemeCardColors = variant === "neo"
+  const cardSurfaceStyle = useThemeCardColors ? { backgroundColor: "var(--item-card-bg)" } : undefined
+  const titleColorStyle = useThemeCardColors ? { color: "var(--item-card-title)" } : undefined
+  const descColorStyle = useThemeCardColors ? { color: "var(--item-card-desc)" } : undefined
+  const priceColorStyle = useThemeCardColors ? { color: "var(--item-card-price)" } : undefined
 
   return (
-    <div className={cn("col-span-2 overflow-hidden border", v.container)} dir="rtl">
+    <div className={cn("col-span-2 overflow-hidden border", v.container)} dir="rtl" style={cardSurfaceStyle}>
       <div className="relative w-full aspect-[16/9] bg-[#e8e8e8]">
         {item.image && !imgError ? (
           <Image
@@ -79,7 +84,7 @@ export const PackageCard = memo(function PackageCard({
         )}
 
         <div className="absolute bottom-3 right-3 bg-white/90 backdrop-blur-sm rounded-2xl px-3 py-1.5 shadow">
-          <span className="font-black text-[#1e293b]">
+          <span className="font-black text-[#1e293b]" style={priceColorStyle}>
             <PriceWithRiyalLogo value={item.price.toLocaleString()} />
           </span>
         </div>
@@ -99,8 +104,8 @@ export const PackageCard = memo(function PackageCard({
       </div>
 
       <div className="p-4 space-y-3">
-        <h3 className="font-black text-[#1e293b] text-lg">{item.name}</h3>
-        {item.description ? <p className="text-gray-500 text-xs -mt-2">{item.description}</p> : null}
+        <h3 className="font-black text-[#1e293b] text-lg" style={titleColorStyle}>{item.name}</h3>
+        {item.description ? <p className="text-gray-500 text-xs -mt-2" style={descColorStyle}>{item.description}</p> : null}
 
         <div className="flex items-center justify-between">
           <button onClick={() => !isOutOfStock && onSelect(item)} className="flex items-center gap-1.5 bg-[#1e293b] text-white text-xs font-bold px-3 py-1.5 rounded-full active:scale-95 transition-transform">
@@ -142,7 +147,7 @@ export const PackageCard = memo(function PackageCard({
 
         <p className="text-sm text-gray-500 text-center">
           المجموع:{" "}
-          <span className="font-bold text-[#1e293b]">
+          <span className="font-bold text-[#1e293b]" style={priceColorStyle}>
             <PriceWithRiyalLogo value={(item.price * qty).toLocaleString()} />
           </span>
         </p>

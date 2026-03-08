@@ -210,6 +210,11 @@ export const ProductCard = memo(function ProductCard({
     : hasVariantPricing
     ? Math.min(...variantPrices)
     : item.price
+  const useThemeCardColors = variant === "neo" || forceUnifiedStyle
+  const cardSurfaceStyle = useThemeCardColors ? { backgroundColor: "var(--item-card-bg)" } : undefined
+  const titleColorStyle = useThemeCardColors ? { color: "var(--item-card-title)" } : undefined
+  const descColorStyle = useThemeCardColors ? { color: "var(--item-card-desc)" } : undefined
+  const priceColorStyle = useThemeCardColors ? { color: "var(--item-card-price)" } : undefined
 
   return (
     <div
@@ -224,16 +229,17 @@ export const ProductCard = memo(function ProductCard({
       tabIndex={0}
       onKeyDown={(e) => e.key === "Enter" && onSelect(item)}
       aria-label={`${item.name} - ${displayPrice}`}
+      style={cardSurfaceStyle}
     >
       {useFloatingTrayStyle ? (
         <>
           <div className={trayStyle.shell}>
             <div className="flex items-center gap-3">
               <div className={cn("min-w-0 flex-1 text-right", v.content)}>
-                <h3 className={cn("font-bold text-base leading-tight", trayStyle.title)}>{item.name}</h3>
-                <p className={cn("text-sm mt-1 line-clamp-2 leading-relaxed", trayStyle.desc)}>{item.description}</p>
+                <h3 className={cn("font-bold text-base leading-tight", trayStyle.title)} style={titleColorStyle}>{item.name}</h3>
+                <p className={cn("text-sm mt-1 line-clamp-2 leading-relaxed", trayStyle.desc)} style={descColorStyle}>{item.description}</p>
                 <div className="mt-2">
-                  <p className={trayStyle.price}>
+                  <p className={trayStyle.price} style={priceColorStyle}>
                     <PriceWithRiyalLogo value={displayPrice} />
                   </p>
                 </div>
@@ -339,8 +345,8 @@ export const ProductCard = memo(function ProductCard({
       </div>
 
       <div className={cn("mt-4 text-right", v.content)}>
-        <h3 className={cn("font-bold text-base leading-tight", v.title)}>{item.name}</h3>
-        <p className={cn("text-sm mt-1 line-clamp-2 leading-relaxed", v.desc)}>{item.description}</p>
+        <h3 className={cn("font-bold text-base leading-tight", v.title)} style={titleColorStyle}>{item.name}</h3>
+        <p className={cn("text-sm mt-1 line-clamp-2 leading-relaxed", v.desc)} style={descColorStyle}>{item.description}</p>
 
         <div className="mt-2 flex flex-wrap justify-end gap-2">
           {item.isFeatured ? (
@@ -355,7 +361,7 @@ export const ProductCard = memo(function ProductCard({
           {hasVariantPricing ? (
             <p className="text-xs text-muted-foreground mb-0.5">يبدأ من</p>
           ) : null}
-          <p className={cn("font-bold", v.price)}>
+          <p className={cn("font-bold", v.price)} style={priceColorStyle}>
             <PriceWithRiyalLogo value={displayPrice} />
           </p>
         </div>

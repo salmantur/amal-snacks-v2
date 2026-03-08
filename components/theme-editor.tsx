@@ -9,7 +9,7 @@ type ThemePreset = {
   id: string
   name: string
   description: string
-  config: ThemeConfig
+  config: Partial<ThemeConfig>
 }
 
 const BUTTON_COLORS: { label: string; color: string }[] = [
@@ -210,7 +210,7 @@ function ColorBlock({
 export function ThemeEditor() {
   const { config, loading, saveConfig } = useThemeConfig()
   const [draft, setDraft] = useState<ThemeConfig | null>(null)
-  const [tab, setTab] = useState<"main" | "background">("main")
+  const [tab, setTab] = useState<"main" | "background" | "cards">("main")
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
@@ -277,6 +277,16 @@ export function ThemeEditor() {
               <div className="rounded-xl px-4 py-2 text-sm font-bold" style={{ backgroundColor: current.destructive, color: current.destructive_foreground }}>
                 حذف
               </div>
+            </div>
+            <div
+              className="rounded-2xl border border-gray-200 p-3"
+              style={{ backgroundColor: current.item_card_background }}
+            >
+              <p className="text-sm font-bold" style={{ color: current.item_card_title }}>اسم الصنف</p>
+              <p className="text-xs mt-1" style={{ color: current.item_card_description }}>وصف قصير للصنف يظهر هنا</p>
+              <p className="text-sm font-bold mt-2" style={{ color: current.item_card_price }}>
+                <PriceWithRiyalLogo value={75} />
+              </p>
             </div>
           </div>
         </div>
@@ -349,6 +359,13 @@ export function ThemeEditor() {
           >
             الخلفيات
           </button>
+          <button
+            type="button"
+            onClick={() => setTab("cards")}
+            className={`flex-1 rounded-lg py-2 text-sm font-medium transition-colors ${tab === "cards" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500"}`}
+          >
+            بطاقات المنتجات
+          </button>
         </div>
 
         {tab === "main" ? (
@@ -391,7 +408,7 @@ export function ThemeEditor() {
               onChange={(color) => update({ destructive_foreground: color })}
             />
           </div>
-        ) : (
+        ) : tab === "background" ? (
           <div className="space-y-5">
             <ColorBlock title="لون خلفية الصفحة" value={current.background} palette={BG_COLORS} onChange={(color) => update({ background: color })} />
             <ColorBlock
@@ -408,6 +425,33 @@ export function ThemeEditor() {
               <Copy className="h-4 w-4" />
               مطابقة لون الشريط مع الخلفية
             </button>
+          </div>
+        ) : (
+          <div className="space-y-5">
+            <ColorBlock
+              title="لون خلفية بطاقات المنتجات"
+              value={current.item_card_background}
+              palette={BG_COLORS}
+              onChange={(color) => update({ item_card_background: color })}
+            />
+            <ColorBlock
+              title="لون اسم المنتج"
+              value={current.item_card_title}
+              palette={TEXT_COLORS}
+              onChange={(color) => update({ item_card_title: color })}
+            />
+            <ColorBlock
+              title="لون وصف المنتج"
+              value={current.item_card_description}
+              palette={TEXT_COLORS}
+              onChange={(color) => update({ item_card_description: color })}
+            />
+            <ColorBlock
+              title="لون سعر المنتج"
+              value={current.item_card_price}
+              palette={TEXT_COLORS}
+              onChange={(color) => update({ item_card_price: color })}
+            />
           </div>
         )}
       </section>

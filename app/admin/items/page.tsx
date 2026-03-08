@@ -491,9 +491,9 @@ export default function ItemsPage() {
 
       {/* Edit / Add Modal */}
       {modalItem && (
-        <div className="fixed inset-0 z-50 bg-black/50" onClick={(e) => e.target === e.currentTarget && closeModal()}>
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-end" onClick={(e) => e.target === e.currentTarget && closeModal()}>
           <div
-            className="absolute inset-x-0 bottom-0 bg-white rounded-t-3xl flex flex-col transform-gpu"
+            className="w-full bg-white rounded-t-3xl flex flex-col"
             style={{ maxHeight: "92dvh", height: "92dvh" }}
           >
             {/* Modal header */}

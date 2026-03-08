@@ -3,11 +3,11 @@
 import { useState, useEffect, useMemo, useCallback } from "react"
 import dynamic from "next/dynamic"
 import { useSearchParams } from "next/navigation"
-import { ProductCard } from "@/components/product-card"
+import { ProductCard, type TrayCardDesign } from "@/components/product-card"
 import { PackageCard } from "@/components/package-card"
 import { CategoryFilter } from "@/components/category-filter"
 import { SearchBar } from "@/components/search-bar"
-import { useCategories } from "@/hooks/use-categories"
+import { useCategories, type Category } from "@/hooks/use-categories"
 import { useMenu } from "@/hooks/use-menu"
 import type { MenuItem } from "@/components/cart-provider"
 import { smartFilterMenuItems } from "@/lib/smart-search"
@@ -20,11 +20,25 @@ const ProductDrawer = dynamic(
 
 const INITIAL_VISIBLE_ITEMS = 6
 const SEARCH_SUGGESTIONS = ["سمبوسة", "سخانات", "باقة العيد", "Spring Rolls"]
+const BEST_SELLERS_CATEGORY_ID = "best_sellers"
+const BEST_SELLERS_CATEGORY: Category = {
+  id: BEST_SELLERS_CATEGORY_ID,
+  label: "الأكثر طلبًا",
+  dbCategories: [],
+  isVisible: true,
+  sortOrder: 0,
+  isCustom: false,
+  sections: undefined,
+}
 
 export function MenuGrid() {
   const searchParams = useSearchParams()
   const { categories: allCategories } = useCategories()
   const categories = allCategories.filter((c) => c.isVisible)
+  const categoriesForUi = useMemo<Category[]>(
+    () => (categories.some((c) => c.id === BEST_SELLERS_CATEGORY_ID) ? categories : [BEST_SELLERS_CATEGORY, ...categories]),
+    [categories]
+  )
   const itemUiParam = searchParams.get("itemui")
   const itemVariant =
     itemUiParam === "glass" ||
@@ -34,10 +48,13 @@ export function MenuGrid() {
     itemUiParam === "neo"
       ? itemUiParam
       : "neo"
+  const trayUiParam = searchParams.get("trayui")
+  const trayCardDesign: TrayCardDesign =
+    trayUiParam === "d2" || trayUiParam === "d3" || trayUiParam === "d1" ? trayUiParam : "d1"
 
   const { menuItems, error, isLoading: loading } = useMenu()
 
-  const [selectedCategory, setSelectedCategory] = useState("platters_breakfast")
+  const [selectedCategory, setSelectedCategory] = useState(BEST_SELLERS_CATEGORY_ID)
   const [searchQuery, setSearchQuery] = useState("")
   const [debouncedSearch, setDebouncedSearch] = useState("")
   const [selectedProduct, setSelectedProduct] = useState<MenuItem | null>(null)
@@ -72,10 +89,11 @@ export function MenuGrid() {
   }, [selectedCategory, debouncedSearch])
 
   useEffect(() => {
-    if (categories.length > 0) {
-      setSelectedCategory((prev) => prev)
-    }
-  }, [categories.length])
+    if (categoriesForUi.length === 0) return
+    setSelectedCategory((prev) =>
+      categoriesForUi.some((cat) => cat.id === prev) ? prev : BEST_SELLERS_CATEGORY_ID
+    )
+  }, [categoriesForUi])
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -87,9 +105,10 @@ export function MenuGrid() {
     return () => window.removeEventListener("selectCategory", handler)
   }, [])
 
-  const categoryConfig = useMemo(() => categories.find((c) => c.id === selectedCategory), [selectedCategory, categories])
+  const categoryConfig = useMemo(() => categoriesForUi.find((c) => c.id === selectedCategory), [selectedCategory, categoriesForUi])
   const dbCategories = useMemo(() => categoryConfig?.dbCategories || [], [categoryConfig])
   const sections = categoryConfig?.sections
+  const isBestSellersCategory = selectedCategory === BEST_SELLERS_CATEGORY_ID
 
   const globalSearchResults = useMemo(() => {
     if (!debouncedSearch) return []
@@ -106,7 +125,48 @@ export function MenuGrid() {
     [menuItems]
   )
 
-  const filteredItems = useMemo(() => menuItems.filter((item) => dbCategories.includes(item.category)), [menuItems, dbCategories])
+  const featuredItems = useMemo(() => {
+    const isMusakhan = (item: MenuItem) => {
+      const ar = (item.name || "").replace(/\s+/g, "")
+      const en = (item.nameEn || "").trim().toLowerCase()
+      return ar.includes("مسخن") || en.includes("musakhan") || en.includes("muskhan")
+    }
+    const originalIndex = new Map(menuItems.map((item, index) => [item.id, index]))
+    const musakhanCandidates = menuItems.filter((item) => isMusakhan(item) && item.category !== "frozen")
+    const musakhanCategoryPriority = (category: string): number => {
+      if (category === "trays") return 0
+      if (category === "sandwiches") return 1
+      if (category === "appetizers") return 2
+      return 3
+    }
+
+    const selectedMusakhan = [...musakhanCandidates].sort((a, b) => {
+      const p = musakhanCategoryPriority(a.category) - musakhanCategoryPriority(b.category)
+      if (p !== 0) return p
+      return (originalIndex.get(a.id) ?? 0) - (originalIndex.get(b.id) ?? 0)
+    })[0]
+
+    const selected = menuItems.filter(
+      (item) => item.category === "trays" || item.isFeatured || (selectedMusakhan ? item.id === selectedMusakhan.id : false)
+    )
+
+    return Array.from(new Map(selected.map((item) => [item.id, item])).values()).sort((a, b) => {
+      const aIsTray = a.category === "trays"
+      const bIsTray = b.category === "trays"
+      if (aIsTray && !bIsTray) return -1
+      if (!aIsTray && bIsTray) return 1
+      if (selectedMusakhan && a.id === selectedMusakhan.id && b.id !== selectedMusakhan.id) return -1
+      if (selectedMusakhan && b.id === selectedMusakhan.id && a.id !== selectedMusakhan.id) return 1
+      if (a.isFeatured && !b.isFeatured) return -1
+      if (!a.isFeatured && b.isFeatured) return 1
+      return (originalIndex.get(a.id) ?? 0) - (originalIndex.get(b.id) ?? 0)
+    })
+  }, [menuItems])
+
+  const filteredItems = useMemo(
+    () => (isBestSellersCategory ? featuredItems : menuItems.filter((item) => dbCategories.includes(item.category))),
+    [isBestSellersCategory, featuredItems, menuItems, dbCategories]
+  )
 
   const visibleFilteredItems = useMemo(
     () => (shouldLimitItems ? filteredItems.slice(0, INITIAL_VISIBLE_ITEMS) : filteredItems),
@@ -121,7 +181,7 @@ export function MenuGrid() {
         </div>
       ) : null}
 
-      <CategoryFilter selectedCategory={selectedCategory} onSelectCategory={setSelectedCategory} categories={categories} />
+      <CategoryFilter selectedCategory={selectedCategory} onSelectCategory={setSelectedCategory} categories={categoriesForUi} />
       <SearchBar value={searchQuery} onChange={setSearchQuery} />
 
       <div className="max-w-6xl mx-auto px-4 md:px-6 py-6 md:py-8 pb-32">
@@ -160,7 +220,15 @@ export function MenuGrid() {
               </p>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8">
                 {globalSearchResults.map((item, idx) => (
-                  <ProductCard key={item.id} item={item} onSelect={setSelectedProduct} priority={idx < 2} variant={itemVariant} />
+                  <ProductCard
+                    key={item.id}
+                    item={item}
+                    onSelect={setSelectedProduct}
+                    priority={idx < 2}
+                    variant={itemVariant}
+                    trayDesign={trayCardDesign}
+                    forceUnifiedStyle={isBestSellersCategory}
+                  />
                 ))}
               </div>
             </div>
@@ -180,7 +248,7 @@ export function MenuGrid() {
                       item.category === "eid" ? (
                         <PackageCard key={item.id} item={item} onSelect={setSelectedProduct} priority={idx < 4 && section.dbCategory === sections[0]?.dbCategory} variant={itemVariant} />
                       ) : (
-                        <ProductCard key={item.id} item={item} onSelect={setSelectedProduct} priority={idx < 4 && section.dbCategory === sections[0]?.dbCategory} variant={itemVariant} />
+                        <ProductCard key={item.id} item={item} onSelect={setSelectedProduct} priority={idx < 4 && section.dbCategory === sections[0]?.dbCategory} variant={itemVariant} trayDesign={trayCardDesign} />
                       )
                     )}
                   </div>
@@ -191,10 +259,18 @@ export function MenuGrid() {
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8">
             {visibleFilteredItems.map((item, idx) =>
-              item.category === "eid" ? (
+              item.category === "eid" && !isBestSellersCategory ? (
                 <PackageCard key={item.id} item={item} onSelect={setSelectedProduct} priority={idx < 2} variant={itemVariant} />
               ) : (
-                <ProductCard key={item.id} item={item} onSelect={setSelectedProduct} priority={idx < 2} variant={itemVariant} />
+                <ProductCard
+                  key={item.id}
+                  item={item}
+                  onSelect={setSelectedProduct}
+                  priority={idx < 2}
+                  variant={itemVariant}
+                  trayDesign={trayCardDesign}
+                  forceUnifiedStyle={isBestSellersCategory}
+                />
               )
             )}
           </div>

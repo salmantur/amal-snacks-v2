@@ -16,6 +16,7 @@ interface ProductCardProps {
   priority?: boolean
   variant?: ItemCardVariant
   trayDesign?: TrayCardDesign
+  forceUnifiedStyle?: boolean
 }
 
 function parseVariantOption(raw: string, fallbackPrice: number): { label: string; price: number } {
@@ -155,6 +156,7 @@ export const ProductCard = memo(function ProductCard({
   priority = false,
   variant = "neo",
   trayDesign = "d1",
+  forceUnifiedStyle = false,
 }: ProductCardProps) {
   const [brokenImages, setBrokenImages] = useState<Record<string, boolean>>({})
   const [traySizeIndex, setTraySizeIndex] = useState(0)
@@ -173,6 +175,11 @@ export const ProductCard = memo(function ProductCard({
   const hasVariantPricing = (item.limit || 0) === 1 && variantPrices.length > 0
   const isTraySizeVariantCard =
     item.category === "trays" && (item.limit || 0) === 1 && (item.ingredients || []).some((raw) => raw.includes("::"))
+  const normalizedNameAr = (item.name || "").replace(/\s+/g, "")
+  const normalizedNameEn = (item.nameEn || "").trim().toLowerCase()
+  const isMusakhanCard =
+    normalizedNameAr.includes("مسخن") || normalizedNameEn.includes("musakhan") || normalizedNameEn.includes("muskhan")
+  const useFloatingTrayStyle = forceUnifiedStyle || isTraySizeVariantCard || isMusakhanCard
 
   const trayCardOptions = isTraySizeVariantCard
     ? variantOptions
@@ -210,7 +217,7 @@ export const ProductCard = memo(function ProductCard({
       className={cn(
         "cursor-pointer group transition-transform duration-100",
         item.inStock !== false ? "active:scale-95" : "opacity-60 cursor-not-allowed",
-        isTraySizeVariantCard && "col-span-2 md:col-span-1",
+        useFloatingTrayStyle && "col-span-2 md:col-span-1",
         v.container
       )}
       role="button"
@@ -218,21 +225,21 @@ export const ProductCard = memo(function ProductCard({
       onKeyDown={(e) => e.key === "Enter" && onSelect(item)}
       aria-label={`${item.name} - ${displayPrice}`}
     >
-      {isTraySizeVariantCard ? (
+      {useFloatingTrayStyle ? (
         <>
           <div className={trayStyle.shell}>
             <div className="relative mx-auto h-[120px] w-[120px]">
               <div className={trayStyle.circleShell} />
               <div className={trayStyle.circleInset}>
-                {selectedTrayImage && !isImageBroken(selectedTrayImage) ? (
+                {(isTraySizeVariantCard ? selectedTrayImage : mainImage) ? (
                   <Image
-                    src={selectedTrayImage}
+                    src={isTraySizeVariantCard ? selectedTrayImage : mainImage}
                     alt={item.name}
                     fill
                     sizes="140px"
                     quality={72}
                     className="object-cover"
-                    onError={() => markImageBroken(selectedTrayImage)}
+                    onError={() => markImageBroken(isTraySizeVariantCard ? selectedTrayImage : mainImage)}
                     priority={priority}
                     loading={priority ? "eager" : "lazy"}
                   />
@@ -244,35 +251,37 @@ export const ProductCard = memo(function ProductCard({
               </div>
             </div>
 
-            <div className="mt-2.5 flex justify-center gap-2">
-              {trayCardOptions.map((option, idx) => {
-                const isSelected = safeTrayIndex === idx
-                const colors = ["#efc0cc", "#f2df8f", "#f6e8ed"]
-                return (
-                  <button
-                    key={`${item.id}-${option.label}-${idx}`}
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setTraySizeIndex(idx)
-                    }}
-                    className="flex flex-col items-center gap-1"
-                    aria-label={option.label}
-                  >
-                    <span
-                      className={cn(
-                        "w-6 h-6 rounded-full border transition-all",
-                        isSelected ? `ring-2 ${trayStyle.chipActive} border-white scale-105` : "border-[#d9d9de]"
-                      )}
-                      style={{ backgroundColor: colors[idx % colors.length] }}
-                    />
-                    <span className={cn("text-[11px] font-bold", isSelected ? "text-[#2a2a35]" : "text-[#8f959f]")}>
-                      {getTraySizeChipLabel(option.label)}
-                    </span>
-                  </button>
-                )
-              })}
-            </div>
+            {isTraySizeVariantCard ? (
+              <div className="mt-2.5 flex justify-center gap-2">
+                {trayCardOptions.map((option, idx) => {
+                  const isSelected = safeTrayIndex === idx
+                  const colors = ["#efc0cc", "#f2df8f", "#f6e8ed"]
+                  return (
+                    <button
+                      key={`${item.id}-${option.label}-${idx}`}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setTraySizeIndex(idx)
+                      }}
+                      className="flex flex-col items-center gap-1"
+                      aria-label={option.label}
+                    >
+                      <span
+                        className={cn(
+                          "w-6 h-6 rounded-full border transition-all",
+                          isSelected ? `ring-2 ${trayStyle.chipActive} border-white scale-105` : "border-[#d9d9de]"
+                        )}
+                        style={{ backgroundColor: colors[idx % colors.length] }}
+                      />
+                      <span className={cn("text-[11px] font-bold", isSelected ? "text-[#2a2a35]" : "text-[#8f959f]")}>
+                        {getTraySizeChipLabel(option.label)}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            ) : null}
 
             {item.isFeatured ? (
               <div className="absolute top-2 right-2 bg-yellow-400 text-yellow-900 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-0.5">

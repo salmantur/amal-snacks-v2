@@ -283,6 +283,37 @@ export function ThemeEditor() {
       </section>
 
       <section className="rounded-2xl border border-gray-200 bg-white p-4 space-y-3">
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-sm font-bold text-gray-800">Tray Design</p>
+          <span className="text-xs text-gray-500">Design C / Floating-3</span>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => update({ tray_variant_design: "design_c" })}
+            className={`rounded-xl border px-3 py-2.5 text-sm font-semibold transition-colors ${
+              trayDesign === "design_c"
+                ? "border-gray-900 bg-gray-900 text-white"
+                : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+            }`}
+          >
+            DESIGN C
+          </button>
+          <button
+            type="button"
+            onClick={() => update({ tray_variant_design: "floating_3" })}
+            className={`rounded-xl border px-3 py-2.5 text-sm font-semibold transition-colors ${
+              trayDesign === "floating_3"
+                ? "border-gray-900 bg-gray-900 text-white"
+                : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+            }`}
+          >
+            FLOATING-3
+          </button>
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-gray-200 bg-white p-4 space-y-3">
         <div className="flex items-center gap-2 text-gray-700">
           <Sparkles className="h-4 w-4" />
           <p className="text-sm font-bold">ثيمات جاهزة</p>
@@ -379,37 +410,6 @@ export function ThemeEditor() {
             </button>
           </div>
         )}
-      </section>
-
-      <section className="rounded-2xl border border-gray-200 bg-white p-4 space-y-3">
-        <div className="flex items-center justify-between gap-2">
-          <p className="text-sm font-bold text-gray-800">Tray Variant Design</p>
-          <span className="text-xs text-gray-500">Product drawer style</span>
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            onClick={() => update({ tray_variant_design: "design_c" })}
-            className={`rounded-xl border px-3 py-2.5 text-sm font-semibold transition-colors ${
-              trayDesign === "design_c"
-                ? "border-gray-900 bg-gray-900 text-white"
-                : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
-            }`}
-          >
-            DESIGN C
-          </button>
-          <button
-            type="button"
-            onClick={() => update({ tray_variant_design: "floating_3" })}
-            className={`rounded-xl border px-3 py-2.5 text-sm font-semibold transition-colors ${
-              trayDesign === "floating_3"
-                ? "border-gray-900 bg-gray-900 text-white"
-                : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
-            }`}
-          >
-            FLOATING-3
-          </button>
-        </div>
       </section>
 
       <div className="flex gap-3">

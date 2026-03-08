@@ -175,26 +175,13 @@ export default function ItemsPage() {
   }
 
   function lockBodyScroll() {
-    const scrollY = window.scrollY
     document.documentElement.classList.add("modal-open")
-    document.body.dataset.modalScrollY = String(scrollY)
-    document.body.style.position = "fixed"
-    document.body.style.top = `-${scrollY}px`
-    document.body.style.left = "0"
-    document.body.style.right = "0"
-    document.body.style.width = "100%"
+    document.body.classList.add("modal-open")
   }
 
   function unlockBodyScroll() {
-    const scrollY = Number(document.body.dataset.modalScrollY || 0)
     document.documentElement.classList.remove("modal-open")
-    delete document.body.dataset.modalScrollY
-    document.body.style.position = ""
-    document.body.style.top = ""
-    document.body.style.left = ""
-    document.body.style.right = ""
-    document.body.style.width = ""
-    window.scrollTo(0, scrollY)
+    document.body.classList.remove("modal-open")
   }
 
   function openModal(item: Partial<MenuItem>, isNewItem: boolean) {
@@ -223,12 +210,7 @@ export default function ItemsPage() {
   useEffect(() => {
     return () => {
       document.documentElement.classList.remove("modal-open")
-      delete document.body.dataset.modalScrollY
-      document.body.style.position = ""
-      document.body.style.top = ""
-      document.body.style.left = ""
-      document.body.style.right = ""
-      document.body.style.width = ""
+      document.body.classList.remove("modal-open")
     }
   }, [])
 

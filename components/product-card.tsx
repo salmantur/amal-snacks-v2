@@ -228,26 +228,38 @@ export const ProductCard = memo(function ProductCard({
       {useFloatingTrayStyle ? (
         <>
           <div className={trayStyle.shell}>
-            <div className="relative mx-auto h-[120px] w-[120px]">
-              <div className={trayStyle.circleShell} />
-              <div className={trayStyle.circleInset}>
-                {(isTraySizeVariantCard ? selectedTrayImage : mainImage) ? (
-                  <Image
-                    src={isTraySizeVariantCard ? selectedTrayImage : mainImage}
-                    alt={item.name}
-                    fill
-                    sizes="140px"
-                    quality={72}
-                    className="object-cover"
-                    onError={() => markImageBroken(isTraySizeVariantCard ? selectedTrayImage : mainImage)}
-                    priority={priority}
-                    loading={priority ? "eager" : "lazy"}
-                  />
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
-                    <ShoppingBag className="h-6 w-6" />
-                  </div>
-                )}
+            <div className="flex items-center gap-3">
+              <div className={cn("min-w-0 flex-1 text-right", v.content)}>
+                <h3 className={cn("font-bold text-base leading-tight", trayStyle.title)}>{item.name}</h3>
+                <p className={cn("text-sm mt-1 line-clamp-2 leading-relaxed", trayStyle.desc)}>{item.description}</p>
+                <div className="mt-2">
+                  <p className={trayStyle.price}>
+                    <PriceWithRiyalLogo value={displayPrice} />
+                  </p>
+                </div>
+              </div>
+
+              <div className="relative h-[120px] w-[120px] shrink-0">
+                <div className={trayStyle.circleShell} />
+                <div className={trayStyle.circleInset}>
+                  {(isTraySizeVariantCard ? selectedTrayImage : mainImage) ? (
+                    <Image
+                      src={isTraySizeVariantCard ? selectedTrayImage : mainImage}
+                      alt={item.name}
+                      fill
+                      sizes="140px"
+                      quality={72}
+                      className="object-cover"
+                      onError={() => markImageBroken(isTraySizeVariantCard ? selectedTrayImage : mainImage)}
+                      priority={priority}
+                      loading={priority ? "eager" : "lazy"}
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
+                      <ShoppingBag className="h-6 w-6" />
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -289,16 +301,6 @@ export const ProductCard = memo(function ProductCard({
                 الأكثر
               </div>
             ) : null}
-          </div>
-
-          <div className={cn("mt-3 text-right", v.content)}>
-            <h3 className={cn("font-bold text-base leading-tight", trayStyle.title)}>{item.name}</h3>
-            <p className={cn("text-sm mt-1 line-clamp-2 leading-relaxed", trayStyle.desc)}>{item.description}</p>
-            <div className="mt-2">
-              <p className={trayStyle.price}>
-                <PriceWithRiyalLogo value={displayPrice} />
-              </p>
-            </div>
           </div>
         </>
       ) : (

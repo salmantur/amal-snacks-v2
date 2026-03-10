@@ -1,7 +1,8 @@
-﻿import { NextResponse } from "next/server"
+import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { z } from "zod"
 import { normalizeDiscountConfig, resolveDiscount } from "@/lib/discounts"
+import { getSupabaseConfig } from "@/lib/supabase/config"
 import { formatNewOrderTelegramMessage, normalizeTelegramConfig, sendTelegramMessage } from "@/lib/telegram"
 
 const orderItemSchema = z.object({
@@ -65,12 +66,7 @@ function parseVariantOption(raw: string, fallbackPrice: number): { label: string
 
 export async function POST(req: Request) {
   try {
-    const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-      return NextResponse.json({ error: "Server is not configured" }, { status: 500 })
-    }
+    const { url, publishableKey } = getSupabaseConfig()
 
     const parsed = orderPayloadSchema.safeParse(await req.json())
     if (!parsed.success) {
@@ -81,7 +77,7 @@ export async function POST(req: Request) {
     }
 
     const payload = parsed.data
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+    const supabase = createClient(url, publishableKey)
 
     const itemIds = Array.from(new Set(payload.items.map((item) => item.id)))
     const { data: menuRows, error: menuError } = await supabase

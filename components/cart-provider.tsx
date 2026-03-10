@@ -37,6 +37,7 @@ export interface DeliveryInfo {
   name: string
   phone: string
   address: string
+  locationUrl: string
   area: string
   notes: string
   scheduledTime: string | null
@@ -97,10 +98,12 @@ function isValidDeliveryInfo(value: unknown): value is DeliveryInfo {
   if (!value || typeof value !== "object") return false
   const info = value as Partial<DeliveryInfo>
   const scheduledTimeOk = info.scheduledTime === null || typeof info.scheduledTime === "string"
+  const locationUrlOk = info.locationUrl === undefined || typeof info.locationUrl === "string"
   return (
     typeof info.name === "string" &&
     typeof info.phone === "string" &&
     typeof info.address === "string" &&
+    locationUrlOk &&
     typeof info.area === "string" &&
     typeof info.notes === "string" &&
     scheduledTimeOk
@@ -119,6 +122,7 @@ const DEFAULT_DELIVERY_INFO: DeliveryInfo = {
   name: "",
   phone: "",
   address: "",
+  locationUrl: "",
   area: "",
   notes: "",
   scheduledTime: null,
@@ -155,7 +159,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const storedItems = sanitizeCartItems(loadFromStorage<unknown>(CART_STORAGE_KEY, []))
     const storedDelivery = loadFromStorage<unknown>(DELIVERY_STORAGE_KEY, DEFAULT_DELIVERY_INFO)
     setItems(storedItems)
-    setDeliveryInfoState(isValidDeliveryInfo(storedDelivery) ? storedDelivery : DEFAULT_DELIVERY_INFO)
+    setDeliveryInfoState(
+      isValidDeliveryInfo(storedDelivery) ? { ...DEFAULT_DELIVERY_INFO, ...storedDelivery } : DEFAULT_DELIVERY_INFO
+    )
     setStorageReady(true)
   }, [])
 

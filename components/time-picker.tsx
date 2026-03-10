@@ -3,22 +3,30 @@
 import { useState, useMemo } from "react"
 import { ChevronDown, ChevronLeft, CalendarDays } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { CLOSE_HOUR, OPEN_HOUR, generateDeliveryDaySlots, isSaudiStoreOpen } from "@/lib/checkout-schedule"
+import {
+  CLOSE_HOUR,
+  OPEN_HOUR,
+  generateDeliveryDaySlots,
+  isSaudiDateClosed,
+  isSaudiStoreOpenForOrders,
+} from "@/lib/checkout-schedule"
 
 interface TimePickerProps {
   value: string | null
   onChange: (value: string | null) => void
   minMinutes?: number
   required?: boolean
+  closedDates?: string[]
 }
 
-export function TimePicker({ value, onChange, minMinutes = 0, required = false }: TimePickerProps) {
+export function TimePicker({ value, onChange, minMinutes = 0, required = false, closedDates = [] }: TimePickerProps) {
   const [open, setOpen] = useState(false)
   const [selectedDayIdx, setSelectedDayIdx] = useState(0)
 
-  const days = useMemo(() => generateDeliveryDaySlots(minMinutes), [minMinutes])
+  const days = useMemo(() => generateDeliveryDaySlots(minMinutes, closedDates), [closedDates, minMinutes])
   const safeSelectedDayIdx = days.length === 0 ? 0 : Math.min(selectedDayIdx, days.length - 1)
-  const isOpen = isSaudiStoreOpen()
+  const isClosedToday = isSaudiDateClosed(new Date(), closedDates)
+  const isOpen = isSaudiStoreOpenForOrders(new Date(), closedDates)
 
   const handleSelect = (slot: string) => {
     const day = days[safeSelectedDayIdx]
@@ -34,6 +42,8 @@ export function TimePicker({ value, onChange, minMinutes = 0, required = false }
 
   const displayValue = value
     ? value
+    : days.length === 0
+    ? "لا توجد مواعيد متاحة الآن"
     : required
     ? "اختر موعدًا"
     : isOpen
@@ -70,11 +80,13 @@ export function TimePicker({ value, onChange, minMinutes = 0, required = false }
       {!required && (
         <div className={cn(
           "mt-2 mx-1 flex items-center gap-1.5 text-xs font-medium",
-          isOpen ? "text-green-600" : "text-orange-500"
+          isOpen ? "text-green-600" : isClosedToday ? "text-red-500" : "text-orange-500"
         )}>
-          <span className={cn("w-1.5 h-1.5 rounded-full", isOpen ? "bg-green-500" : "bg-orange-400")} />
+          <span className={cn("w-1.5 h-1.5 rounded-full", isOpen ? "bg-green-500" : isClosedToday ? "bg-red-500" : "bg-orange-400")} />
           {isOpen
             ? `متاح الآن - نغلق ${CLOSE_HOUR - 12}:00 م`
+            : isClosedToday
+            ? "اليوم مغلق لاستقبال الطلبات"
             : `نفتح الساعة ${OPEN_HOUR - 12}:00 م`}
         </div>
       )}
@@ -131,52 +143,60 @@ export function TimePicker({ value, onChange, minMinutes = 0, required = false }
               )}
 
               {/* Day tabs */}
-              <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
-                {days.map((day, idx) => (
-                  <button
-                    key={day.date}
-                    onClick={() => setSelectedDayIdx(idx)}
-                    className={cn(
-                      "flex-shrink-0 px-4 py-2.5 rounded-2xl text-sm font-semibold transition-all",
-                      safeSelectedDayIdx === idx
-                        ? "bg-[#1e293b] text-white"
-                        : "bg-[#f5f5f5] text-gray-600"
-                    )}
-                  >
-                    <span className="block">{day.dayLabel}</span>
-                    <span className={cn("block text-xs mt-0.5 font-normal", safeSelectedDayIdx === idx ? "opacity-70" : "text-gray-400")}>
-                      {day.dateLabel}
-                    </span>
-                  </button>
-                ))}
-              </div>
-
-              {/* Time grid */}
-              <div>
-                <p className="text-xs text-gray-400 mb-3 font-medium">
-                  {days[safeSelectedDayIdx]?.slots.length ?? 0} موعد متاح
-                </p>
-                <div className="grid grid-cols-3 gap-2">
-                  {days[safeSelectedDayIdx]?.slots.map((slot) => {
-                    const activeDay = days[safeSelectedDayIdx]
-                    const isSelected = activeDay ? value?.includes(slot) && value?.includes(activeDay.dayLabel) : false
-                    return (
+              {days.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 p-4 text-right">
+                  <p className="font-semibold text-gray-700">لا توجد مواعيد متاحة داخل نافذة الحجز الحالية</p>
+                  <p className="mt-1 text-xs text-gray-500">احذف بعض الأيام المغلقة أو أعد المحاولة لاحقًا.</p>
+                </div>
+              ) : (
+                <>
+                  <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+                    {days.map((day, idx) => (
                       <button
-                        key={slot}
-                        onClick={() => handleSelect(slot)}
+                        key={day.date}
+                        onClick={() => setSelectedDayIdx(idx)}
                         className={cn(
-                          "py-3.5 rounded-2xl text-sm font-semibold transition-all border-2",
-                          isSelected
-                            ? "bg-primary border-primary text-primary-foreground shadow-md scale-105"
-                            : "bg-[#f5f5f5] border-transparent hover:border-gray-300 hover:bg-white"
+                          "flex-shrink-0 px-4 py-2.5 rounded-2xl text-sm font-semibold transition-all",
+                          safeSelectedDayIdx === idx
+                            ? "bg-[#1e293b] text-white"
+                            : "bg-[#f5f5f5] text-gray-600"
                         )}
                       >
-                        {slot}
+                        <span className="block">{day.dayLabel}</span>
+                        <span className={cn("block text-xs mt-0.5 font-normal", safeSelectedDayIdx === idx ? "opacity-70" : "text-gray-400")}>
+                          {day.dateLabel}
+                        </span>
                       </button>
-                    )
-                  })}
-                </div>
-              </div>
+                    ))}
+                  </div>
+
+                  <div>
+                    <p className="text-xs text-gray-400 mb-3 font-medium">
+                      {days[safeSelectedDayIdx]?.slots.length ?? 0} موعد متاح
+                    </p>
+                    <div className="grid grid-cols-3 gap-2">
+                      {days[safeSelectedDayIdx]?.slots.map((slot) => {
+                        const activeDay = days[safeSelectedDayIdx]
+                        const isSelected = activeDay ? value?.includes(slot) && value?.includes(activeDay.dayLabel) : false
+                        return (
+                          <button
+                            key={slot}
+                            onClick={() => handleSelect(slot)}
+                            className={cn(
+                              "py-3.5 rounded-2xl text-sm font-semibold transition-all border-2",
+                              isSelected
+                                ? "bg-primary border-primary text-primary-foreground shadow-md scale-105"
+                                : "bg-[#f5f5f5] border-transparent hover:border-gray-300 hover:bg-white"
+                            )}
+                          >
+                            {slot}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>

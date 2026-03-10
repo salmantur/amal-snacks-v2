@@ -22,6 +22,15 @@ interface SaudiNowParts {
   hour: number
 }
 
+function formatDateKey(year: number, monthIndex: number, day: number): string {
+  const date = new Date(Date.UTC(year, monthIndex, day, 9, 0, 0, 0))
+  return [
+    date.getUTCFullYear(),
+    String(date.getUTCMonth() + 1).padStart(2, "0"),
+    String(date.getUTCDate()).padStart(2, "0"),
+  ].join("-")
+}
+
 function getSaudiClock(date = new Date()): Date {
   return new Date(date.getTime() + SAUDI_OFFSET_MS)
 }
@@ -65,12 +74,31 @@ export function isSaudiStoreOpen(date = new Date()): boolean {
   return hour >= OPEN_HOUR && hour < CLOSE_HOUR
 }
 
-export function generateDeliveryDaySlots(minMinutes: number): DeliveryDaySlots[] {
+export function getSaudiDateKey(date = new Date()): string {
+  const { year, monthIndex, day } = getSaudiNowParts(date)
+  return formatDateKey(year, monthIndex, day)
+}
+
+export function isSaudiDateClosed(date = new Date(), closedDates: string[] = []): boolean {
+  const todayKey = getSaudiDateKey(date)
+  return new Set(closedDates).has(todayKey)
+}
+
+export function isSaudiStoreOpenForOrders(date = new Date(), closedDates: string[] = []): boolean {
+  if (isSaudiDateClosed(date, closedDates)) return false
+  return isSaudiStoreOpen(date)
+}
+
+export function generateDeliveryDaySlots(minMinutes: number, closedDates: string[] = []): DeliveryDaySlots[] {
   const result: DeliveryDaySlots[] = []
   const base = getSaudiNowParts()
   const earliest = new Date(Date.now() + (minMinutes + 45) * 60 * 1000)
+  const closedDatesSet = new Set(closedDates)
 
   for (let dayOffset = 0; dayOffset < BOOKING_WINDOW_DAYS; dayOffset++) {
+    const dateKey = formatDateKey(base.year, base.monthIndex, base.day + dayOffset)
+    if (closedDatesSet.has(dateKey)) continue
+
     const slots: string[] = []
 
     for (let hour = OPEN_HOUR; hour < CLOSE_HOUR; hour++) {
@@ -99,8 +127,8 @@ export function generateDeliveryDaySlots(minMinutes: number): DeliveryDaySlots[]
   return result
 }
 
-export function getEarliestDeliverySlotLabel(minMinutes: number): string | null {
-  const firstDay = generateDeliveryDaySlots(minMinutes)[0]
+export function getEarliestDeliverySlotLabel(minMinutes: number, closedDates: string[] = []): string | null {
+  const firstDay = generateDeliveryDaySlots(minMinutes, closedDates)[0]
   if (!firstDay || firstDay.slots.length === 0) return null
   return `${firstDay.dayLabel} ${firstDay.dateLabel} - ${firstDay.slots[0]}`
 }

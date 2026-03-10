@@ -122,6 +122,7 @@ export function generateWhatsAppMessage(
     name: string
     phone: string
     address: string
+    locationUrl?: string
     area: string
     notes: string
     scheduledTime: string | null
@@ -137,6 +138,9 @@ export function generateWhatsAppMessage(
   message += `*الهاتف:* ${deliveryInfo.phone}\n`
   message += `*المنطقة:* ${deliveryInfo.area}\n`
   message += `*العنوان:* ${deliveryInfo.address}\n`
+  if (deliveryInfo.locationUrl) {
+    message += `*رابط الموقع:* ${deliveryInfo.locationUrl}\n`
+  }
 
   if (deliveryInfo.scheduledTime) {
     message += `*وقت التسليم:* ${deliveryInfo.scheduledTime}\n`

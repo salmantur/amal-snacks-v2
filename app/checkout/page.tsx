@@ -1,14 +1,17 @@
 "use client"
 
-import { useMemo, useState, useCallback, Suspense, useEffect } from "react"
+import { useMemo, useState, useCallback, Suspense, useEffect, useRef } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { useSearchParams, useRouter } from "next/navigation"
 import {
   ArrowRight,
+  Clock3,
+  Store,
   Minus,
   Plus,
   Trash2,
+  Truck,
   MapPin,
   User,
   Phone,
@@ -23,20 +26,243 @@ import type { CartItem } from "@/components/cart-provider"
 import { TimePicker } from "@/components/time-picker"
 import { useDeliveryAreas } from "@/hooks/use-delivery-areas"
 import { useDiscountConfig } from "@/hooks/use-discount-config"
+import { useOrderScheduleConfig } from "@/hooks/use-order-schedule-config"
 import { resolveDiscount } from "@/lib/discounts"
 import {
   generateWhatsAppMessage,
   generatePickupWhatsAppMessage,
   WHATSAPP_NUMBER,
 } from "@/lib/data"
-import { getEarliestDeliverySlotLabel } from "@/lib/checkout-schedule"
+import { generateDeliveryDaySlots, isSaudiDateClosed } from "@/lib/checkout-schedule"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { PriceWithRiyalLogo } from "@/components/ui/price-with-riyal-logo"
 
-type CheckoutErrors = { name?: string; phone?: string; area?: string }
-type AreaDesign = "search" | "chips" | "cards"
+type CheckoutErrors = { name?: string; phone?: string; area?: string; scheduledTime?: string }
 type CheckoutTheme = "classic" | "glass" | "contrast"
+type OrderMode = "pickup" | "delivery"
+type CouponStatusTone = "success" | "error" | "info"
+
+const QUICK_NOTE_OPTIONS = [
+  "بدون بصل",
+  "اتصال عند الوصول",
+  "اتركه عند الباب",
+  "مستعجل",
+]
+
+const EMPTY_DELIVERY_INFO = {
+  name: "",
+  phone: "",
+  address: "",
+  locationUrl: "",
+  area: "",
+  notes: "",
+  scheduledTime: null,
+}
+
+const PREFERRED_ORDER_TYPE_KEY = "amal_preferred_order_type"
+const CHECKOUT_EVENTS_KEY = "amal_checkout_events"
+
+function normalizeSaudiPhoneDigits(value: string): string {
+  let digits = value.replace(/\D/g, "")
+
+  if (digits.startsWith("00966")) digits = `0${digits.slice(5)}`
+  if (digits.startsWith("966")) digits = `0${digits.slice(3)}`
+  if (!digits.startsWith("0") && digits.length === 9) digits = `0${digits}`
+
+  return digits.slice(0, 10)
+}
+
+function formatSaudiPhoneInput(value: string): string {
+  const digits = normalizeSaudiPhoneDigits(value)
+
+  if (digits.length <= 3) return digits
+  if (digits.length <= 6) return `${digits.slice(0, 3)} ${digits.slice(3)}`
+  return `${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6)}`
+}
+
+function trackCheckoutEvent(event: string, details: Record<string, boolean | number | string | null> = {}) {
+  if (typeof window === "undefined") return
+
+  try {
+    const raw = window.localStorage.getItem(CHECKOUT_EVENTS_KEY)
+    const parsed = raw ? (JSON.parse(raw) as unknown) : []
+    const existing = Array.isArray(parsed) ? parsed : []
+    const next = [
+      ...existing.slice(-39),
+      {
+        event,
+        details,
+        timestamp: new Date().toISOString(),
+      },
+    ]
+
+    window.localStorage.setItem(CHECKOUT_EVENTS_KEY, JSON.stringify(next))
+  } catch {
+    // Local funnel tracking is best-effort only.
+  }
+}
+
+function scrollToSection(node: HTMLElement | null) {
+  if (!node) return
+  node.scrollIntoView({ behavior: "smooth", block: "start" })
+}
+
+function SectionStatusBadge({ done, label }: { done: boolean; label: string }) {
+  return (
+    <span
+      className={cn(
+        "rounded-full px-3 py-1 text-xs font-semibold",
+        done ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
+      )}
+    >
+      {label}
+    </span>
+  )
+}
+
+function renderWhatsAppHandoffWindow(
+  popup: Window,
+  state: "saving" | "opening" | "error",
+  whatsappUrl?: string
+) {
+  const content =
+    state === "saving"
+      ? {
+          title: "جاري حفظ الطلب",
+          description: "سنفتح واتساب مباشرة بعد حفظ الطلب.",
+          badge: "الخطوة 1 من 2",
+          action: "",
+          statusClass: "is-saving",
+        }
+      : state === "opening"
+        ? {
+            title: "تم حفظ الطلب",
+            description: "جاري فتح واتساب الآن. إذا لم ينتقل تلقائيًا، استخدم الزر بالأسفل.",
+            badge: "الخطوة 2 من 2",
+            action: whatsappUrl
+              ? `<a class="action" href="${whatsappUrl}">فتح واتساب يدويًا</a>`
+              : "",
+            statusClass: "is-opening",
+          }
+        : {
+            title: "تعذر حفظ الطلب",
+            description: "حدثت مشكلة أثناء الحفظ. ارجع للمتجر وحاول مرة أخرى.",
+            badge: "لم يكتمل الطلب",
+            action: "",
+            statusClass: "is-error",
+          }
+
+  popup.document.write(`
+    <!doctype html>
+    <html lang="ar" dir="rtl">
+      <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>حالة الطلب</title>
+        <style>
+          body {
+            margin: 0;
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            background:
+              radial-gradient(circle at top, rgba(37, 211, 102, 0.12), transparent 32%),
+              linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+            color: #0f172a;
+            font-family: system-ui, sans-serif;
+          }
+          .card {
+            width: min(30rem, calc(100vw - 2rem));
+            background: rgba(255, 255, 255, 0.92);
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            border-radius: 28px;
+            padding: 28px;
+            box-shadow: 0 20px 40px rgba(15, 23, 42, 0.12);
+            text-align: center;
+            backdrop-filter: blur(14px);
+          }
+          .badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 2rem;
+            padding: 0 0.85rem;
+            border-radius: 999px;
+            background: rgba(15, 23, 42, 0.06);
+            color: #334155;
+            font-size: 0.8rem;
+            font-weight: 700;
+          }
+          .indicator {
+            width: 54px;
+            height: 54px;
+            margin: 18px auto 16px;
+            border-radius: 999px;
+            display: grid;
+            place-items: center;
+            font-size: 1.2rem;
+            font-weight: 800;
+          }
+          .is-saving .indicator {
+            border: 3px solid #d1d5db;
+            border-top-color: #25d366;
+            animation: spin 0.9s linear infinite;
+          }
+          .is-opening .indicator {
+            background: rgba(34, 197, 94, 0.12);
+            color: #15803d;
+          }
+          .is-opening .indicator::before {
+            content: "✓";
+          }
+          .is-error .indicator {
+            background: rgba(239, 68, 68, 0.12);
+            color: #b91c1c;
+          }
+          .is-error .indicator::before {
+            content: "!";
+          }
+          h1 {
+            margin: 0;
+            font-size: 1.5rem;
+          }
+          p {
+            margin: 0.75rem 0 0;
+            color: #475569;
+            line-height: 1.7;
+          }
+          .action {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 3rem;
+            margin-top: 1.5rem;
+            padding: 0 1.2rem;
+            border-radius: 999px;
+            background: #25d366;
+            color: white;
+            font-weight: 800;
+            text-decoration: none;
+          }
+          @keyframes spin {
+            to { transform: rotate(360deg); }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="card ${content.statusClass}">
+          <div class="badge">${content.badge}</div>
+          <div class="indicator"></div>
+          <h1>${content.title}</h1>
+          <p>${content.description}</p>
+          ${content.action}
+        </div>
+      </body>
+    </html>
+  `)
+  popup.document.close()
+}
 
 function CheckoutItemImage({ item }: { item: CartItem }) {
   const [imgError, setImgError] = useState(false)
@@ -120,14 +346,9 @@ function normalizeMakingTimeMinutes(value: number): number {
 
 function CheckoutContent() {
   const searchParams = useSearchParams()
-  const orderType = (searchParams.get("type") as "pickup" | "delivery") || "delivery"
+  const orderTypeParam = searchParams.get("type")
+  const orderType = (orderTypeParam as OrderMode) || "delivery"
   const isPickup = orderType === "pickup"
-
-  const areaDesignParam = searchParams.get("areaui")
-  const areaDesign: AreaDesign =
-    areaDesignParam === "chips" || areaDesignParam === "cards" || areaDesignParam === "search"
-      ? areaDesignParam
-      : "chips"
 
   const themeParam = searchParams.get("checkoutui")
   const activeCheckoutTheme: CheckoutTheme =
@@ -166,19 +387,52 @@ function CheckoutContent() {
   const { items, totalPrice, updateQuantity, removeItem, deliveryInfo, setDeliveryInfo, clearCart } = useCart()
   const { areas: deliveryAreas } = useDeliveryAreas()
   const { config: discountConfig } = useDiscountConfig()
+  const { config: orderScheduleConfig } = useOrderScheduleConfig()
+  const areaSectionRef = useRef<HTMLElement | null>(null)
+  const detailsSectionRef = useRef<HTMLElement | null>(null)
+  const scheduleSectionRef = useRef<HTMLElement | null>(null)
+  const previousRevealStateRef = useRef(false)
+  const previousInfoDoneRef = useRef(false)
+  const previousCheckoutSnapshotRef = useRef<string | null>(null)
+  const animatedTotalRef = useRef<number | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errors, setErrors] = useState<CheckoutErrors>({})
   const [submitted, setSubmitted] = useState(false)
   const [areaFocused, setAreaFocused] = useState(false)
   const [actionFeedback, setActionFeedback] = useState<string | null>(null)
   const [highlightedCartKey, setHighlightedCartKey] = useState<string | null>(null)
+  const [isCartExpanded, setIsCartExpanded] = useState(true)
+  const [isDetectingLocation, setIsDetectingLocation] = useState(false)
+  const [manualWhatsAppUrl, setManualWhatsAppUrl] = useState<string | null>(null)
   const [couponInput, setCouponInput] = useState("")
   const [appliedCouponCode, setAppliedCouponCode] = useState<string | null>(null)
   const [couponStatus, setCouponStatus] = useState<string | null>(null)
+  const [couponStatusTone, setCouponStatusTone] = useState<CouponStatusTone | null>(null)
 
   useEffect(() => {
     router.prefetch("/confirmation")
   }, [router])
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    setIsCartExpanded(window.innerWidth >= 768)
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+
+    if (orderTypeParam === "pickup" || orderTypeParam === "delivery") {
+      window.localStorage.setItem(PREFERRED_ORDER_TYPE_KEY, orderType)
+      return
+    }
+
+    const storedOrderType = window.localStorage.getItem(PREFERRED_ORDER_TYPE_KEY)
+    if (storedOrderType !== "pickup" && storedOrderType !== "delivery") return
+
+    const nextParams = new URLSearchParams(searchParams.toString())
+    nextParams.set("type", storedOrderType)
+    router.replace(`/checkout?${nextParams.toString()}`, { scroll: false })
+  }, [orderType, orderTypeParam, router, searchParams])
 
   const showActionFeedback = useCallback((message: string) => {
     setActionFeedback(message)
@@ -189,7 +443,8 @@ function CheckoutContent() {
 
   const handleInputChange = useCallback(
     (field: keyof typeof deliveryInfo, value: string) => {
-      setDeliveryInfo({ ...deliveryInfo, [field]: value })
+      const nextValue = field === "phone" ? formatSaudiPhoneInput(value) : value
+      setDeliveryInfo({ ...deliveryInfo, [field]: nextValue })
       if (submitted || errors[field as keyof CheckoutErrors]) {
         setErrors((prev) => ({ ...prev, [field]: undefined }))
       }
@@ -197,13 +452,97 @@ function CheckoutContent() {
     [deliveryInfo, setDeliveryInfo, submitted, errors]
   )
 
+  const handleResetRememberedDetails = useCallback(() => {
+    setDeliveryInfo({
+      ...EMPTY_DELIVERY_INFO,
+      scheduledTime: deliveryInfo.scheduledTime,
+    })
+    setErrors({})
+    setSubmitted(false)
+    setManualWhatsAppUrl(null)
+    trackCheckoutEvent("details_reset", { orderType })
+    showActionFeedback("تم مسح البيانات المحفوظة")
+    window.setTimeout(() => scrollToSection(detailsSectionRef.current), 120)
+  }, [deliveryInfo.scheduledTime, orderType, setDeliveryInfo, showActionFeedback])
+
+  const handleUseCurrentLocation = useCallback(() => {
+    if (typeof window === "undefined" || !("geolocation" in navigator)) {
+      showActionFeedback("المتصفح لا يدعم تحديد الموقع")
+      return
+    }
+
+    setIsDetectingLocation(true)
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords
+        const nextLocationUrl = `https://maps.google.com/?q=${latitude},${longitude}`
+        setDeliveryInfo({
+          ...deliveryInfo,
+          locationUrl: nextLocationUrl,
+        })
+        setIsDetectingLocation(false)
+        trackCheckoutEvent("location_detected", { orderType })
+        showActionFeedback("تم إضافة موقعك الحالي")
+      },
+      () => {
+        setIsDetectingLocation(false)
+        showActionFeedback("تعذر الوصول إلى موقعك الحالي")
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      }
+    )
+  }, [deliveryInfo, orderType, setDeliveryInfo, showActionFeedback])
+
   const pickArea = useCallback(
     (areaName: string) => {
       handleInputChange("area", areaName)
       setAreaFocused(false)
+      trackCheckoutEvent("area_selected", { area: areaName })
       showActionFeedback("تم تحديث رسوم التوصيل")
     },
     [handleInputChange, showActionFeedback]
+  )
+
+  const switchOrderType = useCallback(
+    (nextType: OrderMode) => {
+      if (nextType === orderType) return
+      const nextParams = new URLSearchParams(searchParams.toString())
+      nextParams.set("type", nextType)
+      router.replace(`/checkout?${nextParams.toString()}`, { scroll: false })
+      trackCheckoutEvent("order_type_selected", { type: nextType })
+      showActionFeedback(nextType === "pickup" ? "تم التحويل إلى الاستلام من المحل" : "تم التحويل إلى التوصيل")
+      window.setTimeout(() => {
+        scrollToSection(nextType === "pickup" ? detailsSectionRef.current : areaSectionRef.current)
+      }, 180)
+    },
+    [orderType, router, searchParams, showActionFeedback]
+  )
+
+  const applyQuickNote = useCallback(
+    (note: string) => {
+      const existing = deliveryInfo.notes
+        .split("\n")
+        .map((value) => value.trim())
+        .filter(Boolean)
+
+      if (existing.includes(note)) {
+        setDeliveryInfo({
+          ...deliveryInfo,
+          notes: existing.filter((value) => value !== note).join("\n"),
+        })
+        return
+      }
+
+      setDeliveryInfo({
+        ...deliveryInfo,
+        notes: [...existing, note].join("\n"),
+      })
+      showActionFeedback("تمت إضافة الملاحظة")
+    },
+    [deliveryInfo, setDeliveryInfo, showActionFeedback]
   )
 
   const handleDecrease = useCallback(
@@ -236,12 +575,23 @@ function CheckoutContent() {
   )
 
   const handleScheduleChange = useCallback(
-    (value: string | null) => setDeliveryInfo({ ...deliveryInfo, scheduledTime: value }),
-    [deliveryInfo, setDeliveryInfo]
+    (value: string | null) => {
+      setDeliveryInfo({ ...deliveryInfo, scheduledTime: value })
+      if (submitted || errors.scheduledTime) {
+        setErrors((prev) => ({ ...prev, scheduledTime: undefined }))
+      }
+    },
+    [deliveryInfo, errors.scheduledTime, setDeliveryInfo, submitted]
   )
 
   const selectedArea = deliveryAreas.find((a) => a.name === deliveryInfo.area)
   const deliveryFee = isPickup ? 0 : selectedArea?.price || 0
+  const hasStoredDetails = Boolean(
+    deliveryInfo.name || deliveryInfo.phone || deliveryInfo.area || deliveryInfo.address || deliveryInfo.locationUrl
+  )
+  const isScheduled = Boolean(deliveryInfo.scheduledTime)
+  const canRevealFulfillmentDetails = isPickup || Boolean(selectedArea)
+  const isFinalTotalReady = isPickup || Boolean(selectedArea)
   const discountResult = useMemo(
     () =>
       resolveDiscount({
@@ -253,8 +603,60 @@ function CheckoutContent() {
     [discountConfig, totalPrice, deliveryFee, appliedCouponCode]
   )
   const grandTotal = discountResult.finalTotal
+  const activeCouponCode = discountResult.codeApplied ?? null
   const maxMakingTime = items.reduce((max, item) => Math.max(max, normalizeMakingTimeMinutes(item.makingTime || 0)), 0)
-  const earliestSlot = useMemo(() => getEarliestDeliverySlotLabel(maxMakingTime), [maxMakingTime])
+  const closedDates = orderScheduleConfig.closedDates
+  const availableScheduleDays = useMemo(
+    () => generateDeliveryDaySlots(maxMakingTime, closedDates),
+    [closedDates, maxMakingTime]
+  )
+  const availableScheduleLabels = useMemo(
+    () =>
+      new Set(
+        availableScheduleDays.flatMap((day) => day.slots.map((slot) => `${day.dayLabel} ${day.dateLabel} - ${slot}`))
+      ),
+    [availableScheduleDays]
+  )
+  const earliestSlot = useMemo(() => {
+    const firstDay = availableScheduleDays[0]
+    if (!firstDay || firstDay.slots.length === 0) return null
+    return `${firstDay.dayLabel} ${firstDay.dateLabel} - ${firstDay.slots[0]}`
+  }, [availableScheduleDays])
+  const isTodayClosed = useMemo(() => isSaudiDateClosed(new Date(), closedDates), [closedDates])
+  const hasAvailableScheduleDays = availableScheduleDays.length > 0
+  const [displayGrandTotal, setDisplayGrandTotal] = useState(grandTotal)
+  const [isTotalAnimating, setIsTotalAnimating] = useState(false)
+  const checkoutSnapshot = useMemo(
+    () =>
+      JSON.stringify({
+        orderType,
+        area: selectedArea?.name ?? deliveryInfo.area,
+        name: deliveryInfo.name,
+        phone: deliveryInfo.phone,
+        address: deliveryInfo.address,
+        locationUrl: deliveryInfo.locationUrl,
+        notes: deliveryInfo.notes,
+        scheduledTime: deliveryInfo.scheduledTime,
+        couponCode: activeCouponCode,
+        items: items.map((item) => ({
+          cartKey: item.cartKey,
+          quantity: item.quantity,
+        })),
+      }),
+    [
+      activeCouponCode,
+      deliveryInfo.address,
+      deliveryInfo.area,
+      deliveryInfo.locationUrl,
+      deliveryInfo.name,
+      deliveryInfo.notes,
+      deliveryInfo.phone,
+      deliveryInfo.scheduledTime,
+      items,
+      orderType,
+      selectedArea?.name,
+    ]
+  )
 
   const filteredAreas = useMemo(() => {
     if (isPickup) return []
@@ -264,33 +666,84 @@ function CheckoutContent() {
   }, [deliveryInfo.area, isPickup, deliveryAreas])
 
   const quickAreas = useMemo(() => deliveryAreas.slice(0, 6), [deliveryAreas])
+  const activeQuickNotes = useMemo(
+    () =>
+      deliveryInfo.notes
+        .split("\n")
+        .map((value) => value.trim())
+        .filter(Boolean),
+    [deliveryInfo.notes]
+  )
+
+  useEffect(() => {
+    if (animatedTotalRef.current === null) {
+      animatedTotalRef.current = grandTotal
+      setDisplayGrandTotal(grandTotal)
+      return
+    }
+
+    const previousValue = animatedTotalRef.current
+    if (previousValue === grandTotal) {
+      setDisplayGrandTotal(grandTotal)
+      return
+    }
+
+    const durationMs = 360
+    const startTime = performance.now()
+    setIsTotalAnimating(true)
+
+    const step = (timestamp: number) => {
+      const progress = Math.min((timestamp - startTime) / durationMs, 1)
+      const nextValue = Math.round(previousValue + (grandTotal - previousValue) * progress)
+      animatedTotalRef.current = nextValue
+      setDisplayGrandTotal(nextValue)
+
+      if (progress < 1) {
+        window.requestAnimationFrame(step)
+        return
+      }
+
+      animatedTotalRef.current = grandTotal
+      setDisplayGrandTotal(grandTotal)
+      window.setTimeout(() => setIsTotalAnimating(false), 180)
+    }
+
+    const frame = window.requestAnimationFrame(step)
+    return () => window.cancelAnimationFrame(frame)
+  }, [grandTotal])
 
   const applyCoupon = useCallback(() => {
     const normalized = couponInput.trim().toUpperCase()
     if (!normalized) {
       setAppliedCouponCode(null)
       setCouponStatus("اكتب كود الخصم أولا")
+      setCouponStatusTone("info")
       return
     }
     if (!discountConfig.enabled) {
       setAppliedCouponCode(null)
       setCouponStatus("الخصومات غير مفعلة حاليا")
+      setCouponStatusTone("error")
       return
     }
     const matched = discountConfig.codes.find((code) => code.code === normalized && code.active)
     if (!matched) {
       setAppliedCouponCode(null)
       setCouponStatus("كود الخصم غير صحيح أو غير فعال")
+      setCouponStatusTone("error")
       return
     }
     const currentTotal = totalPrice + deliveryFee
     if (matched.minOrder && currentTotal < matched.minOrder) {
       setAppliedCouponCode(null)
       setCouponStatus(`هذا الكود يتطلب حد أدنى ${matched.minOrder}`)
+      setCouponStatusTone("error")
       return
     }
     setAppliedCouponCode(normalized)
     setCouponStatus("تم تطبيق الكود")
+    setCouponStatusTone("success")
+    trackCheckoutEvent("coupon_applied", { code: normalized })
     showActionFeedback("تم تطبيق كود الخصم")
   }, [couponInput, discountConfig, totalPrice, deliveryFee, showActionFeedback])
 
@@ -298,7 +751,18 @@ function CheckoutContent() {
     setAppliedCouponCode(null)
     setCouponInput("")
     setCouponStatus(null)
+    setCouponStatusTone(null)
   }, [])
+
+  useEffect(() => {
+    if (!appliedCouponCode || activeCouponCode === appliedCouponCode) return
+
+    setAppliedCouponCode(null)
+    setCouponStatus(
+      discountConfig.enabled ? "تم إلغاء الكود لأن الطلب لم يعد يطابق شروط الخصم" : "تم تعطيل الخصومات حاليًا"
+    )
+    setCouponStatusTone("error")
+  }, [activeCouponCode, appliedCouponCode, discountConfig.enabled])
 
   useEffect(() => {
     if (isPickup || !deliveryInfo.area || selectedArea) return
@@ -311,10 +775,51 @@ function CheckoutContent() {
     }
   }, [deliveryInfo, isPickup, selectedArea, setDeliveryInfo, deliveryAreas])
 
+  useEffect(() => {
+    if (!canRevealFulfillmentDetails || previousRevealStateRef.current === canRevealFulfillmentDetails) {
+      previousRevealStateRef.current = canRevealFulfillmentDetails
+      return
+    }
+
+    previousRevealStateRef.current = canRevealFulfillmentDetails
+    window.setTimeout(() => scrollToSection(detailsSectionRef.current), 150)
+  }, [canRevealFulfillmentDetails])
+
   const infoDone = useMemo(() => {
     const hasBaseInfo = Boolean(deliveryInfo.name.trim() && deliveryInfo.phone.trim())
     return isPickup ? hasBaseInfo : hasBaseInfo && Boolean(selectedArea)
   }, [deliveryInfo.name, deliveryInfo.phone, selectedArea, isPickup])
+
+  useEffect(() => {
+    if (infoDone && !previousInfoDoneRef.current) {
+      window.setTimeout(() => scrollToSection(scheduleSectionRef.current), 160)
+    }
+
+    previousInfoDoneRef.current = infoDone
+  }, [infoDone])
+
+  useEffect(() => {
+    if (!deliveryInfo.scheduledTime) return
+    if (availableScheduleLabels.has(deliveryInfo.scheduledTime)) return
+
+    setDeliveryInfo({
+      ...deliveryInfo,
+      scheduledTime: null,
+    })
+  }, [availableScheduleLabels, deliveryInfo, setDeliveryInfo])
+
+  useEffect(() => {
+    if (previousCheckoutSnapshotRef.current === null) {
+      previousCheckoutSnapshotRef.current = checkoutSnapshot
+      return
+    }
+
+    if (previousCheckoutSnapshotRef.current !== checkoutSnapshot && manualWhatsAppUrl && !isSubmitting) {
+      setManualWhatsAppUrl(null)
+    }
+
+    previousCheckoutSnapshotRef.current = checkoutSnapshot
+  }, [checkoutSnapshot, isSubmitting, manualWhatsAppUrl])
 
   const validate = useCallback((): CheckoutErrors => {
     const next: CheckoutErrors = {}
@@ -322,23 +827,54 @@ function CheckoutContent() {
 
     if (!deliveryInfo.phone.trim()) next.phone = "رقم الهاتف مطلوب"
     else {
-      const digitsOnly = deliveryInfo.phone.replace(/\D/g, "")
-      if (digitsOnly.length < 9) next.phone = "أدخل رقم هاتف صحيح"
+      const digitsOnly = normalizeSaudiPhoneDigits(deliveryInfo.phone)
+      if (digitsOnly.length !== 10 || !digitsOnly.startsWith("05")) next.phone = "أدخل رقم جوال سعودي صحيح"
     }
 
     if (!isPickup && !selectedArea) next.area = "اختر منطقة التوصيل من القائمة"
+    if (!hasAvailableScheduleDays) next.scheduledTime = "لا توجد مواعيد متاحة حاليا"
+    else if (isTodayClosed && !deliveryInfo.scheduledTime) next.scheduledTime = "اليوم مغلق، اختر موعدًا في يوم آخر"
     return next
-  }, [deliveryInfo.name, deliveryInfo.phone, isPickup, selectedArea])
+  }, [deliveryInfo.name, deliveryInfo.phone, deliveryInfo.scheduledTime, hasAvailableScheduleDays, isPickup, isTodayClosed, selectedArea])
 
   const deliveryAccuracyText = useMemo(() => {
     if (isPickup) return "جاهزية الطلب حسب موعد الاستلام المختار."
+    if (isTodayClosed && !deliveryInfo.scheduledTime) return "اليوم مغلق بالكامل، لذا يلزم تحديد موعد من يوم آخر."
     if (deliveryInfo.scheduledTime) return `التسليم المتوقع ضمن 15-25 دقيقة من الموعد: ${deliveryInfo.scheduledTime}`
     return earliestSlot
       ? `أقرب نافذة توصيل متاحة: ${earliestSlot} (قد تتغير ±20 دقيقة حسب الزحام).`
       : "نؤكد أقرب نافذة توصيل متاحة بعد مراجعة وقت التحضير."
-  }, [isPickup, deliveryInfo.scheduledTime, earliestSlot])
+  }, [isPickup, isTodayClosed, deliveryInfo.scheduledTime, earliestSlot])
+  const scheduleDone = !isTodayClosed || Boolean(deliveryInfo.scheduledTime)
+  const scheduleBadgeLabel = isTodayClosed
+    ? deliveryInfo.scheduledTime
+      ? "تم التحديد"
+      : "مطلوب"
+    : isScheduled
+    ? "تم التحديد"
+    : "أقرب وقت"
 
   const fieldBaseClass = `w-full min-h-12 py-4 px-4 pr-12 rounded-2xl text-base ${theme.input} text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all`
+  const mutedTextClass = activeCheckoutTheme === "contrast" ? "text-slate-300" : "text-muted-foreground"
+  const couponToneClass =
+    appliedCouponCode || discountResult.codeDiscountAmount > 0
+      ? "border-green-200 bg-green-50 text-green-700"
+      : couponStatusTone === "error"
+        ? "border-red-200 bg-red-50 text-red-700"
+        : couponStatusTone === "info"
+          ? "border-amber-200 bg-amber-50 text-amber-700"
+        : "border-border/60 bg-background/70 text-muted-foreground"
+  const combinedOrderNotes = useMemo(() => {
+    if (isPickup) return deliveryInfo.notes
+
+    return [
+      deliveryInfo.address.trim() ? `العنوان: ${deliveryInfo.address.trim()}` : "",
+      deliveryInfo.locationUrl.trim() ? `رابط الموقع: ${deliveryInfo.locationUrl.trim()}` : "",
+      deliveryInfo.notes.trim() ? `ملاحظات: ${deliveryInfo.notes.trim()}` : "",
+    ]
+      .filter(Boolean)
+      .join("\n")
+  }, [deliveryInfo.address, deliveryInfo.locationUrl, deliveryInfo.notes, isPickup])
 
   const handleWhatsAppCheckout = async () => {
     setSubmitted(true)
@@ -350,6 +886,11 @@ function CheckoutContent() {
     }
 
     setIsSubmitting(true)
+    trackCheckoutEvent("checkout_started", {
+      orderType,
+      itemsCount: items.length,
+      areaSelected: Boolean(selectedArea),
+    })
     const cartItems = items.map((item) => ({
       id: item.id,
       name: item.name,
@@ -365,57 +906,14 @@ function CheckoutContent() {
       : generateWhatsAppMessage(cartItems, totalPrice, deliveryInfo, deliveryFee)
 
     const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${message}`
+    setManualWhatsAppUrl(whatsappUrl)
     const whatsappWindow = window.open("", "_blank")
     if (whatsappWindow) {
-      whatsappWindow.document.write(`
-        <!doctype html>
-        <html lang="ar" dir="rtl">
-          <head>
-            <meta charset="utf-8" />
-            <meta name="viewport" content="width=device-width, initial-scale=1" />
-            <title>Opening WhatsApp</title>
-            <style>
-              body {
-                margin: 0;
-                min-height: 100vh;
-                display: grid;
-                place-items: center;
-                background: #f7f7f7;
-                color: #111827;
-                font-family: system-ui, sans-serif;
-              }
-              .card {
-                width: min(28rem, calc(100vw - 2rem));
-                background: white;
-                border-radius: 20px;
-                padding: 24px;
-                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-                text-align: center;
-              }
-              .spinner {
-                width: 38px;
-                height: 38px;
-                margin: 0 auto 16px;
-                border-radius: 999px;
-                border: 3px solid #d1d5db;
-                border-top-color: #25d366;
-                animation: spin 0.9s linear infinite;
-              }
-              @keyframes spin {
-                to { transform: rotate(360deg); }
-              }
-            </style>
-          </head>
-          <body>
-            <div class="card">
-              <div class="spinner"></div>
-              <strong>Opening WhatsApp...</strong>
-              <p style="margin: 10px 0 0; color: #6b7280;">Please wait while we save your order.</p>
-            </div>
-          </body>
-        </html>
-      `)
-      whatsappWindow.document.close()
+      renderWhatsAppHandoffWindow(whatsappWindow, "saving")
+      trackCheckoutEvent("whatsapp_popup_opened", { blocked: false })
+    } else {
+      trackCheckoutEvent("whatsapp_popup_opened", { blocked: true })
+      showActionFeedback("إذا لم يفتح واتساب تلقائيًا ستجد زر الفتح اليدوي بعد تأكيد الطلب.")
     }
 
     const controller = new AbortController()
@@ -431,9 +929,9 @@ function CheckoutContent() {
           customerArea: isPickup ? "" : selectedArea?.name || "",
           orderType: isPickup ? "pickup" : "delivery",
           items: cartItems.map((item) => ({ id: item.id, quantity: item.quantity, selectedIngredients: item.selectedIngredients })),
-          notes: deliveryInfo.notes,
+          notes: combinedOrderNotes,
           scheduledTime: deliveryInfo.scheduledTime,
-          couponCode: appliedCouponCode,
+          couponCode: activeCouponCode,
         }),
         signal: controller.signal,
       })
@@ -445,17 +943,28 @@ function CheckoutContent() {
       const confirmedDiscount = typeof orderData.totalDiscount === "number" ? orderData.totalDiscount : discountResult.totalDiscount
 
       clearCart()
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(PREFERRED_ORDER_TYPE_KEY, orderType)
+      }
       const params = new URLSearchParams({
         name: deliveryInfo.name,
         area: isPickup ? "" : selectedArea?.name || "",
         total: String(confirmedTotal),
         discount: String(confirmedDiscount),
-        code: orderData.codeApplied ?? appliedCouponCode ?? "",
+        code: orderData.codeApplied ?? activeCouponCode ?? "",
         type: isPickup ? "pickup" : "delivery",
         time: deliveryInfo.scheduledTime ?? "في أقرب وقت",
         wa: whatsappUrl,
       })
       const confirmationUrl = `/confirmation?${params.toString()}`
+      if (whatsappWindow && !whatsappWindow.closed) {
+        renderWhatsAppHandoffWindow(whatsappWindow, "opening", whatsappUrl)
+      }
+      trackCheckoutEvent("checkout_saved", {
+        orderType,
+        total: confirmedTotal,
+        discount: confirmedDiscount,
+      })
       router.push(confirmationUrl)
 
       window.setTimeout(() => {
@@ -468,13 +977,18 @@ function CheckoutContent() {
         } catch {
           window.open(whatsappUrl, "_blank")
         }
-      }, 0)
+      }, 700)
     } catch (error) {
       window.clearTimeout(timeoutId)
-      whatsappWindow?.close()
+      if (whatsappWindow && !whatsappWindow.closed) {
+        renderWhatsAppHandoffWindow(whatsappWindow, "error")
+      }
+      trackCheckoutEvent("checkout_failed", {
+        reason: error instanceof Error ? error.name : "unknown",
+      })
       alert(
         error instanceof Error && error.name === "AbortError"
-          ? "Saving the order took too long. Please try again."
+          ? "استغرق حفظ الطلب وقتًا أطول من المتوقع. حاول مرة أخرى."
           : "تعذر حفظ الطلب، حاول مرة أخرى."
       )
       setIsSubmitting(false)
@@ -497,7 +1011,7 @@ function CheckoutContent() {
   }
 
   return (
-    <main className={theme.main}>
+    <main className={theme.main} style={{ paddingBottom: "calc(13rem + env(safe-area-inset-bottom))" }}>
       <header className={theme.header}>
         <div className="flex items-center gap-4 px-4 py-3">
           <Link
@@ -534,319 +1048,593 @@ function CheckoutContent() {
         </div>
       ) : null}
 
+      {manualWhatsAppUrl ? (
+        <div className="px-4 pt-3">
+          <div className="rounded-2xl border border-[#25D366]/25 bg-[#25D366]/10 px-4 py-3 text-right">
+            <p className="text-sm font-semibold text-[#1f8f48]">زر واتساب اليدوي جاهز إذا احتجته</p>
+            <p className="mt-1 text-xs text-[#4b5563]">مفيد خصوصًا عند اختبار Safari على iPhone إذا لم يفتح واتساب تلقائيًا.</p>
+            <a
+              href={manualWhatsAppUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 inline-flex min-h-11 items-center justify-center rounded-full bg-[#25D366] px-4 text-sm font-bold text-white"
+            >
+              فتح واتساب يدويًا
+            </a>
+          </div>
+        </div>
+      ) : null}
+
       <div className="p-4 space-y-5">
-        <section className={theme.section}>
-          <h2 className="text-lg font-bold mb-4">طلباتك ({items.length})</h2>
-          <div className="space-y-3">
-            {items.map((item) => (
-              <div
-                key={item.cartKey}
-                className={cn(
-                  "p-3 rounded-2xl border transition-all duration-300",
-                  highlightedCartKey === item.cartKey && "ring-2 ring-primary/30 scale-[1.01]",
-                  activeCheckoutTheme === "contrast" ? "bg-white border-slate-200" : "bg-background border-border/50"
-                )}
+        <section className={theme.section} ref={areaSectionRef}>
+          <div className="mb-4 flex items-start justify-between gap-3">
+            <div className="text-right">
+              <h2 className="text-lg font-bold">طريقة الطلب</h2>
+              <p className={cn("mt-1 text-xs", mutedTextClass)}>ابدأ باختيار نوع الطلب ثم أكمل الخطوات التالية بسرعة.</p>
+            </div>
+            <div className="flex flex-col items-end gap-2">
+              <SectionStatusBadge done={isPickup || Boolean(selectedArea)} label={isPickup || selectedArea ? "تم" : "اختر"} />
+              {hasStoredDetails ? (
+                <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+                  تم تعبئة آخر بياناتك تلقائيًا
+                </span>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => switchOrderType("delivery")}
+              className={cn(
+                "rounded-3xl border p-4 text-right transition-all",
+                !isPickup ? "border-primary bg-primary/10 shadow-sm" : "border-border bg-background hover:border-primary/30"
+              )}
+            >
+              <Truck className={cn("mb-3 h-5 w-5", !isPickup ? "text-primary" : "text-muted-foreground")} />
+              <p className="font-bold">توصيل</p>
+              <p className="mt-1 text-xs text-muted-foreground">اختر المنطقة وشاهد الرسوم فورًا</p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => switchOrderType("pickup")}
+              className={cn(
+                "rounded-3xl border p-4 text-right transition-all",
+                isPickup ? "border-primary bg-primary/10 shadow-sm" : "border-border bg-background hover:border-primary/30"
+              )}
+            >
+              <Store className={cn("mb-3 h-5 w-5", isPickup ? "text-primary" : "text-muted-foreground")} />
+              <p className="font-bold">استلام من المحل</p>
+              <p className="mt-1 text-xs text-muted-foreground">أسرع بدون رسوم توصيل</p>
+            </button>
+          </div>
+
+          {hasStoredDetails ? (
+            <div className="mt-3 flex justify-end">
+              <button
+                type="button"
+                onClick={handleResetRememberedDetails}
+                className="rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground transition-colors hover:border-primary/30"
               >
-                <div className="flex items-start gap-3">
-                  <CheckoutItemImage item={item} />
-                  <div className="flex-1 min-w-0 text-right">
-                    <h3 className="font-bold text-foreground leading-tight break-words">{item.name}</h3>
-                    {item.selectedIngredients?.length ? (
-                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{item.selectedIngredients.join("، ")}</p>
-                    ) : null}
-                    <p className="text-primary font-medium mt-1">
-                      <PriceWithRiyalLogo value={item.price * item.quantity} />
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-3 flex items-center justify-between">
-                  <button
-                    onClick={() => handleRemove(item)}
-                    className="w-11 h-11 rounded-full bg-destructive/10 flex items-center justify-center text-destructive active:scale-95 transition-transform flex-shrink-0"
-                    aria-label="حذف"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => handleDecrease(item)}
-                      className={cn("w-11 h-11 rounded-full flex items-center justify-center active:scale-95 transition-transform", theme.input)}
-                      aria-label="تقليل"
-                    >
-                      <Minus className="h-4 w-4" />
-                    </button>
-                    <span className="w-7 text-center font-medium">{item.quantity}</span>
-                    <button
-                      onClick={() => handleIncrease(item)}
-                      className={cn("w-11 h-11 rounded-full flex items-center justify-center active:scale-95 transition-transform", theme.input)}
-                      aria-label="زيادة"
-                    >
-                      <Plus className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className={theme.section}>
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-lg font-bold">{isPickup ? "وقت الاستلام" : "موعد التوصيل"}</h2>
-            {!isPickup && earliestSlot ? (
-              <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold px-2.5 py-1">
-                أقرب موعد: {earliestSlot}
-              </div>
-            ) : null}
-          </div>
-
-          {maxMakingTime > 0 ? (
-            <div className="mb-3 p-3 bg-amal-yellow/20 rounded-xl text-right text-sm text-foreground">
-              الحد الأدنى للتجهيز:{" "}
-              <span className="font-bold">
-                {maxMakingTime >= 60
-                  ? `${maxMakingTime % 60 === 0 ? maxMakingTime / 60 : `${Math.floor(maxMakingTime / 60)} ساعة و${maxMakingTime % 60} دقيقة`}`
-                  : `${maxMakingTime} دقيقة`}
-              </span>
+                ليست بياناتك؟ امسح البيانات المحفوظة
+              </button>
             </div>
           ) : null}
 
-          <TimePicker value={deliveryInfo.scheduledTime} onChange={handleScheduleChange} minMinutes={maxMakingTime} required={false} />
-        </section>
-
-        <section className={theme.section}>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold">{isPickup ? "بيانات الاستلام" : "بيانات التوصيل"}</h2>
-            <span className="text-xs text-muted-foreground">* الحقول المطلوبة</span>
-          </div>
-
-          <div className="space-y-3">
-            <div className="relative">
-              <User className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="الاسم الكامل *"
-                value={deliveryInfo.name}
-                onChange={(e) => handleInputChange("name", e.target.value)}
-                className={cn(fieldBaseClass, errors.name && "ring-2 ring-red-300 border border-red-300")}
-                aria-invalid={Boolean(errors.name)}
-              />
-              {errors.name ? <p className="text-sm font-medium text-red-600 mt-1 pr-2" role="alert">{errors.name}</p> : null}
-            </div>
-
-            <div className="relative">
-              <Phone className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              <input
-                type="tel"
-                inputMode="tel"
-                dir="ltr"
-                placeholder="رقم الهاتف *"
-                value={deliveryInfo.phone}
-                onChange={(e) => handleInputChange("phone", e.target.value)}
-                className={cn(fieldBaseClass, errors.phone && "ring-2 ring-red-300 border border-red-300")}
-                aria-invalid={Boolean(errors.phone)}
-              />
-              {errors.phone ? <p className="text-sm font-medium text-red-600 mt-1 pr-2" role="alert">{errors.phone}</p> : null}
-              {!errors.phone ? <p className="text-sm text-muted-foreground mt-1 pr-2">صيغة مقترحة: 05xxxxxxxx</p> : null}
-            </div>
-
-            {!isPickup ? (
-              <div className="relative">
-                <div className="mb-2">
-                  <p className="text-sm font-medium text-right mb-2">اختيار سريع</p>
-                  <div className="flex flex-wrap gap-2">
-                    {quickAreas.map((area) => (
-                      <button
-                        key={`quick-${area.id}`}
-                        type="button"
-                        onClick={() => pickArea(area.name)}
-                        className={cn(
-                          "rounded-full px-4 py-2.5 text-sm border transition-colors active:scale-[0.99]",
-                          selectedArea?.id === area.id
-                            ? "bg-primary text-primary-foreground border-primary"
-                            : `${theme.input} text-foreground border-border hover:bg-primary/10`
-                        )}
-                      >
-                        {area.name}
-                      </button>
-                    ))}
-                  </div>
+          {!isPickup ? (
+            <div className="mt-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="text-right">
+                  <p className="text-sm font-semibold">اختر المنطقة أولًا</p>
+                  <p className="text-xs text-muted-foreground">أفضل المناطق تظهر هنا للاختيار السريع</p>
                 </div>
-
-                {areaDesign === "search" ? (
-                  <>
-                    <MapPin className="absolute right-4 top-4 h-5 w-5 text-muted-foreground" />
-                    <input
-                      type="text"
-                      placeholder="اكتب المنطقة *"
-                      value={deliveryInfo.area}
-                      onFocus={() => setAreaFocused(true)}
-                      onBlur={() => setTimeout(() => setAreaFocused(false), 120)}
-                      onChange={(e) => handleInputChange("area", e.target.value)}
-                      className={cn(fieldBaseClass, errors.area && "ring-2 ring-red-300 border border-red-300")}
-                      aria-invalid={Boolean(errors.area)}
-                    />
-
-                    {areaFocused && filteredAreas.length > 0 ? (
-                      <div className="absolute z-20 mt-2 w-full rounded-2xl border border-border bg-white shadow-lg overflow-hidden">
-                        <div className="max-h-56 overflow-y-auto">
-                          {filteredAreas.map((area) => (
-                            <button
-                              key={area.id}
-                              type="button"
-                              onMouseDown={(e) => {
-                                e.preventDefault()
-                                pickArea(area.name)
-                              }}
-                              className="w-full text-right px-4 py-3.5 min-h-12 hover:bg-amal-grey/60 transition-colors"
-                            >
-                              <p className="font-medium">{area.name}</p>
-                              <p className="text-xs text-muted-foreground">
-                                رسوم التوصيل: <PriceWithRiyalLogo value={area.price} />
-                              </p>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    ) : null}
-                  </>
-                ) : areaDesign === "cards" ? (
-                  <div className="space-y-2">
-                    {filteredAreas.map((area) => (
-                      <button
-                        key={area.id}
-                        type="button"
-                        onClick={() => pickArea(area.name)}
-                        className={cn(
-                          "w-full rounded-2xl border px-3 py-3.5 min-h-12 text-right transition-colors active:scale-[0.99]",
-                          selectedArea?.id === area.id ? "border-primary bg-primary/10" : "border-border bg-amal-grey/60 hover:bg-amal-grey"
-                        )}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="font-semibold">{area.name}</span>
-                          <span className={cn("text-sm", selectedArea?.id === area.id ? "text-primary font-bold" : "text-muted-foreground")}>
-                            <PriceWithRiyalLogo value={area.price} />
-                          </span>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="flex flex-wrap gap-2">
-                    {filteredAreas.map((area) => (
-                      <button
-                        key={area.id}
-                        type="button"
-                        onClick={() => pickArea(area.name)}
-                        className={cn(
-                          "rounded-full px-4 py-3 min-h-12 text-sm border transition-colors active:scale-[0.99]",
-                          selectedArea?.id === area.id
-                            ? "bg-primary text-primary-foreground border-primary"
-                            : `${theme.input} text-foreground border-border hover:bg-primary/10`
-                        )}
-                      >
-                        {area.name} · <PriceWithRiyalLogo value={area.price} />
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                {errors.area ? <p className="text-sm font-medium text-red-600 mt-1 pr-2" role="alert">{errors.area}</p> : null}
-                <p className="text-sm mt-2 text-muted-foreground">
-                  {selectedArea ? (
-                    <span className="text-primary font-semibold">
-                      رسوم التوصيل الآن: <PriceWithRiyalLogo value={selectedArea.price} />
-                    </span>
-                  ) : (
-                    "اختر منطقة من القائمة لاحتساب الرسوم فورًا"
-                  )}
-                </p>
+                <div className="rounded-full bg-background/70 px-3 py-1 text-xs font-semibold text-primary">
+                  {selectedArea ? <PriceWithRiyalLogo value={selectedArea.price} /> : "الرسوم حسب المنطقة"}
+                </div>
               </div>
-            ) : null}
 
-            <div className="relative">
-              <FileText className="absolute right-4 top-4 h-5 w-5 text-muted-foreground" />
-              <textarea
-                placeholder="ملاحظات إضافية (اختياري)"
-                value={deliveryInfo.notes}
-                onChange={(e) => handleInputChange("notes", e.target.value)}
-                rows={2}
-                className={cn(fieldBaseClass, "resize-none")}
-              />
+              <div className="grid gap-2 sm:grid-cols-2">
+                {quickAreas.map((area) => (
+                  <button
+                    key={`quick-card-${area.id}`}
+                    type="button"
+                    onClick={() => pickArea(area.name)}
+                    className={cn(
+                      "rounded-2xl border px-4 py-3 text-right transition-all active:scale-[0.99]",
+                      selectedArea?.id === area.id
+                        ? "border-primary bg-primary/10"
+                        : "border-border bg-background/80 hover:border-primary/30"
+                    )}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="font-semibold">{area.name}</span>
+                      <span className={cn("text-sm font-medium", selectedArea?.id === area.id ? "text-primary" : "text-muted-foreground")}>
+                        <PriceWithRiyalLogo value={area.price} />
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              <div className="relative">
+                <MapPin className="absolute right-4 top-4 h-5 w-5 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="ابحث عن المنطقة أو اختر من القائمة *"
+                  value={deliveryInfo.area}
+                  onFocus={() => setAreaFocused(true)}
+                  onBlur={() => setTimeout(() => setAreaFocused(false), 120)}
+                  onChange={(e) => handleInputChange("area", e.target.value)}
+                  className={cn(fieldBaseClass, errors.area && "ring-2 ring-red-300 border border-red-300")}
+                  aria-invalid={Boolean(errors.area)}
+                />
+
+                {areaFocused && filteredAreas.length > 0 ? (
+                  <div className="absolute z-20 mt-2 w-full overflow-hidden rounded-2xl border border-border bg-white shadow-lg">
+                    <div className="max-h-56 overflow-y-auto">
+                      {filteredAreas.map((area) => (
+                        <button
+                          key={area.id}
+                          type="button"
+                          onMouseDown={(event) => {
+                            event.preventDefault()
+                            pickArea(area.name)
+                          }}
+                          className="w-full px-4 py-3.5 text-right transition-colors hover:bg-amal-grey/60"
+                        >
+                          <div className="flex items-center justify-between gap-3">
+                            <span className="font-medium">{area.name}</span>
+                            <span className="text-xs text-muted-foreground">
+                              <PriceWithRiyalLogo value={area.price} />
+                            </span>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+
+              {errors.area ? <p className="text-sm font-medium text-red-600 pr-2" role="alert">{errors.area}</p> : null}
+              <p className="text-sm text-right text-muted-foreground">
+                {selectedArea ? (
+                  <span className="font-semibold text-primary">
+                    رسوم التوصيل الحالية: <PriceWithRiyalLogo value={selectedArea.price} />
+                  </span>
+                ) : (
+                  "اختر منطقة ليظهر إجمالي الطلب مباشرة."
+                )}
+              </p>
             </div>
-          </div>
+          ) : (
+            <div className="mt-4 rounded-3xl border border-emerald-200 bg-emerald-50 p-4 text-right">
+              <p className="font-semibold text-emerald-800">الاستلام من المحل أسرع</p>
+              <p className="mt-1 text-sm text-emerald-700">لا توجد رسوم توصيل، ويمكنك متابعة الطلب عبر واتساب بعد الحفظ.</p>
+            </div>
+          )}
         </section>
 
-        <section className={theme.summary}>
-          <div className="mb-3">
-            <label className="block text-sm font-medium mb-2">كود الخصم</label>
+        <section className={cn(theme.summary, "space-y-4")}>
+          <div className="flex items-start justify-between gap-3">
+            <div className="text-right">
+              <h2 className="text-lg font-bold">ملخص الطلب المباشر</h2>
+              <p className={cn("mt-1 text-xs", mutedTextClass)}>
+                {isPickup
+                  ? "الاستلام من المحل مفعل الآن"
+                  : selectedArea
+                    ? `رسوم ${selectedArea.name} مضافة مباشرة`
+                    : "اختر المنطقة ليظهر الإجمالي النهائي"}
+              </p>
+            </div>
+            <div className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+              {isPickup ? "استلام" : selectedArea ? `توصيل ${selectedArea.name}` : "بانتظار المنطقة"}
+            </div>
+          </div>
+
+          <div className="space-y-2 text-sm">
+            <div className="flex items-center justify-between">
+              <span className={mutedTextClass}>المجموع الفرعي</span>
+              <span className="font-semibold">
+                <PriceWithRiyalLogo value={totalPrice} />
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <span className={mutedTextClass}>{isPickup ? "رسوم التوصيل" : "رسوم التوصيل"}</span>
+              <span className={cn("font-semibold", isPickup && "text-[#1e5631]")}>
+                {isPickup ? "مجاني" : selectedArea ? <PriceWithRiyalLogo value={deliveryFee} /> : "اختر المنطقة"}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <span className={mutedTextClass}>إجمالي الخصومات</span>
+              <span className={cn("font-semibold", discountResult.totalDiscount > 0 ? "text-green-600" : mutedTextClass)}>
+                {discountResult.totalDiscount > 0 ? (
+                  <>
+                    -<PriceWithRiyalLogo value={discountResult.totalDiscount} />
+                  </>
+                ) : (
+                  "لا يوجد"
+                )}
+              </span>
+            </div>
+
+            <div
+              className={cn(
+                "flex items-center justify-between rounded-2xl border px-4 py-3 transition-transform duration-300",
+                isTotalAnimating && "scale-[1.02]",
+                activeCheckoutTheme === "contrast" ? "border-slate-700 bg-slate-950/40" : "border-primary/15 bg-background/75"
+              )}
+            >
+              <span className="font-bold">الإجمالي النهائي</span>
+              <span className="font-bold text-primary">
+                {isFinalTotalReady ? <PriceWithRiyalLogo value={displayGrandTotal} /> : "اختر المنطقة"}
+              </span>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-border/60 bg-background/70 p-3">
+            <label className="block text-sm font-medium mb-2 text-right">كود الخصم</label>
             <div className="flex gap-2">
               <input
                 type="text"
                 value={couponInput}
                 onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
                 placeholder="WELCOME10"
-                className={cn("flex-1 h-11 rounded-xl px-3 border border-border", theme.input)}
+                className={cn("flex-1 h-11 rounded-xl px-3 border border-border text-right", theme.input)}
               />
               <Button type="button" onClick={applyCoupon} className="h-11 rounded-xl px-4">
                 تطبيق
               </Button>
             </div>
-            {couponStatus ? <p className="mt-2 text-xs text-muted-foreground">{couponStatus}</p> : null}
-            {appliedCouponCode ? (
-              <button type="button" onClick={clearCoupon} className="mt-1 text-xs text-primary font-semibold">
-                إلغاء الكود {appliedCouponCode}
-              </button>
+
+            {couponStatus ? (
+              <div
+                className={cn(
+                  "mt-3 flex items-center justify-between gap-3 rounded-2xl border px-3 py-2 text-sm transition-all duration-300",
+                  couponToneClass,
+                  couponStatusTone === "success" && "scale-[1.01] shadow-sm"
+                )}
+              >
+                <span>{couponStatus}</span>
+                {discountResult.codeDiscountAmount > 0 ? (
+                  <span className="rounded-full bg-white/70 px-2 py-1 text-xs font-bold text-green-700">
+                    وفرت <PriceWithRiyalLogo value={discountResult.codeDiscountAmount} />
+                  </span>
+                ) : null}
+              </div>
+            ) : null}
+
+            {activeCouponCode ? (
+              <div className="mt-3 flex items-center justify-between gap-3">
+                <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
+                  تم تطبيق {activeCouponCode}
+                </span>
+                <button type="button" onClick={clearCoupon} className="text-xs font-semibold text-primary">
+                  إلغاء الكود
+                </button>
+              </div>
             ) : null}
           </div>
-
-          <div className="flex justify-between mb-2">
-            <span className={cn(activeCheckoutTheme === "contrast" ? "text-slate-300" : "text-muted-foreground")}>المجموع الفرعي</span>
-            <span className="font-medium">
-              <PriceWithRiyalLogo value={totalPrice} />
-            </span>
-          </div>
-
-          <div className="flex justify-between mb-2">
-            <span className={cn(activeCheckoutTheme === "contrast" ? "text-slate-300" : "text-muted-foreground")}>
-              {isPickup ? "رسوم التوصيل" : `رسوم التوصيل ${selectedArea ? `(${selectedArea.name})` : ""}`}
-            </span>
-            <span className={cn("font-medium", isPickup && "text-[#1e5631]")}>
-              {isPickup ? "مجاني" : selectedArea ? <PriceWithRiyalLogo value={selectedArea.price} /> : "اختر المنطقة"}
-            </span>
-          </div>
-
-          {discountResult.autoDiscountAmount > 0 ? (
-            <div className="flex justify-between mb-2">
-              <span className={cn(activeCheckoutTheme === "contrast" ? "text-slate-300" : "text-muted-foreground")}>خصم عام</span>
-              <span className="font-medium text-green-600">
-                -<PriceWithRiyalLogo value={discountResult.autoDiscountAmount} />
-              </span>
-            </div>
-          ) : null}
-
-          {discountResult.codeDiscountAmount > 0 ? (
-            <div className="flex justify-between mb-2">
-              <span className={cn(activeCheckoutTheme === "contrast" ? "text-slate-300" : "text-muted-foreground")}>
-                خصم الكود {discountResult.codeApplied ? `(${discountResult.codeApplied})` : ""}
-              </span>
-              <span className="font-medium text-green-600">
-                -<PriceWithRiyalLogo value={discountResult.codeDiscountAmount} />
-              </span>
-            </div>
-          ) : null}
-
-          <div className={cn("pt-2 mt-2 border-t", activeCheckoutTheme === "contrast" ? "border-slate-700" : "border-primary/20")}>
-            <div className="flex justify-between">
-              <span className="font-bold text-lg">الإجمالي</span>
-              <span className="font-bold text-lg text-primary">
-                <PriceWithRiyalLogo value={grandTotal} />
-              </span>
-            </div>
-          </div>
         </section>
+
+        <section className={theme.section}>
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div className="text-right">
+              <h2 className="text-lg font-bold">طلباتك ({items.length})</h2>
+              <p className={cn("mt-1 text-xs", mutedTextClass)}>على الجوال يمكنك إخفاء الأصناف لتكمل الدفع بشكل أسرع.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsCartExpanded((prev) => !prev)}
+              className="rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground"
+            >
+              {isCartExpanded ? "إخفاء الأصناف" : "عرض الأصناف"}
+            </button>
+          </div>
+
+          {!isCartExpanded ? (
+            <div className="rounded-2xl border border-border/60 bg-background/70 px-4 py-3 text-right">
+              <p className="text-sm font-semibold">السلة مختصرة للعرض السريع</p>
+              <p className={cn("mt-1 text-xs", mutedTextClass)}>
+                {items.length} أصناف جاهزة بقيمة <PriceWithRiyalLogo value={totalPrice} />
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {items.map((item) => (
+                <div
+                  key={item.cartKey}
+                  className={cn(
+                    "p-3 rounded-2xl border transition-all duration-300",
+                    highlightedCartKey === item.cartKey && "ring-2 ring-primary/30 scale-[1.01]",
+                    activeCheckoutTheme === "contrast" ? "bg-white border-slate-200" : "bg-background border-border/50"
+                  )}
+                >
+                  <div className="flex items-start gap-3">
+                    <CheckoutItemImage item={item} />
+                    <div className="flex-1 min-w-0 text-right">
+                      <h3 className="font-bold text-foreground leading-tight break-words">{item.name}</h3>
+                      {item.selectedIngredients?.length ? (
+                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{item.selectedIngredients.join("، ")}</p>
+                      ) : null}
+                      <p className="text-primary font-medium mt-1">
+                        <PriceWithRiyalLogo value={item.price * item.quantity} />
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 flex items-center justify-between">
+                    <button
+                      onClick={() => handleRemove(item)}
+                      className="w-11 h-11 rounded-full bg-destructive/10 flex items-center justify-center text-destructive active:scale-95 transition-transform flex-shrink-0"
+                      aria-label="حذف"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleDecrease(item)}
+                        className={cn("w-11 h-11 rounded-full flex items-center justify-center active:scale-95 transition-transform", theme.input)}
+                        aria-label="تقليل"
+                      >
+                        <Minus className="h-4 w-4" />
+                      </button>
+                      <span className="w-7 text-center font-medium">{item.quantity}</span>
+                      <button
+                        onClick={() => handleIncrease(item)}
+                        className={cn("w-11 h-11 rounded-full flex items-center justify-center active:scale-95 transition-transform", theme.input)}
+                        aria-label="زيادة"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {!canRevealFulfillmentDetails ? (
+          <section className={theme.section}>
+            <div className="rounded-3xl border border-dashed border-primary/30 bg-primary/5 p-5 text-right">
+              <p className="text-sm font-semibold text-primary">اختر منطقة التوصيل أولًا</p>
+              <p className={cn("mt-2 text-sm leading-6", mutedTextClass)}>
+                بعد اختيار المنطقة سنعرض بيانات التوصيل ووقت التسليم والإجمالي النهائي بشكل كامل.
+              </p>
+            </div>
+          </section>
+        ) : (
+          <>
+            <section className={cn(theme.section, "animate-in fade-in slide-in-from-bottom-2 duration-500")} ref={detailsSectionRef}>
+              <div className="flex items-center justify-between mb-4 gap-3">
+                <div className="text-right">
+                  <h2 className="text-lg font-bold">{isPickup ? "بيانات الاستلام" : "بيانات التوصيل"}</h2>
+                  <p className={cn("mt-1 text-xs", mutedTextClass)}>
+                    {isPickup
+                      ? "اسمك ورقمك يكفيان لإكمال الطلب"
+                      : "رتبنا النموذج ليبدأ بالاسم ثم الهاتف ثم العنوان والملاحظات"}
+                  </p>
+                </div>
+                <div className="flex flex-col items-end gap-2">
+                  <SectionStatusBadge done={infoDone} label={infoDone ? "تم" : "قيد الإكمال"} />
+                  <span className="text-xs text-muted-foreground">* الحقول المطلوبة</span>
+                </div>
+              </div>
+
+              {!isPickup && selectedArea ? (
+                <div className="mb-4 rounded-2xl border border-primary/15 bg-primary/5 px-4 py-3 text-right">
+                  <p className="text-sm font-semibold text-primary">المنطقة المختارة: {selectedArea.name}</p>
+                  <p className={cn("mt-1 text-xs", mutedTextClass)}>
+                    رسوم التوصيل الحالية: <PriceWithRiyalLogo value={selectedArea.price} />
+                  </p>
+                </div>
+              ) : null}
+
+              <div className="space-y-3">
+                <div className="relative">
+                  <User className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <input
+                    type="text"
+                    placeholder="الاسم الكامل *"
+                    value={deliveryInfo.name}
+                    onChange={(e) => handleInputChange("name", e.target.value)}
+                    className={cn(fieldBaseClass, errors.name && "ring-2 ring-red-300 border border-red-300")}
+                    aria-invalid={Boolean(errors.name)}
+                  />
+                  {errors.name ? <p className="text-sm font-medium text-red-600 mt-1 pr-2" role="alert">{errors.name}</p> : null}
+                </div>
+
+                <div className="relative">
+                  <Phone className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <input
+                    type="tel"
+                    inputMode="tel"
+                    dir="ltr"
+                    placeholder="رقم الهاتف *"
+                    value={deliveryInfo.phone}
+                    onChange={(e) => handleInputChange("phone", e.target.value)}
+                    className={cn(fieldBaseClass, errors.phone && "ring-2 ring-red-300 border border-red-300")}
+                    aria-invalid={Boolean(errors.phone)}
+                  />
+                  {errors.phone ? <p className="text-sm font-medium text-red-600 mt-1 pr-2" role="alert">{errors.phone}</p> : null}
+                  {!errors.phone ? <p className="text-sm text-muted-foreground mt-1 pr-2">صيغة مقترحة: 05xxxxxxxx</p> : null}
+                </div>
+
+                {!isPickup ? (
+                  <>
+                    <div className="relative">
+                      <MapPin className="absolute right-4 top-4 h-5 w-5 text-muted-foreground" />
+                      <textarea
+                        placeholder="العنوان التفصيلي: الحي، الشارع، رقم المبنى"
+                        value={deliveryInfo.address}
+                        onChange={(e) => handleInputChange("address", e.target.value)}
+                        rows={2}
+                        className={cn(fieldBaseClass, "resize-none")}
+                      />
+                    </div>
+
+                    <div className="rounded-2xl border border-border/60 bg-background/70 p-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="text-right">
+                          <p className="text-sm font-semibold">موقع التوصيل</p>
+                          <p className={cn("mt-1 text-xs", mutedTextClass)}>أضف رابط خرائط أو استخدم موقعك الحالي لتسهيل الوصول.</p>
+                        </div>
+                        <Button
+                          type="button"
+                          onClick={handleUseCurrentLocation}
+                          disabled={isDetectingLocation}
+                          variant="outline"
+                          className="min-h-11 rounded-full px-4 text-xs font-semibold"
+                        >
+                          {isDetectingLocation ? "جارٍ التحديد..." : "استخدم موقعي"}
+                        </Button>
+                      </div>
+
+                      <input
+                        type="url"
+                        inputMode="url"
+                        dir="ltr"
+                        placeholder="https://maps.google.com/..."
+                        value={deliveryInfo.locationUrl}
+                        onChange={(e) => handleInputChange("locationUrl", e.target.value)}
+                        className={cn("mt-3 h-12 rounded-2xl border border-border px-4 text-left", theme.input)}
+                      />
+                    </div>
+                  </>
+                ) : null}
+
+                <div className="relative">
+                  <FileText className="absolute right-4 top-4 h-5 w-5 text-muted-foreground" />
+                  <textarea
+                    placeholder="ملاحظات إضافية (اختياري)"
+                    value={deliveryInfo.notes}
+                    onChange={(e) => handleInputChange("notes", e.target.value)}
+                    rows={3}
+                    className={cn(fieldBaseClass, "resize-none")}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-sm font-medium text-right">ملاحظات سريعة</p>
+                    {activeQuickNotes.length > 0 ? (
+                      <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
+                        {activeQuickNotes.length} مفعلة
+                      </span>
+                    ) : null}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {QUICK_NOTE_OPTIONS.map((note) => {
+                      const active = activeQuickNotes.includes(note)
+                      return (
+                        <button
+                          key={note}
+                          type="button"
+                          onClick={() => applyQuickNote(note)}
+                          className={cn(
+                            "rounded-full border px-4 py-2 text-sm transition-colors",
+                            active ? "border-primary bg-primary/10 text-primary" : "border-border bg-background hover:border-primary/30"
+                          )}
+                        >
+                          {note}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section className={cn(theme.section, "animate-in fade-in slide-in-from-bottom-2 duration-500")} ref={scheduleSectionRef}>
+              <div className="flex items-center justify-between mb-2 gap-3">
+                <div className="text-right">
+                  <h2 className="text-lg font-bold">{isPickup ? "وقت الاستلام" : "موعد التوصيل"}</h2>
+                  <p className={cn("mt-1 text-xs", mutedTextClass)}>
+                    {isPickup ? "اختر أقرب وقت أو حدد وقتًا يناسبك" : "معظم العملاء يختارون أقرب وقت"}
+                  </p>
+                </div>
+                <div className="flex flex-col items-end gap-2">
+                  <SectionStatusBadge done={scheduleDone} label={scheduleBadgeLabel} />
+                  {!isPickup && earliestSlot ? (
+                    <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold px-2.5 py-1">
+                      أقرب موعد: {earliestSlot}
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+
+              {isTodayClosed ? (
+                <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-right">
+                  <p className="text-sm font-semibold text-red-700">اليوم مغلق لاستقبال الطلبات</p>
+                  <p className="mt-1 text-xs text-red-600">اختر موعدًا من يوم آخر قبل إتمام الطلب.</p>
+                </div>
+              ) : null}
+
+              <div className="mb-4 grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (isTodayClosed) return
+                    handleScheduleChange(null)
+                  }}
+                  disabled={isTodayClosed || !hasAvailableScheduleDays}
+                  className={cn(
+                    "rounded-2xl border p-3 text-right transition-colors",
+                    !isScheduled && !isTodayClosed ? "border-primary bg-primary/10" : "border-border bg-background hover:border-primary/30",
+                    (isTodayClosed || !hasAvailableScheduleDays) && "cursor-not-allowed opacity-60 hover:border-border"
+                  )}
+                >
+                  <Clock3 className={cn("mb-2 h-5 w-5", !isScheduled && !isTodayClosed ? "text-primary" : "text-muted-foreground")} />
+                  <p className="font-semibold">في أقرب وقت</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {isTodayClosed ? "غير متاح لأن اليوم مغلق" : "الخيار الأسرع لمعظم الطلبات"}
+                  </p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => showActionFeedback("اختر الموعد من القائمة بالأسفل")}
+                  className={cn(
+                    "rounded-2xl border p-3 text-right transition-colors",
+                    isScheduled ? "border-primary bg-primary/10" : "border-border bg-background hover:border-primary/30"
+                  )}
+                >
+                  <Clock3 className={cn("mb-2 h-5 w-5", isScheduled ? "text-primary" : "text-muted-foreground")} />
+                  <p className="font-semibold">تحديد وقت</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{deliveryInfo.scheduledTime ?? "اختر الوقت المناسب لك"}</p>
+                </button>
+              </div>
+
+              {maxMakingTime > 0 ? (
+                <div className="mb-3 rounded-xl bg-amal-yellow/20 p-3 text-right text-sm text-foreground">
+                  الحد الأدنى للتجهيز:{" "}
+                  <span className="font-bold">
+                    {maxMakingTime >= 60
+                      ? `${maxMakingTime % 60 === 0 ? maxMakingTime / 60 : `${Math.floor(maxMakingTime / 60)} ساعة و${maxMakingTime % 60} دقيقة`}`
+                      : `${maxMakingTime} دقيقة`}
+                  </span>
+                </div>
+              ) : null}
+
+              <TimePicker
+                value={deliveryInfo.scheduledTime}
+                onChange={handleScheduleChange}
+                minMinutes={maxMakingTime}
+                required={false}
+                closedDates={closedDates}
+              />
+              {errors.scheduledTime ? (
+                <p className="mt-2 pr-2 text-sm font-medium text-red-600" role="alert">
+                  {errors.scheduledTime}
+                </p>
+              ) : null}
+            </section>
+          </>
+        )}
 
         <section className={theme.section} dir="rtl">
           <div className="flex items-center gap-2 mb-3">
@@ -868,10 +1656,68 @@ function CheckoutContent() {
         </section>
       </div>
 
-      <div className={theme.ctaWrap}>
-        <Button onClick={handleWhatsAppCheckout} disabled={isSubmitting} className="w-full h-14 rounded-full bg-[#25D366] hover:bg-[#25D366]/90 text-white text-lg font-bold shadow-xl">
-          {isSubmitting ? "جاري الإرسال..." : "إتمام الطلب عبر واتساب"}
-        </Button>
+      <div className={theme.ctaWrap} style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}>
+        <div className="space-y-3">
+          <div
+            className={cn(
+              "rounded-3xl border px-4 py-3 shadow-lg transition-transform duration-300",
+              isTotalAnimating && "scale-[1.01]",
+              activeCheckoutTheme === "contrast"
+                ? "border-slate-700 bg-slate-950/90 text-white"
+                : "border-white/60 bg-white/90 backdrop-blur-md"
+            )}
+          >
+            <div className="mb-2 flex items-center justify-between text-xs font-medium">
+              <span className={mutedTextClass}>المجموع الفرعي</span>
+              <span>
+                <PriceWithRiyalLogo value={totalPrice} />
+              </span>
+            </div>
+            <div className="mb-2 flex items-center justify-between text-xs font-medium">
+              <span className={mutedTextClass}>التوصيل</span>
+              <span>{isPickup ? "مجاني" : selectedArea ? <PriceWithRiyalLogo value={deliveryFee} /> : "اختر المنطقة"}</span>
+            </div>
+            <div className="mb-3 flex items-center justify-between text-xs font-medium">
+              <span className={mutedTextClass}>الخصم</span>
+              <span className={discountResult.totalDiscount > 0 ? "text-green-600" : mutedTextClass}>
+                {discountResult.totalDiscount > 0 ? (
+                  <>
+                    -<PriceWithRiyalLogo value={discountResult.totalDiscount} />
+                  </>
+                ) : (
+                  "لا يوجد"
+                )}
+              </span>
+            </div>
+            <div className="flex items-center justify-between border-t border-primary/10 pt-3">
+              <span className="text-sm font-bold">الإجمالي النهائي</span>
+              <span className="text-lg font-bold text-primary">
+                {isFinalTotalReady ? <PriceWithRiyalLogo value={displayGrandTotal} /> : "اختر المنطقة"}
+              </span>
+            </div>
+          </div>
+
+          <p className="text-center text-xs font-medium text-muted-foreground">يتم حفظ طلبك أولًا قبل فتح واتساب.</p>
+
+          {manualWhatsAppUrl ? (
+            <a
+              href={manualWhatsAppUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex min-h-12 items-center justify-center rounded-full border border-[#25D366]/25 bg-[#25D366]/10 px-4 text-sm font-semibold text-[#1f8f48]"
+            >
+              فتح واتساب يدويًا
+            </a>
+          ) : null}
+
+          <Button
+            onClick={handleWhatsAppCheckout}
+            disabled={isSubmitting || (!isPickup && !selectedArea)}
+            className="w-full h-14 rounded-full bg-[#25D366] hover:bg-[#25D366]/90 text-white text-lg font-bold shadow-xl disabled:cursor-not-allowed disabled:bg-[#25D366]/60"
+          >
+            {isSubmitting ? "جاري الإرسال..." : !isPickup && !selectedArea ? "اختر المنطقة أولًا" : "إتمام الطلب عبر واتساب"}
+          </Button>
+        </div>
       </div>
     </main>
   )

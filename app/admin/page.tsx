@@ -14,6 +14,7 @@ import { CategoryManager } from "@/components/category-manager"
 import { SalesDashboard } from "@/components/sales-dashboard"
 import { ThemeEditor } from "@/components/theme-editor"
 import { DeliveryAreasManager } from "@/components/delivery-areas-manager"
+import { ClosedDatesManager } from "@/components/closed-dates-manager"
 import { DiscountManager } from "@/components/discount-manager"
 import { TelegramSettingsManager } from "@/components/telegram-settings-manager"
 import { cn } from "@/lib/utils"
@@ -449,8 +450,9 @@ export default function AdminPage() {
       ) : null}
 
       {activeTab === "delivery" ? (
-        <div className={cn(designStyles.content, "max-w-lg mx-auto", adminDesign === "design3" && "text-white")}>
+        <div className={cn(designStyles.content, "max-w-lg mx-auto space-y-4", adminDesign === "design3" && "text-white")}>
           <DeliveryAreasManager />
+          <ClosedDatesManager />
         </div>
       ) : null}
 

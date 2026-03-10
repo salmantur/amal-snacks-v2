@@ -361,6 +361,57 @@ function CheckoutContent() {
 
     const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${message}`
     const whatsappWindow = window.open("", "_blank")
+    if (whatsappWindow) {
+      whatsappWindow.document.write(`
+        <!doctype html>
+        <html lang="ar" dir="rtl">
+          <head>
+            <meta charset="utf-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1" />
+            <title>Opening WhatsApp</title>
+            <style>
+              body {
+                margin: 0;
+                min-height: 100vh;
+                display: grid;
+                place-items: center;
+                background: #f7f7f7;
+                color: #111827;
+                font-family: system-ui, sans-serif;
+              }
+              .card {
+                width: min(28rem, calc(100vw - 2rem));
+                background: white;
+                border-radius: 20px;
+                padding: 24px;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+                text-align: center;
+              }
+              .spinner {
+                width: 38px;
+                height: 38px;
+                margin: 0 auto 16px;
+                border-radius: 999px;
+                border: 3px solid #d1d5db;
+                border-top-color: #25d366;
+                animation: spin 0.9s linear infinite;
+              }
+              @keyframes spin {
+                to { transform: rotate(360deg); }
+              }
+            </style>
+          </head>
+          <body>
+            <div class="card">
+              <div class="spinner"></div>
+              <strong>Opening WhatsApp...</strong>
+              <p style="margin: 10px 0 0; color: #6b7280;">Please wait while we save your order.</p>
+            </div>
+          </body>
+        </html>
+      `)
+      whatsappWindow.document.close()
+    }
 
     try {
       const orderResponse = await fetch("/api/orders", {

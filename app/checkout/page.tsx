@@ -360,6 +360,7 @@ function CheckoutContent() {
       : generateWhatsAppMessage(cartItems, totalPrice, deliveryInfo)
 
     const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${message}`
+    const whatsappWindow = window.open("", "_blank")
 
     try {
       const orderResponse = await fetch("/api/orders", {
@@ -382,7 +383,11 @@ function CheckoutContent() {
       const confirmedTotal = typeof orderData.total === "number" ? orderData.total : grandTotal
       const confirmedDiscount = typeof orderData.totalDiscount === "number" ? orderData.totalDiscount : discountResult.totalDiscount
 
-      window.open(whatsappUrl, "_blank")
+      if (whatsappWindow) {
+        whatsappWindow.location.href = whatsappUrl
+      } else {
+        window.open(whatsappUrl, "_blank")
+      }
 
       clearCart()
       const params = new URLSearchParams({
@@ -397,6 +402,7 @@ function CheckoutContent() {
       })
       router.push(`/confirmation?${params.toString()}`)
     } catch {
+      whatsappWindow?.close()
       alert("تعذر حفظ الطلب، حاول مرة أخرى.")
       setIsSubmitting(false)
     }

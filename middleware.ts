@@ -1,8 +1,6 @@
 import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
-
-const SUPABASE_URL = "https://eejlqdydoilbjpegxvbq.supabase.co"
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVlamxxZHlkb2lsYmpwZWd4dmJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAyMjE4MTQsImV4cCI6MjA4NTc5NzgxNH0.J5pQRDXpjYWpoNqmpmh-3KRICK9ijcL0NRe06405JYA"
+import { getSupabaseConfig } from "@/lib/supabase/config"
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -13,8 +11,9 @@ export async function middleware(request: NextRequest) {
   }
 
   let response = NextResponse.next({ request })
+  const { url, publishableKey } = getSupabaseConfig()
 
-  const supabase = createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  const supabase = createServerClient(url, publishableKey, {
     cookies: {
       getAll() {
         return request.cookies.getAll()

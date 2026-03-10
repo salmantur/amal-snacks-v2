@@ -413,6 +413,9 @@ function CheckoutContent() {
       whatsappWindow.document.close()
     }
 
+    const controller = new AbortController()
+    const timeoutId = window.setTimeout(() => controller.abort(), 15000)
+
     try {
       const orderResponse = await fetch("/api/orders", {
         method: "POST",
@@ -427,16 +430,22 @@ function CheckoutContent() {
           scheduledTime: deliveryInfo.scheduledTime,
           couponCode: appliedCouponCode,
         }),
+        signal: controller.signal,
       })
 
       if (!orderResponse.ok) throw new Error("save failed")
       const orderData: { total?: number; totalDiscount?: number; codeApplied?: string | null } = await orderResponse.json()
+      window.clearTimeout(timeoutId)
       const confirmedTotal = typeof orderData.total === "number" ? orderData.total : grandTotal
       const confirmedDiscount = typeof orderData.totalDiscount === "number" ? orderData.totalDiscount : discountResult.totalDiscount
 
-      if (whatsappWindow) {
-        whatsappWindow.location.href = whatsappUrl
-      } else {
+      try {
+        if (whatsappWindow && !whatsappWindow.closed) {
+          whatsappWindow.location.href = whatsappUrl
+        } else {
+          window.open(whatsappUrl, "_blank")
+        }
+      } catch {
         window.open(whatsappUrl, "_blank")
       }
 
@@ -452,9 +461,14 @@ function CheckoutContent() {
         wa: whatsappUrl,
       })
       router.push(`/confirmation?${params.toString()}`)
-    } catch {
+    } catch (error) {
+      window.clearTimeout(timeoutId)
       whatsappWindow?.close()
-      alert("تعذر حفظ الطلب، حاول مرة أخرى.")
+      alert(
+        error instanceof Error && error.name === "AbortError"
+          ? "Saving the order took too long. Please try again."
+          : "تعذر حفظ الطلب، حاول مرة أخرى."
+      )
       setIsSubmitting(false)
     }
   }

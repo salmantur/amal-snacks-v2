@@ -38,6 +38,7 @@ interface DeliveryAreaRow {
 }
 
 interface AppSettingsRow {
+  key?: string
   value: unknown
 }
 
@@ -80,10 +81,19 @@ export async function POST(req: Request) {
     const supabase = createClient(url, publishableKey)
 
     const itemIds = Array.from(new Set(payload.items.map((item) => item.id)))
-    const { data: menuRows, error: menuError } = await supabase
+    const menuPromise = supabase
       .from("menu")
       .select("id,name,name_en,price,ingredients,limit")
       .in("id", itemIds)
+    const settingsPromise = supabase
+      .from("app_settings")
+      .select("key,value")
+      .in("key", ["discount_config", "telegram_alerts"])
+
+    const [{ data: menuRows, error: menuError }, { data: settingsRows }] = await Promise.all([
+      menuPromise,
+      settingsPromise,
+    ])
 
     if (menuError || !menuRows) {
       return NextResponse.json({ error: "Unable to load menu prices" }, { status: 500 })
@@ -145,13 +155,14 @@ export async function POST(req: Request) {
     })
 
     const subtotal = normalizedItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
-    const { data: discountSetting } = await supabase
-      .from("app_settings")
-      .select("value")
-      .eq("key", "discount_config")
-      .maybeSingle<AppSettingsRow>()
+    const settingsMap = new Map<string, unknown>()
+    for (const row of (settingsRows ?? []) as AppSettingsRow[]) {
+      const key = typeof row.key === "string" ? row.key : ""
+      if (key) settingsMap.set(key, row.value)
+    }
 
-    const discountConfig = normalizeDiscountConfig(discountSetting?.value)
+    const discountConfig = normalizeDiscountConfig(settingsMap.get("discount_config"))
+    const telegramConfig = normalizeTelegramConfig(settingsMap.get("telegram_alerts"))
     const discountResult = resolveDiscount({
       config: discountConfig,
       subtotal,
@@ -184,13 +195,6 @@ export async function POST(req: Request) {
 
     // Best-effort notification: never block order creation if Telegram fails.
     try {
-      const { data: telegramSetting } = await supabase
-        .from("app_settings")
-        .select("value")
-        .eq("key", "telegram_alerts")
-        .maybeSingle<AppSettingsRow>()
-
-      const telegramConfig = normalizeTelegramConfig(telegramSetting?.value)
       if (telegramConfig.enabled && telegramConfig.notifyOnNewOrder && telegramConfig.botToken && telegramConfig.chatId) {
         const telegramMessage = formatNewOrderTelegramMessage({
           orderNumber: insertedOrder.order_number,
@@ -213,7 +217,7 @@ export async function POST(req: Request) {
           scheduledTime: payload.scheduledTime ?? null,
           area: payload.customerArea,
         })
-        await sendTelegramMessage(telegramConfig, telegramMessage)
+        void sendTelegramMessage(telegramConfig, telegramMessage)
       }
     } catch {
       // Ignore notification errors.

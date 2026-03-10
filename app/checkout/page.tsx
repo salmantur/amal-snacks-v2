@@ -906,14 +906,13 @@ function CheckoutContent() {
       : generateWhatsAppMessage(cartItems, totalPrice, deliveryInfo, deliveryFee)
 
     const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${message}`
-    setManualWhatsAppUrl(whatsappUrl)
     const whatsappWindow = window.open("", "_blank")
     if (whatsappWindow) {
       renderWhatsAppHandoffWindow(whatsappWindow, "saving")
       trackCheckoutEvent("whatsapp_popup_opened", { blocked: false })
     } else {
       trackCheckoutEvent("whatsapp_popup_opened", { blocked: true })
-      showActionFeedback("إذا لم يفتح واتساب تلقائيًا ستجد زر الفتح اليدوي بعد تأكيد الطلب.")
+      showActionFeedback("سنجهز زر واتساب اليدوي بعد حفظ الطلب إذا لم يفتح تلقائيًا.")
     }
 
     const controller = new AbortController()
@@ -942,6 +941,7 @@ function CheckoutContent() {
       const confirmedTotal = typeof orderData.total === "number" ? orderData.total : grandTotal
       const confirmedDiscount = typeof orderData.totalDiscount === "number" ? orderData.totalDiscount : discountResult.totalDiscount
 
+      setManualWhatsAppUrl(whatsappUrl)
       clearCart()
       if (typeof window !== "undefined") {
         window.localStorage.setItem(PREFERRED_ORDER_TYPE_KEY, orderType)

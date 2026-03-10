@@ -182,7 +182,19 @@ export async function POST(req: Request) {
       .single()
 
     if (insertError || !insertedOrder) {
-      return NextResponse.json({ error: "Failed to save order" }, { status: 500 })
+      console.error("Failed to save order to Supabase", {
+        insertError,
+        orderType: payload.orderType,
+        customerArea: payload.customerArea,
+        itemsCount: payload.items.length,
+      })
+      return NextResponse.json(
+        {
+          error: "Failed to save order",
+          details: insertError?.message ?? null,
+        },
+        { status: 500 }
+      )
     }
 
     // Best-effort notification: never block order creation if Telegram fails.
@@ -211,7 +223,8 @@ export async function POST(req: Request) {
         })
         void sendTelegramMessage(telegramConfig, telegramMessage)
       }
-    } catch {
+    } catch (telegramError) {
+      console.error("Telegram notification failed", telegramError)
       // Ignore notification errors.
     }
 
@@ -224,7 +237,14 @@ export async function POST(req: Request) {
       codeApplied: discountResult.codeApplied,
       total,
     })
-  } catch {
-    return NextResponse.json({ error: "Unexpected server error" }, { status: 500 })
+  } catch (error) {
+    console.error("Unexpected /api/orders error", error)
+    return NextResponse.json(
+      {
+        error: "Unexpected server error",
+        details: error instanceof Error ? error.message : null,
+      },
+      { status: 500 }
+    )
   }
 }

@@ -53,6 +53,7 @@ export default function AdminPage() {
   const router = useRouter()
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [soundEnabled, setSoundEnabled] = useState(true)
 
   const [filter, setFilter] = useState<OrderFilter>("all")
@@ -73,9 +74,16 @@ export default function AdminPage() {
   }, [soundEnabled])
 
   const refreshOrders = useCallback(async () => {
-    const data = await fetchRecentOrders()
-    setOrders((prev) => mergeOrders(prev, data))
-    setLoading(false)
+    try {
+      const data = await fetchRecentOrders()
+      setOrders((prev) => mergeOrders(prev, data))
+      setLoadError(null)
+    } catch (error) {
+      console.error("Failed to refresh admin orders", error)
+      setLoadError("تعذر تحميل الطلبات من لوحة التحكم. تحقق من الجلسة أو إعدادات Supabase ثم أعد المحاولة.")
+    } finally {
+      setLoading(false)
+    }
   }, [])
 
   const handleLogout = async () => {
@@ -493,6 +501,19 @@ export default function AdminPage() {
               </div>
               <p className="text-gray-400">جاري تحميل الطلبات...</p>
             </div>
+          ) : loadError && orders.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 rounded-full bg-red-50 mx-auto mb-4 flex items-center justify-center">
+                <X className="h-8 w-8 text-red-400" />
+              </div>
+              <p className="mx-auto max-w-md text-sm font-medium text-red-600">{loadError}</p>
+              <button
+                onClick={() => void refreshOrders()}
+                className="mt-4 rounded-xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white"
+              >
+                إعادة المحاولة
+              </button>
+            </div>
           ) : filteredOrders.length === 0 ? (
             <div className="text-center py-12">
               <div className="w-16 h-16 rounded-full bg-gray-100 mx-auto mb-4 flex items-center justify-center">
@@ -502,6 +523,11 @@ export default function AdminPage() {
             </div>
           ) : (
             <>
+              {loadError ? (
+                <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-right text-sm text-amber-700">
+                  {loadError}
+                </div>
+              ) : null}
               {layoutMode === "kanban" ? (
                 <div className="grid gap-3 lg:grid-cols-4">
                   {([

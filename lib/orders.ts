@@ -1,6 +1,15 @@
 import { createClient } from "@/lib/supabase/client"
 import type { Order } from "@/lib/data"
 
+type OrderItemRow = {
+  name?: string
+  nameEn?: string
+  name_en?: string
+  quantity?: number
+  price?: number
+  selectedIngredients?: string[]
+}
+
 export interface NewOrderPayload {
   customerName: string
   customerPhone: string
@@ -62,9 +71,24 @@ export async function fetchRecentOrders(): Promise<Order[]> {
     .order("created_at", { ascending: false })
     .limit(500)
 
-  if (error || !data) return []
+  if (error) {
+    throw new Error(`Unable to load orders: ${error.message}`)
+  }
 
-  return data.map(dbRowToOrder)
+  if (!data) return []
+
+  const orders: Order[] = []
+  for (const row of data) {
+    const order = dbRowToOrder(row)
+    if (order) {
+      orders.push(order)
+      continue
+    }
+
+    console.warn("Skipping malformed order row", row)
+  }
+
+  return orders
 }
 
 // Subscribe to new orders in real-time
@@ -80,7 +104,13 @@ export function subscribeToOrders(
       "postgres_changes",
       { event: "INSERT", schema: "public", table: "orders" },
       (payload) => {
-        onNewOrder(dbRowToOrder(payload.new))
+        const order = dbRowToOrder(payload.new)
+        if (order) {
+          onNewOrder(order)
+          return
+        }
+
+        console.warn("Skipping malformed realtime order payload", payload.new)
       }
     )
     .on(
@@ -95,7 +125,15 @@ export function subscribeToOrders(
   return () => { supabase.removeChannel(channel) }
 }
 
-function dbRowToOrder(row: any): Order {
+function dbRowToOrder(row: any): Order | null {
+  if (!row || typeof row !== "object") return null
+
+  const rawItems: unknown[] = Array.isArray(row.items) ? row.items : []
+  const createdAt = new Date(row.created_at)
+  if (!row.id || !Number.isFinite(Number(row.order_number)) || Number.isNaN(createdAt.getTime())) {
+    return null
+  }
+
   return {
     id: row.id,
     orderNumber: row.order_number,
@@ -103,14 +141,20 @@ function dbRowToOrder(row: any): Order {
     customerPhone: row.customer_phone ?? "",
     customerAddress: row.customer_area ?? "",
     orderType: row.order_type === "pickup" ? "pickup" : "delivery",
-    items: (row.items ?? []).map((item: { name: string; nameEn?: string; name_en?: string; quantity: number; price: number; selectedIngredients?: string[] }) => ({
-      ...item,
-      nameEn: item.nameEn || item.name_en || "",
-    })),
-    total: row.total,
-    status: row.status,
+    items: rawItems
+      .filter((item: unknown): item is OrderItemRow => Boolean(item && typeof item === "object"))
+      .map((item: OrderItemRow) => ({
+        name: String(item.name ?? ""),
+        quantity: Number(item.quantity) || 0,
+        price: Number(item.price) || 0,
+        nameEn: item.nameEn || item.name_en || "",
+        selectedIngredients: Array.isArray(item.selectedIngredients) ? item.selectedIngredients : [],
+      }))
+      .filter((item: { name: string; quantity: number }) => item.name && item.quantity > 0),
+    total: Number(row.total) || 0,
+    status: row.status === "preparing" || row.status === "ready" || row.status === "delivered" ? row.status : "pending",
     notes: row.notes ?? "",
     scheduledTime: row.scheduled_time ?? null,
-    createdAt: new Date(row.created_at),
+    createdAt,
   }
 }

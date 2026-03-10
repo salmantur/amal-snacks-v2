@@ -360,7 +360,6 @@ function CheckoutContent() {
       : generateWhatsAppMessage(cartItems, totalPrice, deliveryInfo)
 
     const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${message}`
-    window.open(whatsappUrl, "_blank")
 
     try {
       const orderResponse = await fetch("/api/orders", {
@@ -382,6 +381,8 @@ function CheckoutContent() {
       const orderData: { total?: number; totalDiscount?: number; codeApplied?: string | null } = await orderResponse.json()
       const confirmedTotal = typeof orderData.total === "number" ? orderData.total : grandTotal
       const confirmedDiscount = typeof orderData.totalDiscount === "number" ? orderData.totalDiscount : discountResult.totalDiscount
+
+      window.open(whatsappUrl, "_blank")
 
       clearCart()
       const params = new URLSearchParams({

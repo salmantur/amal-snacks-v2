@@ -21,13 +21,13 @@ import {
 import { useCart } from "@/components/cart-provider"
 import type { CartItem } from "@/components/cart-provider"
 import { TimePicker } from "@/components/time-picker"
+import { useDeliveryAreas } from "@/hooks/use-delivery-areas"
 import { useDiscountConfig } from "@/hooks/use-discount-config"
 import { resolveDiscount } from "@/lib/discounts"
 import {
   generateWhatsAppMessage,
   generatePickupWhatsAppMessage,
   WHATSAPP_NUMBER,
-  deliveryAreas,
 } from "@/lib/data"
 import { getEarliestDeliverySlotLabel } from "@/lib/checkout-schedule"
 import { Button } from "@/components/ui/button"
@@ -164,6 +164,7 @@ function CheckoutContent() {
 
   const router = useRouter()
   const { items, totalPrice, updateQuantity, removeItem, deliveryInfo, setDeliveryInfo, clearCart } = useCart()
+  const { areas: deliveryAreas } = useDeliveryAreas()
   const { config: discountConfig } = useDiscountConfig()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errors, setErrors] = useState<CheckoutErrors>({})
@@ -174,6 +175,10 @@ function CheckoutContent() {
   const [couponInput, setCouponInput] = useState("")
   const [appliedCouponCode, setAppliedCouponCode] = useState<string | null>(null)
   const [couponStatus, setCouponStatus] = useState<string | null>(null)
+
+  useEffect(() => {
+    router.prefetch("/confirmation")
+  }, [router])
 
   const showActionFeedback = useCallback((message: string) => {
     setActionFeedback(message)
@@ -256,9 +261,9 @@ function CheckoutContent() {
     const q = normalizeText(deliveryInfo.area || "")
     if (!q) return deliveryAreas
     return deliveryAreas.filter((a) => normalizeText(a.name).includes(q))
-  }, [deliveryInfo.area, isPickup])
+  }, [deliveryInfo.area, isPickup, deliveryAreas])
 
-  const quickAreas = useMemo(() => deliveryAreas.slice(0, 6), [])
+  const quickAreas = useMemo(() => deliveryAreas.slice(0, 6), [deliveryAreas])
 
   const applyCoupon = useCallback(() => {
     const normalized = couponInput.trim().toUpperCase()
@@ -304,7 +309,7 @@ function CheckoutContent() {
       setAreaFocused(false)
       setErrors((prev) => ({ ...prev, area: undefined }))
     }
-  }, [deliveryInfo, isPickup, selectedArea, setDeliveryInfo])
+  }, [deliveryInfo, isPickup, selectedArea, setDeliveryInfo, deliveryAreas])
 
   const infoDone = useMemo(() => {
     const hasBaseInfo = Boolean(deliveryInfo.name.trim() && deliveryInfo.phone.trim())
@@ -357,7 +362,7 @@ function CheckoutContent() {
 
     const message = isPickup
       ? generatePickupWhatsAppMessage(cartItems, totalPrice, deliveryInfo)
-      : generateWhatsAppMessage(cartItems, totalPrice, deliveryInfo)
+      : generateWhatsAppMessage(cartItems, totalPrice, deliveryInfo, deliveryFee)
 
     const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${message}`
     const whatsappWindow = window.open("", "_blank")
@@ -439,16 +444,6 @@ function CheckoutContent() {
       const confirmedTotal = typeof orderData.total === "number" ? orderData.total : grandTotal
       const confirmedDiscount = typeof orderData.totalDiscount === "number" ? orderData.totalDiscount : discountResult.totalDiscount
 
-      try {
-        if (whatsappWindow && !whatsappWindow.closed) {
-          whatsappWindow.location.href = whatsappUrl
-        } else {
-          window.open(whatsappUrl, "_blank")
-        }
-      } catch {
-        window.open(whatsappUrl, "_blank")
-      }
-
       clearCart()
       const params = new URLSearchParams({
         name: deliveryInfo.name,
@@ -460,7 +455,20 @@ function CheckoutContent() {
         time: deliveryInfo.scheduledTime ?? "في أقرب وقت",
         wa: whatsappUrl,
       })
-      router.push(`/confirmation?${params.toString()}`)
+      const confirmationUrl = `/confirmation?${params.toString()}`
+      router.push(confirmationUrl)
+
+      window.setTimeout(() => {
+        try {
+          if (whatsappWindow && !whatsappWindow.closed) {
+            whatsappWindow.location.href = whatsappUrl
+          } else {
+            window.open(whatsappUrl, "_blank")
+          }
+        } catch {
+          window.open(whatsappUrl, "_blank")
+        }
+      }, 0)
     } catch (error) {
       window.clearTimeout(timeoutId)
       whatsappWindow?.close()

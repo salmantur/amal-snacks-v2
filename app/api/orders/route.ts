@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { z } from "zod"
 import { normalizeDiscountConfig, resolveDiscount } from "@/lib/discounts"
+import { fetchDeliveryAreasFromSupabase } from "@/lib/delivery-areas"
 import { getSupabaseConfig } from "@/lib/supabase/config"
 import { formatNewOrderTelegramMessage, normalizeTelegramConfig, sendTelegramMessage } from "@/lib/telegram"
 
@@ -31,11 +32,6 @@ interface MenuRow {
   limit?: number | null
 }
 
-interface DeliveryAreaRow {
-  name: string
-  price: number
-  is_active: boolean
-}
 
 interface AppSettingsRow {
   key?: string
@@ -118,14 +114,10 @@ export async function POST(req: Request) {
 
     let deliveryFee = 0
     if (payload.orderType === "delivery") {
-      const { data: areaRow, error: areaError } = await supabase
-        .from("delivery_areas")
-        .select("name,price,is_active")
-        .eq("name", payload.customerArea)
-        .eq("is_active", true)
-        .maybeSingle<DeliveryAreaRow>()
+      const deliveryAreasResult = await fetchDeliveryAreasFromSupabase(supabase)
+      const areaRow = deliveryAreasResult.areas.find((area) => area.name === payload.customerArea && area.is_active)
 
-      if (areaError || !areaRow) {
+      if (!areaRow) {
         return NextResponse.json({ error: "Invalid delivery area" }, { status: 400 })
       }
 

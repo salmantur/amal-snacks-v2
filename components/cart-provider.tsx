@@ -139,26 +139,38 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined)
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>(() => {
-    if (isStorageStale()) return []
-    return sanitizeCartItems(loadFromStorage<unknown>(CART_STORAGE_KEY, []))
-  })
-  const [deliveryInfo, setDeliveryInfoState] = useState<DeliveryInfo>(() => {
-    if (isStorageStale()) return DEFAULT_DELIVERY_INFO
-    const stored = loadFromStorage<unknown>(DELIVERY_STORAGE_KEY, DEFAULT_DELIVERY_INFO)
-    return isValidDeliveryInfo(stored) ? stored : DEFAULT_DELIVERY_INFO
-  })
+  // Keep initial render identical between server and client to avoid hydration mismatches.
+  const [items, setItems] = useState<CartItem[]>([])
+  const [deliveryInfo, setDeliveryInfoState] = useState<DeliveryInfo>(DEFAULT_DELIVERY_INFO)
+  const [storageReady, setStorageReady] = useState(false)
+
+  useEffect(() => {
+    if (isStorageStale()) {
+      setItems([])
+      setDeliveryInfoState(DEFAULT_DELIVERY_INFO)
+      setStorageReady(true)
+      return
+    }
+
+    const storedItems = sanitizeCartItems(loadFromStorage<unknown>(CART_STORAGE_KEY, []))
+    const storedDelivery = loadFromStorage<unknown>(DELIVERY_STORAGE_KEY, DEFAULT_DELIVERY_INFO)
+    setItems(storedItems)
+    setDeliveryInfoState(isValidDeliveryInfo(storedDelivery) ? storedDelivery : DEFAULT_DELIVERY_INFO)
+    setStorageReady(true)
+  }, [])
 
   // Persist cart items whenever they change
   useEffect(() => {
+    if (!storageReady) return
     saveToStorage(CART_STORAGE_KEY, items)
     saveToStorage(CART_UPDATED_AT_KEY, Date.now())
-  }, [items])
+  }, [items, storageReady])
 
   // Persist delivery info whenever it changes
   useEffect(() => {
+    if (!storageReady) return
     saveToStorage(DELIVERY_STORAGE_KEY, deliveryInfo)
-  }, [deliveryInfo])
+  }, [deliveryInfo, storageReady])
 
   const addItem = useCallback((item: MenuItem, quantity = 1, selectedIngredients?: string[]) => {
     setItems((prev) => {

@@ -1,15 +1,17 @@
+import { DEFAULT_DELIVERY_AREAS } from "@/lib/delivery-areas"
+
 // Categories matching your Supabase database values
 export const categories = [
   { id: "eid", label: "باقات العيد 🎁", dbCategories: ["eid"] },
-  { 
-    id: "platters_breakfast", 
-    label: "بلاتر وسخانات الفطور", 
+  {
+    id: "platters_breakfast",
+    label: "بلاتر وسخانات الفطور",
     dbCategories: ["platters", "breakfast_heaters"],
     // Sub-sections to display separately within this category
     sections: [
       { dbCategory: "platters", label: "البلاترات", cols: 2 },
       { dbCategory: "breakfast_heaters", label: "سخانات الفطور", cols: 3 },
-    ]
+    ],
   },
   { id: "heaters", label: "سخانات", dbCategories: ["heaters"] },
   { id: "trays", label: "صواني تقديمات", dbCategories: ["trays"] },
@@ -63,9 +65,7 @@ export const mockOrders: Order[] = [
     customerPhone: "+966509876543",
     customerAddress: "جدة، حي الروضة",
     orderType: "pickup",
-    items: [
-      { name: "كبة مثلجة", quantity: 5, price: 30 },
-    ],
+    items: [{ name: "كبة مثلجة", quantity: 5, price: 30 }],
     total: 150,
     status: "preparing",
     notes: "",
@@ -112,13 +112,7 @@ export function getAvailableTimeSlots(minMinutes = 0): { date: string; slots: st
 }
 
 // Delivery areas with prices
-export const deliveryAreas = [
-  { id: "west-dammam",  name: "غرب الدمام", price: 30 },
-  { id: "east-dammam",  name: "شرق الدمام", price: 35 },
-  { id: "dhahran-raka", name: "الظهران - الراكة", price: 40 },
-  { id: "khobar",       name: "الخبر", price: 50 },
-  { id: "aziziyah",     name: "العزيزية", price: 60 },
-]
+export const deliveryAreas = DEFAULT_DELIVERY_AREAS.map(({ id, name, price }) => ({ id, name, price }))
 
 // WhatsApp message generator
 export function generateWhatsAppMessage(
@@ -131,10 +125,11 @@ export function generateWhatsAppMessage(
     area: string
     notes: string
     scheduledTime: string | null
-  }
+  },
+  deliveryFeeOverride?: number
 ): string {
-  const deliveryArea = deliveryAreas.find(a => a.name === deliveryInfo.area)
-  const deliveryFee = deliveryArea?.price || 0
+  const deliveryArea = deliveryAreas.find((area) => area.name === deliveryInfo.area)
+  const deliveryFee = deliveryFeeOverride ?? deliveryArea?.price ?? 0
   const total = subtotal + deliveryFee
 
   let message = `*طلب جديد من أمل سناك*\n\n`
@@ -142,11 +137,11 @@ export function generateWhatsAppMessage(
   message += `*الهاتف:* ${deliveryInfo.phone}\n`
   message += `*المنطقة:* ${deliveryInfo.area}\n`
   message += `*العنوان:* ${deliveryInfo.address}\n`
-  
+
   if (deliveryInfo.scheduledTime) {
     message += `*وقت التسليم:* ${deliveryInfo.scheduledTime}\n`
   }
-  
+
   message += `\n*الطلبات:*\n`
   items.forEach((item) => {
     message += `- ${item.name} x ${item.quantity} = ${item.price * item.quantity} SAR\n`
@@ -154,15 +149,15 @@ export function generateWhatsAppMessage(
       message += `  (${item.selectedIngredients.join("، ")})\n`
     }
   })
-  
+
   message += `\n*المجموع الفرعي:* ${subtotal} SAR\n`
   message += `*رسوم التوصيل (${deliveryInfo.area}):* ${deliveryFee} SAR\n`
   message += `*الإجمالي:* ${total} SAR\n`
-  
+
   if (deliveryInfo.notes) {
     message += `\n*ملاحظات:* ${deliveryInfo.notes}`
   }
-  
+
   return encodeURIComponent(message)
 }
 
@@ -203,4 +198,3 @@ export function generatePickupWhatsAppMessage(
 
   return encodeURIComponent(message)
 }
-

@@ -1,8 +1,9 @@
-﻿"use client"
+"use client"
 
-import { ShoppingBag, Truck, X, MapPin } from "lucide-react"
-import { Dialog, DialogContent } from "@/components/ui/dialog"
+import { Check, Store, Truck } from "lucide-react"
 import { useState } from "react"
+import { Dialog, DialogContent } from "@/components/ui/dialog"
+import { cn } from "@/lib/utils"
 
 interface OrderTypeModalProps {
   open: boolean
@@ -10,156 +11,115 @@ interface OrderTypeModalProps {
   onClose: () => void
 }
 
-type ModalStyle = "aurora" | "crystal" | "midnight"
+type OrderType = "pickup" | "delivery"
 
-const SHOP_ADDRESS = "الدمام، حي الفيصلية، شارع الأمير محمد بن فهد"
-const SHOP_MAPS_URL = "https://maps.google.com/?q=26.4207,50.0888"
+export function OrderTypeModal({
+  open,
+  onSelect,
+  onClose,
+}: OrderTypeModalProps) {
+  const [selectedType, setSelectedType] = useState<OrderType | null>(null)
 
-function getModalStyle(): ModalStyle {
-  if (typeof window === "undefined") return "aurora"
-  const value = new URLSearchParams(window.location.search).get("modal")
-  if (value === "crystal" || value === "midnight" || value === "aurora") return value
-  return "aurora"
-}
+  const handleSelect = (type: OrderType) => {
+    if (selectedType) return
+    setSelectedType(type)
 
-export function OrderTypeModal({ open, onSelect, onClose }: OrderTypeModalProps) {
-  const style = getModalStyle()
-  const [pickupSelected, setPickupSelected] = useState(false)
-  const [deliverySelected, setDeliverySelected] = useState(false)
-
-  const handlePickupSelect = () => {
-    setPickupSelected(true)
     window.setTimeout(() => {
-      onSelect("pickup")
-      setPickupSelected(false)
+      onSelect(type)
+      setSelectedType(null)
     }, 180)
   }
 
-  const handleDeliverySelect = () => {
-    setDeliverySelected(true)
-    window.setTimeout(() => {
-      onSelect("delivery")
-      setDeliverySelected(false)
-    }, 180)
-  }
-
-  const theme =
-    style === "crystal"
-      ? {
-          shell:
-            "rounded-3xl border border-white/55 bg-gradient-to-br from-white/80 via-white/50 to-white/30 backdrop-blur-2xl",
-          glow:
-            "bg-[radial-gradient(circle_at_12%_14%,rgba(255,255,255,0.9),transparent_35%),radial-gradient(circle_at_88%_80%,rgba(180,220,255,0.35),transparent_45%)]",
-          title: "text-slate-800",
-          subtitle: "text-slate-600",
-          buttonA: "border border-white/70 bg-white/55 text-slate-800 hover:bg-white/70",
-          buttonB: "border border-sky-200/70 bg-sky-100/60 text-sky-900 hover:bg-sky-100/80",
-          map: "text-slate-600 hover:text-slate-800",
-        }
-      : style === "midnight"
-        ? {
-            shell:
-              "rounded-3xl border border-cyan-200/30 bg-gradient-to-br from-slate-900/85 via-slate-800/75 to-slate-900/85 backdrop-blur-2xl",
-            glow:
-              "bg-[radial-gradient(circle_at_14%_12%,rgba(56,189,248,0.25),transparent_35%),radial-gradient(circle_at_88%_82%,rgba(16,185,129,0.2),transparent_40%)]",
-            title: "text-white",
-            subtitle: "text-white/75",
-            buttonA: "border border-cyan-200/35 bg-cyan-300/20 text-cyan-100 hover:bg-cyan-300/30",
-            buttonB: "border border-emerald-200/35 bg-emerald-300/20 text-emerald-100 hover:bg-emerald-300/30",
-            map: "text-white/70 hover:text-white",
-          }
-        : {
-            shell:
-              "rounded-3xl border border-white/40 bg-gradient-to-br from-white/60 via-white/35 to-white/20 backdrop-blur-2xl",
-            glow:
-              "bg-[radial-gradient(circle_at_10%_12%,rgba(255,255,255,0.85),transparent_35%),radial-gradient(circle_at_90%_80%,rgba(255,255,255,0.25),transparent_45%)]",
-            title: "text-white",
-            subtitle: "text-white/85",
-            buttonA: "border border-white/50 bg-white/35 text-white hover:bg-white/45",
-            buttonB: "border border-white/50 bg-white/20 text-white hover:bg-white/30",
-            map: "text-white/85 hover:text-white",
-          }
+  const isSelected = (type: OrderType) => selectedType === type
+  const isLocked = selectedType !== null
 
   return (
-    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-sm w-[min(24rem,calc(100vw-2rem))] p-0 border-0 rounded-3xl overflow-hidden gap-0 bg-transparent shadow-none [&>button]:hidden">
-        <div className={`relative overflow-hidden ${theme.shell}`}>
-          <div className={`pointer-events-none absolute inset-0 ${theme.glow}`} />
-          <div className="pointer-events-none absolute inset-[1px] rounded-3xl border border-white/30" />
-
-          <div className="relative px-6 pt-8 pb-6 text-center">
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) {
+          setSelectedType(null)
+          onClose()
+        }
+      }}
+    >
+      <DialogContent className="h-[100dvh] w-screen max-w-none rounded-none border-0 bg-[#f3eef1] p-0 shadow-none [&>button]:hidden">
+        <div className="flex min-h-full flex-col px-6 pb-10 pt-24">
+          <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-7">
             <button
-              onClick={onClose}
-              className="absolute top-4 left-4 w-9 h-9 rounded-full backdrop-blur flex items-center justify-center border border-white/80 bg-black/35 text-white shadow-md outline-none focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-0"
-              style={{ WebkitTapHighlightColor: "transparent" }}
+              type="button"
+              onClick={() => handleSelect("delivery")}
+              disabled={isLocked}
+              className={cn(
+                "relative min-h-[18rem] rounded-[2rem] border-2 bg-[#f6eff2] px-6 py-8 text-center transition-all duration-200",
+                isSelected("delivery")
+                  ? "border-[#ef3d7f] shadow-[0_20px_50px_rgba(239,61,127,0.16)]"
+                  : "border-[#dfe3e7] bg-[#f8f8f8]",
+              )}
             >
-              <X className="h-4 w-4" />
-            </button>
+              {isSelected("delivery") ? (
+                <span className="absolute -right-4 -top-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#ef3d7f] text-white shadow-[0_10px_25px_rgba(239,61,127,0.28)]">
+                  <Check className="h-7 w-7" />
+                </span>
+              ) : null}
 
-            <style>{`
-              @keyframes pickup-pop {
-                0% { transform: scale(1); }
-                45% { transform: scale(1.2); }
-                75% { transform: scale(1.33); }
-                100% { transform: scale(1.26); }
-              }
-            `}</style>
-
-            <div className="flex items-end justify-center gap-3 mb-5">
               <div
-                className="w-20 h-20 bg-yellow-100/85 border border-yellow-200/80 rounded-3xl flex items-center justify-center backdrop-blur"
-                style={pickupSelected ? { animation: "pickup-pop 180ms ease-out both" } : undefined}
+                className={cn(
+                  "mx-auto flex h-32 w-32 items-center justify-center rounded-full",
+                  isSelected("delivery") ? "bg-[#f3d7e1]" : "bg-[#f1f1f1]",
+                )}
               >
-                <ShoppingBag className="h-9 w-9 text-yellow-700" />
+                <Truck
+                  className={cn(
+                    "h-14 w-14",
+                    isSelected("delivery") ? "text-[#ef3d7f]" : "text-[#b9bfc7]",
+                  )}
+                />
               </div>
+
+              <p className="mt-10 text-3xl font-black tracking-tight text-[#08122d]">
+                توصيل للمنزل
+              </p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleSelect("pickup")}
+              disabled={isLocked}
+              className={cn(
+                "relative min-h-[18rem] rounded-[2rem] border-2 bg-[#f8f8f8] px-6 py-8 text-center transition-all duration-200",
+                isSelected("pickup")
+                  ? "border-[#ef3d7f] shadow-[0_20px_50px_rgba(239,61,127,0.16)]"
+                  : "border-[#dfe3e7]",
+              )}
+            >
+              {isSelected("pickup") ? (
+                <span className="absolute -right-4 -top-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#ef3d7f] text-white shadow-[0_10px_25px_rgba(239,61,127,0.28)]">
+                  <Check className="h-7 w-7" />
+                </span>
+              ) : null}
+
               <div
-                className="w-14 h-14 bg-pink-100/85 border border-pink-200/80 rounded-2xl flex items-center justify-center mb-2 backdrop-blur"
-                style={deliverySelected ? { animation: "pickup-pop 180ms ease-out both" } : undefined}
+                className={cn(
+                  "mx-auto flex h-32 w-32 items-center justify-center rounded-full",
+                  isSelected("pickup") ? "bg-[#f3d7e1]" : "bg-[#efe1bb]",
+                )}
               >
-                <Truck className="h-7 w-7 text-pink-700" />
+                <Store
+                  className={cn(
+                    "h-14 w-14",
+                    isSelected("pickup") ? "text-[#ef3d7f]" : "text-[#f1b514]",
+                  )}
+                />
               </div>
-            </div>
 
-            <h2 className={`text-3xl font-black mb-1 ${theme.title}`}>كيف تريد طلبك؟</h2>
-            <p className={`text-sm font-medium ${theme.subtitle}`}>اختر طريقة الاستلام</p>
-          </div>
-
-          <div className="relative px-5 pb-5 space-y-3">
-            <button
-              onClick={handlePickupSelect}
-              disabled={pickupSelected || deliverySelected}
-              className={`w-full flex items-center justify-center gap-3 py-4 px-6 rounded-2xl font-extrabold text-xl shadow-[0_8px_20px_rgba(0,0,0,0.15)] transition-colors ${theme.buttonA}`}
-            >
-              <ShoppingBag className="h-5 w-5" />
-              استلام من المحل
-            </button>
-
-            <a
-              href={SHOP_MAPS_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`flex items-center gap-2 px-2 py-1 text-sm transition-colors ${theme.map}`}
-            >
-              <MapPin className="h-4 w-4 flex-shrink-0" />
-              <span className="text-right">{SHOP_ADDRESS}</span>
-            </a>
-
-            <button
-              onClick={handleDeliverySelect}
-              disabled={pickupSelected || deliverySelected}
-              className={`w-full flex items-center justify-center gap-3 py-4 px-6 rounded-2xl font-extrabold text-xl shadow-[0_8px_20px_rgba(0,0,0,0.15)] transition-colors ${theme.buttonB}`}
-            >
-              <Truck className="h-5 w-5" />
-              توصيل للمنزل
-            </button>
-
-            <button onClick={onClose} className={`w-full py-2 text-sm transition-colors ${theme.map}`}>
-              متابعة التصفح
+              <p className="mt-10 text-3xl font-black tracking-tight text-[#08122d]">
+                استلام من المحل
+              </p>
             </button>
           </div>
         </div>
       </DialogContent>
-
     </Dialog>
   )
 }

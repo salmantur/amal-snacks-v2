@@ -32,6 +32,22 @@ const statusPriority: Record<Order["status"], number> = {
   delivered: 3,
 }
 
+const ORDERS_POLL_INTERVAL_MS = 5000
+
+function mergeOrders(existing: Order[], incoming: Order[]): Order[] {
+  const merged = new Map<string, Order>()
+
+  for (const order of existing) {
+    merged.set(order.id, order)
+  }
+
+  for (const order of incoming) {
+    merged.set(order.id, order)
+  }
+
+  return Array.from(merged.values()).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+}
+
 export default function AdminPage() {
   const router = useRouter()
   const [orders, setOrders] = useState<Order[]>([])
@@ -57,7 +73,8 @@ export default function AdminPage() {
 
   const refreshOrders = useCallback(async () => {
     const data = await fetchRecentOrders()
-    setOrders(data)
+    setOrders((prev) => mergeOrders(prev, data))
+    setLoading(false)
   }, [])
 
   const handleLogout = async () => {
@@ -67,16 +84,38 @@ export default function AdminPage() {
   }
 
   useEffect(() => {
-    fetchRecentOrders().then((data) => {
-      setOrders(data)
-      setLoading(false)
-    })
-  }, [])
+    void refreshOrders()
+  }, [refreshOrders])
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      void refreshOrders()
+    }, ORDERS_POLL_INTERVAL_MS)
+
+    const handleWindowFocus = () => {
+      void refreshOrders()
+    }
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        void refreshOrders()
+      }
+    }
+
+    window.addEventListener("focus", handleWindowFocus)
+    document.addEventListener("visibilitychange", handleVisibilityChange)
+
+    return () => {
+      window.clearInterval(intervalId)
+      window.removeEventListener("focus", handleWindowFocus)
+      document.removeEventListener("visibilitychange", handleVisibilityChange)
+    }
+  }, [refreshOrders])
 
   useEffect(() => {
     const cleanup = subscribeToOrders(
       (newOrder) => {
-        setOrders((prev) => [newOrder, ...prev])
+        setOrders((prev) => mergeOrders(prev, [newOrder]))
         setNewOrderAlert(true)
         playNotificationSound()
         setTimeout(() => setNewOrderAlert(false), 2500)

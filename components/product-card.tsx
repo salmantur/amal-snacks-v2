@@ -244,6 +244,32 @@ export const ProductCard = memo(function ProductCard({
   )
   const bestSellerCardClass = cn(cardBaseClass, "col-span-1")
   const bestSellerOverlay = buildBestSellerOverlay(bestSellerCardConfig)
+  const priceBadgeRadius =
+    bestSellerCardConfig.price_badge_shape === "square"
+      ? 16
+      : bestSellerCardConfig.price_badge_shape === "rounded"
+      ? 24
+      : 999
+  const priceBadgeStyle =
+    bestSellerCardConfig.price_badge_style === "transparent"
+      ? {
+          backgroundColor: `rgba(255,255,255,${bestSellerCardConfig.price_badge_opacity * 0.45})`,
+          borderColor: `rgba(255,255,255,${Math.min(bestSellerCardConfig.price_badge_opacity + 0.1, 0.95)})`,
+          backdropFilter: "none",
+        }
+      : bestSellerCardConfig.price_badge_style === "glass"
+      ? {
+          backgroundColor: `rgba(255,255,255,${Math.max(bestSellerCardConfig.price_badge_opacity * 0.5, 0.22)})`,
+          borderColor: `rgba(255,255,255,${Math.min(bestSellerCardConfig.price_badge_opacity + 0.12, 0.98)})`,
+          backdropFilter: `blur(${bestSellerCardConfig.price_badge_blur_px}px) saturate(160%)`,
+          WebkitBackdropFilter: `blur(${bestSellerCardConfig.price_badge_blur_px}px) saturate(160%)`,
+          boxShadow: "0 12px 30px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.5)",
+        }
+      : {
+          backgroundColor: `rgba(255,255,255,${bestSellerCardConfig.price_badge_opacity})`,
+          borderColor: "#d7d2cf",
+          backdropFilter: "none",
+        }
 
   const renderDotSelector = (
     tone: "light" | "bold" = "light",
@@ -449,8 +475,14 @@ export const ProductCard = memo(function ProductCard({
             </p>
             <div style={{ marginTop: bestSellerCardConfig.description_price_gap_px }}>
               <span
-                className="inline-flex items-center rounded-full border border-[#d7d2cf] bg-white/90 px-6 py-3 font-black text-[#212430] shadow-[0_10px_24px_rgba(0,0,0,0.10)]"
-                style={{ fontSize: bestSellerCardConfig.price_size_px }}
+                className="inline-flex items-center border font-black text-[#212430] shadow-[0_10px_24px_rgba(0,0,0,0.10)]"
+                style={{
+                  fontSize: bestSellerCardConfig.price_size_px,
+                  borderRadius: priceBadgeRadius,
+                  paddingInline: bestSellerCardConfig.price_badge_padding_x_px,
+                  paddingBlock: bestSellerCardConfig.price_badge_padding_y_px,
+                  ...priceBadgeStyle,
+                }}
               >
                 <PriceWithRiyalLogo value={displayPrice} />
               </span>

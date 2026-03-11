@@ -1,3 +1,6 @@
+export type BestSellerPriceBadgeStyle = "solid" | "transparent" | "glass"
+export type BestSellerPriceBadgeShape = "pill" | "rounded" | "square"
+
 export interface BestSellerCardConfig {
   card_height: number
   card_radius: number
@@ -13,10 +16,19 @@ export interface BestSellerCardConfig {
   description_price_gap_px: number
   price_sizes_gap_px: number
   overlay_lead_alpha: number
+  overlay_lead_color: string
   overlay_mid_alpha: number
+  overlay_mid_color: string
   overlay_end_alpha: number
+  overlay_end_color: string
   overlay_mid_stop_percent: number
   overlay_end_stop_percent: number
+  price_badge_style: BestSellerPriceBadgeStyle
+  price_badge_shape: BestSellerPriceBadgeShape
+  price_badge_opacity: number
+  price_badge_blur_px: number
+  price_badge_padding_x_px: number
+  price_badge_padding_y_px: number
 }
 
 export const BEST_SELLER_CARD_CONFIG_KEY = "best_seller_card_style_v2"
@@ -36,10 +48,19 @@ export const DEFAULT_BEST_SELLER_CARD_CONFIG: BestSellerCardConfig = {
   description_price_gap_px: 20,
   price_sizes_gap_px: 20,
   overlay_lead_alpha: 0.1,
+  overlay_lead_color: "#ffffff",
   overlay_mid_alpha: 0.62,
+  overlay_mid_color: "#ffffff",
   overlay_end_alpha: 0.98,
+  overlay_end_color: "#ffffff",
   overlay_mid_stop_percent: 55,
   overlay_end_stop_percent: 72,
+  price_badge_style: "solid",
+  price_badge_shape: "pill",
+  price_badge_opacity: 0.9,
+  price_badge_blur_px: 16,
+  price_badge_padding_x_px: 24,
+  price_badge_padding_y_px: 12,
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -49,6 +70,11 @@ function clamp(value: number, min: number, max: number): number {
 function toNumber(value: unknown, fallback: number): number {
   const parsed = typeof value === "number" ? value : Number(value)
   return Number.isFinite(parsed) ? parsed : fallback
+}
+
+function normalizeHexColor(value: unknown, fallback: string): string {
+  const raw = String(value || "").trim()
+  return /^#[0-9a-fA-F]{6}$/.test(raw) ? raw : fallback
 }
 
 export function normalizeBestSellerCardConfig(value: unknown): BestSellerCardConfig {
@@ -93,8 +119,11 @@ export function normalizeBestSellerCardConfig(value: unknown): BestSellerCardCon
       40
     ),
     overlay_lead_alpha: clamp(toNumber(raw.overlay_lead_alpha, DEFAULT_BEST_SELLER_CARD_CONFIG.overlay_lead_alpha), 0, 0.4),
+    overlay_lead_color: normalizeHexColor(raw.overlay_lead_color, DEFAULT_BEST_SELLER_CARD_CONFIG.overlay_lead_color),
     overlay_mid_alpha: clamp(toNumber(raw.overlay_mid_alpha, DEFAULT_BEST_SELLER_CARD_CONFIG.overlay_mid_alpha), 0.2, 0.9),
+    overlay_mid_color: normalizeHexColor(raw.overlay_mid_color, DEFAULT_BEST_SELLER_CARD_CONFIG.overlay_mid_color),
     overlay_end_alpha: clamp(toNumber(raw.overlay_end_alpha, DEFAULT_BEST_SELLER_CARD_CONFIG.overlay_end_alpha), 0.6, 1),
+    overlay_end_color: normalizeHexColor(raw.overlay_end_color, DEFAULT_BEST_SELLER_CARD_CONFIG.overlay_end_color),
     overlay_mid_stop_percent: clamp(
       Math.round(toNumber(raw.overlay_mid_stop_percent, DEFAULT_BEST_SELLER_CARD_CONFIG.overlay_mid_stop_percent)),
       40,
@@ -105,9 +134,48 @@ export function normalizeBestSellerCardConfig(value: unknown): BestSellerCardCon
       58,
       92
     ),
+    price_badge_style:
+      raw.price_badge_style === "transparent" || raw.price_badge_style === "glass" || raw.price_badge_style === "solid"
+        ? raw.price_badge_style
+        : DEFAULT_BEST_SELLER_CARD_CONFIG.price_badge_style,
+    price_badge_shape:
+      raw.price_badge_shape === "rounded" || raw.price_badge_shape === "square" || raw.price_badge_shape === "pill"
+        ? raw.price_badge_shape
+        : DEFAULT_BEST_SELLER_CARD_CONFIG.price_badge_shape,
+    price_badge_opacity: clamp(
+      toNumber(raw.price_badge_opacity, DEFAULT_BEST_SELLER_CARD_CONFIG.price_badge_opacity),
+      0.15,
+      1
+    ),
+    price_badge_blur_px: clamp(
+      Math.round(toNumber(raw.price_badge_blur_px, DEFAULT_BEST_SELLER_CARD_CONFIG.price_badge_blur_px)),
+      0,
+      32
+    ),
+    price_badge_padding_x_px: clamp(
+      Math.round(toNumber(raw.price_badge_padding_x_px, DEFAULT_BEST_SELLER_CARD_CONFIG.price_badge_padding_x_px)),
+      10,
+      40
+    ),
+    price_badge_padding_y_px: clamp(
+      Math.round(toNumber(raw.price_badge_padding_y_px, DEFAULT_BEST_SELLER_CARD_CONFIG.price_badge_padding_y_px)),
+      6,
+      22
+    ),
   }
 }
 
 export function buildBestSellerOverlay(config: BestSellerCardConfig): string {
-  return `linear-gradient(90deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,${config.overlay_lead_alpha}) 34%, rgba(255,255,255,${config.overlay_mid_alpha}) ${config.overlay_mid_stop_percent}%, rgba(255,255,255,${config.overlay_end_alpha}) ${config.overlay_end_stop_percent}%, rgba(255,255,255,1) 100%)`
+  const lead = hexToRgb(config.overlay_lead_color)
+  const mid = hexToRgb(config.overlay_mid_color)
+  const end = hexToRgb(config.overlay_end_color)
+  return `linear-gradient(90deg, rgba(${lead.r},${lead.g},${lead.b},0.05) 0%, rgba(${lead.r},${lead.g},${lead.b},${config.overlay_lead_alpha}) 34%, rgba(${mid.r},${mid.g},${mid.b},${config.overlay_mid_alpha}) ${config.overlay_mid_stop_percent}%, rgba(${end.r},${end.g},${end.b},${config.overlay_end_alpha}) ${config.overlay_end_stop_percent}%, rgba(${end.r},${end.g},${end.b},1) 100%)`
+}
+
+function hexToRgb(hex: string) {
+  return {
+    r: Number.parseInt(hex.slice(1, 3), 16),
+    g: Number.parseInt(hex.slice(3, 5), 16),
+    b: Number.parseInt(hex.slice(5, 7), 16),
+  }
 }

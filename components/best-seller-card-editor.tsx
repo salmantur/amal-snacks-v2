@@ -88,6 +88,33 @@ function ColorField({
   )
 }
 
+function ToggleField({
+  label,
+  description,
+  checked,
+  onChange,
+}: {
+  label: string
+  description?: string
+  checked: boolean
+  onChange: (nextValue: boolean) => void
+}) {
+  return (
+    <label className="flex cursor-pointer items-start justify-between gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3">
+      <div className="space-y-1 text-right">
+        <div className="text-sm font-semibold text-gray-800">{label}</div>
+        {description ? <div className="text-xs text-gray-500">{description}</div> : null}
+      </div>
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(event) => onChange(event.target.checked)}
+        className="mt-1 h-5 w-5 rounded border-gray-300 accent-[#ef4b86]"
+      />
+    </label>
+  )
+}
+
 export function BestSellerCardEditor() {
   const { config, loading, error, saveConfig } = useBestSellerCardConfig()
   const { orderIds } = useBestSellersConfig()
@@ -283,6 +310,12 @@ export function BestSellerCardEditor() {
 
       <section className="space-y-4 rounded-2xl border border-gray-200 bg-white p-4">
         <h4 className="text-sm font-bold text-gray-900">أماكن العناصر</h4>
+        <ToggleField
+          label="إظهار الوصف"
+          description="يمكنك إخفاء وصف المنتج من بطاقة الأكثر طلبًا."
+          checked={current.show_description}
+          onChange={(value) => update("show_description", value)}
+        />
         <SliderField
           label="عرض مساحة النص"
           value={current.content_width_percent}

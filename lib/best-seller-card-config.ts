@@ -7,6 +7,7 @@ export interface BestSellerCardConfig {
   content_width_percent: number
   content_right_px: number
   content_top_percent: number
+  show_description: boolean
   title_size_px: number
   description_size_px: number
   price_size_px: number
@@ -39,6 +40,7 @@ export const DEFAULT_BEST_SELLER_CARD_CONFIG: BestSellerCardConfig = {
   content_width_percent: 48,
   content_right_px: 20,
   content_top_percent: 50,
+  show_description: true,
   title_size_px: 34,
   description_size_px: 15,
   price_size_px: 28,
@@ -94,6 +96,8 @@ export function normalizeBestSellerCardConfig(value: unknown): BestSellerCardCon
       28,
       72
     ),
+    show_description:
+      typeof raw.show_description === "boolean" ? raw.show_description : DEFAULT_BEST_SELLER_CARD_CONFIG.show_description,
     title_size_px: clamp(Math.round(toNumber(raw.title_size_px, DEFAULT_BEST_SELLER_CARD_CONFIG.title_size_px)), 24, 52),
     description_size_px: clamp(
       Math.round(toNumber(raw.description_size_px, DEFAULT_BEST_SELLER_CARD_CONFIG.description_size_px)),

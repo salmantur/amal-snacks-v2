@@ -449,31 +449,42 @@ export const ProductCard = memo(function ProductCard({
           )}
           <div className="absolute inset-0" style={{ backgroundImage: bestSellerOverlay }} />
           <div
-            className="absolute text-right"
+            className="absolute flex flex-col overflow-hidden text-right"
             dir="rtl"
             style={{
               width: `${bestSellerCardConfig.content_width_percent}%`,
+              maxWidth: `calc(100% - ${bestSellerCardConfig.content_right_px + 18}px)`,
+              maxHeight: "calc(100% - 32px)",
               right: bestSellerCardConfig.content_right_px,
               top: `${bestSellerCardConfig.content_top_percent}%`,
               transform: "translateY(-50%)",
             }}
           >
             <h3
-              className="font-black leading-[1.05] text-[#212430]"
-              style={{ fontSize: bestSellerCardConfig.title_size_px }}
+              className="line-clamp-2 break-words font-black text-[#212430]"
+              style={{ fontSize: bestSellerCardConfig.title_size_px, lineHeight: 1.08 }}
             >
               {item.name}
             </h3>
-            <p
-              className="leading-8 text-[#3c4050]/75"
+            {bestSellerCardConfig.show_description ? (
+              <p
+                className="line-clamp-2 break-words text-[#3c4050]/75"
+                style={{
+                  marginTop: bestSellerCardConfig.title_description_gap_px,
+                  fontSize: bestSellerCardConfig.description_size_px,
+                  lineHeight: 1.45,
+                }}
+              >
+                {item.description || "اختر الحجم الصغير أو الوسط أو الكبير حسب المناسبة."}
+              </p>
+            ) : null}
+            <div
               style={{
-                marginTop: bestSellerCardConfig.title_description_gap_px,
-                fontSize: bestSellerCardConfig.description_size_px,
+                marginTop: bestSellerCardConfig.show_description
+                  ? bestSellerCardConfig.description_price_gap_px
+                  : bestSellerCardConfig.title_description_gap_px,
               }}
             >
-              {item.description || "اختر الحجم الصغير أو الوسط أو الكبير حسب المناسبة."}
-            </p>
-            <div style={{ marginTop: bestSellerCardConfig.description_price_gap_px }}>
               <span
                 className="inline-flex items-center border font-black text-[#212430] shadow-[0_10px_24px_rgba(0,0,0,0.10)]"
                 style={{

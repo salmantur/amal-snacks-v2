@@ -99,7 +99,7 @@ export function BestSellerCardEditor() {
 
   return (
     <div className="space-y-5" dir="rtl">
-      <section className="rounded-2xl border border-gray-200 bg-white p-4 space-y-4">
+      <section className="sticky top-[5.5rem] z-20 rounded-2xl border border-gray-200 bg-white p-4 space-y-4 shadow-[0_12px_28px_rgba(15,23,42,0.08)] md:static md:shadow-none">
         <div className="flex items-center justify-between gap-3">
           <div>
             <h3 className="text-base font-bold text-gray-900">بطاقة الأكثر طلبًا</h3>
@@ -111,13 +111,17 @@ export function BestSellerCardEditor() {
         <div className="rounded-[28px] border border-dashed border-gray-200 bg-[#faf8f6] p-3">
           {previewItem ? (
             <div className="mx-auto max-w-xl">
-              <ProductCard
-                item={previewItem}
-                onSelect={() => {}}
-                priority
-                bestSellerStyle="s2"
-                bestSellerCardConfig={current}
-              />
+              <div className="mx-auto h-[275px] w-full overflow-hidden md:h-auto">
+                <div className="origin-top scale-[0.64] sm:scale-[0.78] md:scale-100">
+                  <ProductCard
+                    item={previewItem}
+                    onSelect={() => {}}
+                    priority
+                    bestSellerStyle="s2"
+                    bestSellerCardConfig={current}
+                  />
+                </div>
+              </div>
             </div>
           ) : (
             <div className="rounded-2xl bg-gray-100 px-4 py-10 text-center text-sm text-gray-500">
@@ -132,7 +136,7 @@ export function BestSellerCardEditor() {
           </div>
         ) : null}
 
-        <div className="flex flex-wrap justify-end gap-2">
+        <div className="flex flex-wrap justify-end gap-2 border-t border-gray-100 pt-3">
           <button
             type="button"
             onClick={handleReset}

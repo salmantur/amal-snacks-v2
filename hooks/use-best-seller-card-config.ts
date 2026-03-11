@@ -14,11 +14,17 @@ const TABLE = "app_settings"
 export function useBestSellerCardConfig() {
   const [config, setConfig] = useState<BestSellerCardConfig>(DEFAULT_BEST_SELLER_CARD_CONFIG)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
     async function load() {
-      const { data } = await supabase.from(TABLE).select("value").eq("key", BEST_SELLER_CARD_CONFIG_KEY).single()
+      const { data, error: loadError } = await supabase.from(TABLE).select("value").eq("key", BEST_SELLER_CARD_CONFIG_KEY).single()
+      if (loadError && loadError.code !== "PGRST116") {
+        setError(loadError.message)
+      } else {
+        setError(null)
+      }
       setConfig(normalizeBestSellerCardConfig(data?.value))
       setLoading(false)
     }
@@ -28,11 +34,16 @@ export function useBestSellerCardConfig() {
 
   async function saveConfig(nextConfig: BestSellerCardConfig) {
     const normalized = normalizeBestSellerCardConfig(nextConfig)
-    await supabase
+    const { error: saveError } = await supabase
       .from(TABLE)
       .upsert({ key: BEST_SELLER_CARD_CONFIG_KEY, value: normalized }, { onConflict: "key" })
+    if (saveError) {
+      setError(saveError.message)
+      throw saveError
+    }
+    setError(null)
     setConfig(normalized)
   }
 
-  return { config, loading, saveConfig }
+  return { config, loading, error, saveConfig }
 }

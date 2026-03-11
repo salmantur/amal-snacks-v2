@@ -109,5 +109,5 @@ export function normalizeBestSellerCardConfig(value: unknown): BestSellerCardCon
 }
 
 export function buildBestSellerOverlay(config: BestSellerCardConfig): string {
-  return `linear-gradient(90deg,rgba(255,255,255,0.05)_0%,rgba(255,255,255,${config.overlay_lead_alpha})_34%,rgba(255,255,255,${config.overlay_mid_alpha})_${config.overlay_mid_stop_percent}%,rgba(255,255,255,${config.overlay_end_alpha})_${config.overlay_end_stop_percent}%,rgba(255,255,255,1)_100%)`
+  return `linear-gradient(90deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,${config.overlay_lead_alpha}) 34%, rgba(255,255,255,${config.overlay_mid_alpha}) ${config.overlay_mid_stop_percent}%, rgba(255,255,255,${config.overlay_end_alpha}) ${config.overlay_end_stop_percent}%, rgba(255,255,255,1) 100%)`
 }

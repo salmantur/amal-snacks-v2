@@ -53,12 +53,13 @@ function SliderField({
 }
 
 export function BestSellerCardEditor() {
-  const { config, loading, saveConfig } = useBestSellerCardConfig()
+  const { config, loading, error, saveConfig } = useBestSellerCardConfig()
   const { orderIds } = useBestSellersConfig()
   const { menuItems } = useMenu()
   const [draft, setDraft] = useState<BestSellerCardConfig | null>(null)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   const current = draft ?? config
   const previewItem = useMemo(() => getBestSellerCandidates(menuItems, orderIds)[0] ?? menuItems[0] ?? null, [menuItems, orderIds])
@@ -66,21 +67,30 @@ export function BestSellerCardEditor() {
   function update<K extends keyof BestSellerCardConfig>(key: K, value: BestSellerCardConfig[K]) {
     setDraft((prev) => normalizeBestSellerCardConfig({ ...(prev ?? current), [key]: value }))
     setSaved(false)
+    setSaveError(null)
   }
 
   async function handleSave() {
     const next = normalizeBestSellerCardConfig(current)
     setSaving(true)
-    await saveConfig(next)
-    setSaving(false)
-    setSaved(true)
-    setDraft(null)
-    window.setTimeout(() => setSaved(false), 1800)
+    setSaveError(null)
+    try {
+      await saveConfig(next)
+      setSaved(true)
+      setDraft(null)
+      window.setTimeout(() => setSaved(false), 1800)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "تعذر حفظ إعدادات البطاقة."
+      setSaveError(message)
+    } finally {
+      setSaving(false)
+    }
   }
 
   function handleReset() {
     setDraft(DEFAULT_BEST_SELLER_CARD_CONFIG)
     setSaved(false)
+    setSaveError(null)
   }
 
   if (loading) {
@@ -115,6 +125,12 @@ export function BestSellerCardEditor() {
             </div>
           )}
         </div>
+
+        {saveError || error ? (
+          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {saveError || error}
+          </div>
+        ) : null}
 
         <div className="flex flex-wrap justify-end gap-2">
           <button

@@ -447,20 +447,6 @@ export const ProductCard = memo(function ProductCard({
               <ShoppingBag className="h-8 w-8" />
             </div>
           )}
-          {bestSellerImage ? (
-            <div className="absolute inset-x-0 bottom-0 h-[58%] overflow-hidden">
-              <Image
-                src={bestSellerImage}
-                alt=""
-                fill
-                sizes="(max-width: 768px) 100vw, 560px"
-                quality={54}
-                className="scale-125 object-cover object-bottom blur-2xl brightness-[0.72] saturate-[1.2]"
-                aria-hidden="true"
-              />
-              <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.02)_0%,rgba(15,23,42,0.22)_32%,rgba(15,23,42,0.52)_100%)]" />
-            </div>
-          ) : null}
           <div className="absolute inset-0" style={{ backgroundImage: bestSellerOverlay }} />
           <div
             className="absolute flex flex-col overflow-hidden text-right"
@@ -475,14 +461,14 @@ export const ProductCard = memo(function ProductCard({
             }}
           >
             <h3
-              className="line-clamp-2 break-words font-black text-white drop-shadow-[0_10px_22px_rgba(15,23,42,0.38)]"
+              className="line-clamp-2 break-words font-black text-[#212430]"
               style={{ fontSize: bestSellerCardConfig.title_size_px, lineHeight: 1.08 }}
             >
               {item.name}
             </h3>
             {bestSellerCardConfig.show_description ? (
               <p
-                className="line-clamp-2 break-words text-white/82 drop-shadow-[0_8px_18px_rgba(15,23,42,0.34)]"
+                className="line-clamp-2 break-words text-[#3c4050]/75"
                 style={{
                   marginTop: bestSellerCardConfig.title_description_gap_px,
                   fontSize: bestSellerCardConfig.description_size_px,

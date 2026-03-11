@@ -13,6 +13,7 @@ import { StockManager } from "@/components/stock-manager"
 import { CategoryManager } from "@/components/category-manager"
 import { SalesDashboard } from "@/components/sales-dashboard"
 import { ThemeEditor } from "@/components/theme-editor"
+import { BestSellerCardEditor } from "@/components/best-seller-card-editor"
 import { DeliveryAreasManager } from "@/components/delivery-areas-manager"
 import { ClosedDatesManager } from "@/components/closed-dates-manager"
 import { DiscountManager } from "@/components/discount-manager"
@@ -468,6 +469,7 @@ export default function AdminPage() {
         <div className={cn(designStyles.content, "max-w-lg mx-auto", adminDesign === "design3" && "text-white")}>
           <h2 className="text-lg font-bold mb-4">تخصيص المظهر</h2>
           <ThemeEditor />
+          <BestSellerCardEditor />
         </div>
       ) : null}
 

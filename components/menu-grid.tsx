@@ -7,6 +7,7 @@ import { ProductCard, type TrayCardDesign } from "@/components/product-card"
 import { PackageCard } from "@/components/package-card"
 import { CategoryFilter } from "@/components/category-filter"
 import { SearchBar } from "@/components/search-bar"
+import { useBestSellerCardConfig } from "@/hooks/use-best-seller-card-config"
 import { useCategories, type Category } from "@/hooks/use-categories"
 import { useBestSellersConfig } from "@/hooks/use-best-sellers-config"
 import { useMenu } from "@/hooks/use-menu"
@@ -56,6 +57,7 @@ export function MenuGrid() {
 
   const { menuItems, error, isLoading: loading } = useMenu()
   const { orderIds: bestSellerOrder } = useBestSellersConfig()
+  const { config: bestSellerCardConfig } = useBestSellerCardConfig()
 
   const [selectedCategory, setSelectedCategory] = useState(BEST_SELLERS_CATEGORY_ID)
   const [searchQuery, setSearchQuery] = useState("")
@@ -141,6 +143,9 @@ export function MenuGrid() {
     () => (shouldLimitItems ? filteredItems.slice(0, INITIAL_VISIBLE_ITEMS) : filteredItems),
     [filteredItems, shouldLimitItems]
   )
+  const bestSellerGridClass = isBestSellersCategory
+    ? "grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-8"
+    : "grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8"
 
   return (
     <div className="min-h-screen bg-background">
@@ -226,7 +231,7 @@ export function MenuGrid() {
             })}
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8">
+          <div className={bestSellerGridClass}>
             {visibleFilteredItems.map((item, idx) =>
               item.category === "eid" && !isBestSellersCategory ? (
                 <PackageCard key={item.id} item={item} onSelect={setSelectedProduct} priority={idx < 2} variant={itemVariant} />
@@ -238,7 +243,8 @@ export function MenuGrid() {
                   priority={idx < 2}
                   variant={itemVariant}
                   trayDesign={trayCardDesign}
-                  forceUnifiedStyle={isBestSellersCategory}
+                  bestSellerStyle={isBestSellersCategory ? "s2" : undefined}
+                  bestSellerCardConfig={isBestSellersCategory ? bestSellerCardConfig : undefined}
                 />
               )
             )}

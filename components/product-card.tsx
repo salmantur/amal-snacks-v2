@@ -4,11 +4,13 @@ import React, { memo, useState } from "react"
 import Image from "next/image"
 import { ShoppingBag } from "lucide-react"
 import { type MenuItem } from "@/components/cart-provider"
+import { buildBestSellerOverlay, DEFAULT_BEST_SELLER_CARD_CONFIG, type BestSellerCardConfig } from "@/lib/best-seller-card-config"
 import { cn } from "@/lib/utils"
 import { PriceWithRiyalLogo } from "@/components/ui/price-with-riyal-logo"
 
 export type ItemCardVariant = "neo" | "glass" | "editorial" | "warm" | "minimal"
 export type TrayCardDesign = "d1" | "d2" | "d3"
+export type BestSellerCardStyle = "s1" | "s2" | "s3"
 
 interface ProductCardProps {
   item: MenuItem
@@ -17,6 +19,8 @@ interface ProductCardProps {
   variant?: ItemCardVariant
   trayDesign?: TrayCardDesign
   forceUnifiedStyle?: boolean
+  bestSellerStyle?: BestSellerCardStyle
+  bestSellerCardConfig?: BestSellerCardConfig
 }
 
 function parseVariantOption(raw: string, fallbackPrice: number): { label: string; price: number } {
@@ -157,6 +161,8 @@ export const ProductCard = memo(function ProductCard({
   variant = "neo",
   trayDesign = "d1",
   forceUnifiedStyle = false,
+  bestSellerStyle,
+  bestSellerCardConfig = DEFAULT_BEST_SELLER_CARD_CONFIG,
 }: ProductCardProps) {
   const [brokenImages, setBrokenImages] = useState<Record<string, boolean>>({})
   const [traySizeIndex, setTraySizeIndex] = useState(0)
@@ -225,13 +231,309 @@ export const ProductCard = memo(function ProductCard({
   const floatingPriceStyle = useThemeCardColors
     ? { color: "var(--item-card-price)", backgroundColor: "var(--item-card-bg)", borderColor: "rgba(15, 23, 42, 0.12)" }
     : priceColorStyle
+  const bestSellerImage = isTraySizeVariantCard ? selectedTrayImage || mainImage : mainImage
+  const sizeDotColors = ["#f2d5de", "#f2da66", "#dd667d"]
+  const sizeChipColors = [
+    { bg: "#fde7ee", text: "#bf4a66", border: "#efb5c4" },
+    { bg: "#f6eaa7", text: "#8f6900", border: "#ecd66e" },
+    { bg: "#f7f3ea", text: "#6d5d42", border: "#eadfca" },
+  ]
+  const cardBaseClass = cn(
+    "cursor-pointer group transition-transform duration-100",
+    item.inStock !== false ? "active:scale-95" : "opacity-60 cursor-not-allowed"
+  )
+  const bestSellerCardClass = cn(cardBaseClass, "col-span-1")
+  const bestSellerOverlay = buildBestSellerOverlay(bestSellerCardConfig)
+
+  const renderDotSelector = (
+    tone: "light" | "bold" = "light",
+    options?: { dotSize?: number; labelSize?: number; gap?: number; topMargin?: number }
+  ) =>
+    isTraySizeVariantCard ? (
+      <div
+        className="flex items-end justify-end"
+        dir="rtl"
+        style={{ marginTop: options?.topMargin ?? 20, gap: options?.gap ?? 12 }}
+      >
+        {trayCardOptions.map((option, idx) => {
+          const isSelected = safeTrayIndex === idx
+          return (
+            <button
+              key={`${item.id}-${option.label}-${idx}-dot`}
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                setTraySizeIndex(idx)
+              }}
+              className="flex flex-col items-center gap-1"
+              aria-label={option.label}
+            >
+              <span
+                className={cn(
+                  "rounded-full border-2 transition-all duration-200",
+                  isSelected
+                    ? tone === "bold"
+                      ? "scale-105 border-white ring-4 ring-[#d56f86]/35"
+                      : "scale-105 border-white ring-4 ring-[#d9b4bf]/55"
+                    : "border-transparent"
+                )}
+                style={{
+                  backgroundColor: sizeDotColors[idx % sizeDotColors.length],
+                  width: options?.dotSize ?? 40,
+                  height: options?.dotSize ?? 40,
+                }}
+              />
+              <span
+                className={cn("font-bold", isSelected ? "text-[#1f2433]" : "text-[#878a94]")}
+                style={{ fontSize: options?.labelSize ?? 14 }}
+              >
+                {getTraySizeChipLabel(option.label)}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+    ) : null
+
+  const renderChipSelector = () =>
+    isTraySizeVariantCard ? (
+      <div className="mt-6 flex flex-wrap justify-end gap-3" dir="rtl">
+        {trayCardOptions.map((option, idx) => {
+          const isSelected = safeTrayIndex === idx
+          const palette = sizeChipColors[idx % sizeChipColors.length]
+          return (
+            <button
+              key={`${item.id}-${option.label}-${idx}-chip`}
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                setTraySizeIndex(idx)
+              }}
+              className={cn(
+                "rounded-full border px-5 py-2.5 text-base font-bold transition-all duration-200",
+                isSelected ? "shadow-[0_10px_22px_rgba(0,0,0,0.16)] scale-[1.02]" : "shadow-none"
+              )}
+              style={{
+                backgroundColor: palette.bg,
+                borderColor: palette.border,
+                color: palette.text,
+              }}
+              aria-label={option.label}
+            >
+              {getTraySizeChipLabel(option.label)}
+            </button>
+          )
+        })}
+      </div>
+    ) : null
+
+  if (bestSellerStyle === "s1") {
+    return (
+      <div
+        onClick={() => item.inStock !== false && onSelect(item)}
+        className={cn(
+          bestSellerCardClass,
+          "overflow-hidden rounded-[34px] border border-[#ece6e6] bg-[linear-gradient(135deg,#fcfbfa_0%,#f7f4ef_48%,#ffffff_100%)] p-4 shadow-[0_24px_55px_rgba(15,23,42,0.10)]"
+        )}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => e.key === "Enter" && onSelect(item)}
+        aria-label={`${item.name} - ${displayPrice}`}
+      >
+        <div className="grid grid-cols-[1.08fr_0.92fr] gap-0">
+          <div className="relative min-h-[360px] overflow-hidden rounded-[28px] bg-[#eee7dc]">
+            {bestSellerImage ? (
+              <Image
+                src={bestSellerImage}
+                alt={item.name}
+                fill
+                sizes="(max-width: 768px) 52vw, 340px"
+                quality={76}
+                className="object-cover"
+                onError={() => markImageBroken(bestSellerImage)}
+                priority={priority}
+                loading={priority ? "eager" : "lazy"}
+              />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
+                <ShoppingBag className="h-8 w-8" />
+              </div>
+            )}
+            <div className="pointer-events-none absolute inset-y-0 right-0 w-24 bg-[linear-gradient(90deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.78)_62%,rgba(255,255,255,1)_100%)]" />
+            {item.inStock === false ? (
+              <div className="absolute inset-0 bg-black/35 flex items-center justify-center">
+                <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-gray-800">نفذت الكمية</span>
+              </div>
+            ) : null}
+          </div>
+
+          <div className="flex min-h-[360px] flex-col justify-center px-4 py-6 text-right" dir="rtl">
+            <h3 className="text-[2.7rem] font-black leading-[0.95] text-black sm:text-[3.1rem]">{item.name}</h3>
+            <p className="mt-5 text-[1.05rem] leading-9 text-black/85">
+              {item.description || "اختر الحجم المناسب لوجبتك واستمتع بطعم جاهز للتقديم."}
+            </p>
+            <div className="mt-6">
+              <span className="inline-flex rounded-[26px] bg-white px-7 py-4 text-[2rem] font-black text-black shadow-[0_14px_28px_rgba(0,0,0,0.14)]">
+                <PriceWithRiyalLogo value={displayPrice} />
+              </span>
+            </div>
+            {renderDotSelector("bold")}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (bestSellerStyle === "s2") {
+    return (
+      <div
+        onClick={() => item.inStock !== false && onSelect(item)}
+        className={cn(
+          bestSellerCardClass,
+          "overflow-hidden rounded-[34px] border border-white/70 bg-[#fbfaf8] p-3 shadow-[0_22px_50px_rgba(15,23,42,0.08)]"
+        )}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => e.key === "Enter" && onSelect(item)}
+        aria-label={`${item.name} - ${displayPrice}`}
+      >
+        <div
+          className="relative overflow-hidden bg-[#efeadf]"
+          style={{
+            minHeight: bestSellerCardConfig.card_height,
+            borderRadius: bestSellerCardConfig.card_radius,
+          }}
+        >
+          {bestSellerImage ? (
+            <Image
+              src={bestSellerImage}
+              alt={item.name}
+              fill
+              sizes="(max-width: 768px) 100vw, 560px"
+              quality={76}
+              className="object-cover"
+              onError={() => markImageBroken(bestSellerImage)}
+              priority={priority}
+              loading={priority ? "eager" : "lazy"}
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
+              <ShoppingBag className="h-8 w-8" />
+            </div>
+          )}
+          <div className="absolute inset-0" style={{ backgroundImage: bestSellerOverlay }} />
+          <div
+            className="absolute text-right"
+            dir="rtl"
+            style={{
+              width: `${bestSellerCardConfig.content_width_percent}%`,
+              right: bestSellerCardConfig.content_right_px,
+              top: `${bestSellerCardConfig.content_top_percent}%`,
+              transform: "translateY(-50%)",
+            }}
+          >
+            <h3
+              className="font-black leading-[1.05] text-[#212430]"
+              style={{ fontSize: bestSellerCardConfig.title_size_px }}
+            >
+              {item.name}
+            </h3>
+            <p
+              className="leading-8 text-[#3c4050]/75"
+              style={{
+                marginTop: bestSellerCardConfig.title_description_gap_px,
+                fontSize: bestSellerCardConfig.description_size_px,
+              }}
+            >
+              {item.description || "اختر الحجم الصغير أو الوسط أو الكبير حسب المناسبة."}
+            </p>
+            <div style={{ marginTop: bestSellerCardConfig.description_price_gap_px }}>
+              <span
+                className="inline-flex items-center rounded-full border border-[#d7d2cf] bg-white/90 px-6 py-3 font-black text-[#212430] shadow-[0_10px_24px_rgba(0,0,0,0.10)]"
+                style={{ fontSize: bestSellerCardConfig.price_size_px }}
+              >
+                <PriceWithRiyalLogo value={displayPrice} />
+              </span>
+            </div>
+            {renderDotSelector("light", {
+              dotSize: bestSellerCardConfig.size_dot_px,
+              labelSize: bestSellerCardConfig.size_label_px,
+              topMargin: bestSellerCardConfig.price_sizes_gap_px,
+            })}
+          </div>
+          {item.inStock === false ? (
+            <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+              <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-gray-800">نفذت الكمية</span>
+            </div>
+          ) : null}
+        </div>
+      </div>
+    )
+  }
+
+  if (bestSellerStyle === "s3") {
+    return (
+      <div
+        onClick={() => item.inStock !== false && onSelect(item)}
+        className={cn(
+          bestSellerCardClass,
+          "overflow-hidden rounded-[36px] border border-[#e9d8d8] bg-white p-3 shadow-[0_24px_54px_rgba(15,23,42,0.14)]"
+        )}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => e.key === "Enter" && onSelect(item)}
+        aria-label={`${item.name} - ${displayPrice}`}
+      >
+        <div className="relative min-h-[620px] overflow-hidden rounded-[30px] bg-[#dfe4e6]">
+          {bestSellerImage ? (
+            <Image
+              src={bestSellerImage}
+              alt={item.name}
+              fill
+              sizes="(max-width: 768px) 100vw, 460px"
+              quality={76}
+              className="object-cover"
+              onError={() => markImageBroken(bestSellerImage)}
+              priority={priority}
+              loading={priority ? "eager" : "lazy"}
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
+              <ShoppingBag className="h-8 w-8" />
+            </div>
+          )}
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.12)_0%,rgba(255,255,255,0.48)_36%,rgba(255,255,255,0.86)_72%,rgba(255,255,255,0.95)_100%)]" />
+          <div className="absolute inset-x-0 top-0 px-7 pt-8 text-right" dir="rtl">
+            <span className="inline-flex rounded-full bg-[#c8a44d]/80 px-4 py-1 text-sm font-bold text-white">
+              صناعة يدوية فاخرة
+            </span>
+            <h3 className="mt-6 text-[3rem] font-black leading-none text-[#10162f]">{item.name}</h3>
+            <p className="mt-5 max-w-[90%] text-[1.05rem] leading-9 text-[#10162f]/82">
+              {item.description || "استمتع بتقديم فاخر مع تفاصيل مدروسة وطعم يليق بالمناسبات."}
+            </p>
+          </div>
+          <div className="absolute inset-x-0 bottom-0 px-7 pb-8 text-right" dir="rtl">
+            <div className="text-[3rem] font-black leading-none text-[#f44784]">
+              <PriceWithRiyalLogo value={displayPrice} />
+            </div>
+            {isTraySizeVariantCard ? <p className="mt-5 text-xl font-bold text-[#10162f]">اختر الحجم:</p> : null}
+            {renderChipSelector()}
+          </div>
+          {item.inStock === false ? (
+            <div className="absolute inset-0 bg-black/35 flex items-center justify-center">
+              <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-gray-800">نفذت الكمية</span>
+            </div>
+          ) : null}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div
       onClick={() => item.inStock !== false && onSelect(item)}
       className={cn(
-        "cursor-pointer group transition-transform duration-100",
-        item.inStock !== false ? "active:scale-95" : "opacity-60 cursor-not-allowed",
+        cardBaseClass,
         useFloatingTrayStyle && "col-span-2 md:col-span-1",
         v.container
       )}

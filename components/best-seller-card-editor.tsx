@@ -113,6 +113,7 @@ export function BestSellerCardEditor() {
     const next = normalizeBestSellerCardConfig(current)
     setSaving(true)
     setSaveError(null)
+
     try {
       await saveConfig(next)
       setSaved(true)
@@ -133,11 +134,11 @@ export function BestSellerCardEditor() {
   }
 
   if (loading) {
-    return <div className="h-64 rounded-2xl bg-gray-100 animate-pulse" />
+    return <div className="h-64 animate-pulse rounded-2xl bg-gray-100" />
   }
 
   return (
-    <div className="space-y-5 pb-44 md:pb-0" dir="rtl">
+    <div className="space-y-5" dir="rtl">
       <section className="sticky top-[5.5rem] z-20 rounded-2xl border border-gray-200 bg-white p-4 shadow-[0_12px_28px_rgba(15,23,42,0.08)] md:static md:shadow-none">
         <div className="space-y-4">
           <div className="flex items-center justify-between gap-3">
@@ -221,62 +222,176 @@ export function BestSellerCardEditor() {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-gray-200 bg-white p-4 space-y-4">
+      <section className="space-y-4 rounded-2xl border border-gray-200 bg-white p-4">
         <h4 className="text-sm font-bold text-gray-900">التدرج والشفافية</h4>
-        <ColorField label="لون بداية التدرج" value={current.overlay_lead_color} onChange={(value) => update("overlay_lead_color", value)} />
-        <SliderField label="شفافية بداية التدرج" value={Math.round(current.overlay_lead_alpha * 100)} min={0} max={40} suffix="%" onChange={(value) => update("overlay_lead_alpha", value / 100)} />
-        <ColorField label="لون منتصف التدرج" value={current.overlay_mid_color} onChange={(value) => update("overlay_mid_color", value)} />
-        <SliderField label="شفافية منتصف التدرج" value={Math.round(current.overlay_mid_alpha * 100)} min={20} max={90} suffix="%" onChange={(value) => update("overlay_mid_alpha", value / 100)} />
-        <ColorField label="لون نهاية التدرج" value={current.overlay_end_color} onChange={(value) => update("overlay_end_color", value)} />
-        <SliderField label="شفافية نهاية التدرج" value={Math.round(current.overlay_end_alpha * 100)} min={60} max={100} suffix="%" onChange={(value) => update("overlay_end_alpha", value / 100)} />
-        <SliderField label="مكان بداية التركيز" value={current.overlay_mid_stop_percent} min={40} max={72} suffix="%" onChange={(value) => update("overlay_mid_stop_percent", value)} />
-        <SliderField label="مكان نهاية التركيز" value={current.overlay_end_stop_percent} min={58} max={92} suffix="%" onChange={(value) => update("overlay_end_stop_percent", value)} />
+        <ColorField
+          label="لون بداية التدرج"
+          value={current.overlay_lead_color}
+          onChange={(value) => update("overlay_lead_color", value)}
+        />
+        <SliderField
+          label="شفافية بداية التدرج"
+          value={Math.round(current.overlay_lead_alpha * 100)}
+          min={0}
+          max={40}
+          suffix="%"
+          onChange={(value) => update("overlay_lead_alpha", value / 100)}
+        />
+        <ColorField
+          label="لون منتصف التدرج"
+          value={current.overlay_mid_color}
+          onChange={(value) => update("overlay_mid_color", value)}
+        />
+        <SliderField
+          label="شفافية منتصف التدرج"
+          value={Math.round(current.overlay_mid_alpha * 100)}
+          min={20}
+          max={90}
+          suffix="%"
+          onChange={(value) => update("overlay_mid_alpha", value / 100)}
+        />
+        <ColorField
+          label="لون نهاية التدرج"
+          value={current.overlay_end_color}
+          onChange={(value) => update("overlay_end_color", value)}
+        />
+        <SliderField
+          label="شفافية نهاية التدرج"
+          value={Math.round(current.overlay_end_alpha * 100)}
+          min={60}
+          max={100}
+          suffix="%"
+          onChange={(value) => update("overlay_end_alpha", value / 100)}
+        />
+        <SliderField
+          label="مكان بداية التركيز"
+          value={current.overlay_mid_stop_percent}
+          min={40}
+          max={72}
+          suffix="%"
+          onChange={(value) => update("overlay_mid_stop_percent", value)}
+        />
+        <SliderField
+          label="مكان نهاية التركيز"
+          value={current.overlay_end_stop_percent}
+          min={58}
+          max={92}
+          suffix="%"
+          onChange={(value) => update("overlay_end_stop_percent", value)}
+        />
       </section>
 
-      <section className="rounded-2xl border border-gray-200 bg-white p-4 space-y-4">
+      <section className="space-y-4 rounded-2xl border border-gray-200 bg-white p-4">
         <h4 className="text-sm font-bold text-gray-900">أماكن العناصر</h4>
-        <SliderField label="عرض مساحة النص" value={current.content_width_percent} min={30} max={62} suffix="%" onChange={(value) => update("content_width_percent", value)} />
-        <SliderField label="إزاحة المحتوى من اليمين" value={current.content_right_px} min={8} max={48} suffix="px" onChange={(value) => update("content_right_px", value)} />
-        <SliderField label="موضع مجموعة المحتوى عموديًا" value={current.content_top_percent} min={28} max={72} suffix="%" onChange={(value) => update("content_top_percent", value)} />
-        <SliderField label="مسافة الاسم عن الوصف" value={current.title_description_gap_px} min={4} max={28} suffix="px" onChange={(value) => update("title_description_gap_px", value)} />
-        <SliderField label="مسافة الوصف عن السعر" value={current.description_price_gap_px} min={6} max={36} suffix="px" onChange={(value) => update("description_price_gap_px", value)} />
-        <SliderField label="مسافة السعر عن المقاسات" value={current.price_sizes_gap_px} min={6} max={40} suffix="px" onChange={(value) => update("price_sizes_gap_px", value)} />
+        <SliderField
+          label="عرض مساحة النص"
+          value={current.content_width_percent}
+          min={30}
+          max={62}
+          suffix="%"
+          onChange={(value) => update("content_width_percent", value)}
+        />
+        <SliderField
+          label="إزاحة المحتوى من اليمين"
+          value={current.content_right_px}
+          min={8}
+          max={48}
+          suffix="px"
+          onChange={(value) => update("content_right_px", value)}
+        />
+        <SliderField
+          label="موضع مجموعة المحتوى عموديًا"
+          value={current.content_top_percent}
+          min={28}
+          max={72}
+          suffix="%"
+          onChange={(value) => update("content_top_percent", value)}
+        />
+        <SliderField
+          label="مسافة الاسم عن الوصف"
+          value={current.title_description_gap_px}
+          min={4}
+          max={28}
+          suffix="px"
+          onChange={(value) => update("title_description_gap_px", value)}
+        />
+        <SliderField
+          label="مسافة الوصف عن السعر"
+          value={current.description_price_gap_px}
+          min={6}
+          max={36}
+          suffix="px"
+          onChange={(value) => update("description_price_gap_px", value)}
+        />
+        <SliderField
+          label="مسافة السعر عن المقاسات"
+          value={current.price_sizes_gap_px}
+          min={6}
+          max={40}
+          suffix="px"
+          onChange={(value) => update("price_sizes_gap_px", value)}
+        />
       </section>
 
-      <section className="rounded-2xl border border-gray-200 bg-white p-4 space-y-4">
+      <section className="space-y-4 rounded-2xl border border-gray-200 bg-white p-4">
         <h4 className="text-sm font-bold text-gray-900">الأحجام</h4>
-        <SliderField label="ارتفاع البطاقة" value={current.card_height} min={280} max={520} suffix="px" onChange={(value) => update("card_height", value)} />
-        <SliderField label="استدارة البطاقة" value={current.card_radius} min={16} max={48} suffix="px" onChange={(value) => update("card_radius", value)} />
-        <SliderField label="حجم اسم الصنف" value={current.title_size_px} min={24} max={52} suffix="px" onChange={(value) => update("title_size_px", value)} />
-        <SliderField label="حجم الوصف" value={current.description_size_px} min={12} max={24} suffix="px" onChange={(value) => update("description_size_px", value)} />
-        <SliderField label="حجم السعر" value={current.price_size_px} min={20} max={40} suffix="px" onChange={(value) => update("price_size_px", value)} />
-        <SliderField label="حجم دوائر المقاسات" value={current.size_dot_px} min={24} max={56} suffix="px" onChange={(value) => update("size_dot_px", value)} />
-        <SliderField label="حجم نص المقاسات" value={current.size_label_px} min={10} max={20} suffix="px" onChange={(value) => update("size_label_px", value)} />
+        <SliderField
+          label="ارتفاع البطاقة"
+          value={current.card_height}
+          min={280}
+          max={520}
+          suffix="px"
+          onChange={(value) => update("card_height", value)}
+        />
+        <SliderField
+          label="استدارة البطاقة"
+          value={current.card_radius}
+          min={16}
+          max={48}
+          suffix="px"
+          onChange={(value) => update("card_radius", value)}
+        />
+        <SliderField
+          label="حجم اسم الصنف"
+          value={current.title_size_px}
+          min={24}
+          max={52}
+          suffix="px"
+          onChange={(value) => update("title_size_px", value)}
+        />
+        <SliderField
+          label="حجم الوصف"
+          value={current.description_size_px}
+          min={12}
+          max={24}
+          suffix="px"
+          onChange={(value) => update("description_size_px", value)}
+        />
+        <SliderField
+          label="حجم السعر"
+          value={current.price_size_px}
+          min={20}
+          max={40}
+          suffix="px"
+          onChange={(value) => update("price_size_px", value)}
+        />
+        <SliderField
+          label="حجم دوائر المقاسات"
+          value={current.size_dot_px}
+          min={24}
+          max={56}
+          suffix="px"
+          onChange={(value) => update("size_dot_px", value)}
+        />
+        <SliderField
+          label="حجم نص المقاسات"
+          value={current.size_label_px}
+          min={10}
+          max={20}
+          suffix="px"
+          onChange={(value) => update("size_label_px", value)}
+        />
       </section>
-
-      {previewItem ? (
-        <div className="fixed inset-x-3 bottom-3 z-30 rounded-2xl border border-gray-200 bg-white/92 p-2 shadow-[0_16px_36px_rgba(15,23,42,0.16)] backdrop-blur md:hidden">
-          <div className="mb-2 flex items-center justify-between px-1">
-            <span className="text-xs font-bold text-gray-800">معاينة مباشرة</span>
-            {draft ? (
-              <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
-                غير محفوظ
-              </span>
-            ) : null}
-          </div>
-          <div className="h-[170px] overflow-hidden rounded-[22px] bg-[#faf8f6]">
-            <div className="origin-top scale-[0.43]">
-              <ProductCard
-                item={previewItem}
-                onSelect={() => {}}
-                priority
-                bestSellerStyle="s2"
-                bestSellerCardConfig={current}
-              />
-            </div>
-          </div>
-        </div>
-      ) : null}
     </div>
   )
 }

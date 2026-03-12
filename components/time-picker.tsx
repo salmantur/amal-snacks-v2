@@ -1,11 +1,12 @@
 ﻿"use client"
 
-import { useState, useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { ChevronDown, ChevronLeft, CalendarDays } from "lucide-react"
 import { cn } from "@/lib/utils"
 import {
   CLOSE_HOUR,
   OPEN_HOUR,
+  formatArabicDuration,
   generateDeliveryDaySlots,
   isSaudiDateClosed,
   isSaudiStoreOpenForOrders,
@@ -17,9 +18,10 @@ interface TimePickerProps {
   minMinutes?: number
   required?: boolean
   closedDates?: string[]
+  openSignal?: number
 }
 
-export function TimePicker({ value, onChange, minMinutes = 0, required = false, closedDates = [] }: TimePickerProps) {
+export function TimePicker({ value, onChange, minMinutes = 0, required = false, closedDates = [], openSignal = 0 }: TimePickerProps) {
   const [open, setOpen] = useState(false)
   const [selectedDayIdx, setSelectedDayIdx] = useState(0)
 
@@ -27,6 +29,11 @@ export function TimePicker({ value, onChange, minMinutes = 0, required = false, 
   const safeSelectedDayIdx = days.length === 0 ? 0 : Math.min(selectedDayIdx, days.length - 1)
   const isClosedToday = isSaudiDateClosed(new Date(), closedDates)
   const isOpen = isSaudiStoreOpenForOrders(new Date(), closedDates)
+
+  useEffect(() => {
+    if (openSignal <= 0) return
+    setOpen(true)
+  }, [openSignal])
 
   const handleSelect = (slot: string) => {
     const day = days[safeSelectedDayIdx]
@@ -135,7 +142,7 @@ export function TimePicker({ value, onChange, minMinutes = 0, required = false, 
                     <p className="font-bold">في أقرب وقت ممكن</p>
                     <p className={cn("text-xs mt-0.5", !value ? "opacity-80" : "text-gray-500")}>
                       {minMinutes > 0
-                        ? `وقت التحضير ~${minMinutes >= 60 ? `${Math.floor(minMinutes / 60)} ساعة` : `${minMinutes} دقيقة`} + التوصيل`
+                        ? `وقت التحضير ~${formatArabicDuration(minMinutes)} + التوصيل`
                         : "خلال 30-60 دقيقة تقريبًا"}
                     </p>
                   </div>

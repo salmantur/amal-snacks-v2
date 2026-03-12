@@ -69,6 +69,26 @@ function formatSlot(hour: number, minute: number): string {
   return `${h12}:${minute === 0 ? "00" : "30"} ${period}`
 }
 
+function formatArabicDurationPart(value: number, singular: string, dual: string, plural: string): string {
+  if (value <= 0) return ""
+  if (value === 1) return singular
+  if (value === 2) return dual
+  return `${value} ${plural}`
+}
+
+export function formatArabicDuration(totalMinutes: number): string {
+  if (totalMinutes <= 0) return "0 دقيقة"
+
+  const hours = Math.floor(totalMinutes / 60)
+  const minutes = totalMinutes % 60
+  const parts = [
+    formatArabicDurationPart(hours, "ساعة", "ساعتين", "ساعات"),
+    formatArabicDurationPart(minutes, "دقيقة", "دقيقتين", "دقائق"),
+  ].filter(Boolean)
+
+  return parts.join(" و ")
+}
+
 export function isSaudiStoreOpen(date = new Date()): boolean {
   const { hour } = getSaudiNowParts(date)
   return hour >= OPEN_HOUR && hour < CLOSE_HOUR

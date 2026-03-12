@@ -22,7 +22,6 @@ import {
   MapPin,
   User,
   Phone,
-  FileText,
   ShoppingBag,
   CheckCircle2,
   ShieldCheck,
@@ -41,6 +40,7 @@ import {
   WHATSAPP_NUMBER,
 } from "@/lib/data";
 import {
+  formatArabicDuration,
   generateDeliveryDaySlots,
   isSaudiDateClosed,
 } from "@/lib/checkout-schedule";
@@ -54,16 +54,8 @@ type CheckoutErrors = {
   area?: string;
   scheduledTime?: string;
 };
-type CheckoutTheme = "classic" | "glass" | "contrast";
 type OrderMode = "pickup" | "delivery";
 type CouponStatusTone = "success" | "error" | "info";
-
-const QUICK_NOTE_OPTIONS = [
-  "بدون بصل",
-  "اتصال عند الوصول",
-  "اتركه عند الباب",
-  "مستعجل",
-];
 
 const EMPTY_DELIVERY_INFO = {
   name: "",
@@ -77,6 +69,7 @@ const EMPTY_DELIVERY_INFO = {
 
 const PREFERRED_ORDER_TYPE_KEY = "amal_preferred_order_type";
 const CHECKOUT_EVENTS_KEY = "amal_checkout_events";
+const DELIVERY_BUFFER_MINUTES = 120;
 
 function normalizeSaudiPhoneDigits(value: string): string {
   let digits = value.replace(/\D/g, "");
@@ -410,48 +403,17 @@ function CheckoutContent() {
   const orderTypeParam = searchParams.get("type");
   const orderType = (orderTypeParam as OrderMode) || "delivery";
   const isPickup = orderType === "pickup";
-
-  const themeParam = searchParams.get("checkoutui");
-  const activeCheckoutTheme: CheckoutTheme =
-    themeParam === "glass" ||
-    themeParam === "contrast" ||
-    themeParam === "classic"
-      ? themeParam
-      : "glass";
-
-  const theme =
-    activeCheckoutTheme === "glass"
-      ? {
-          main: "min-h-screen bg-[radial-gradient(circle_at_top,_#f7fafc,_#edf2f7_50%,_#e2e8f0)] pb-10",
-          header:
-            "sticky top-0 z-50 bg-white/55 backdrop-blur-xl border-b border-white/60",
-          section:
-            "rounded-3xl border border-white/60 bg-white/55 backdrop-blur-md shadow-[0_10px_30px_rgba(0,0,0,0.07)] p-4",
-          summary:
-            "p-4 rounded-3xl border border-white/60 bg-white/55 backdrop-blur-md",
-          input: "bg-white/70",
-          ctaWrap: "mx-auto w-full max-w-6xl px-4 pb-8 pt-2",
-        }
-      : activeCheckoutTheme === "contrast"
-        ? {
-            main: "min-h-screen bg-slate-50 pb-10",
-            header:
-              "sticky top-0 z-50 bg-slate-900 text-white border-b border-slate-800",
-            section:
-              "rounded-2xl border border-slate-200 bg-white shadow-sm p-4",
-            summary: "p-4 rounded-2xl bg-slate-900 text-white",
-            input: "bg-slate-100",
-            ctaWrap: "mx-auto w-full max-w-6xl px-4 pb-8 pt-2",
-          }
-        : {
-            main: "min-h-screen bg-background pb-10",
-            header:
-              "sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border/50",
-            section: "rounded-2xl border border-border/60 bg-card p-4",
-            summary: "p-4 bg-amal-pink-light rounded-2xl",
-            input: "bg-amal-grey",
-            ctaWrap: "mx-auto w-full max-w-6xl px-4 pb-8 pt-2",
-          };
+  const theme = {
+    main: "min-h-screen bg-[radial-gradient(circle_at_top,_#f7fafc,_#edf2f7_50%,_#e2e8f0)] pb-10",
+    header:
+      "sticky top-0 z-50 border-b border-white/70 bg-white/60 backdrop-blur-xl",
+    section:
+      "rounded-3xl border border-white/60 bg-white/55 p-4 shadow-[0_10px_30px_rgba(15,23,42,0.07)] backdrop-blur-md",
+    summary:
+      "rounded-3xl border border-white/60 bg-white/55 p-4 backdrop-blur-md",
+    input: "bg-white/70",
+    ctaWrap: "mx-auto w-full max-w-6xl px-4 pb-8 pt-2",
+  };
 
   const router = useRouter();
   const {
@@ -469,7 +431,8 @@ function CheckoutContent() {
   const areaSectionRef = useRef<HTMLElement | null>(null);
   const detailsSectionRef = useRef<HTMLElement | null>(null);
   const scheduleSectionRef = useRef<HTMLElement | null>(null);
-  const previousRevealStateRef = useRef(false);
+  const schedulePickerRef = useRef<HTMLDivElement | null>(null);
+  const previousRevealStateRef = useRef(true);
   const previousInfoDoneRef = useRef(false);
   const previousCheckoutSnapshotRef = useRef<string | null>(null);
   const animatedTotalRef = useRef<number | null>(null);
@@ -481,6 +444,9 @@ function CheckoutContent() {
   const [highlightedCartKey, setHighlightedCartKey] = useState<string | null>(
     null,
   );
+  const [isSchedulePickerHighlighted, setIsSchedulePickerHighlighted] =
+    useState(false);
+  const [schedulePickerOpenSignal, setSchedulePickerOpenSignal] = useState(0);
   const [isCartExpanded, setIsCartExpanded] = useState(true);
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   const [manualWhatsAppUrl, setManualWhatsAppUrl] = useState<string | null>(
@@ -592,35 +558,10 @@ function CheckoutContent() {
   const pickArea = useCallback(
     (areaName: string) => {
       handleInputChange("area", areaName);
-      setAreaFocused(false);
       trackCheckoutEvent("area_selected", { area: areaName });
       showActionFeedback("تم تحديث رسوم التوصيل");
     },
     [handleInputChange, showActionFeedback],
-  );
-
-  const applyQuickNote = useCallback(
-    (note: string) => {
-      const existing = deliveryInfo.notes
-        .split("\n")
-        .map((value) => value.trim())
-        .filter(Boolean);
-
-      if (existing.includes(note)) {
-        setDeliveryInfo({
-          ...deliveryInfo,
-          notes: existing.filter((value) => value !== note).join("\n"),
-        });
-        return;
-      }
-
-      setDeliveryInfo({
-        ...deliveryInfo,
-        notes: [...existing, note].join("\n"),
-      });
-      showActionFeedback("تمت إضافة الملاحظة");
-    },
-    [deliveryInfo, setDeliveryInfo, showActionFeedback],
   );
 
   const handleDecrease = useCallback(
@@ -676,17 +617,25 @@ function CheckoutContent() {
     [deliveryInfo, errors.scheduledTime, setDeliveryInfo, submitted],
   );
 
+  const focusSchedulePicker = useCallback(() => {
+    setSchedulePickerOpenSignal((previous) => previous + 1);
+    setIsSchedulePickerHighlighted(true);
+    scrollToSection(schedulePickerRef.current ?? scheduleSectionRef.current);
+    window.setTimeout(() => {
+      setIsSchedulePickerHighlighted(false);
+    }, 1200);
+  }, []);
+
   const selectedArea = deliveryAreas.find((a) => a.name === deliveryInfo.area);
   const deliveryFee = isPickup ? 0 : selectedArea?.price || 0;
   const hasStoredDetails = Boolean(
     deliveryInfo.name ||
     deliveryInfo.phone ||
     deliveryInfo.area ||
-    deliveryInfo.address ||
     deliveryInfo.locationUrl,
   );
   const isScheduled = Boolean(deliveryInfo.scheduledTime);
-  const canRevealFulfillmentDetails = isPickup || Boolean(selectedArea);
+  const canRevealFulfillmentDetails = true;
   const isFinalTotalReady = isPickup || Boolean(selectedArea);
   const discountResult = useMemo(
     () =>
@@ -705,10 +654,11 @@ function CheckoutContent() {
       Math.max(max, normalizeMakingTimeMinutes(item.makingTime || 0)),
     0,
   );
+  const minimumLeadTimeMinutes = maxMakingTime + DELIVERY_BUFFER_MINUTES;
   const closedDates = orderScheduleConfig.closedDates;
   const availableScheduleDays = useMemo(
-    () => generateDeliveryDaySlots(maxMakingTime, closedDates),
-    [closedDates, maxMakingTime],
+    () => generateDeliveryDaySlots(minimumLeadTimeMinutes, closedDates),
+    [closedDates, minimumLeadTimeMinutes],
   );
   const availableScheduleLabels = useMemo(
     () =>
@@ -719,11 +669,6 @@ function CheckoutContent() {
       ),
     [availableScheduleDays],
   );
-  const earliestSlot = useMemo(() => {
-    const firstDay = availableScheduleDays[0];
-    if (!firstDay || firstDay.slots.length === 0) return null;
-    return `${firstDay.dayLabel} ${firstDay.dateLabel} - ${firstDay.slots[0]}`;
-  }, [availableScheduleDays]);
   const isTodayClosed = useMemo(
     () => isSaudiDateClosed(new Date(), closedDates),
     [closedDates],
@@ -738,9 +683,7 @@ function CheckoutContent() {
         area: selectedArea?.name ?? deliveryInfo.area,
         name: deliveryInfo.name,
         phone: deliveryInfo.phone,
-        address: deliveryInfo.address,
         locationUrl: deliveryInfo.locationUrl,
-        notes: deliveryInfo.notes,
         scheduledTime: deliveryInfo.scheduledTime,
         couponCode: activeCouponCode,
         items: items.map((item) => ({
@@ -750,11 +693,9 @@ function CheckoutContent() {
       }),
     [
       activeCouponCode,
-      deliveryInfo.address,
       deliveryInfo.area,
       deliveryInfo.locationUrl,
       deliveryInfo.name,
-      deliveryInfo.notes,
       deliveryInfo.phone,
       deliveryInfo.scheduledTime,
       items,
@@ -771,15 +712,6 @@ function CheckoutContent() {
   }, [deliveryInfo.area, isPickup, deliveryAreas]);
 
   const quickAreas = useMemo(() => deliveryAreas.slice(0, 6), [deliveryAreas]);
-  const activeQuickNotes = useMemo(
-    () =>
-      deliveryInfo.notes
-        .split("\n")
-        .map((value) => value.trim())
-        .filter(Boolean),
-    [deliveryInfo.notes],
-  );
-
   useEffect(() => {
     if (animatedTotalRef.current === null) {
       animatedTotalRef.current = grandTotal;
@@ -908,11 +840,8 @@ function CheckoutContent() {
   }, [canRevealFulfillmentDetails]);
 
   const infoDone = useMemo(() => {
-    const hasBaseInfo = Boolean(
-      deliveryInfo.name.trim() && deliveryInfo.phone.trim(),
-    );
-    return isPickup ? hasBaseInfo : hasBaseInfo && Boolean(selectedArea);
-  }, [deliveryInfo.name, deliveryInfo.phone, selectedArea, isPickup]);
+    return Boolean(deliveryInfo.name.trim() && deliveryInfo.phone.trim());
+  }, [deliveryInfo.name, deliveryInfo.phone]);
 
   useEffect(() => {
     if (infoDone && !previousInfoDoneRef.current) {
@@ -963,8 +892,10 @@ function CheckoutContent() {
     if (!isPickup && !selectedArea) next.area = "اختر منطقة التوصيل من القائمة";
     if (!hasAvailableScheduleDays)
       next.scheduledTime = "لا توجد مواعيد متاحة حاليا";
-    else if (isTodayClosed && !deliveryInfo.scheduledTime)
-      next.scheduledTime = "اليوم مغلق، اختر موعدًا في يوم آخر";
+    else if (!deliveryInfo.scheduledTime)
+      next.scheduledTime = isTodayClosed
+        ? "اليوم مغلق، اختر موعدًا في يوم آخر"
+        : "اختر موعدًا قبل إتمام الطلب";
     return next;
   }, [
     deliveryInfo.name,
@@ -982,24 +913,20 @@ function CheckoutContent() {
       return "اليوم مغلق بالكامل، لذا يلزم تحديد موعد من يوم آخر.";
     if (deliveryInfo.scheduledTime)
       return `التسليم المتوقع ضمن 15-25 دقيقة من الموعد: ${deliveryInfo.scheduledTime}`;
-    return earliestSlot
-      ? `أقرب نافذة توصيل متاحة: ${earliestSlot} (قد تتغير ±20 دقيقة حسب الزحام).`
-      : "نؤكد أقرب نافذة توصيل متاحة بعد مراجعة وقت التحضير.";
-  }, [isPickup, isTodayClosed, deliveryInfo.scheduledTime, earliestSlot]);
-  const scheduleDone = !isTodayClosed || Boolean(deliveryInfo.scheduledTime);
-  const scheduleBadgeLabel = isTodayClosed
-    ? deliveryInfo.scheduledTime
-      ? "تم التحديد"
-      : "مطلوب"
-    : isScheduled
-      ? "تم التحديد"
-      : "أقرب وقت";
+    return "سنؤكد وقت التسليم المناسب بعد مراجعة وقت التحضير.";
+  }, [isPickup, isTodayClosed, deliveryInfo.scheduledTime]);
+  const scheduleDone = Boolean(deliveryInfo.scheduledTime);
+  const scheduleBadgeLabel = deliveryInfo.scheduledTime ? "تم التحديد" : "مطلوب";
 
-  const fieldBaseClass = `w-full min-h-12 py-4 px-4 pr-12 rounded-2xl text-base ${theme.input} text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all`;
-  const mutedTextClass =
-    activeCheckoutTheme === "contrast"
-      ? "text-slate-300"
-      : "text-muted-foreground";
+  const fieldBaseClass = `w-full min-h-12 rounded-2xl border border-white/65 ${theme.input} px-4 py-4 pr-12 text-base text-foreground placeholder:text-muted-foreground transition-all focus:outline-none focus:ring-2 focus:ring-primary/20`;
+  const mutedTextClass = "text-muted-foreground";
+  const summaryMutedTextClass = "text-muted-foreground";
+  const headerActionClass =
+    "flex h-11 w-11 items-center justify-center rounded-full bg-white/80 shadow-sm transition-transform active:scale-95";
+  const layoutWidthClass = "max-w-6xl";
+  const contentGridClass = "grid gap-4 items-start";
+  const contentColumnClass = "space-y-4";
+  const asideColumnClass = "hidden";
   const couponToneClass =
     appliedCouponCode || discountResult.codeDiscountAmount > 0
       ? "border-green-200 bg-green-50 text-green-700"
@@ -1009,31 +936,23 @@ function CheckoutContent() {
           ? "border-amber-200 bg-amber-50 text-amber-700"
           : "border-border/60 bg-background/70 text-muted-foreground";
   const combinedOrderNotes = useMemo(() => {
-    if (isPickup) return deliveryInfo.notes;
-
-    return [
-      deliveryInfo.address.trim()
-        ? `العنوان: ${deliveryInfo.address.trim()}`
-        : "",
-      deliveryInfo.locationUrl.trim()
-        ? `رابط الموقع: ${deliveryInfo.locationUrl.trim()}`
-        : "",
-      deliveryInfo.notes.trim() ? `ملاحظات: ${deliveryInfo.notes.trim()}` : "",
-    ]
-      .filter(Boolean)
-      .join("\n");
-  }, [
-    deliveryInfo.address,
-    deliveryInfo.locationUrl,
-    deliveryInfo.notes,
-    isPickup,
-  ]);
+    if (isPickup) return "";
+    return deliveryInfo.locationUrl.trim()
+      ? `رابط الموقع: ${deliveryInfo.locationUrl.trim()}`
+      : "";
+  }, [deliveryInfo.locationUrl, isPickup]);
   const checkoutDisabled = isSubmitting || (!isPickup && !selectedArea);
   const checkoutButtonLabel = isSubmitting
     ? "جاري الإرسال..."
     : !isPickup && !selectedArea
       ? "اختر المنطقة أولًا"
       : "إتمام الطلب عبر واتساب";
+
+  const headerSummaryText = isPickup
+    ? "استلام من المحل"
+    : selectedArea
+      ? `التوصيل إلى ${selectedArea.name}`
+      : "اختر منطقة التوصيل";
 
   const handleWhatsAppCheckout = async () => {
     setSubmitted(true);
@@ -1131,7 +1050,7 @@ function CheckoutContent() {
         discount: String(confirmedDiscount),
         code: orderData.codeApplied ?? activeCouponCode ?? "",
         type: isPickup ? "pickup" : "delivery",
-        time: deliveryInfo.scheduledTime ?? "في أقرب وقت",
+        time: deliveryInfo.scheduledTime ?? "",
         wa: whatsappUrl,
       });
       const confirmationUrl = `/confirmation?${params.toString()}`;
@@ -1198,56 +1117,23 @@ function CheckoutContent() {
   return (
     <main className={theme.main}>
       <header className={theme.header}>
-        <div className="flex items-center gap-4 px-4 py-3">
-          <Link
-            href="/"
-            className={cn(
-              "w-11 h-11 rounded-full flex items-center justify-center active:scale-95 transition-transform",
-              activeCheckoutTheme === "contrast"
-                ? "bg-slate-700"
-                : "bg-amal-grey",
-            )}
-          >
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
+          <Link href="/" className={headerActionClass}>
             <ArrowRight className="h-5 w-5" />
           </Link>
-          <div>
+          <div className="text-right">
             <h1 className="text-xl font-bold">إتمام الطلب</h1>
-            <p
-              className={cn(
-                "text-xs",
-                activeCheckoutTheme === "contrast"
-                  ? "text-slate-300"
-                  : "text-muted-foreground",
-              )}
-            >
-              {isPickup ? "استلام من المحل" : "توصيل للمنزل"}
+            <p className={cn("text-xs", mutedTextClass)}>
+              {headerSummaryText} | {items.length} أصناف
             </p>
           </div>
         </div>
 
-        <div
-          className={cn(
-            "px-4 pb-3 flex items-center justify-between border-t",
-            activeCheckoutTheme === "contrast"
-              ? "border-slate-700"
-              : "border-border/40",
-          )}
-        >
+        <div className="hidden">
+          <PriceWithRiyalLogo value={displayGrandTotal} />
+        </div>
+        <div className="hidden">
           <ProgressStep label="السلة" done={items.length > 0} />
-          <div
-            className={cn(
-              "h-px flex-1 mx-2",
-              activeCheckoutTheme === "contrast" ? "bg-slate-700" : "bg-border",
-            )}
-          />
-          <ProgressStep label="البيانات" done={infoDone} />
-          <div
-            className={cn(
-              "h-px flex-1 mx-2",
-              activeCheckoutTheme === "contrast" ? "bg-slate-700" : "bg-border",
-            )}
-          />
-          <ProgressStep label="التأكيد" done={false} />
         </div>
       </header>
 
@@ -1277,18 +1163,18 @@ function CheckoutContent() {
         </div>
       ) : null}
 
-      <div className="mx-auto max-w-6xl p-4 space-y-5 lg:space-y-6">
-        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
-          <div className="space-y-5">
-            <section
-              className={cn(theme.section, "lg:p-6")}
-              ref={areaSectionRef}
-            >
+      <div className={cn("mx-auto p-4 space-y-5 lg:space-y-6", layoutWidthClass)}>
+        <div className={contentGridClass}>
+          <div className={contentColumnClass}>
+            <section className="hidden">
               <div className="mb-4 flex items-start justify-between gap-3">
                 <div className="text-right">
                   <h2 className="text-lg font-bold">
                     {isPickup ? "الاستلام من المحل" : "التوصيل"}
                   </h2>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {isPickup ? "الخطوة الأولى لإكمال الطلب" : "حدد المنطقة ثم أكمل بياناتك"}
+                  </p>
                 </div>
                 <div className="flex flex-col items-end gap-2">
                   <SectionStatusBadge done={true} label="محدد" />
@@ -1352,37 +1238,26 @@ function CheckoutContent() {
                     </div>
                   </div>
 
-                  <div className="grid gap-2 sm:grid-cols-2">
+                  <div className="mb-3 flex flex-wrap justify-end gap-2">
                     {quickAreas.map((area) => (
                       <button
                         key={`quick-card-${area.id}`}
                         type="button"
                         onClick={() => pickArea(area.name)}
                         className={cn(
-                          "rounded-2xl border px-4 py-3 text-right transition-all active:scale-[0.99]",
+                          "inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm transition-all active:scale-[0.98]",
                           selectedArea?.id === area.id
-                            ? "border-primary bg-primary/10"
-                            : "border-border bg-background/80 hover:border-primary/30",
+                            ? "border-primary bg-primary/10 text-primary shadow-sm"
+                            : "border-border/70 bg-white/80 text-foreground hover:border-primary/30 hover:bg-white",
                         )}
                       >
-                        <div className="flex items-center justify-between gap-3">
-                          <span className="font-semibold">{area.name}</span>
-                          <span
-                            className={cn(
-                              "text-sm font-medium",
-                              selectedArea?.id === area.id
-                                ? "text-primary"
-                                : "text-muted-foreground",
-                            )}
-                          >
-                            <PriceWithRiyalLogo value={area.price} />
-                          </span>
-                        </div>
+                        <PriceWithRiyalLogo value={area.price} />
+                        <span className="font-medium">{area.name}</span>
                       </button>
                     ))}
                   </div>
 
-                  <div className="relative">
+                  <div className="relative rounded-[28px] border border-white/70 bg-white/45 p-3 shadow-[0_10px_30px_rgba(15,23,42,0.04)] backdrop-blur-sm">
                     <MapPin className="absolute right-4 top-4 h-5 w-5 text-muted-foreground" />
                     <input
                       type="text"
@@ -1397,16 +1272,37 @@ function CheckoutContent() {
                       }
                       className={cn(
                         fieldBaseClass,
+                        "pl-20 pr-12",
                         errors.area &&
                           "ring-2 ring-red-300 border border-red-300",
                       )}
-                      aria-invalid={Boolean(errors.area)}
+                        aria-invalid={Boolean(errors.area)}
+                        aria-autocomplete="list"
                     />
 
-                    {areaFocused && filteredAreas.length > 0 ? (
-                      <div className="absolute z-20 mt-2 w-full overflow-hidden rounded-2xl border border-border bg-white shadow-lg">
-                        <div className="max-h-56 overflow-y-auto">
-                          {filteredAreas.map((area) => (
+                    <div className="pointer-events-none absolute left-6 top-1/2 -translate-y-1/2 rounded-full bg-white/85 px-2.5 py-1 text-[11px] font-semibold text-muted-foreground shadow-sm">
+                      {filteredAreas.length} منطقة
+                    </div>
+
+                    <div
+                      className={cn(
+                        "absolute z-20 mt-2 w-full overflow-hidden rounded-[26px] border border-white/80 bg-white/92 shadow-[0_18px_45px_rgba(15,23,42,0.12)] backdrop-blur-xl transition-all duration-200",
+                        areaFocused
+                          ? "pointer-events-auto translate-y-0 opacity-100"
+                          : "pointer-events-none -translate-y-1 opacity-0",
+                      )}
+                    >
+                      <div className="border-b border-border/50 px-4 py-3 text-right">
+                        <p className="text-xs font-semibold text-muted-foreground">
+                          اختر المنطقة المناسبة للتوصيل
+                        </p>
+                      </div>
+                      <div className="max-h-64 overflow-y-auto py-1">
+                        {filteredAreas.length > 0 ? (
+                          filteredAreas.map((area) => {
+                            const isSelected = selectedArea?.id === area.id;
+
+                            return (
                             <button
                               key={area.id}
                               type="button"
@@ -1414,19 +1310,46 @@ function CheckoutContent() {
                                 event.preventDefault();
                                 pickArea(area.name);
                               }}
-                              className="w-full px-4 py-3.5 text-right transition-colors hover:bg-amal-grey/60"
+                              className={cn(
+                                "w-full px-4 py-3 text-right transition-all hover:bg-amal-grey/55",
+                                isSelected && "bg-primary/5",
+                              )}
                             >
                               <div className="flex items-center justify-between gap-3">
-                                <span className="font-medium">{area.name}</span>
-                                <span className="text-xs text-muted-foreground">
+                                <div className="text-right">
+                                  <p
+                                    className={cn(
+                                      "font-medium",
+                                      isSelected && "text-primary",
+                                    )}
+                                  >
+                                    {area.name}
+                                  </p>
+                                  <p className="mt-1 text-xs text-muted-foreground">
+                                    رسوم التوصيل
+                                  </p>
+                                </div>
+                                <span
+                                  className={cn(
+                                    "rounded-full px-2.5 py-1 text-xs font-semibold",
+                                    isSelected
+                                      ? "bg-primary/10 text-primary"
+                                      : "bg-muted text-muted-foreground",
+                                  )}
+                                >
                                   <PriceWithRiyalLogo value={area.price} />
                                 </span>
                               </div>
                             </button>
-                          ))}
-                        </div>
+                            );
+                          })
+                        ) : (
+                          <div className="px-4 py-5 text-right text-sm text-muted-foreground">
+                            لا توجد منطقة مطابقة، جرّب كتابة اسم آخر.
+                          </div>
+                        )}
                       </div>
-                    ) : null}
+                    </div>
                   </div>
 
                   {errors.area ? (
@@ -1455,7 +1378,7 @@ function CheckoutContent() {
             </section>
           </div>
 
-          <aside className="space-y-5 lg:sticky lg:top-28">
+          <aside className={asideColumnClass}>
             <section className={cn(theme.summary, "space-y-4 lg:p-6")}>
               <div className="flex items-start justify-between gap-3">
                 <div className="text-right">
@@ -1472,14 +1395,14 @@ function CheckoutContent() {
 
               <div className="space-y-2 text-sm">
                 <div className="flex items-center justify-between">
-                  <span className={mutedTextClass}>المجموع الفرعي</span>
+                  <span className={summaryMutedTextClass}>المجموع الفرعي</span>
                   <span className="font-semibold">
                     <PriceWithRiyalLogo value={totalPrice} />
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <span className={mutedTextClass}>
+                  <span className={summaryMutedTextClass}>
                     {isPickup ? "رسوم التوصيل" : "رسوم التوصيل"}
                   </span>
                   <span
@@ -1499,13 +1422,13 @@ function CheckoutContent() {
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <span className={mutedTextClass}>إجمالي الخصومات</span>
+                  <span className={summaryMutedTextClass}>إجمالي الخصومات</span>
                   <span
                     className={cn(
                       "font-semibold",
                       discountResult.totalDiscount > 0
                         ? "text-green-600"
-                        : mutedTextClass,
+                        : summaryMutedTextClass,
                     )}
                   >
                     {discountResult.totalDiscount > 0 ? (
@@ -1525,9 +1448,7 @@ function CheckoutContent() {
                   className={cn(
                     "flex items-center justify-between rounded-2xl border px-4 py-3 transition-transform duration-300",
                     isTotalAnimating && "scale-[1.02]",
-                    activeCheckoutTheme === "contrast"
-                      ? "border-slate-700 bg-slate-950/40"
-                      : "border-primary/15 bg-background/75",
+                    "border-primary/15 bg-background/75",
                   )}
                 >
                   <span className="font-bold">الإجمالي النهائي</span>
@@ -1605,7 +1526,7 @@ function CheckoutContent() {
               </div>
             </section>
 
-            <section className={cn(theme.section, "lg:p-6")}>
+            <section className="hidden">
               <div className="mb-4 flex items-center justify-between gap-3">
                 <div className="text-right">
                   <h2 className="text-lg font-bold">طلباتك ({items.length})</h2>
@@ -1638,9 +1559,7 @@ function CheckoutContent() {
                         "p-3 rounded-2xl border transition-all duration-300",
                         highlightedCartKey === item.cartKey &&
                           "ring-2 ring-primary/30 scale-[1.01]",
-                        activeCheckoutTheme === "contrast"
-                          ? "bg-white border-slate-200"
-                          : "bg-background border-border/50",
+                        "bg-background border-border/50",
                       )}
                     >
                       <div className="flex items-start gap-3">
@@ -1797,19 +1716,6 @@ function CheckoutContent() {
 
                 {!isPickup ? (
                   <>
-                    <div className="relative">
-                      <MapPin className="absolute right-4 top-4 h-5 w-5 text-muted-foreground" />
-                      <textarea
-                        placeholder="العنوان التفصيلي: الحي، الشارع، رقم المبنى"
-                        value={deliveryInfo.address}
-                        onChange={(e) =>
-                          handleInputChange("address", e.target.value)
-                        }
-                        rows={2}
-                        className={cn(fieldBaseClass, "resize-none")}
-                      />
-                    </div>
-
                     <div className="rounded-2xl border border-border/60 bg-background/70 p-3">
                       <div className="flex items-center justify-between gap-3">
                         <div className="text-right">
@@ -1846,50 +1752,91 @@ function CheckoutContent() {
                   </>
                 ) : null}
 
-                <div className="relative">
-                  <FileText className="absolute right-4 top-4 h-5 w-5 text-muted-foreground" />
-                  <textarea
-                    placeholder="ملاحظات إضافية (اختياري)"
-                    value={deliveryInfo.notes}
-                    onChange={(e) => handleInputChange("notes", e.target.value)}
-                    rows={3}
-                    className={cn(fieldBaseClass, "resize-none")}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm font-medium text-right">
-                      ملاحظات سريعة
-                    </p>
-                    {activeQuickNotes.length > 0 ? (
-                      <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
-                        {activeQuickNotes.length} مفعلة
-                      </span>
-                    ) : null}
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {QUICK_NOTE_OPTIONS.map((note) => {
-                      const active = activeQuickNotes.includes(note);
-                      return (
-                        <button
-                          key={note}
-                          type="button"
-                          onClick={() => applyQuickNote(note)}
-                          className={cn(
-                            "rounded-full border px-4 py-2 text-sm transition-colors",
-                            active
-                              ? "border-primary bg-primary/10 text-primary"
-                              : "border-border bg-background hover:border-primary/30",
-                          )}
-                        >
-                          {note}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
               </div>
+            </section>
+
+            <section
+              className={cn(
+                theme.section,
+                "animate-in fade-in slide-in-from-bottom-2 duration-500 lg:p-6",
+              )}
+              ref={areaSectionRef}
+            >
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <div className="text-right">
+                  <h2 className="text-lg font-bold">
+                    {isPickup ? "معلومات الاستلام" : "منطقة التوصيل"}
+                  </h2>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {isPickup
+                      ? "لا توجد رسوم توصيل عند الاستلام من المحل"
+                      : "اختر المنطقة من القائمة لتحديث الرسوم"}
+                  </p>
+                </div>
+                <SectionStatusBadge
+                  done={isPickup || Boolean(selectedArea)}
+                  label={isPickup || selectedArea ? "تم" : "مطلوب"}
+                />
+              </div>
+
+              {isPickup ? (
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-right">
+                  <p className="font-semibold text-emerald-800">بدون رسوم توصيل</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="relative">
+                    <MapPin className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <select
+                      value={deliveryInfo.area}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (!value) {
+                          handleInputChange("area", "");
+                          return;
+                        }
+                        pickArea(value);
+                      }}
+                      className={cn(
+                        fieldBaseClass,
+                        "appearance-none pr-12",
+                        errors.area &&
+                          "ring-2 ring-red-300 border border-red-300",
+                      )}
+                      aria-invalid={Boolean(errors.area)}
+                    >
+                      <option value="">اختر منطقة التوصيل *</option>
+                      {deliveryAreas.map((area) => (
+                        <option key={area.id} value={area.name}>
+                          {area.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {errors.area ? (
+                    <p
+                      className="pr-2 text-sm font-medium text-red-600"
+                      role="alert"
+                    >
+                      {errors.area}
+                    </p>
+                  ) : null}
+
+                  {selectedArea ? (
+                    <div className="rounded-2xl border border-primary/15 bg-primary/5 px-4 py-3 text-right">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="font-semibold text-primary">
+                          {selectedArea.name}
+                        </span>
+                        <span className="rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-primary">
+                          <PriceWithRiyalLogo value={selectedArea.price} />
+                        </span>
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              )}
             </section>
 
             <section
@@ -1910,11 +1857,6 @@ function CheckoutContent() {
                     done={scheduleDone}
                     label={scheduleBadgeLabel}
                   />
-                  {!isPickup && earliestSlot ? (
-                    <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold px-2.5 py-1">
-                      أقرب موعد: {earliestSlot}
-                    </div>
-                  ) : null}
                 </div>
               </div>
 
@@ -1926,46 +1868,12 @@ function CheckoutContent() {
                 </div>
               ) : null}
 
-              <div className="mb-4 grid grid-cols-2 gap-3">
+              <div className="mb-4 grid grid-cols-1 gap-3">
                 <button
                   type="button"
-                  onClick={() => {
-                    if (isTodayClosed) return;
-                    handleScheduleChange(null);
-                  }}
-                  disabled={isTodayClosed || !hasAvailableScheduleDays}
+                  onClick={focusSchedulePicker}
                   className={cn(
-                    "rounded-2xl border p-3 text-right transition-colors",
-                    !isScheduled && !isTodayClosed
-                      ? "border-primary bg-primary/10"
-                      : "border-border bg-background hover:border-primary/30",
-                    (isTodayClosed || !hasAvailableScheduleDays) &&
-                      "cursor-not-allowed opacity-60 hover:border-border",
-                  )}
-                >
-                  <Clock3
-                    className={cn(
-                      "mb-2 h-5 w-5",
-                      !isScheduled && !isTodayClosed
-                        ? "text-primary"
-                        : "text-muted-foreground",
-                    )}
-                  />
-                  <p className="font-semibold">في أقرب وقت</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {isTodayClosed
-                      ? "غير متاح لأن اليوم مغلق"
-                      : "الخيار الأسرع لمعظم الطلبات"}
-                  </p>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    showActionFeedback("اختر الموعد من القائمة بالأسفل")
-                  }
-                  className={cn(
-                    "rounded-2xl border p-3 text-right transition-colors",
+                    "rounded-2xl border p-3 text-right transition-all active:scale-[0.99]",
                     isScheduled
                       ? "border-primary bg-primary/10"
                       : "border-border bg-background hover:border-primary/30",
@@ -1984,24 +1892,35 @@ function CheckoutContent() {
                 </button>
               </div>
 
-              {maxMakingTime > 0 ? (
+              {minimumLeadTimeMinutes > 0 ? (
                 <div className="mb-3 rounded-xl bg-amal-yellow/20 p-3 text-right text-sm text-foreground">
                   الحد الأدنى للتجهيز:{" "}
                   <span className="font-bold">
-                    {maxMakingTime >= 60
-                      ? `${maxMakingTime % 60 === 0 ? maxMakingTime / 60 : `${Math.floor(maxMakingTime / 60)} ساعة و${maxMakingTime % 60} دقيقة`}`
-                      : `${maxMakingTime} دقيقة`}
+                    {formatArabicDuration(minimumLeadTimeMinutes)}
                   </span>
                 </div>
               ) : null}
 
-              <TimePicker
-                value={deliveryInfo.scheduledTime}
-                onChange={handleScheduleChange}
-                minMinutes={maxMakingTime}
-                required={false}
-                closedDates={closedDates}
-              />
+              <div
+                ref={schedulePickerRef}
+                className={cn(
+                  "rounded-3xl transition-all duration-300",
+                  isSchedulePickerHighlighted &&
+                    "ring-2 ring-primary/30 ring-offset-2 ring-offset-transparent",
+                )}
+              >
+                <TimePicker
+                  value={deliveryInfo.scheduledTime}
+                  onChange={handleScheduleChange}
+                  minMinutes={minimumLeadTimeMinutes}
+                  required={false}
+                  closedDates={closedDates}
+                  openSignal={schedulePickerOpenSignal}
+                />
+              </div>
+              <p className={cn("mt-3 text-right text-sm leading-7", mutedTextClass)}>
+                {deliveryAccuracyText}
+              </p>
               {errors.scheduledTime ? (
                 <p
                   className="mt-2 pr-2 text-sm font-medium text-red-600"
@@ -2011,10 +1930,220 @@ function CheckoutContent() {
                 </p>
               ) : null}
             </section>
+
+            <section className={cn(theme.section, "lg:p-6")}>
+              <div className="mb-4 text-right">
+                <div className="text-right">
+                  <h2 className="text-lg font-bold">الأصناف ({items.length})</h2>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    راجع الكمية قبل إتمام الطلب
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {items.map((item) => (
+                  <div
+                    key={item.cartKey}
+                    className={cn(
+                      "rounded-2xl border border-border/50 bg-background p-3 transition-all duration-300",
+                      highlightedCartKey === item.cartKey &&
+                        "scale-[1.01] ring-2 ring-primary/30",
+                    )}
+                  >
+                    <div className="flex items-start gap-3">
+                      <CheckoutItemImage item={item} />
+                      <div className="min-w-0 flex-1 text-right">
+                        <h3 className="break-words font-bold text-foreground leading-tight">
+                          {item.name}
+                        </h3>
+                        {item.selectedIngredients?.length ? (
+                          <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                            {item.selectedIngredients.join("، ")}
+                          </p>
+                        ) : null}
+                        <p className="mt-1 font-medium text-primary">
+                          <PriceWithRiyalLogo value={item.price * item.quantity} />
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 flex items-center justify-between">
+                      <button
+                        onClick={() => handleRemove(item)}
+                        className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-destructive/10 text-destructive transition-transform active:scale-95"
+                        aria-label="حذف"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleDecrease(item)}
+                          className={cn(
+                            "flex h-11 w-11 items-center justify-center rounded-full transition-transform active:scale-95",
+                            theme.input,
+                          )}
+                          aria-label="تقليل"
+                        >
+                          <Minus className="h-4 w-4" />
+                        </button>
+                        <span className="w-7 text-center font-medium">
+                          {item.quantity}
+                        </span>
+                        <button
+                          onClick={() => handleIncrease(item)}
+                          className={cn(
+                            "flex h-11 w-11 items-center justify-center rounded-full transition-transform active:scale-95",
+                            theme.input,
+                          )}
+                          aria-label="زيادة"
+                        >
+                          <Plus className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section className={cn(theme.summary, "space-y-4 lg:p-6")}>
+              <div className="flex items-start justify-between gap-3">
+                <div className="text-right">
+                  <h2 className="text-lg font-bold">الإجمالي</h2>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    آخر خطوة قبل الإرسال إلى واتساب
+                  </p>
+                </div>
+                <div className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+                  {isPickup
+                    ? "استلام"
+                    : selectedArea
+                      ? `توصيل ${selectedArea.name}`
+                      : "بانتظار المنطقة"}
+                </div>
+              </div>
+
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className={summaryMutedTextClass}>المجموع الفرعي</span>
+                  <span className="font-semibold">
+                    <PriceWithRiyalLogo value={totalPrice} />
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className={summaryMutedTextClass}>رسوم التوصيل</span>
+                  <span className={cn("font-semibold", isPickup && "text-[#1e5631]")}>
+                    {isPickup ? (
+                      "مجاني"
+                    ) : selectedArea ? (
+                      <PriceWithRiyalLogo value={deliveryFee} />
+                    ) : (
+                      "اختر المنطقة"
+                    )}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className={summaryMutedTextClass}>إجمالي الخصومات</span>
+                  <span
+                    className={cn(
+                      "font-semibold",
+                      discountResult.totalDiscount > 0
+                        ? "text-green-600"
+                        : summaryMutedTextClass,
+                    )}
+                  >
+                    {discountResult.totalDiscount > 0 ? (
+                      <>
+                        -<PriceWithRiyalLogo value={discountResult.totalDiscount} />
+                      </>
+                    ) : (
+                      "لا يوجد"
+                    )}
+                  </span>
+                </div>
+
+                <div
+                  className={cn(
+                    "flex items-center justify-between rounded-2xl border border-primary/15 bg-background/75 px-4 py-3 transition-transform duration-300",
+                    isTotalAnimating && "scale-[1.02]",
+                  )}
+                >
+                  <span className="font-bold">الإجمالي النهائي</span>
+                  <span className="font-bold text-primary">
+                    {isFinalTotalReady ? (
+                      <PriceWithRiyalLogo value={displayGrandTotal} />
+                    ) : (
+                      "اختر المنطقة"
+                    )}
+                  </span>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-border/60 bg-background/70 p-3">
+                <label className="mb-2 block text-right text-sm font-medium">
+                  كود الخصم
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={couponInput}
+                    onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                    placeholder="WELCOME10"
+                    className={cn(
+                      "h-11 flex-1 rounded-xl border border-border px-3 text-right",
+                      theme.input,
+                    )}
+                  />
+                  <Button
+                    type="button"
+                    onClick={applyCoupon}
+                    className="h-11 rounded-xl px-4"
+                  >
+                    تطبيق
+                  </Button>
+                </div>
+
+                {couponStatus ? (
+                  <div
+                    className={cn(
+                      "mt-3 flex items-center justify-between gap-3 rounded-2xl border px-3 py-2 text-sm transition-all duration-300",
+                      couponToneClass,
+                      couponStatusTone === "success" && "scale-[1.01] shadow-sm",
+                    )}
+                  >
+                    <span>{couponStatus}</span>
+                    {discountResult.codeDiscountAmount > 0 ? (
+                      <span className="rounded-full bg-white/70 px-2 py-1 text-xs font-bold text-green-700">
+                        وفرت <PriceWithRiyalLogo value={discountResult.codeDiscountAmount} />
+                      </span>
+                    ) : null}
+                  </div>
+                ) : null}
+
+                {activeCouponCode ? (
+                  <div className="mt-3 flex items-center justify-between gap-3">
+                    <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
+                      تم تطبيق {activeCouponCode}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={clearCoupon}
+                      className="text-xs font-semibold text-primary"
+                    >
+                      إلغاء الكود
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+            </section>
           </>
         )}
 
-        <section className={cn(theme.section, "lg:p-6")} dir="rtl">
+        <section className="hidden" dir="rtl">
           <div className="flex items-center gap-2 mb-3">
             <ShieldCheck className="h-5 w-5 text-emerald-600" />
             <h3 className="font-bold text-base">ضمانات الطلب</h3>
@@ -2039,11 +2168,9 @@ function CheckoutContent() {
         <div className="space-y-3">
           <div
             className={cn(
-              "rounded-3xl border px-4 py-3 shadow-lg transition-transform duration-300",
+              "hidden rounded-3xl border px-4 py-3 shadow-lg transition-transform duration-300",
               isTotalAnimating && "scale-[1.01]",
-              activeCheckoutTheme === "contrast"
-                ? "border-slate-700 bg-slate-950/90 text-white"
-                : "border-white/60 bg-white/90 backdrop-blur-md",
+              "border-white/60 bg-white/90 backdrop-blur-md",
             )}
           >
             <div className="mb-2 flex items-center justify-between text-xs font-medium">

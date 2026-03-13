@@ -119,6 +119,11 @@ function scrollToSection(node: HTMLElement | null) {
   node.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
+function isLikelyIOSDevice() {
+  if (typeof navigator === "undefined") return false;
+  return /iPad|iPhone|iPod/i.test(navigator.userAgent);
+}
+
 function SectionStatusBadge({ done, label }: { done: boolean; label: string }) {
   return (
     <span
@@ -277,6 +282,8 @@ function renderWhatsAppHandoffWindow(
   `);
   popup.document.close();
 }
+
+void renderWhatsAppHandoffWindow;
 
 function CheckoutItemImage({ item }: { item: CartItem }) {
   const [imgError, setImgError] = useState(false);
@@ -626,6 +633,25 @@ function CheckoutContent() {
     }, 1200);
   }, []);
 
+  const focusFirstInvalidSection = useCallback(
+    (nextErrors: CheckoutErrors) => {
+      if (nextErrors.name || nextErrors.phone) {
+        scrollToSection(detailsSectionRef.current);
+        return;
+      }
+
+      if (nextErrors.area) {
+        scrollToSection(areaSectionRef.current);
+        return;
+      }
+
+      if (nextErrors.scheduledTime) {
+        focusSchedulePicker();
+      }
+    },
+    [focusSchedulePicker],
+  );
+
   const selectedArea = deliveryAreas.find((a) => a.name === deliveryInfo.area);
   const deliveryFee = isPickup ? 0 : selectedArea?.price || 0;
   const hasStoredDetails = Boolean(
@@ -941,12 +967,26 @@ function CheckoutContent() {
       ? `رابط الموقع: ${deliveryInfo.locationUrl.trim()}`
       : "";
   }, [deliveryInfo.locationUrl, isPickup]);
-  const checkoutDisabled = isSubmitting || (!isPickup && !selectedArea);
+  const missingCheckoutSteps = useMemo(() => {
+    const steps: string[] = [];
+
+    if (!deliveryInfo.name.trim()) steps.push("الاسم");
+    if (!deliveryInfo.phone.trim()) steps.push("رقم الجوال");
+    if (!isPickup && !selectedArea) steps.push("المنطقة");
+    if (!deliveryInfo.scheduledTime) steps.push("الموعد");
+
+    return steps;
+  }, [
+    deliveryInfo.name,
+    deliveryInfo.phone,
+    deliveryInfo.scheduledTime,
+    isPickup,
+    selectedArea,
+  ]);
+  const checkoutDisabled = isSubmitting;
   const checkoutButtonLabel = isSubmitting
     ? "جاري الإرسال..."
-    : !isPickup && !selectedArea
-      ? "اختر المنطقة أولًا"
-      : "إتمام الطلب عبر واتساب";
+    : "إتمام الطلب عبر واتساب";
 
   const headerSummaryText = isPickup
     ? "استلام من المحل"
@@ -960,6 +1000,7 @@ function CheckoutContent() {
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) {
       showActionFeedback("يرجى تصحيح الحقول المحددة");
+      window.setTimeout(() => focusFirstInvalidSection(nextErrors), 120);
       return;
     }
 
@@ -988,15 +1029,69 @@ function CheckoutContent() {
           deliveryFee,
         );
 
+    const orderPayload = {
+      customerName: deliveryInfo.name,
+      customerPhone: deliveryInfo.phone,
+      customerArea: isPickup ? "" : selectedArea?.name || "",
+      orderType: isPickup ? "pickup" : "delivery",
+      items: cartItems.map((item) => ({
+        id: item.id,
+        quantity: item.quantity,
+        selectedIngredients: item.selectedIngredients,
+      })),
+      notes: combinedOrderNotes,
+      scheduledTime: deliveryInfo.scheduledTime,
+      couponCode: activeCouponCode,
+    };
     const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${message}`;
-    const whatsappWindow = window.open("", "_blank");
+
+    if (isLikelyIOSDevice()) {
+      setManualWhatsAppUrl(whatsappUrl);
+
+      try {
+        const payloadText = JSON.stringify(orderPayload);
+        const payloadBlob = new Blob([payloadText], {
+          type: "application/json",
+        });
+        const beaconSent =
+          typeof navigator !== "undefined" &&
+          typeof navigator.sendBeacon === "function"
+            ? navigator.sendBeacon("/api/orders", payloadBlob)
+            : false;
+
+        if (!beaconSent) {
+          void fetch("/api/orders", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: payloadText,
+            keepalive: true,
+          });
+        }
+      } catch {
+        // Best-effort save only; direct WhatsApp handoff is the priority on iPhone.
+      }
+
+      trackCheckoutEvent("checkout_started", {
+        orderType,
+        itemsCount: items.length,
+        areaSelected: Boolean(selectedArea),
+        handoffMode: "ios_direct",
+      });
+      window.location.href = whatsappUrl;
+      return;
+    }
+
+    const whatsappWindow = window.open(
+      whatsappUrl,
+      "_blank",
+      "noopener,noreferrer",
+    );
     if (whatsappWindow) {
-      renderWhatsAppHandoffWindow(whatsappWindow, "saving");
       trackCheckoutEvent("whatsapp_popup_opened", { blocked: false });
     } else {
       trackCheckoutEvent("whatsapp_popup_opened", { blocked: true });
       showActionFeedback(
-        "سنجهز زر واتساب اليدوي بعد حفظ الطلب إذا لم يفتح تلقائيًا.",
+        "إذا لم يفتح واتساب تلقائيًا فاستخدم الزر اليدوي بالأسفل.",
       );
     }
 
@@ -1010,20 +1105,7 @@ function CheckoutContent() {
       const orderResponse = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          customerName: deliveryInfo.name,
-          customerPhone: deliveryInfo.phone,
-          customerArea: isPickup ? "" : selectedArea?.name || "",
-          orderType: isPickup ? "pickup" : "delivery",
-          items: cartItems.map((item) => ({
-            id: item.id,
-            quantity: item.quantity,
-            selectedIngredients: item.selectedIngredients,
-          })),
-          notes: combinedOrderNotes,
-          scheduledTime: deliveryInfo.scheduledTime,
-          couponCode: activeCouponCode,
-        }),
+        body: JSON.stringify(orderPayload),
         signal: controller.signal,
       });
 
@@ -1056,36 +1138,16 @@ function CheckoutContent() {
         wa: whatsappUrl,
       });
       const confirmationUrl = `/confirmation?${params.toString()}`;
-      if (whatsappWindow && !whatsappWindow.closed) {
-        renderWhatsAppHandoffWindow(whatsappWindow, "opening", whatsappUrl);
-      }
       trackCheckoutEvent("checkout_saved", {
         orderType,
         total: confirmedTotal,
         discount: confirmedDiscount,
       });
       router.push(confirmationUrl);
-
-      window.setTimeout(() => {
-        try {
-          if (whatsappWindow && !whatsappWindow.closed) {
-            whatsappWindow.location.href = whatsappUrl;
-          } else {
-            window.open(whatsappUrl, "_blank");
-          }
-        } catch {
-          window.open(whatsappUrl, "_blank");
-        }
-      }, 700);
     } catch (error) {
       window.clearTimeout(timeoutId);
-      if (whatsappWindow && !whatsappWindow.closed) {
-        renderWhatsAppHandoffWindow(whatsappWindow, "error");
-      }
       try {
-        if (whatsappWindow && !whatsappWindow.closed) {
-          whatsappWindow.location.href = whatsappUrl;
-        } else {
+        if (!whatsappWindow || whatsappWindow.closed) {
           window.open(whatsappUrl, "_blank");
         }
       } catch {
@@ -2243,7 +2305,14 @@ function CheckoutContent() {
             </a>
           ) : null}
 
+          {missingCheckoutSteps.length > 0 ? (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-right text-sm text-amber-800">
+              أكمل هذه البيانات أولًا: {missingCheckoutSteps.join("، ")}
+            </div>
+          ) : null}
+
           <Button
+            type="button"
             onClick={handleWhatsAppCheckout}
             disabled={checkoutDisabled}
             className="w-full h-14 rounded-full bg-[#25D366] hover:bg-[#25D366]/90 text-white text-lg font-bold shadow-xl disabled:cursor-not-allowed disabled:bg-[#25D366]/60"

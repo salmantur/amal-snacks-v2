@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useMemo, useRef } from "react"
+import Image from "next/image"
 import Link from "next/link"
 import {
   ArrowRight, Plus, Pencil, Trash2, Search, X, Check,
@@ -61,10 +62,10 @@ export default function ItemsPage() {
   const [pkgLabelInput, setPkgLabelInput] = useState("")
   const [pkgQtyInput, setPkgQtyInput] = useState(1)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
   const { orderIds: bestSellerOrderIds, loading: bestSellerOrderLoading, saveOrder } = useBestSellersConfig()
 
-  function decodePossibleMojibake(value: string): string {
+  const decodePossibleMojibake = React.useCallback((value: string): string => {
     if (!value) return value
     if (!/[ØÙÃÂâð]/.test(value)) return value
     try {
@@ -74,19 +75,9 @@ export default function ItemsPage() {
     } catch {
       return value
     }
-  }
+  }, [])
 
-  useEffect(() => { loadItems() }, [])
-
-  async function loadItems() {
-    setLoading(true)
-    const { data, error } = await supabase.from("menu").select("*").order("category")
-    if (error) setError(error.message)
-    else setItems((data || []).map(normalize))
-    setLoading(false)
-  }
-
-  function getDisplayImage(img?: string | null) {
+  const getDisplayImage = React.useCallback((img?: string | null) => {
     const raw = String(img ?? "").trim()
     if (!raw || raw === "null" || raw === "undefined") return null
     if (raw.startsWith("http://") || raw.startsWith("https://") || raw.startsWith("data:image/") || raw.startsWith("blob:")) {
@@ -104,7 +95,7 @@ export default function ItemsPage() {
       // Fallback for malformed unicode sequences in legacy data.
       return `${SUPABASE_URL}/storage/v1/object/public/Menu/${cleaned}`
     }
-  }
+  }, [])
 
   function sanitizeModalItem(input: Partial<MenuItem>): Partial<MenuItem> {
     const safeImage = getDisplayImage(input.image || "") || ""
@@ -136,7 +127,7 @@ export default function ItemsPage() {
     }
   }
 
-  function normalize(raw: Record<string, unknown>): MenuItem {
+  const normalize = React.useCallback((raw: Record<string, unknown>): MenuItem => {
     let img = String(raw.image || raw.img || raw.image_url || "")
     if (img.includes(",")) img = img.split(",")[0].trim()
     const normalizedImage = getDisplayImage(img) || ""
@@ -170,7 +161,17 @@ export default function ItemsPage() {
       images: normalizedGalleryImages,
       packageItems,
     }
-  }
+  }, [decodePossibleMojibake, getDisplayImage])
+
+  const loadItems = React.useCallback(async () => {
+    setLoading(true)
+    const { data, error } = await supabase.from("menu").select("*").order("category")
+    if (error) setError(error.message)
+    else setItems((data || []).map(normalize))
+    setLoading(false)
+  }, [normalize, supabase])
+
+  useEffect(() => { void loadItems() }, [loadItems])
 
   function flash(msg: string) {
     setSuccessMsg(msg)
@@ -464,7 +465,13 @@ export default function ItemsPage() {
 
                     <div className="relative w-12 h-12 rounded-xl bg-white overflow-hidden flex-shrink-0">
                       {imageSrc ? (
-                        <img src={imageSrc} alt={item.name} className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
+                        <Image
+                          src={imageSrc}
+                          alt={item.name}
+                          fill
+                          sizes="48px"
+                          className="object-cover"
+                        />
                       ) : (
                         <div className="absolute inset-0 flex items-center justify-center">
                           <ImageIcon className="h-4 w-4 text-gray-300" />
@@ -507,7 +514,13 @@ export default function ItemsPage() {
                   {/* Image */}
                   <div className="relative w-20 h-20 rounded-2xl bg-[#f5f5f5] overflow-hidden flex-shrink-0">
                     {imgSrc
-                      ? <img src={imgSrc} alt={item.name} className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
+                      ? <Image
+                          src={imgSrc}
+                          alt={item.name}
+                          fill
+                          sizes="80px"
+                          className="object-cover"
+                        />
                       : <div className="absolute inset-0 flex items-center justify-center"><ImageIcon className="h-6 w-6 text-gray-300" /></div>
                     }
                     {item.isFeatured && (
@@ -624,7 +637,13 @@ export default function ItemsPage() {
                 <div className="flex items-center gap-3">
                   <div className="relative w-24 h-24 rounded-2xl bg-[#f5f5f5] flex items-center justify-center overflow-hidden flex-shrink-0">
                     {modalMainImage
-                      ? <img src={modalMainImage} alt="preview" className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
+                      ? <Image
+                          src={modalMainImage}
+                          alt="preview"
+                          fill
+                          sizes="96px"
+                          className="object-cover"
+                        />
                       : <ImageIcon className="h-7 w-7 text-gray-300" />
                     }
                   </div>
@@ -801,7 +820,13 @@ export default function ItemsPage() {
                     if (!gallerySrc) return null
                     return (
                       <div key={idx} className="relative w-16 h-16 rounded-xl overflow-hidden bg-[#f5f5f5] flex-shrink-0">
-                        <img src={gallerySrc} alt="" className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
+                        <Image
+                          src={gallerySrc}
+                          alt=""
+                          fill
+                          sizes="64px"
+                          className="object-cover"
+                        />
                         <button
                           onClick={() => setModalItem(prev => prev ? ({ ...prev, images: (prev.images || []).filter((_, i) => i !== idx) }) : prev)}
                           className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-xs"

@@ -1000,6 +1000,9 @@ function CheckoutContent() {
       );
     }
 
+    // Keep the manual fallback available even if saving the order is slow or fails.
+    setManualWhatsAppUrl(whatsappUrl);
+
     const controller = new AbortController();
     const timeoutId = window.setTimeout(() => controller.abort(), 15000);
 
@@ -1038,7 +1041,6 @@ function CheckoutContent() {
           ? orderData.totalDiscount
           : discountResult.totalDiscount;
 
-      setManualWhatsAppUrl(whatsappUrl);
       clearCart();
       if (typeof window !== "undefined") {
         window.localStorage.setItem(PREFERRED_ORDER_TYPE_KEY, orderType);
@@ -1080,13 +1082,22 @@ function CheckoutContent() {
       if (whatsappWindow && !whatsappWindow.closed) {
         renderWhatsAppHandoffWindow(whatsappWindow, "error");
       }
+      try {
+        if (whatsappWindow && !whatsappWindow.closed) {
+          whatsappWindow.location.href = whatsappUrl;
+        } else {
+          window.open(whatsappUrl, "_blank");
+        }
+      } catch {
+        window.open(whatsappUrl, "_blank");
+      }
       trackCheckoutEvent("checkout_failed", {
         reason: error instanceof Error ? error.name : "unknown",
       });
       alert(
         error instanceof Error && error.name === "AbortError"
-          ? "استغرق حفظ الطلب وقتًا أطول من المتوقع. حاول مرة أخرى."
-          : "تعذر حفظ الطلب، حاول مرة أخرى.",
+          ? "استغرق حفظ الطلب وقتًا أطول من المتوقع، لكن تم تجهيز واتساب لإكمال الطلب."
+          : "تعذر حفظ الطلب تلقائيًا، لكن تم تجهيز واتساب لإكمال الطلب.",
       );
       setIsSubmitting(false);
     }

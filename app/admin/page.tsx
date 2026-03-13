@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { ArrowRight, Bell, Volume2, VolumeX, RefreshCw, LogOut, ChefHat, Search, Menu, X } from "lucide-react"
+import { ArrowRight, Bell, Volume2, VolumeX, RefreshCw, LogOut, ChefHat, Menu, X } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { type Order } from "@/lib/data"
 import { fetchRecentOrders, subscribeToOrders, updateOrderStatus } from "@/lib/orders"
@@ -58,11 +58,11 @@ export default function AdminPage() {
   const [soundEnabled, setSoundEnabled] = useState(true)
 
   const [filter, setFilter] = useState<OrderFilter>("all")
-  const [typeFilter, setTypeFilter] = useState<TypeFilter>("all")
-  const [sortBy, setSortBy] = useState<SortBy>("newest")
+  const [typeFilter] = useState<TypeFilter>("all")
+  const [sortBy] = useState<SortBy>("newest")
   const [layoutMode, setLayoutMode] = useState<LayoutMode>("kanban")
-  const [adminDesign, setAdminDesign] = useState<AdminDesign>("design1")
-  const [searchQuery, setSearchQuery] = useState("")
+  const [adminDesign] = useState<AdminDesign>("design1")
+  const [searchQuery] = useState("")
   const [activeTab, setActiveTab] = useState<AdminTab>("orders")
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [newOrderAlert, setNewOrderAlert] = useState(false)

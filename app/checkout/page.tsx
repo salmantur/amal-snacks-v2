@@ -1004,12 +1004,6 @@ function CheckoutContent() {
       return;
     }
 
-    setIsSubmitting(true);
-    trackCheckoutEvent("checkout_started", {
-      orderType,
-      itemsCount: items.length,
-      areaSelected: Boolean(selectedArea),
-    });
     const cartItems = items.map((item) => ({
       id: item.id,
       name: item.name,
@@ -1080,6 +1074,13 @@ function CheckoutContent() {
       window.location.href = whatsappUrl;
       return;
     }
+
+    setIsSubmitting(true);
+    trackCheckoutEvent("checkout_started", {
+      orderType,
+      itemsCount: items.length,
+      areaSelected: Boolean(selectedArea),
+    });
 
     const whatsappWindow = window.open(
       whatsappUrl,

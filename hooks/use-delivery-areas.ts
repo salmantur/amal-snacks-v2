@@ -18,6 +18,12 @@ export interface DeliveryAreaMutationResult {
 
 type DeliveryAreasSource = "app_settings" | "legacy_table" | "fallback"
 
+interface EditableAreasResult {
+  areas: DeliveryArea[]
+  source: DeliveryAreasSource
+  error: string | null
+}
+
 function getSupabaseErrorMessage(error: unknown, fallbackMessage: string) {
   if (error && typeof error === "object" && "message" in error && typeof error.message === "string") {
     return error.message
@@ -26,18 +32,22 @@ function getSupabaseErrorMessage(error: unknown, fallbackMessage: string) {
   return fallbackMessage
 }
 
-async function loadEditableAreas(supabase: ReturnType<typeof createClient>) {
+async function loadEditableAreas(
+  supabase: ReturnType<typeof createClient>
+): Promise<EditableAreasResult> {
   const result = await fetchDeliveryAreasFromSupabase(supabase)
 
   if (result.source === "fallback") {
     return {
       areas: DEFAULT_DELIVERY_AREAS,
+      source: result.source,
       error: result.error,
     }
   }
 
   return {
     areas: result.areas,
+    source: result.source,
     error: null,
   }
 }
@@ -78,7 +88,7 @@ export async function saveDeliveryArea(area: DeliveryArea): Promise<DeliveryArea
   const supabase = createClient()
   const current = await loadEditableAreas(supabase)
 
-  if (current.error) {
+  if (current.error && current.source !== "fallback") {
     return {
       ok: false,
       error: current.error,
@@ -101,7 +111,7 @@ export async function deleteDeliveryArea(id: string): Promise<DeliveryAreaMutati
   const supabase = createClient()
   const current = await loadEditableAreas(supabase)
 
-  if (current.error) {
+  if (current.error && current.source !== "fallback") {
     return {
       ok: false,
       error: current.error,

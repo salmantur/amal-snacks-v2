@@ -410,16 +410,17 @@ function CheckoutContent() {
   const orderTypeParam = searchParams.get("type");
   const orderType = (orderTypeParam as OrderMode) || "delivery";
   const isPickup = orderType === "pickup";
+  const checkoutLayout: string = "stitch-refined";
   const theme = {
-    main: "min-h-screen bg-[radial-gradient(circle_at_top,_#f7fafc,_#edf2f7_50%,_#e2e8f0)] pb-10",
+    main: "min-h-screen bg-[#fdfaf9] pb-24 text-slate-900",
     header:
-      "sticky top-0 z-50 border-b border-white/70 bg-white/60 backdrop-blur-xl",
+      "sticky top-0 z-50 border-b border-slate-200/80 bg-[#fdfaf9]/90 backdrop-blur-md",
     section:
-      "rounded-3xl border border-white/60 bg-white/55 p-4 shadow-[0_10px_30px_rgba(15,23,42,0.07)] backdrop-blur-md",
+      "rounded-[20px] border border-slate-200 bg-white p-4 shadow-[0_4px_20px_rgba(15,23,42,0.05)]",
     summary:
-      "rounded-3xl border border-white/60 bg-white/55 p-4 backdrop-blur-md",
-    input: "bg-white/70",
-    ctaWrap: "mx-auto w-full max-w-6xl px-4 pb-8 pt-2",
+      "rounded-[24px] border border-[#f7e8bf] bg-[#fffbe8] p-5 shadow-[0_4px_20px_rgba(236,91,19,0.05)]",
+    input: "bg-slate-50",
+    ctaWrap: "mx-auto w-full max-w-md px-4 pb-8 pt-2",
   };
 
   const router = useRouter();
@@ -955,15 +956,17 @@ function CheckoutContent() {
   const scheduleDone = Boolean(deliveryInfo.scheduledTime);
   const scheduleBadgeLabel = deliveryInfo.scheduledTime ? "تم التحديد" : "مطلوب";
 
-  const fieldBaseClass = `w-full min-h-12 rounded-2xl border border-white/65 ${theme.input} px-4 py-4 pr-12 text-base text-foreground placeholder:text-muted-foreground transition-all focus:outline-none focus:ring-2 focus:ring-primary/20`;
-  const mutedTextClass = "text-muted-foreground";
-  const summaryMutedTextClass = "text-muted-foreground";
+  const fieldBaseClass = `w-full min-h-12 rounded-[16px] border border-slate-200 ${theme.input} px-4 py-4 pr-12 text-base text-slate-900 placeholder:text-slate-400 transition-all focus:outline-none focus:ring-2 focus:ring-primary/20`;
+  const mutedTextClass = "text-slate-500";
+  const summaryMutedTextClass = "text-slate-600";
   const headerActionClass =
-    "flex h-11 w-11 items-center justify-center rounded-full bg-white/80 shadow-sm transition-transform active:scale-95";
-  const layoutWidthClass = "max-w-6xl";
+    "flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm transition-transform active:scale-95";
+  const layoutWidthClass = "max-w-md";
   const contentGridClass = "grid gap-4 items-start";
   const contentColumnClass = "space-y-4";
   const asideColumnClass = "hidden";
+  const ctaButtonClass =
+    "h-14 w-full rounded-[18px] border-2 border-pink-200 bg-pink-50 text-lg font-bold text-pink-600 hover:bg-pink-100 disabled:cursor-not-allowed disabled:bg-pink-50 disabled:text-pink-300";
   const couponToneClass =
     appliedCouponCode || discountResult.codeDiscountAmount > 0
       ? "border-green-200 bg-green-50 text-green-700"
@@ -1004,6 +1007,15 @@ function CheckoutContent() {
     : selectedArea
       ? `التوصيل إلى ${selectedArea.name}`
       : "اختر منطقة التوصيل";
+
+  const headerTitle =
+    checkoutLayout === "default" ? "إتمام الطلب" : "أمل سناك";
+  const headerSubtitle =
+    checkoutLayout === "stitch-warm"
+      ? "مراجعة الطلب وإدخال البيانات"
+      : checkoutLayout === "stitch-refined"
+        ? "تفاصيل التوصيل لإتمام طلبك"
+        : `${headerSummaryText} | ${items.length} أصناف`;
 
   const handleWhatsAppCheckout = async () => {
     setSubmitted(true);
@@ -1202,15 +1214,18 @@ function CheckoutContent() {
   return (
     <main className={theme.main}>
       <header className={theme.header}>
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
+        <div
+          className={cn(
+            "mx-auto flex items-center justify-between gap-4 px-4 py-3",
+            layoutWidthClass,
+          )}
+        >
           <Link href="/" className={headerActionClass}>
             <ArrowRight className="h-5 w-5" />
           </Link>
           <div className="text-right">
-            <h1 className="text-xl font-bold">إتمام الطلب</h1>
-            <p className={cn("text-xs", mutedTextClass)}>
-              {headerSummaryText} | {items.length} أصناف
-            </p>
+            <h1 className="text-xl font-bold">{headerTitle}</h1>
+            <p className={cn("text-xs", mutedTextClass)}>{headerSubtitle}</p>
           </div>
         </div>
 
@@ -2327,7 +2342,7 @@ function CheckoutContent() {
             type="button"
             onClick={handleWhatsAppCheckout}
             disabled={checkoutDisabled}
-            className="w-full h-14 rounded-full bg-[#25D366] hover:bg-[#25D366]/90 text-white text-lg font-bold shadow-xl disabled:cursor-not-allowed disabled:bg-[#25D366]/60"
+            className={ctaButtonClass}
           >
             {checkoutButtonLabel}
           </Button>

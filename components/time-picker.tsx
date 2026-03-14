@@ -1,6 +1,6 @@
 ﻿"use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react"
 import { ChevronDown, ChevronLeft, CalendarDays } from "lucide-react"
 import { cn } from "@/lib/utils"
 import {
@@ -21,9 +21,44 @@ interface TimePickerProps {
   openSignal?: number
 }
 
+function getFocusableElements(container: HTMLElement | null) {
+  if (!container) return []
+
+  return Array.from(
+    container.querySelectorAll<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    )
+  ).filter((element) => !element.hasAttribute("disabled") && element.getAttribute("aria-hidden") !== "true")
+}
+
+function trapFocusOnTab(event: ReactKeyboardEvent<HTMLElement>, container: HTMLElement | null) {
+  if (event.key !== "Tab") return
+
+  const focusable = getFocusableElements(container)
+  if (focusable.length === 0) {
+    event.preventDefault()
+    return
+  }
+
+  const first = focusable[0]
+  const last = focusable[focusable.length - 1]
+  const activeElement = document.activeElement
+
+  if (event.shiftKey && activeElement === first) {
+    event.preventDefault()
+    last.focus()
+  } else if (!event.shiftKey && activeElement === last) {
+    event.preventDefault()
+    first.focus()
+  }
+}
+
 export function TimePicker({ value, onChange, minMinutes = 0, required = false, closedDates = [], openSignal = 0 }: TimePickerProps) {
   const [open, setOpen] = useState(false)
   const [selectedDayIdx, setSelectedDayIdx] = useState(0)
+  const triggerRef = useRef<HTMLButtonElement | null>(null)
+  const dialogRef = useRef<HTMLDivElement | null>(null)
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null)
 
   const days = useMemo(() => generateDeliveryDaySlots(minMinutes, closedDates), [closedDates, minMinutes])
   const safeSelectedDayIdx = days.length === 0 ? 0 : Math.min(selectedDayIdx, days.length - 1)
@@ -34,6 +69,36 @@ export function TimePicker({ value, onChange, minMinutes = 0, required = false, 
     if (openSignal <= 0) return
     setOpen(true)
   }, [openSignal])
+
+  useEffect(() => {
+    if (!open) return
+
+    const previousOverflow = document.body.style.overflow
+    const previousTouchAction = document.body.style.touchAction
+    const previousFocused =
+      document.activeElement instanceof HTMLElement ? document.activeElement : triggerRef.current
+
+    document.body.style.overflow = "hidden"
+    document.body.style.touchAction = "none"
+
+    const focusTimeout = window.setTimeout(() => {
+      closeButtonRef.current?.focus()
+    }, 0)
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false)
+    }
+
+    window.addEventListener("keydown", handleKeyDown)
+
+    return () => {
+      window.clearTimeout(focusTimeout)
+      window.removeEventListener("keydown", handleKeyDown)
+      document.body.style.overflow = previousOverflow
+      document.body.style.touchAction = previousTouchAction
+      previousFocused?.focus()
+    }
+  }, [open])
 
   const handleSelect = (slot: string) => {
     const day = days[safeSelectedDayIdx]
@@ -61,6 +126,7 @@ export function TimePicker({ value, onChange, minMinutes = 0, required = false, 
     <div dir="rtl">
       {/* Trigger button */}
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen(true)}
         className={cn(
@@ -71,6 +137,9 @@ export function TimePicker({ value, onChange, minMinutes = 0, required = false, 
             ? "bg-red-50 border-red-200"
             : "bg-[#f5f5f5] border-transparent"
         )}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        aria-controls="time-picker-dialog"
       >
         <div className="flex items-center gap-3">
           <div className="text-right">
@@ -102,8 +171,17 @@ export function TimePicker({ value, onChange, minMinutes = 0, required = false, 
       {open && (
         <div className="fixed inset-0 z-[200]" dir="rtl">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setOpen(false)} />
-          <div className="absolute bottom-0 left-0 right-0 flex max-h-[min(85vh,42rem)] flex-col rounded-t-3xl bg-white"
-            style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
+          <div
+            id="time-picker-dialog"
+            ref={dialogRef}
+            className="absolute bottom-0 left-0 right-0 flex max-h-[min(85vh,42rem)] flex-col rounded-t-3xl bg-white"
+            style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="time-picker-title"
+            tabIndex={-1}
+            onKeyDown={(event) => trapFocusOnTab(event, dialogRef.current)}
+          >
 
             {/* Handle */}
             <div className="flex justify-center pt-3 pb-2">
@@ -112,11 +190,16 @@ export function TimePicker({ value, onChange, minMinutes = 0, required = false, 
 
             {/* Header */}
             <div className="flex items-center justify-between px-5 pb-4 border-b border-gray-100">
-              <button onClick={() => setOpen(false)} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+              <button
+                ref={closeButtonRef}
+                onClick={() => setOpen(false)}
+                className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center"
+                aria-label="إغلاق اختيار الموعد"
+              >
                 <ChevronDown className="h-4 w-4" />
               </button>
               <div className="text-right">
-                <h3 className="font-bold text-lg">اختر الموعد</h3>
+                <h3 id="time-picker-title" className="font-bold text-lg">اختر الموعد</h3>
                 <p className="text-xs text-gray-400">ساعات العمل {OPEN_HOUR - 12}:00 م - {CLOSE_HOUR - 12}:00 م</p>
               </div>
               <CalendarDays className="h-5 w-5 text-gray-300" />

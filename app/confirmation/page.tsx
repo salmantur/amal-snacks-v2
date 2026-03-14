@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import {
   CheckCircle2,
   ChevronLeft,
@@ -38,9 +38,6 @@ function isLikelyIOSDevice() {
 
 function ConfirmationContent() {
   const searchParams = useSearchParams()
-  const router = useRouter()
-
-  const [countdown, setCountdown] = useState(20)
   const [copied, setCopied] = useState(false)
   const [feedback, setFeedback] = useState<string | null>(null)
   const [showEditor, setShowEditor] = useState(false)
@@ -78,16 +75,6 @@ function ConfirmationContent() {
       1800,
     )
   }
-
-  useEffect(() => {
-    if (countdown <= 0) {
-      router.push("/")
-      return
-    }
-
-    const timer = window.setTimeout(() => setCountdown((value) => value - 1), 1000)
-    return () => window.clearTimeout(timer)
-  }, [countdown, router])
 
   const orderSummary = useMemo(() => {
     const lines = [
@@ -167,7 +154,7 @@ function ConfirmationContent() {
           <div className="mt-4 flex flex-wrap justify-end gap-2">
             <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600">
               <Clock3 className="h-3.5 w-3.5" />
-              عودة تلقائية خلال {countdown} ثانية
+              {"\u064a\u0628\u0642\u0649 \u0647\u0630\u0647 \u0627\u0644\u0635\u0641\u062d\u0629 \u0645\u0641\u062a\u0648\u062d\u0629 \u062d\u062a\u0649 \u062a\u0646\u062a\u0647\u064a"}
             </span>
             <span className="inline-flex items-center gap-2 rounded-full bg-[#25D366]/10 px-3 py-1.5 text-xs font-semibold text-[#1f8f48]">
               <MessageCircle className="h-3.5 w-3.5" />

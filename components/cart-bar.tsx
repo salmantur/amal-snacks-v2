@@ -2,23 +2,89 @@
 
 import { useRouter } from "next/navigation"
 import { ShoppingBag, ChevronLeft, X } from "lucide-react"
-import { useState } from "react"
+import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react"
 import { useCart } from "@/components/cart-provider"
 import { OrderTypeModal } from "@/components/order-type-modal"
 import { PriceWithRiyalLogo } from "@/components/ui/price-with-riyal-logo"
+
+function getFocusableElements(container: HTMLElement | null) {
+  if (!container) return []
+
+  return Array.from(
+    container.querySelectorAll<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    )
+  ).filter((element) => !element.hasAttribute("disabled") && element.getAttribute("aria-hidden") !== "true")
+}
+
+function trapFocusOnTab(event: ReactKeyboardEvent<HTMLElement>, container: HTMLElement | null) {
+  if (event.key !== "Tab") return
+
+  const focusable = getFocusableElements(container)
+  if (focusable.length === 0) {
+    event.preventDefault()
+    return
+  }
+
+  const first = focusable[0]
+  const last = focusable[focusable.length - 1]
+  const activeElement = document.activeElement
+
+  if (event.shiftKey && activeElement === first) {
+    event.preventDefault()
+    last.focus()
+  } else if (!event.shiftKey && activeElement === last) {
+    event.preventDefault()
+    first.focus()
+  }
+}
 
 export function CartBar() {
   const { items, totalItems, totalPrice, removeItem, updateQuantity } = useCart()
   const [modalOpen, setModalOpen] = useState(false)
   const [cartOpen, setCartOpen] = useState(false)
+  const cartTriggerRef = useRef<HTMLButtonElement | null>(null)
+  const cartDialogRef = useRef<HTMLDivElement | null>(null)
+  const cartCloseButtonRef = useRef<HTMLButtonElement | null>(null)
+  const returnFocusRef = useRef<HTMLElement | null>(null)
   const router = useRouter()
-
-  if (totalItems === 0) return null
 
   const handleSelect = (type: "pickup" | "delivery") => {
     setModalOpen(false)
     router.push(`/checkout?type=${type}`)
   }
+
+  useEffect(() => {
+    if (!cartOpen) return
+
+    const previousOverflow = document.body.style.overflow
+    const previousTouchAction = document.body.style.touchAction
+    returnFocusRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : cartTriggerRef.current
+
+    document.body.style.overflow = "hidden"
+    document.body.style.touchAction = "none"
+
+    const focusTimeout = window.setTimeout(() => {
+      cartCloseButtonRef.current?.focus()
+    }, 0)
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setCartOpen(false)
+    }
+
+    window.addEventListener("keydown", handleKeyDown)
+
+    return () => {
+      window.clearTimeout(focusTimeout)
+      window.removeEventListener("keydown", handleKeyDown)
+      document.body.style.overflow = previousOverflow
+      document.body.style.touchAction = previousTouchAction
+      returnFocusRef.current?.focus()
+    }
+  }, [cartOpen])
+
+  if (totalItems === 0) return null
 
   return (
     <>
@@ -38,9 +104,14 @@ export function CartBar() {
           </button>
 
           <button
+            ref={cartTriggerRef}
             onClick={() => setCartOpen(true)}
             className="relative z-10 flex-1 min-w-0 rounded-full px-2 py-1.5 active:opacity-80 transition-opacity"
             dir="rtl"
+            aria-haspopup="dialog"
+            aria-expanded={cartOpen}
+            aria-controls="cart-bar-dialog"
+            aria-label="فتح السلة"
           >
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0 text-right">
@@ -61,17 +132,34 @@ export function CartBar() {
         <div className="fixed inset-0 z-50" onClick={() => setCartOpen(false)}>
           <div className="absolute inset-0 bg-black/40" />
           <div
+            id="cart-bar-dialog"
+            ref={cartDialogRef}
             className="absolute bottom-0 left-0 right-0 bg-background rounded-t-3xl p-5 max-h-[70vh] flex flex-col"
             style={{ paddingBottom: "calc(1.25rem + env(safe-area-inset-bottom))" }}
             onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="cart-bar-title"
+            tabIndex={-1}
+            onKeyDown={(event) => trapFocusOnTab(event, cartDialogRef.current)}
           >
             <div className="w-10 h-1 rounded-full bg-gray-200 mx-auto mb-4" />
 
             <div className="flex items-center justify-between mb-4" dir="rtl">
-              <h2 className="text-lg font-bold">سلتك</h2>
-              <span className="text-sm text-muted-foreground">
-                {totalItems} عنصر · <PriceWithRiyalLogo value={totalPrice} />
-              </span>
+              <button
+                ref={cartCloseButtonRef}
+                onClick={() => setCartOpen(false)}
+                className="w-8 h-8 rounded-full bg-gray-200 text-gray-700 flex items-center justify-center active:scale-95 transition-transform"
+                aria-label="إغلاق السلة"
+              >
+                <X className="h-4 w-4" />
+              </button>
+              <div className="text-right">
+                <h2 id="cart-bar-title" className="text-lg font-bold">سلتك</h2>
+                <span className="text-sm text-muted-foreground">
+                  {totalItems} عنصر · <PriceWithRiyalLogo value={totalPrice} />
+                </span>
+              </div>
             </div>
 
             <div className="overflow-y-auto flex-1 space-y-2 pb-2" dir="rtl">

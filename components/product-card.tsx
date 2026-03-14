@@ -243,6 +243,13 @@ export const ProductCard = memo(function ProductCard({
     item.inStock !== false ? "active:scale-95" : "opacity-60 cursor-not-allowed"
   )
   const bestSellerCardClass = cn(cardBaseClass, "col-span-1")
+  const handleCardKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (item.inStock === false) return
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault()
+      onSelect(item)
+    }
+  }
   const bestSellerOverlay = buildBestSellerOverlay(bestSellerCardConfig)
   const priceBadgeRadius =
     bestSellerCardConfig.price_badge_shape === "square"
@@ -363,7 +370,7 @@ export const ProductCard = memo(function ProductCard({
         )}
         role="button"
         tabIndex={0}
-        onKeyDown={(e) => e.key === "Enter" && onSelect(item)}
+        onKeyDown={handleCardKeyDown}
         aria-label={`${item.name} - ${displayPrice}`}
       >
         <div className="grid grid-cols-[1.08fr_0.92fr] gap-0">
@@ -420,7 +427,7 @@ export const ProductCard = memo(function ProductCard({
         )}
         role="button"
         tabIndex={0}
-        onKeyDown={(e) => e.key === "Enter" && onSelect(item)}
+        onKeyDown={handleCardKeyDown}
         aria-label={`${item.name} - ${displayPrice}`}
       >
         <div
@@ -524,7 +531,7 @@ export const ProductCard = memo(function ProductCard({
         )}
         role="button"
         tabIndex={0}
-        onKeyDown={(e) => e.key === "Enter" && onSelect(item)}
+        onKeyDown={handleCardKeyDown}
         aria-label={`${item.name} - ${displayPrice}`}
       >
         <div className="relative min-h-[620px] overflow-hidden rounded-[30px] bg-[#dfe4e6]">
@@ -582,7 +589,7 @@ export const ProductCard = memo(function ProductCard({
       )}
       role="button"
       tabIndex={0}
-      onKeyDown={(e) => e.key === "Enter" && onSelect(item)}
+      onKeyDown={handleCardKeyDown}
       aria-label={`${item.name} - ${displayPrice}`}
       style={cardSurfaceStyle}
     >

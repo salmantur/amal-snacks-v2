@@ -1,7 +1,7 @@
 ﻿"use client"
 
 import { ShoppingBag, X, Sparkles, Menu, ChevronLeft, ChevronRight } from "lucide-react"
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, type KeyboardEvent as ReactKeyboardEvent } from "react"
 import Link from "next/link"
 import { useCart } from "@/components/cart-provider"
 import { OrderTypeModal } from "@/components/order-type-modal"
@@ -44,6 +44,38 @@ function NewProductsTicker({ items }: { items: MenuItem[] }) {
   )
 }
 
+function getFocusableElements(container: HTMLElement | null) {
+  if (!container) return []
+
+  return Array.from(
+    container.querySelectorAll<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    )
+  ).filter((element) => !element.hasAttribute("disabled") && element.getAttribute("aria-hidden") !== "true")
+}
+
+function trapFocusOnTab(event: ReactKeyboardEvent<HTMLElement>, container: HTMLElement | null) {
+  if (event.key !== "Tab") return
+
+  const focusable = getFocusableElements(container)
+  if (focusable.length === 0) {
+    event.preventDefault()
+    return
+  }
+
+  const first = focusable[0]
+  const last = focusable[focusable.length - 1]
+  const activeElement = document.activeElement
+
+  if (event.shiftKey && activeElement === first) {
+    event.preventDefault()
+    last.focus()
+  } else if (!event.shiftKey && activeElement === last) {
+    event.preventDefault()
+    first.focus()
+  }
+}
+
 export function Header() {
   const [cartOpen, setCartOpen] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -51,6 +83,14 @@ export function Header() {
   const [scrolled, setScrolled] = useState(false)
   const [cartBounce, setCartBounce] = useState(false)
   const prevCount = useRef(0)
+  const menuTriggerRef = useRef<HTMLButtonElement | null>(null)
+  const cartTriggerRef = useRef<HTMLButtonElement | null>(null)
+  const cartDialogRef = useRef<HTMLDivElement | null>(null)
+  const menuDialogRef = useRef<HTMLDivElement | null>(null)
+  const cartCloseButtonRef = useRef<HTMLButtonElement | null>(null)
+  const menuCloseButtonRef = useRef<HTMLButtonElement | null>(null)
+  const cartReturnFocusRef = useRef<HTMLElement | null>(null)
+  const menuReturnFocusRef = useRef<HTMLElement | null>(null)
   const router = useRouter()
   const { items, totalItems, totalPrice, removeItem, updateQuantity } = useCart()
 
@@ -70,6 +110,67 @@ export function Header() {
     }
     prevCount.current = totalItems
   }, [totalItems])
+
+  useEffect(() => {
+    if (!cartOpen && !menuOpen) return
+
+    const previousOverflow = document.body.style.overflow
+    const previousTouchAction = document.body.style.touchAction
+
+    document.body.style.overflow = "hidden"
+    document.body.style.touchAction = "none"
+
+    return () => {
+      document.body.style.overflow = previousOverflow
+      document.body.style.touchAction = previousTouchAction
+    }
+  }, [cartOpen, menuOpen])
+
+  useEffect(() => {
+    if (!cartOpen) return
+
+    cartReturnFocusRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : cartTriggerRef.current
+
+    const focusTimeout = window.setTimeout(() => {
+      cartCloseButtonRef.current?.focus()
+    }, 0)
+
+    return () => {
+      window.clearTimeout(focusTimeout)
+      cartReturnFocusRef.current?.focus()
+    }
+  }, [cartOpen])
+
+  useEffect(() => {
+    if (!menuOpen) return
+
+    menuReturnFocusRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : menuTriggerRef.current
+
+    const focusTimeout = window.setTimeout(() => {
+      menuCloseButtonRef.current?.focus()
+    }, 0)
+
+    return () => {
+      window.clearTimeout(focusTimeout)
+      menuReturnFocusRef.current?.focus()
+    }
+  }, [menuOpen])
+
+  useEffect(() => {
+    if (!cartOpen && !menuOpen) return
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        if (cartOpen) setCartOpen(false)
+        if (menuOpen) setMenuOpen(false)
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [cartOpen, menuOpen])
 
   const handleOrderSelect = (type: "pickup" | "delivery") => {
     setOrderModalOpen(false)
@@ -91,8 +192,13 @@ export function Header() {
       >
         <div className="relative flex items-center justify-between px-4 py-3">
           <button
+            ref={menuTriggerRef}
             onClick={() => setMenuOpen(true)}
             className="w-10 h-10 flex items-center justify-center active:opacity-60 transition-opacity"
+            aria-haspopup="dialog"
+            aria-expanded={menuOpen}
+            aria-controls="header-menu-dialog"
+            aria-label="فتح القائمة"
           >
             <Menu className="h-5 w-5 text-foreground" />
           </button>
@@ -102,12 +208,17 @@ export function Header() {
           </Link>
 
           <button
+            ref={cartTriggerRef}
             onClick={() => setCartOpen(true)}
             className="relative flex items-center gap-2 rounded-full active:scale-95 transition-all duration-150"
             style={{
               background: totalItems > 0 ? "var(--foreground)" : "#f5f5f5",
               padding: totalItems > 0 ? "8px 14px 8px 10px" : "10px",
             }}
+            aria-haspopup="dialog"
+            aria-expanded={cartOpen}
+            aria-controls="header-cart-dialog"
+            aria-label="فتح السلة"
           >
             <ShoppingBag
               className="h-5 w-5 transition-transform duration-300"
@@ -137,27 +248,36 @@ export function Header() {
         <div className="fixed inset-0 z-[100]">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setCartOpen(false)} />
           <div
+            id="header-cart-dialog"
+            ref={cartDialogRef}
             className="absolute bottom-0 left-0 right-0 bg-background rounded-t-3xl flex flex-col"
             style={{ maxHeight: "80vh", paddingBottom: "env(safe-area-inset-bottom)" }}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="header-cart-title"
+            tabIndex={-1}
+            onKeyDown={(event) => trapFocusOnTab(event, cartDialogRef.current)}
           >
             <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
               <div className="w-10 h-1 rounded-full bg-gray-200" />
             </div>
 
             <div className="flex items-center justify-between px-5 py-3 border-b border-border/50 flex-shrink-0" dir="rtl">
-              <h2 className="text-lg font-bold">سلتك 🛍️</h2>
-              <div className="flex items-center gap-3">
+                <h2 id="header-cart-title" className="text-lg font-bold">سلتك 🛍️</h2>
+                <div className="flex items-center gap-3">
                 {totalItems > 0 && (
                   <span className="text-sm text-muted-foreground">
                     {totalItems} عنصر · <PriceWithRiyalLogo value={totalPrice} />
                   </span>
                 )}
-                <button
-                  onClick={() => setCartOpen(false)}
-                  className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center active:scale-95"
-                >
-                  <X className="h-4 w-4" />
-                </button>
+                  <button
+                    ref={cartCloseButtonRef}
+                    onClick={() => setCartOpen(false)}
+                    className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center active:scale-95"
+                    aria-label="إغلاق السلة"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
               </div>
             </div>
 
@@ -237,12 +357,27 @@ export function Header() {
       {menuOpen && (
         <div className="fixed inset-0 z-[100]" dir="rtl">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setMenuOpen(false)} />
-          <div className="absolute top-0 right-0 bottom-0 w-72 bg-white flex flex-col shadow-2xl" style={{ borderRadius: "0 0 0 24px" }}>
+          <div
+            id="header-menu-dialog"
+            ref={menuDialogRef}
+            className="absolute top-0 right-0 bottom-0 w-72 bg-white flex flex-col shadow-2xl"
+            style={{ borderRadius: "0 0 0 24px" }}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="header-menu-title"
+            tabIndex={-1}
+            onKeyDown={(event) => trapFocusOnTab(event, menuDialogRef.current)}
+          >
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-              <button onClick={() => setMenuOpen(false)} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center active:scale-95">
+              <button
+                ref={menuCloseButtonRef}
+                onClick={() => setMenuOpen(false)}
+                className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center active:scale-95"
+                aria-label="إغلاق القائمة"
+              >
                 <ChevronRight className="h-4 w-4" />
               </button>
-              <p className="font-bold text-base">القائمة</p>
+              <p id="header-menu-title" className="font-bold text-base">القائمة</p>
             </div>
             <div className="overflow-y-auto flex-1 py-3">
               {categories.filter((cat) => cat.isVisible).map((cat) => (

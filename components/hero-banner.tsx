@@ -19,6 +19,12 @@ export function HeroBanner() {
   const featuredProduct = config.featured_product_id
     ? menuItems.find((m) => m.id === config.featured_product_id) || null
     : null
+  const featuredNeedsConfiguration = Boolean(
+    featuredProduct &&
+      (featuredProduct.category === "trays" ||
+        featuredProduct.category === "eid" ||
+        (featuredProduct.ingredients?.length ?? 0) > 0)
+  )
 
   if (loading) {
     return <div className="mx-4 mt-4 rounded-3xl bg-amal-pink-light/50 h-44 animate-pulse" />
@@ -67,6 +73,11 @@ export function HeroBanner() {
 
               <button
                 onClick={() => {
+                  if (featuredNeedsConfiguration) {
+                    setDrawerOpen(true)
+                    return
+                  }
+
                   addItem(featuredProduct, 1)
                   setAdded(true)
                   setTimeout(() => setAdded(false), 1500)
@@ -78,7 +89,7 @@ export function HeroBanner() {
                 ) : (
                   <>
                     <ShoppingBag className="h-3.5 w-3.5" />
-                    اطلب الآن
+                    {featuredNeedsConfiguration ? "خصص الطلب" : "اطلب الآن"}
                   </>
                 )}
               </button>

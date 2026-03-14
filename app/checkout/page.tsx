@@ -410,7 +410,6 @@ function CheckoutContent() {
   const orderTypeParam = searchParams.get("type");
   const orderType = (orderTypeParam as OrderMode) || "delivery";
   const isPickup = orderType === "pickup";
-  const checkoutLayout: string = "stitch-refined";
   const theme = {
     main: "min-h-screen bg-[#fdfaf9] pb-24 text-slate-900",
     header:
@@ -455,7 +454,6 @@ function CheckoutContent() {
   const [isSchedulePickerHighlighted, setIsSchedulePickerHighlighted] =
     useState(false);
   const [schedulePickerOpenSignal, setSchedulePickerOpenSignal] = useState(0);
-  const [isCartExpanded, setIsCartExpanded] = useState(true);
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   const [manualWhatsAppUrl, setManualWhatsAppUrl] = useState<string | null>(
     null,
@@ -471,11 +469,6 @@ function CheckoutContent() {
   useEffect(() => {
     router.prefetch("/confirmation");
   }, [router]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    setIsCartExpanded(window.innerWidth >= 768);
-  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -1002,20 +995,8 @@ function CheckoutContent() {
     ? "جاري الإرسال..."
     : "إتمام الطلب عبر واتساب";
 
-  const headerSummaryText = isPickup
-    ? "استلام من المحل"
-    : selectedArea
-      ? `التوصيل إلى ${selectedArea.name}`
-      : "اختر منطقة التوصيل";
-
-  const headerTitle =
-    checkoutLayout === "default" ? "إتمام الطلب" : "أمل سناك";
-  const headerSubtitle =
-    checkoutLayout === "stitch-warm"
-      ? "مراجعة الطلب وإدخال البيانات"
-      : checkoutLayout === "stitch-refined"
-        ? "تفاصيل التوصيل لإتمام طلبك"
-        : `${headerSummaryText} | ${items.length} أصناف`;
+  const headerTitle = "أمل سناك";
+  const headerSubtitle = "تفاصيل التوصيل لإتمام طلبك";
 
   const handleWhatsAppCheckout = async () => {
     setSubmitted(true);
@@ -1626,101 +1607,6 @@ function CheckoutContent() {
               </div>
             </section>
 
-            <section className="hidden">
-              <div className="mb-4 flex items-center justify-between gap-3">
-                <div className="text-right">
-                  <h2 className="text-lg font-bold">طلباتك ({items.length})</h2>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsCartExpanded((prev) => !prev)}
-                  className="rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground"
-                >
-                  {isCartExpanded ? "إخفاء الأصناف" : "عرض الأصناف"}
-                </button>
-              </div>
-
-              {!isCartExpanded ? (
-                <div className="rounded-2xl border border-border/60 bg-background/70 px-4 py-3 text-right">
-                  <p className="text-sm font-semibold">
-                    السلة مختصرة للعرض السريع
-                  </p>
-                  <p className={cn("mt-1 text-xs", mutedTextClass)}>
-                    {items.length} أصناف جاهزة بقيمة{" "}
-                    <PriceWithRiyalLogo value={totalPrice} />
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {items.map((item) => (
-                    <div
-                      key={item.cartKey}
-                      className={cn(
-                        "p-3 rounded-2xl border transition-all duration-300",
-                        highlightedCartKey === item.cartKey &&
-                          "ring-2 ring-primary/30 scale-[1.01]",
-                        "bg-background border-border/50",
-                      )}
-                    >
-                      <div className="flex items-start gap-3">
-                        <CheckoutItemImage item={item} />
-                        <div className="flex-1 min-w-0 text-right">
-                          <h3 className="font-bold text-foreground leading-tight break-words">
-                            {item.name}
-                          </h3>
-                          {item.selectedIngredients?.length ? (
-                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                              {item.selectedIngredients.join("، ")}
-                            </p>
-                          ) : null}
-                          <p className="text-primary font-medium mt-1">
-                            <PriceWithRiyalLogo
-                              value={item.price * item.quantity}
-                            />
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="mt-3 flex items-center justify-between">
-                        <button
-                          onClick={() => handleRemove(item)}
-                          className="w-11 h-11 rounded-full bg-destructive/10 flex items-center justify-center text-destructive active:scale-95 transition-transform flex-shrink-0"
-                          aria-label="حذف"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => handleDecrease(item)}
-                            className={cn(
-                              "w-11 h-11 rounded-full flex items-center justify-center active:scale-95 transition-transform",
-                              theme.input,
-                            )}
-                            aria-label="تقليل"
-                          >
-                            <Minus className="h-4 w-4" />
-                          </button>
-                          <span className="w-7 text-center font-medium">
-                            {item.quantity}
-                          </span>
-                          <button
-                            onClick={() => handleIncrease(item)}
-                            className={cn(
-                              "w-11 h-11 rounded-full flex items-center justify-center active:scale-95 transition-transform",
-                              theme.input,
-                            )}
-                            aria-label="زيادة"
-                          >
-                            <Plus className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </section>
           </aside>
         </div>
 

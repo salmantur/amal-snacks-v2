@@ -43,8 +43,8 @@ export function OrderTypeModal({
         }
       }}
     >
-      <DialogContent className="w-[min(92vw,28rem)] overflow-hidden rounded-[2rem] border border-white/70 bg-[radial-gradient(circle_at_top,#fff8fb_0%,#f5eff3_48%,#efe6ec_100%)] p-0 shadow-[0_32px_90px_rgba(8,18,45,0.22)] [&>button]:hidden">
-        <div className="px-5 pb-5 pt-6 sm:px-6 sm:pb-6">
+      <DialogContent className="max-h-[min(88dvh,40rem)] w-[min(92vw,28rem)] overflow-y-auto rounded-[2rem] border border-white/70 bg-[radial-gradient(circle_at_top,#fff8fb_0%,#f5eff3_48%,#efe6ec_100%)] p-0 shadow-[0_32px_90px_rgba(8,18,45,0.22)] [&>button]:hidden">
+        <div className="px-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-6 sm:px-6 sm:pb-6">
           <div className="text-center">
             <p className="text-[0.7rem] font-semibold tracking-[0.24em] text-[#9b7a86]">
               PICKUP OR DELIVERY

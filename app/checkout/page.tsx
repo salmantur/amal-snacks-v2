@@ -479,6 +479,17 @@ function CheckoutContent() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
+    const handlePageShow = () => {
+      setIsSubmitting(false);
+    };
+
+    window.addEventListener("pageshow", handlePageShow);
+    return () => window.removeEventListener("pageshow", handlePageShow);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
     if (orderTypeParam === "pickup" || orderTypeParam === "delivery") {
       window.localStorage.setItem(PREFERRED_ORDER_TYPE_KEY, orderType);
       return;

@@ -102,8 +102,8 @@ export function TimePicker({ value, onChange, minMinutes = 0, required = false, 
       {open && (
         <div className="fixed inset-0 z-[200]" dir="rtl">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setOpen(false)} />
-          <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl flex flex-col"
-            style={{ maxHeight: "85vh", paddingBottom: "env(safe-area-inset-bottom)" }}>
+          <div className="absolute bottom-0 left-0 right-0 flex max-h-[min(85vh,42rem)] flex-col rounded-t-3xl bg-white"
+            style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
 
             {/* Handle */}
             <div className="flex justify-center pt-3 pb-2">

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { categories as hardcodedCategories } from "@/lib/data"
+import { decodePossibleMojibake } from "@/lib/text"
 
 export interface Category {
   id: string
@@ -14,12 +15,18 @@ export interface Category {
   sections?: { dbCategory: string; label: string }[]
 }
 
-// Sections config for built-in categories that have sub-sections
 const SECTIONS_CONFIG: Record<string, { dbCategory: string; label: string }[]> = {
   platters_breakfast: [
     { dbCategory: "platters", label: "البلاترات" },
     { dbCategory: "breakfast_heaters", label: "سخانات الفطور" },
   ],
+}
+
+function normalizeSections(sections?: { dbCategory: string; label: string }[]) {
+  return sections?.map((section) => ({
+    ...section,
+    label: decodePossibleMojibake(section.label),
+  }))
 }
 
 export function useCategories() {
@@ -35,29 +42,28 @@ export function useCategories() {
       .order("sort_order")
       .then(({ data, error }) => {
         if (error || !data || data.length === 0) {
-          // Fallback to hardcoded categories
           setCategories(
             hardcodedCategories.map((c, i) => ({
               id: c.id,
-              label: c.label,
+              label: decodePossibleMojibake(c.label),
               dbCategories: c.dbCategories,
               isVisible: true,
               sortOrder: i + 1,
               isCustom: false,
-              sections: c.sections,
-            }))
+              sections: normalizeSections(c.sections),
+            })),
           )
         } else {
           setCategories(
             data.map((row) => ({
               id: row.id,
-              label: row.label,
+              label: decodePossibleMojibake(row.label),
               dbCategories: row.db_categories,
               isVisible: row.is_visible,
               sortOrder: row.sort_order,
               isCustom: row.is_custom,
-              sections: SECTIONS_CONFIG[row.id],
-            }))
+              sections: normalizeSections(SECTIONS_CONFIG[row.id]),
+            })),
           )
         }
         setLoading(false)
@@ -69,14 +75,17 @@ export function useCategories() {
 
 export async function saveCategory(cat: Omit<Category, "sections">): Promise<void> {
   const supabase = createClient()
-  await supabase.from("categories").upsert({
-    id: cat.id,
-    label: cat.label,
-    db_categories: cat.dbCategories,
-    is_visible: cat.isVisible,
-    sort_order: cat.sortOrder,
-    is_custom: cat.isCustom,
-  }, { onConflict: "id" })
+  await supabase.from("categories").upsert(
+    {
+      id: cat.id,
+      label: cat.label,
+      db_categories: cat.dbCategories,
+      is_visible: cat.isVisible,
+      sort_order: cat.sortOrder,
+      is_custom: cat.isCustom,
+    },
+    { onConflict: "id" },
+  )
 }
 
 export async function deleteCategory(id: string): Promise<void> {
@@ -84,7 +93,10 @@ export async function deleteCategory(id: string): Promise<void> {
   await supabase.from("categories").delete().eq("id", id)
 }
 
-export async function updateCategoryVisibility(id: string, isVisible: boolean): Promise<void> {
+export async function updateCategoryVisibility(
+  id: string,
+  isVisible: boolean,
+): Promise<void> {
   const supabase = createClient()
   await supabase.from("categories").update({ is_visible: isVisible }).eq("id", id)
 }

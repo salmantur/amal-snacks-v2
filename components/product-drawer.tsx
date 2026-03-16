@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils"
 import { getEidRequiredHeaters } from "@/lib/eid-packages"
 import { PriceWithRiyalLogo } from "@/components/ui/price-with-riyal-logo"
 import { loadCachedTheme } from "@/hooks/use-theme-config"
+import { trackStorefrontEvent } from "@/lib/storefront-events"
 
 interface ProductDrawerProps {
   product: MenuItem | null
@@ -71,6 +72,14 @@ function extractPieceCount(label: string): string {
 function getTrayDesignFromTheme(): TrayDesign {
   const cached = loadCachedTheme()
   return cached?.tray_variant_design === "floating_3" ? "floating_3" : "design_c"
+}
+
+function getPreviousIndex(current: number, total: number): number {
+  return (current - 1 + total) % total
+}
+
+function getNextIndex(current: number, total: number): number {
+  return (current + 1) % total
 }
 
 const TRAY_ITEMS: { ar: string; en: string }[] = [
@@ -147,6 +156,17 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
     setSelectedIngredients([product.ingredients[0]])
   }, [open, product, isTray, isTraySizeVariant, isEidPackage, hasIngredients, maxSelections])
 
+  useEffect(() => {
+    if (!open || !product) return
+
+    trackStorefrontEvent("product_drawer_opened", {
+      productId: product.id,
+      category: product.category,
+      hasOptions: (product.ingredients?.length || 0) > 0,
+      inStock: product.inStock !== false,
+    })
+  }, [open, product])
+
   if (!product) return null
 
   const toggleIngredient = (ingredient: string) => {
@@ -202,6 +222,13 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
         : product.price
 
     addItem({ ...product, price: selectedVariantPrice }, quantity, displaySelections)
+    trackStorefrontEvent("product_added_to_cart", {
+      productId: product.id,
+      category: product.category,
+      quantity,
+      selectionsCount: displaySelections?.length ?? 0,
+      totalPrice: selectedVariantPrice * quantity,
+    })
     setIsAddedFeedback(true)
     setTimeout(() => onClose(), 550)
   }
@@ -256,7 +283,7 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
                 <div className="h-1" />
               </div>
             )}
-            <button onClick={onClose} className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors flex-shrink-0" aria-label="إغلاق">
+            <button type="button" onClick={onClose} className="w-11 h-11 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors flex-shrink-0 touch-manipulation" aria-label="إغلاق">
               <X className="h-5 w-5 text-gray-600" />
             </button>
           </div>
@@ -291,15 +318,16 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
                           const active = safeTrayPreviewIndex === index
                           return (
                             <button
+                              type="button"
                               key={`${image}-${index}`}
                               onClick={() => setTrayPreviewIndex(index)}
                               className={cn(
-                                "relative w-10 h-10 rounded-full overflow-hidden border transition-all",
+                                "relative h-11 w-11 rounded-full overflow-hidden border transition-all touch-manipulation",
                                 active ? "border-[#8a5064] ring-2 ring-[#e8bfcc]" : "border-[#e5dbe0]"
                               )}
                               aria-label={`صورة ${index + 1}`}
                             >
-                              <Image src={image} alt={`Tray preview ${index + 1}`} fill sizes="40px" className="object-cover" />
+                              <Image src={image} alt={`Tray preview ${index + 1}`} fill sizes="44px" className="object-cover" />
                             </button>
                           )
                         })}
@@ -323,6 +351,7 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
 
                         return (
                           <button
+                            type="button"
                             key={`${option.raw}-${offset}`}
                             onClick={() => toggleIngredient(option.raw)}
                             className={cn(
@@ -359,15 +388,35 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
                 )}
                 {allImages.length > 1 ? (
                   <>
-                    <button onClick={() => setImgIndex((i) => (i + 1) % allImages.length)} className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/30 text-white flex items-center justify-center backdrop-blur-sm active:scale-95">
-                      <ChevronLeft className="h-4 w-4" />
+                    <button
+                      type="button"
+                      onClick={() => setImgIndex((i) => getPreviousIndex(i, allImages.length))}
+                      className="absolute left-2 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/35 text-white backdrop-blur-sm transition-transform active:scale-95 touch-manipulation"
+                      aria-label="الصورة السابقة"
+                    >
+                      <ChevronLeft className="h-5 w-5" />
                     </button>
-                    <button onClick={() => setImgIndex((i) => (i - 1 + allImages.length) % allImages.length)} className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/30 text-white flex items-center justify-center backdrop-blur-sm active:scale-95">
-                      <ChevronRight className="h-4 w-4" />
+                    <button
+                      type="button"
+                      onClick={() => setImgIndex((i) => getNextIndex(i, allImages.length))}
+                      className="absolute right-2 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/35 text-white backdrop-blur-sm transition-transform active:scale-95 touch-manipulation"
+                      aria-label="الصورة التالية"
+                    >
+                      <ChevronRight className="h-5 w-5" />
                     </button>
+                    <div className="absolute left-1/2 top-3 -translate-x-1/2 rounded-full bg-black/35 px-3 py-1 text-xs font-semibold text-white backdrop-blur-sm">
+                      {imgIndex + 1} / {allImages.length}
+                    </div>
                     <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1.5">
                       {allImages.map((imgUrl, i) => (
-                        <button key={imgUrl || i} onClick={() => setImgIndex(i)} className="rounded-full transition-all" style={{ width: i === imgIndex ? 16 : 6, height: 6, background: i === imgIndex ? "white" : "rgba(255,255,255,0.5)" }} />
+                        <button
+                          type="button"
+                          key={imgUrl || i}
+                          onClick={() => setImgIndex(i)}
+                          className="rounded-full transition-all touch-manipulation"
+                          aria-label={`عرض الصورة ${i + 1}`}
+                          style={{ width: i === imgIndex ? 16 : 8, height: 8, background: i === imgIndex ? "white" : "rgba(255,255,255,0.5)" }}
+                        />
                       ))}
                     </div>
                   </>
@@ -379,7 +428,7 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
           {isTray && (!isTraySizeVariant || showTrayOptionsStep) ? (
             <div className="pb-4">
               <div className="flex items-center justify-between mb-3">
-                <span className={cn("text-sm font-medium px-3 py-1 rounded-full", trayComplete ? "bg-[#1e5631]/10 text-[#1e5631]" : "bg-amal-yellow/20 text-foreground")}>
+                <span className={cn("text-sm font-medium px-3 py-1 rounded-full", trayComplete ? "bg-[#1e5631]/10 text-[#1e5631]" : "bg-amal-yellow/20 text-foreground")} aria-live="polite">
                   {traySelections.length} / {TRAY_REQUIRED}
                 </span>
                 <h3 className="font-bold text-[#1e293b]">اختر {TRAY_REQUIRED} أصناف</h3>
@@ -393,7 +442,7 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
                   const isSelected = traySelections.includes(key)
                   const isDisabled = !isSelected && traySelections.length >= TRAY_REQUIRED
                   return (
-                    <button key={key} onClick={() => toggleTrayItem(item)} disabled={isDisabled} className={cn("flex items-center justify-between p-4 min-h-14 rounded-xl border-2 transition-all text-base text-right", isSelected ? "border-[#1e5631] bg-[#1e5631]/10 text-[#1e5631]" : "border-gray-200 bg-white text-[#1e293b]", isDisabled && "opacity-40 cursor-not-allowed")}>
+                    <button type="button" key={key} onClick={() => toggleTrayItem(item)} disabled={isDisabled} aria-pressed={isSelected} className={cn("flex items-center justify-between p-4 min-h-14 rounded-xl border-2 transition-all text-base text-right touch-manipulation", isSelected ? "border-[#1e5631] bg-[#1e5631]/10 text-[#1e5631]" : "border-gray-200 bg-white text-[#1e293b]", isDisabled && "opacity-40 cursor-not-allowed")}>
                       <span className="flex-1">{item.ar}</span>
                       {isSelected ? <Check className="h-4 w-4 flex-shrink-0 mr-1" /> : null}
                     </button>
@@ -410,7 +459,7 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
                 <span className="font-semibold text-sm text-right">بلاتر الأجبان</span>
               </div>
               <div className="flex items-center justify-between mb-3">
-                <span className={cn("text-sm font-medium px-3 py-1 rounded-full", eidComplete ? "bg-[#1e5631]/10 text-[#1e5631]" : "bg-amal-yellow/20 text-foreground")}>
+                <span className={cn("text-sm font-medium px-3 py-1 rounded-full", eidComplete ? "bg-[#1e5631]/10 text-[#1e5631]" : "bg-amal-yellow/20 text-foreground")} aria-live="polite">
                   {traySelections.length} / {eidRequired}
                 </span>
                 <h3 className="font-bold text-[#1e293b]">اختر {eidRequired} سخانات</h3>
@@ -424,7 +473,7 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
                   const isSelected = traySelections.includes(key)
                   const isDisabled = !isSelected && traySelections.length >= eidRequired
                   return (
-                    <button key={item} onClick={() => toggleTrayItem({ ar: item, en: item })} disabled={isDisabled} className={cn("flex items-center justify-between p-4 min-h-14 rounded-xl border-2 transition-all text-base text-right", isSelected ? "border-[#1e5631] bg-[#1e5631]/10 text-[#1e5631]" : "border-gray-200 bg-white text-[#1e293b]", isDisabled && "opacity-40 cursor-not-allowed")}>
+                    <button type="button" key={item} onClick={() => toggleTrayItem({ ar: item, en: item })} disabled={isDisabled} aria-pressed={isSelected} className={cn("flex items-center justify-between p-4 min-h-14 rounded-xl border-2 transition-all text-base text-right touch-manipulation", isSelected ? "border-[#1e5631] bg-[#1e5631]/10 text-[#1e5631]" : "border-gray-200 bg-white text-[#1e293b]", isDisabled && "opacity-40 cursor-not-allowed")}>
                       <span className="flex-1">{item}</span>
                       {isSelected ? <Check className="h-4 w-4 flex-shrink-0 mr-1" /> : null}
                     </button>
@@ -461,7 +510,7 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
                         const isSelected = selectedIngredients.includes(option.raw)
                         const colors = ["#efc0cc", "#f2df8f", "#f6e8ed"]
                         return (
-                          <button key={option.raw} onClick={() => toggleIngredient(option.raw)} className="flex flex-col items-center gap-1.5">
+                          <button type="button" key={option.raw} onClick={() => toggleIngredient(option.raw)} className="flex flex-col items-center gap-1.5 touch-manipulation" aria-pressed={isSelected}>
                             <span className="relative inline-flex items-center justify-center">
                               {isSelected ? (
                                 <span className="absolute -inset-1 rounded-lg border border-[#8a5064]" />
@@ -488,6 +537,7 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
                         const isSelected = selectedIngredients.includes(option.raw)
                         return (
                           <button
+                            type="button"
                             key={option.raw}
                             onClick={() => toggleIngredient(option.raw)}
                             className={cn(
@@ -527,7 +577,7 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
                     const isDisabled = !isSelected && maxSelections > 0 && selectedIngredients.length >= maxSelections
                     const parsed = parseVariantOption(ingredient, product.price)
                     return (
-                      <button key={ingredient} onClick={() => toggleIngredient(ingredient)} disabled={isDisabled} className={cn("flex items-center justify-between p-4 min-h-14 rounded-xl border-2 transition-all text-base", isSelected ? "border-[#1e5631] bg-[#1e5631]/10 text-[#1e5631]" : "border-gray-200 bg-white text-[#1e293b]", isDisabled && "opacity-50 cursor-not-allowed")}>
+                      <button type="button" key={ingredient} onClick={() => toggleIngredient(ingredient)} disabled={isDisabled} aria-pressed={isSelected} className={cn("flex items-center justify-between p-4 min-h-14 rounded-xl border-2 transition-all text-base touch-manipulation", isSelected ? "border-[#1e5631] bg-[#1e5631]/10 text-[#1e5631]" : "border-gray-200 bg-white text-[#1e293b]", isDisabled && "opacity-50 cursor-not-allowed")}>
                         {isSelected ? <Check className="h-4 w-4 flex-shrink-0" /> : null}
                         <div className="flex-1 text-right">
                           <div>{parsed.label}</div>
@@ -549,13 +599,13 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
         <div className={cn("px-6 pb-6 pt-3 border-t border-gray-100 flex-shrink-0", isTraySizeVariant && "border-t-0 pt-0 bg-[#f7f3f3]")}>
           {!isTraySizeVariant ? (
             <>
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between gap-3 mb-4 max-[380px]:flex-col max-[380px]:items-stretch">
                 <div className="flex items-center gap-3">
-                  <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors" aria-label="تقليل الكمية">
+                  <button type="button" onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors touch-manipulation" aria-label="تقليل الكمية">
                     <Minus className="h-4 w-4" />
                   </button>
-                  <span className="text-xl font-bold w-8 text-center">{quantity}</span>
-                  <button onClick={() => setQuantity(quantity + 1)} className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors" aria-label="زيادة الكمية">
+                  <span className="text-xl font-bold w-8 text-center" aria-live="polite">{quantity}</span>
+                  <button type="button" onClick={() => setQuantity(quantity + 1)} className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors touch-manipulation" aria-label="زيادة الكمية">
                     <Plus className="h-4 w-4" />
                   </button>
                 </div>
@@ -565,6 +615,7 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
               </div>
 
               <button
+                type="button"
                 onClick={handleAddToCart}
                 disabled={(((isTray && !isTraySizeVariant) && !trayComplete) || (isEidPackage && !eidComplete)) || product.inStock === false || isAddedFeedback}
                 className={cn(
@@ -595,14 +646,16 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
             <div dir="rtl">
               {showTrayOptionsStep ? (
                 <button
+                  type="button"
                   onClick={() => setTrayStep(1)}
                   className="w-full mb-2 h-10 rounded-xl border border-[#e2d6da] bg-white/90 text-[#7a3f51] text-sm font-semibold"
                 >
                   رجوع لاختيار الحجم
                 </button>
               ) : null}
-              <div className="flex items-center gap-3 min-h-10">
+              <div className="flex min-h-10 items-center gap-3 max-[380px]:flex-col">
                 <button
+                  type="button"
                   onClick={showTrayDesignStep ? () => setTrayStep(2) : handleAddToCart}
                   disabled={product.inStock === false || isAddedFeedback || (showTrayOptionsStep && !trayComplete)}
                   className={cn(
@@ -626,21 +679,23 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
                 </button>
 
                 <div
-                  className="border border-[#dddde2] bg-white flex items-center justify-center text-[#b6647e] h-10 min-w-[96px] rounded-[14px] px-2.5 gap-2"
+                  className="border border-[#dddde2] bg-white flex items-center justify-center text-[#b6647e] h-10 min-w-[96px] rounded-[14px] px-2.5 gap-2 max-[380px]:w-full"
                 >
                   <button
+                    type="button"
                     onClick={() => setQuantity(quantity + 1)}
-                    className="leading-none flex items-center justify-center w-6 h-6 text-[20px] font-bold"
+                    className="leading-none flex items-center justify-center w-8 h-8 text-[20px] font-bold touch-manipulation"
                     aria-label="زيادة الكمية"
                   >
                     +
                   </button>
-                  <span className="text-center font-extrabold text-[#2e2f4a] min-w-6 text-[20px] leading-none">
+                  <span className="text-center font-extrabold text-[#2e2f4a] min-w-6 text-[20px] leading-none" aria-live="polite">
                     {quantity}
                   </span>
                   <button
+                    type="button"
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="leading-none flex items-center justify-center w-6 h-6 text-[20px] font-bold"
+                    className="leading-none flex items-center justify-center w-8 h-8 text-[20px] font-bold touch-manipulation"
                     aria-label="تقليل الكمية"
                   >
                     -
@@ -652,14 +707,16 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
             <div dir="rtl">
               {showTrayOptionsStep ? (
                 <button
+                  type="button"
                   onClick={() => setTrayStep(1)}
                   className="w-full mb-2 h-10 rounded-full border border-[#efced7] bg-white text-[#7a3f51] text-sm font-semibold"
                 >
                   رجوع لاختيار الحجم
                 </button>
               ) : null}
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 max-[380px]:flex-col">
               <button
+                type="button"
                 onClick={showTrayDesignStep ? () => setTrayStep(2) : handleAddToCart}
                 disabled={product.inStock === false || isAddedFeedback || (showTrayOptionsStep && !trayComplete)}
                 className={cn(
@@ -682,18 +739,20 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
                   : "أضف للسلة"}
               </button>
 
-              <div className="h-14 rounded-full border border-[#efced7] bg-white px-4 flex items-center gap-4 text-[#b6647e]">
+              <div className="h-14 rounded-full border border-[#efced7] bg-white px-4 flex items-center gap-4 text-[#b6647e] max-[380px]:w-full max-[380px]:justify-center">
                 <button
+                  type="button"
                   onClick={() => setQuantity(quantity + 1)}
-                  className="text-[32px] leading-none"
+                  className="text-[32px] leading-none touch-manipulation"
                   aria-label="زيادة الكمية"
                 >
                   +
                 </button>
-                <span className="min-w-8 text-center text-[34px] font-extrabold text-[#2e2f4a]">{quantity}</span>
+                <span className="min-w-8 text-center text-[34px] font-extrabold text-[#2e2f4a]" aria-live="polite">{quantity}</span>
                 <button
+                  type="button"
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="text-[32px] leading-none"
+                  className="text-[32px] leading-none touch-manipulation"
                   aria-label="تقليل الكمية"
                 >
                   -

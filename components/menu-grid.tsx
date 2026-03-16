@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import { useState, useEffect, useMemo, useCallback } from "react"
 import dynamic from "next/dynamic"
@@ -6,7 +6,6 @@ import { useSearchParams } from "next/navigation"
 import { ProductCard, type TrayCardDesign } from "@/components/product-card"
 import { PackageCard } from "@/components/package-card"
 import { CategoryFilter } from "@/components/category-filter"
-import { SearchBar } from "@/components/search-bar"
 import { useBestSellerCardConfig } from "@/hooks/use-best-seller-card-config"
 import { useCategories, type Category } from "@/hooks/use-categories"
 import { useBestSellersConfig } from "@/hooks/use-best-sellers-config"
@@ -14,6 +13,7 @@ import { useMenu } from "@/hooks/use-menu"
 import type { MenuItem } from "@/components/cart-provider"
 import { getBestSellerCandidates } from "@/lib/best-sellers"
 import { smartFilterMenuItems } from "@/lib/smart-search"
+import { trackStorefrontEvent } from "@/lib/storefront-events"
 import { cn } from "@/lib/utils"
 
 const ProductDrawer = dynamic(
@@ -34,7 +34,12 @@ const BEST_SELLERS_CATEGORY: Category = {
   sections: undefined,
 }
 
-export function MenuGrid() {
+interface MenuGridProps {
+  searchQuery: string
+  onSearchQueryChange: (value: string) => void
+}
+
+export function MenuGrid({ searchQuery, onSearchQueryChange }: MenuGridProps) {
   const searchParams = useSearchParams()
   const { categories: allCategories } = useCategories()
   const categories = allCategories.filter((c) => c.isVisible)
@@ -60,7 +65,6 @@ export function MenuGrid() {
   const { config: bestSellerCardConfig } = useBestSellerCardConfig()
 
   const [selectedCategory, setSelectedCategory] = useState(BEST_SELLERS_CATEGORY_ID)
-  const [searchQuery, setSearchQuery] = useState("")
   const [debouncedSearch, setDebouncedSearch] = useState("")
   const [selectedProduct, setSelectedProduct] = useState<MenuItem | null>(null)
   const [showAllItems, setShowAllItems] = useState(false)
@@ -114,7 +118,6 @@ export function MenuGrid() {
   const dbCategories = useMemo(() => categoryConfig?.dbCategories || [], [categoryConfig])
   const sections = categoryConfig?.sections
   const isBestSellersCategory = selectedCategory === BEST_SELLERS_CATEGORY_ID
-
   const globalSearchResults = useMemo(() => {
     if (!debouncedSearch) return []
     return smartFilterMenuItems(menuItems, debouncedSearch)
@@ -138,14 +141,14 @@ export function MenuGrid() {
     () => (isBestSellersCategory ? featuredItems : menuItems.filter((item) => dbCategories.includes(item.category))),
     [isBestSellersCategory, featuredItems, menuItems, dbCategories]
   )
-
   const visibleFilteredItems = useMemo(
     () => (shouldLimitItems ? filteredItems.slice(0, INITIAL_VISIBLE_ITEMS) : filteredItems),
     [filteredItems, shouldLimitItems]
   )
+  const catalogGridClass = "grid grid-cols-1 gap-3 min-[390px]:grid-cols-2 sm:gap-4 md:grid-cols-3 md:gap-8"
   const bestSellerGridClass = isBestSellersCategory
-    ? "grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-8"
-    : "grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8"
+    ? "grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2 md:gap-8"
+    : catalogGridClass
 
   return (
     <div className="min-h-screen bg-background">
@@ -155,12 +158,22 @@ export function MenuGrid() {
         </div>
       ) : null}
 
-      <CategoryFilter selectedCategory={selectedCategory} onSelectCategory={setSelectedCategory} categories={categoriesForUi} />
-      <SearchBar value={searchQuery} onChange={setSearchQuery} />
+      <div
+        className="sticky z-30 border-b border-black/5 bg-background/88 backdrop-blur-xl"
+        style={{ top: "calc(7.75rem + env(safe-area-inset-top))" }}
+      >
+        <div className="mx-auto max-w-6xl pb-3 md:pb-4">
+          <CategoryFilter
+            selectedCategory={selectedCategory}
+            onSelectCategory={setSelectedCategory}
+            categories={categoriesForUi}
+          />
+        </div>
+      </div>
 
-      <div className="max-w-6xl mx-auto px-4 md:px-6 py-6 md:py-8 pb-32">
+      <div className="mx-auto max-w-6xl px-3 py-5 pb-40 sm:px-4 md:px-6 md:py-8 md:pb-32">
         {loading ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8">
+          <div className={catalogGridClass}>
             {[1, 2, 3, 4, 5, 6].map((i) => (
               <div key={i} className="space-y-3 md:space-y-4">
                 <div className="aspect-square bg-gray-200 rounded-xl md:rounded-2xl animate-pulse" />
@@ -178,8 +191,14 @@ export function MenuGrid() {
               <div className="flex flex-wrap justify-center gap-2 mt-4">
                 {SEARCH_SUGGESTIONS.map((suggestion) => (
                   <button
+                    type="button"
                     key={suggestion}
-                    onClick={() => setSearchQuery(suggestion)}
+                    onClick={() => {
+                      trackStorefrontEvent("search_suggestion_selected", {
+                        suggestion,
+                      })
+                      onSearchQueryChange(suggestion)
+                    }}
                     className="px-4 py-2 rounded-full border border-[#1e5631]/30 bg-white text-[#1e5631] text-sm hover:bg-[#1e5631]/5 transition-colors"
                   >
                     {suggestion}
@@ -192,7 +211,7 @@ export function MenuGrid() {
               <p className="text-sm text-muted-foreground mb-4 text-right" dir="rtl">
                 {globalSearchResults.length} نتيجة لـ "{debouncedSearch}"
               </p>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8">
+              <div className={catalogGridClass}>
                 {globalSearchResults.map((item, idx) => (
                   <ProductCard
                     key={item.id}
@@ -217,7 +236,7 @@ export function MenuGrid() {
               return (
                 <div key={section.dbCategory} className={cn("contain-layout", section.dbCategory !== sections[0]?.dbCategory && "[content-visibility:auto] [contain-intrinsic-size:1px_1200px]")}>
                   <h2 className="text-xl md:text-2xl font-bold text-[#1e293b] text-right mb-4 md:mb-8">{section.label}</h2>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8">
+                  <div className={catalogGridClass}>
                     {visibleSectionItems.map((item, idx) =>
                       item.category === "eid" ? (
                         <PackageCard key={item.id} item={item} onSelect={setSelectedProduct} priority={idx < 4 && section.dbCategory === sections[0]?.dbCategory} variant={itemVariant} />

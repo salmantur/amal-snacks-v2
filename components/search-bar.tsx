@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import { Search, X } from "lucide-react"
 
@@ -9,7 +9,7 @@ interface SearchBarProps {
 
 export function SearchBar({ value, onChange }: SearchBarProps) {
   return (
-    <div className="px-4 mt-4">
+    <div className="mt-2 sm:mt-4">
       <div className="relative">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
         <input

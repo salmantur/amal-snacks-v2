@@ -56,6 +56,7 @@ type CheckoutErrors = {
 };
 type OrderMode = "pickup" | "delivery";
 type CouponStatusTone = "success" | "error" | "info";
+type CheckoutIssueTone = "warning" | "error";
 
 const EMPTY_DELIVERY_INFO = {
   name: "",
@@ -458,6 +459,10 @@ function CheckoutContent() {
   const [manualWhatsAppUrl, setManualWhatsAppUrl] = useState<string | null>(
     null,
   );
+  const [checkoutIssue, setCheckoutIssue] = useState<{
+    tone: CheckoutIssueTone;
+    message: string;
+  } | null>(null);
   const [couponInput, setCouponInput] = useState("");
   const [appliedCouponCode, setAppliedCouponCode] = useState<string | null>(
     null,
@@ -1000,6 +1005,7 @@ function CheckoutContent() {
 
   const handleWhatsAppCheckout = async () => {
     setSubmitted(true);
+    setCheckoutIssue(null);
     const nextErrors = validate();
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) {
@@ -1086,15 +1092,17 @@ function CheckoutContent() {
       areaSelected: Boolean(selectedArea),
     });
 
-    const whatsappWindow = window.open(
-      whatsappUrl,
-      "_blank",
-      "noopener,noreferrer",
-    );
+    const whatsappWindow = window.open("", "_blank");
     if (whatsappWindow) {
+      renderWhatsAppHandoffWindow(whatsappWindow, "saving");
       trackCheckoutEvent("whatsapp_popup_opened", { blocked: false });
     } else {
       trackCheckoutEvent("whatsapp_popup_opened", { blocked: true });
+      setCheckoutIssue({
+        tone: "warning",
+        message:
+          "تعذر فتح نافذة واتساب تلقائيًا. استخدم الزر اليدوي بالأسفل إذا لم يتم الانتقال.",
+      });
       showActionFeedback(
         "إذا لم يفتح واتساب تلقائيًا فاستخدم الزر اليدوي بالأسفل.",
       );
@@ -1148,9 +1156,23 @@ function CheckoutContent() {
         total: confirmedTotal,
         discount: confirmedDiscount,
       });
+      if (whatsappWindow && !whatsappWindow.closed) {
+        renderWhatsAppHandoffWindow(whatsappWindow, "opening", whatsappUrl);
+        window.setTimeout(() => {
+          try {
+            whatsappWindow.opener = null;
+            whatsappWindow.location.replace(whatsappUrl);
+          } catch {
+            window.open(whatsappUrl, "_blank");
+          }
+        }, 250);
+      }
       router.push(confirmationUrl);
     } catch (error) {
       window.clearTimeout(timeoutId);
+      if (whatsappWindow && !whatsappWindow.closed) {
+        renderWhatsAppHandoffWindow(whatsappWindow, "error");
+      }
       try {
         if (!whatsappWindow || whatsappWindow.closed) {
           window.open(whatsappUrl, "_blank");
@@ -1161,11 +1183,13 @@ function CheckoutContent() {
       trackCheckoutEvent("checkout_failed", {
         reason: error instanceof Error ? error.name : "unknown",
       });
-      alert(
-        error instanceof Error && error.name === "AbortError"
-          ? "استغرق حفظ الطلب وقتًا أطول من المتوقع، لكن تم تجهيز واتساب لإكمال الطلب."
-          : "تعذر حفظ الطلب تلقائيًا، لكن تم تجهيز واتساب لإكمال الطلب.",
-      );
+      setCheckoutIssue({
+        tone: "error",
+        message:
+          error instanceof Error && error.name === "AbortError"
+            ? "استغرق حفظ الطلب وقتًا أطول من المتوقع، لكن تم تجهيز واتساب لإكمال الطلب يدويًا."
+            : "تعذر حفظ الطلب تلقائيًا، لكن ما زال بإمكانك المتابعة عبر واتساب اليدوي.",
+      });
       setIsSubmitting(false);
     }
   };
@@ -1216,11 +1240,26 @@ function CheckoutContent() {
         <div className="hidden">
           <ProgressStep label="السلة" done={items.length > 0} />
         </div>
+
+        <div className={cn("mx-auto px-4 pb-3", layoutWidthClass)}>
+          <div className="grid grid-cols-3 gap-2 rounded-2xl border border-slate-200/80 bg-white/80 px-3 py-2 shadow-sm">
+            <ProgressStep label="البيانات" done={infoDone} />
+            <ProgressStep
+              label={isPickup ? "الاستلام" : "المنطقة"}
+              done={isPickup || Boolean(selectedArea)}
+            />
+            <ProgressStep label="الموعد" done={scheduleDone} />
+          </div>
+        </div>
       </header>
 
       {actionFeedback ? (
         <div className="px-4 pt-3">
-          <div className="rounded-2xl border border-primary/25 bg-primary/10 text-primary text-sm font-medium px-4 py-3 animate-in fade-in slide-in-from-top-1 duration-300">
+          <div
+            className="rounded-2xl border border-primary/25 bg-primary/10 px-4 py-3 text-sm font-medium text-primary animate-in fade-in slide-in-from-top-1 duration-300"
+            role="status"
+            aria-live="polite"
+          >
             {actionFeedback}
           </div>
         </div>
@@ -1228,7 +1267,11 @@ function CheckoutContent() {
 
       {manualWhatsAppUrl ? (
         <div className="px-4 pt-3">
-          <div className="rounded-2xl border border-[#25D366]/25 bg-[#25D366]/10 px-4 py-3 text-right">
+          <div
+            className="rounded-2xl border border-[#25D366]/25 bg-[#25D366]/10 px-4 py-3 text-right"
+            role="status"
+            aria-live="polite"
+          >
             <p className="text-sm font-semibold text-[#1f8f48]">
               زر واتساب اليدوي جاهز إذا احتجته
             </p>
@@ -1237,9 +1280,54 @@ function CheckoutContent() {
               target="_blank"
               rel="noopener noreferrer"
               className="mt-3 inline-flex min-h-11 items-center justify-center rounded-full bg-[#25D366] px-4 text-sm font-bold text-white"
+              onClick={() =>
+                trackCheckoutEvent("manual_whatsapp_opened", {
+                  source: "banner",
+                })
+              }
             >
               فتح واتساب يدويًا
             </a>
+          </div>
+        </div>
+      ) : null}
+
+      {checkoutIssue ? (
+        <div className="px-4 pt-3">
+          <div
+            className={cn(
+              "rounded-2xl border px-4 py-3 text-right",
+              checkoutIssue.tone === "error"
+                ? "border-red-200 bg-red-50 text-red-700"
+                : "border-amber-200 bg-amber-50 text-amber-800",
+            )}
+            role="alert"
+          >
+            <p className="text-sm font-semibold">{checkoutIssue.message}</p>
+            <div className="mt-3 flex flex-wrap justify-end gap-2">
+              {manualWhatsAppUrl ? (
+                <a
+                  href={manualWhatsAppUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex min-h-10 items-center justify-center rounded-full bg-[#25D366] px-4 text-sm font-bold text-white"
+                  onClick={() =>
+                    trackCheckoutEvent("manual_whatsapp_opened", {
+                      source: "issue_banner",
+                    })
+                  }
+                >
+                  فتح واتساب يدويًا
+                </a>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => setCheckoutIssue(null)}
+                className="inline-flex min-h-10 items-center justify-center rounded-full border border-current/20 px-4 text-sm font-semibold"
+              >
+                إخفاء التنبيه
+              </button>
+            </div>
           </div>
         </div>
       ) : null}
@@ -1652,20 +1740,28 @@ function CheckoutContent() {
               <div className="space-y-3">
                 <div className="relative">
                   <User className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <label htmlFor="checkout-name" className="sr-only">
+                    الاسم الكامل
+                  </label>
                   <input
+                    id="checkout-name"
                     type="text"
                     placeholder="الاسم الكامل *"
                     value={deliveryInfo.name}
                     onChange={(e) => handleInputChange("name", e.target.value)}
+                    autoComplete="name"
+                    enterKeyHint="next"
                     className={cn(
                       fieldBaseClass,
                       errors.name &&
                         "ring-2 ring-red-300 border border-red-300",
                     )}
                     aria-invalid={Boolean(errors.name)}
+                    aria-describedby={errors.name ? "checkout-name-error" : undefined}
                   />
                   {errors.name ? (
                     <p
+                      id="checkout-name-error"
                       className="text-sm font-medium text-red-600 mt-1 pr-2"
                       role="alert"
                     >
@@ -1676,22 +1772,33 @@ function CheckoutContent() {
 
                 <div className="relative">
                   <Phone className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <label htmlFor="checkout-phone" className="sr-only">
+                    رقم الهاتف
+                  </label>
                   <input
+                    id="checkout-phone"
                     type="tel"
                     inputMode="tel"
                     dir="ltr"
                     placeholder="رقم الهاتف *"
                     value={deliveryInfo.phone}
                     onChange={(e) => handleInputChange("phone", e.target.value)}
+                    autoComplete="tel-national"
+                    enterKeyHint={isPickup ? "done" : "next"}
+                    maxLength={12}
                     className={cn(
                       fieldBaseClass,
                       errors.phone &&
                         "ring-2 ring-red-300 border border-red-300",
                     )}
                     aria-invalid={Boolean(errors.phone)}
+                    aria-describedby={
+                      errors.phone ? "checkout-phone-error" : undefined
+                    }
                   />
                   {errors.phone ? (
                     <p
+                      id="checkout-phone-error"
                       className="text-sm font-medium text-red-600 mt-1 pr-2"
                       role="alert"
                     >
@@ -1706,6 +1813,13 @@ function CheckoutContent() {
                       <div className="flex items-center justify-between gap-3">
                         <div className="text-right">
                           <p className="text-sm font-semibold">موقع التوصيل</p>
+                          <p
+                            id="checkout-location-hint"
+                            className="mt-1 text-xs text-muted-foreground"
+                          >
+                            الصق رابط الموقع من خرائط Google أو استخدم تحديد
+                            موقعي
+                          </p>
                         </div>
                         <Button
                           type="button"
@@ -1720,7 +1834,11 @@ function CheckoutContent() {
                         </Button>
                       </div>
 
+                      <label htmlFor="checkout-location" className="sr-only">
+                        رابط موقع التوصيل
+                      </label>
                       <input
+                        id="checkout-location"
                         type="url"
                         inputMode="url"
                         dir="ltr"
@@ -1729,10 +1847,15 @@ function CheckoutContent() {
                         onChange={(e) =>
                           handleInputChange("locationUrl", e.target.value)
                         }
+                        autoComplete="off"
+                        autoCapitalize="none"
+                        spellCheck={false}
+                        enterKeyHint="done"
                         className={cn(
                           "mt-3 h-12 rounded-2xl border border-border px-4 text-left",
                           theme.input,
                         )}
+                        aria-describedby="checkout-location-hint"
                       />
                     </div>
                   </>
@@ -1773,7 +1896,11 @@ function CheckoutContent() {
                 <div className="space-y-3">
                   <div className="relative">
                     <MapPin className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <label htmlFor="checkout-area" className="sr-only">
+                      منطقة التوصيل
+                    </label>
                     <select
+                      id="checkout-area"
                       value={deliveryInfo.area}
                       onChange={(e) => {
                         const value = e.target.value;
@@ -1790,6 +1917,9 @@ function CheckoutContent() {
                           "ring-2 ring-red-300 border border-red-300",
                       )}
                       aria-invalid={Boolean(errors.area)}
+                      aria-describedby={
+                        errors.area ? "checkout-area-error" : undefined
+                      }
                     >
                       <option value="">اختر منطقة التوصيل *</option>
                       {deliveryAreas.map((area) => (
@@ -1802,6 +1932,7 @@ function CheckoutContent() {
 
                   {errors.area ? (
                     <p
+                      id="checkout-area-error"
                       className="pr-2 text-sm font-medium text-red-600"
                       role="alert"
                     >
@@ -2074,11 +2205,20 @@ function CheckoutContent() {
                   كود الخصم
                 </label>
                 <div className="flex gap-2">
+                  <label htmlFor="checkout-coupon" className="sr-only">
+                    كود الخصم
+                  </label>
                   <input
+                    id="checkout-coupon"
                     type="text"
                     value={couponInput}
                     onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
                     placeholder="WELCOME10"
+                    dir="ltr"
+                    autoComplete="off"
+                    autoCapitalize="none"
+                    spellCheck={false}
+                    enterKeyHint="done"
                     className={cn(
                       "h-11 flex-1 rounded-xl border border-border px-3 text-right",
                       theme.input,
@@ -2213,6 +2353,11 @@ function CheckoutContent() {
               target="_blank"
               rel="noopener noreferrer"
               className="flex min-h-12 items-center justify-center rounded-full border border-[#25D366]/25 bg-[#25D366]/10 px-4 text-sm font-semibold text-[#1f8f48]"
+              onClick={() =>
+                trackCheckoutEvent("manual_whatsapp_opened", {
+                  source: "sticky_cta",
+                })
+              }
             >
               فتح واتساب يدويًا
             </a>

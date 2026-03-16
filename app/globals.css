@@ -62,6 +62,8 @@
     overscroll-behavior-y: contain;
     /* Safe area insets for iPhone notch / Dynamic Island */
     padding-bottom: env(safe-area-inset-bottom);
+    min-height: 100dvh;
+    overflow-x: hidden;
   }
   :lang(ar) {
     letter-spacing: 0;
@@ -70,6 +72,11 @@
   @media (max-width: 768px) {
     :lang(ar) {
       font-size: 1.03rem;
+    }
+    input,
+    textarea,
+    select {
+      font-size: 16px;
     }
   }
   input:focus-visible,
@@ -94,6 +101,8 @@
   /* Smooth scrolling everywhere */
   html {
     scroll-behavior: smooth;
+    min-height: 100%;
+    overflow-x: hidden;
   }
 }
 

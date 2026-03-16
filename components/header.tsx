@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import { ShoppingBag, X, Sparkles, Menu, ChevronLeft, ChevronRight } from "lucide-react"
 import { useState, useEffect, useRef, type KeyboardEvent as ReactKeyboardEvent } from "react"
@@ -190,11 +190,14 @@ export function Header() {
           backdropFilter: scrolled ? "blur(12px)" : "none",
         }}
       >
-        <div className="relative flex items-center justify-between px-4 py-3">
+        <div
+          className="relative flex min-h-[4.5rem] items-center justify-between px-4 pb-3 pt-3 md:px-6"
+          style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top))" }}
+        >
           <button
             ref={menuTriggerRef}
             onClick={() => setMenuOpen(true)}
-            className="w-10 h-10 flex items-center justify-center active:opacity-60 transition-opacity"
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-[#f8fafc] active:opacity-60 transition-opacity"
             aria-haspopup="dialog"
             aria-expanded={menuOpen}
             aria-controls="header-menu-dialog"
@@ -210,7 +213,7 @@ export function Header() {
           <button
             ref={cartTriggerRef}
             onClick={() => setCartOpen(true)}
-            className="relative flex items-center gap-2 rounded-full active:scale-95 transition-all duration-150"
+            className="relative flex min-h-11 items-center gap-2 rounded-full active:scale-95 transition-all duration-150"
             style={{
               background: totalItems > 0 ? "var(--foreground)" : "#f5f5f5",
               padding: totalItems > 0 ? "8px 14px 8px 10px" : "10px",
@@ -251,7 +254,7 @@ export function Header() {
             id="header-cart-dialog"
             ref={cartDialogRef}
             className="absolute bottom-0 left-0 right-0 bg-background rounded-t-3xl flex flex-col"
-            style={{ maxHeight: "80vh", paddingBottom: "env(safe-area-inset-bottom)" }}
+            style={{ maxHeight: "min(88dvh, 48rem)", paddingBottom: "env(safe-area-inset-bottom)" }}
             role="dialog"
             aria-modal="true"
             aria-labelledby="header-cart-title"
@@ -273,7 +276,7 @@ export function Header() {
                   <button
                     ref={cartCloseButtonRef}
                     onClick={() => setCartOpen(false)}
-                    className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center active:scale-95"
+                    className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center active:scale-95"
                     aria-label="إغلاق السلة"
                   >
                     <X className="h-4 w-4" />
@@ -308,14 +311,14 @@ export function Header() {
                     <div className="flex items-center gap-1.5 flex-shrink-0">
                       <button
                         onClick={() => item.quantity === 1 ? removeItem(item.cartKey) : updateQuantity(item.cartKey, item.quantity - 1)}
-                        className="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center active:scale-95 text-base font-bold"
+                        className="h-10 w-10 rounded-full bg-white border border-gray-200 flex items-center justify-center active:scale-95 text-base font-bold"
                       >
                         {item.quantity === 1 ? <X className="h-3 w-3 text-red-400" /> : "-"}
                       </button>
-                      <span className="text-sm font-bold w-5 text-center">{item.quantity}</span>
+                      <span className="w-6 text-center text-sm font-bold">{item.quantity}</span>
                       <button
                         onClick={() => updateQuantity(item.cartKey, item.quantity + 1)}
-                        className="w-8 h-8 rounded-full bg-foreground text-background flex items-center justify-center active:scale-95 text-base font-bold"
+                        className="h-10 w-10 rounded-full bg-foreground text-background flex items-center justify-center active:scale-95 text-base font-bold"
                       >
                         +
                       </button>
@@ -333,7 +336,7 @@ export function Header() {
                     <PriceWithRiyalLogo value={totalPrice} />
                   </span>
                 </div>
-                <div className="flex gap-3">
+                <div className="flex flex-col gap-3 sm:flex-row">
                   <button
                     onClick={() => setCartOpen(false)}
                     className="py-3.5 px-5 rounded-2xl bg-[#f5f5f5] text-foreground font-medium active:scale-95 transition-transform text-sm"
@@ -360,8 +363,12 @@ export function Header() {
           <div
             id="header-menu-dialog"
             ref={menuDialogRef}
-            className="absolute top-0 right-0 bottom-0 w-72 bg-white flex flex-col shadow-2xl"
-            style={{ borderRadius: "0 0 0 24px" }}
+            className="absolute top-0 right-0 bottom-0 flex w-[min(92vw,24rem)] flex-col bg-white shadow-2xl"
+            style={{
+              borderRadius: "0 0 0 24px",
+              paddingBottom: "env(safe-area-inset-bottom)",
+              paddingTop: "env(safe-area-inset-top)",
+            }}
             role="dialog"
             aria-modal="true"
             aria-labelledby="header-menu-title"
@@ -372,7 +379,7 @@ export function Header() {
               <button
                 ref={menuCloseButtonRef}
                 onClick={() => setMenuOpen(false)}
-                className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center active:scale-95"
+                className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center active:scale-95"
                 aria-label="إغلاق القائمة"
               >
                 <ChevronRight className="h-4 w-4" />
@@ -389,7 +396,7 @@ export function Header() {
                       window.dispatchEvent(new CustomEvent("selectCategory", { detail: cat.id }))
                     }, 100)
                   }}
-                  className="w-full flex items-center justify-between px-5 py-3.5 active:bg-gray-50 transition-colors border-b border-gray-50 last:border-0"
+                  className="flex min-h-12 w-full items-center justify-between border-b border-gray-50 px-5 py-3.5 transition-colors active:bg-gray-50 last:border-0"
                 >
                   <ChevronLeft className="h-4 w-4 text-gray-300 flex-shrink-0" />
                   <span className="font-medium text-[15px] text-gray-800">{cat.label}</span>

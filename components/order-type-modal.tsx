@@ -44,26 +44,29 @@ export function OrderTypeModal({
       }}
     >
       <DialogContent className="max-h-[min(88dvh,40rem)] w-[min(92vw,28rem)] overflow-y-auto rounded-[2rem] border border-white/70 bg-[radial-gradient(circle_at_top,#fff8fb_0%,#f5eff3_48%,#efe6ec_100%)] p-0 shadow-[0_32px_90px_rgba(8,18,45,0.22)] [&>button]:hidden">
-        <div className="px-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-6 sm:px-6 sm:pb-6">
+        <div
+          className="px-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-6 sm:px-6 sm:pb-6"
+          dir="rtl"
+        >
           <div className="text-center">
-            <p className="text-[0.7rem] font-semibold tracking-[0.24em] text-[#9b7a86]">
-              PICKUP OR DELIVERY
+            <p className="text-[0.72rem] font-semibold tracking-[0.24em] text-[#9b7a86]">
+              طريقة الاستلام
             </p>
             <h2 className="mt-2 text-[1.7rem] font-black tracking-tight text-[#08122d] sm:text-[1.9rem]">
               اختر طريقة استلام الطلب
             </h2>
             <p className="mt-2 text-sm leading-6 text-[#6f7382]">
-              اختر الخيار المناسب لك وسنكمل الطلب بالخطوات التالية.
+              اختر الخيار المناسب لك وسنكمل تفاصيل الطلب في الخطوة التالية.
             </p>
           </div>
 
-          <div className="mt-5 grid gap-3">
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
             <button
               type="button"
               onClick={() => handleSelect("delivery")}
               disabled={isLocked}
               className={cn(
-                "relative min-h-[11rem] rounded-[1.6rem] border px-4 py-5 text-center transition-all duration-200 sm:min-h-[11.5rem]",
+                "relative min-h-[10rem] rounded-[1.6rem] border px-4 py-5 text-center transition-all duration-200 sm:min-h-[11.5rem]",
                 isSelected("delivery")
                   ? "border-[#ef3d7f] bg-[#fff4f8] shadow-[0_18px_45px_rgba(239,61,127,0.16)]"
                   : "border-[#e1dde1] bg-white/85 hover:border-[#ef3d7f]/35 hover:bg-white",
@@ -102,7 +105,7 @@ export function OrderTypeModal({
               onClick={() => handleSelect("pickup")}
               disabled={isLocked}
               className={cn(
-                "relative min-h-[11rem] rounded-[1.6rem] border px-4 py-5 text-center transition-all duration-200 sm:min-h-[11.5rem]",
+                "relative min-h-[10rem] rounded-[1.6rem] border px-4 py-5 text-center transition-all duration-200 sm:min-h-[11.5rem]",
                 isSelected("pickup")
                   ? "border-[#ef3d7f] bg-[#fff7ea] shadow-[0_18px_45px_rgba(241,181,20,0.14)]"
                   : "border-[#e1dde1] bg-white/85 hover:border-[#f1b514]/40 hover:bg-white",
@@ -135,6 +138,15 @@ export function OrderTypeModal({
                 استلم الطلب بنفسك بدون رسوم توصيل.
               </p>
             </button>
+          </div>
+
+          <div className="mt-4 rounded-[1.3rem] border border-white/70 bg-white/70 px-4 py-3 text-right shadow-[0_10px_24px_rgba(8,18,45,0.06)]">
+            <p className="text-xs font-semibold tracking-[0.16em] text-[#9b7a86]">
+              الخطوة التالية
+            </p>
+            <p className="mt-1 text-sm leading-6 text-[#6f7382]">
+              سنكمل العنوان أو وقت الاستلام بعد اختيار النوع المناسب.
+            </p>
           </div>
         </div>
       </DialogContent>

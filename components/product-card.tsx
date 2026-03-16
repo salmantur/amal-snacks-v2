@@ -395,7 +395,7 @@ export const ProductCard = memo(function ProductCard({
             <div className="pointer-events-none absolute inset-y-0 right-0 w-24 bg-[linear-gradient(90deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.78)_62%,rgba(255,255,255,1)_100%)]" />
             {item.inStock === false ? (
               <div className="absolute inset-0 bg-black/35 flex items-center justify-center">
-                <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-gray-800">نفذت الكمية</span>
+                <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-gray-800">{"\u0646\u0641\u062f\u062a \u0627\u0644\u0643\u0645\u064a\u0629"}</span>
               </div>
             ) : null}
           </div>
@@ -403,7 +403,7 @@ export const ProductCard = memo(function ProductCard({
           <div className="flex min-h-[360px] flex-col justify-center px-4 py-6 text-right" dir="rtl">
             <h3 className="text-[2.7rem] font-black leading-[0.95] text-black sm:text-[3.1rem]">{item.name}</h3>
             <p className="mt-5 text-[1.05rem] leading-9 text-black/85">
-              {item.description || "اختر الحجم المناسب لوجبتك واستمتع بطعم جاهز للتقديم."}
+              {item.description || "\u0627\u062e\u062a\u0631 \u0627\u0644\u062d\u062c\u0645 \u0627\u0644\u0645\u0646\u0627\u0633\u0628 \u0644\u0648\u062c\u0628\u062a\u0643 \u0648\u0627\u0633\u062a\u0645\u062a\u0639 \u0628\u0637\u0639\u0645 \u062c\u0627\u0647\u0632 \u0644\u0644\u062a\u0642\u062f\u064a\u0645."}
             </p>
             <div className="mt-6">
               <span className="inline-flex rounded-[26px] bg-white px-7 py-4 text-[2rem] font-black text-black shadow-[0_14px_28px_rgba(0,0,0,0.14)]">
@@ -482,7 +482,7 @@ export const ProductCard = memo(function ProductCard({
                   lineHeight: 1.45,
                 }}
               >
-                {item.description || "اختر الحجم الصغير أو الوسط أو الكبير حسب المناسبة."}
+                {item.description || "\u0627\u062e\u062a\u0631 \u0627\u0644\u062d\u062c\u0645 \u0627\u0644\u0635\u063a\u064a\u0631 \u0623\u0648 \u0627\u0644\u0648\u0633\u0637 \u0623\u0648 \u0627\u0644\u0643\u0628\u064a\u0631 \u062d\u0633\u0628 \u0627\u0644\u0645\u0646\u0627\u0633\u0628\u0629."}
               </p>
             ) : null}
             <div
@@ -513,7 +513,7 @@ export const ProductCard = memo(function ProductCard({
           </div>
           {item.inStock === false ? (
             <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-              <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-gray-800">نفذت الكمية</span>
+              <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-gray-800">{"\u0646\u0641\u062f\u062a \u0627\u0644\u0643\u0645\u064a\u0629"}</span>
             </div>
           ) : null}
         </div>
@@ -555,23 +555,23 @@ export const ProductCard = memo(function ProductCard({
           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.12)_0%,rgba(255,255,255,0.48)_36%,rgba(255,255,255,0.86)_72%,rgba(255,255,255,0.95)_100%)]" />
           <div className="absolute inset-x-0 top-0 px-7 pt-8 text-right" dir="rtl">
             <span className="inline-flex rounded-full bg-[#c8a44d]/80 px-4 py-1 text-sm font-bold text-white">
-              صناعة يدوية فاخرة
+              {"\u0635\u0646\u0627\u0639\u0629 \u064a\u062f\u0648\u064a\u0629 \u0641\u0627\u062e\u0631\u0629"}
             </span>
             <h3 className="mt-6 text-[3rem] font-black leading-none text-[#10162f]">{item.name}</h3>
             <p className="mt-5 max-w-[90%] text-[1.05rem] leading-9 text-[#10162f]/82">
-              {item.description || "استمتع بتقديم فاخر مع تفاصيل مدروسة وطعم يليق بالمناسبات."}
+              {item.description || "\u0627\u0633\u062a\u0645\u062a\u0639 \u0628\u062a\u0642\u062f\u064a\u0645 \u0641\u0627\u062e\u0631 \u0645\u0639 \u062a\u0641\u0627\u0635\u064a\u0644 \u0645\u062f\u0631\u0648\u0633\u0629 \u0648\u0637\u0639\u0645 \u064a\u0644\u064a\u0642 \u0628\u0627\u0644\u0645\u0646\u0627\u0633\u0628\u0627\u062a."}
             </p>
           </div>
           <div className="absolute inset-x-0 bottom-0 px-7 pb-8 text-right" dir="rtl">
             <div className="text-[3rem] font-black leading-none text-[#f44784]">
               <PriceWithRiyalLogo value={displayPrice} />
             </div>
-            {isTraySizeVariantCard ? <p className="mt-5 text-xl font-bold text-[#10162f]">اختر الحجم:</p> : null}
+            {isTraySizeVariantCard ? <p className="mt-5 text-xl font-bold text-[#10162f]">{"\u0627\u062e\u062a\u0631 \u0627\u0644\u062d\u062c\u0645:"}</p> : null}
             {renderChipSelector()}
           </div>
           {item.inStock === false ? (
             <div className="absolute inset-0 bg-black/35 flex items-center justify-center">
-              <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-gray-800">نفذت الكمية</span>
+              <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-gray-800">{"\u0646\u0641\u062f\u062a \u0627\u0644\u0643\u0645\u064a\u0629"}</span>
             </div>
           ) : null}
         </div>
@@ -584,7 +584,7 @@ export const ProductCard = memo(function ProductCard({
       onClick={() => item.inStock !== false && onSelect(item)}
       className={cn(
         cardBaseClass,
-        useFloatingTrayStyle && "col-span-2 md:col-span-1",
+        useFloatingTrayStyle && "col-span-1 min-[390px]:col-span-2 md:col-span-1",
         v.container
       )}
       role="button"
@@ -687,7 +687,7 @@ export const ProductCard = memo(function ProductCard({
 
         {item.inStock === false ? (
           <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-            <span className="bg-white text-gray-800 text-xs font-bold px-3 py-1 rounded-full">نفذت الكمية</span>
+            <span className="bg-white text-gray-800 text-xs font-bold px-3 py-1 rounded-full">{"\u0646\u0641\u062f\u062a \u0627\u0644\u0643\u0645\u064a\u0629"}</span>
           </div>
         ) : null}
       </div>
@@ -697,7 +697,7 @@ export const ProductCard = memo(function ProductCard({
         <p className={cn("text-sm mt-1 line-clamp-2 leading-relaxed", v.desc)} style={descColorStyle}>{item.description}</p>
         <div className="mt-2 text-right">
           {hasVariantPricing ? (
-            <p className="text-xs text-muted-foreground mb-0.5">يبدأ من</p>
+            <p className="text-xs text-muted-foreground mb-0.5">{"\u064a\u0628\u062f\u0623 \u0645\u0646"}</p>
           ) : null}
           <p className={cn("font-bold", v.price)} style={priceColorStyle}>
             <PriceWithRiyalLogo value={displayPrice} />

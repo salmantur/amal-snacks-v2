@@ -8,6 +8,7 @@ import { useMenu } from "@/hooks/use-menu"
 import { useCart } from "@/components/cart-provider"
 import { ProductDrawer } from "@/components/product-drawer"
 import { PriceWithRiyalLogo } from "@/components/ui/price-with-riyal-logo"
+import { trackStorefrontEvent } from "@/lib/storefront-events"
 
 export function HeroBanner() {
   const { config, loading } = useBannerConfig()
@@ -19,20 +20,26 @@ export function HeroBanner() {
   const featuredProduct = config.featured_product_id
     ? menuItems.find((m) => m.id === config.featured_product_id) || null
     : null
+
   const featuredNeedsConfiguration = Boolean(
     featuredProduct &&
       (featuredProduct.category === "trays" ||
         featuredProduct.category === "eid" ||
-        (featuredProduct.ingredients?.length ?? 0) > 0)
+        (featuredProduct.ingredients?.length ?? 0) > 0),
   )
 
   if (loading) {
-    return <div className="mx-4 mt-4 rounded-3xl bg-amal-pink-light/50 h-44 animate-pulse" />
+    return (
+      <div className="mx-4 mt-4 h-44 animate-pulse rounded-[2rem] bg-amal-pink-light/50 md:rounded-3xl" />
+    )
   }
 
   if (config.full_design_mode && config.full_design_url) {
     return (
-      <div className="mx-4 mt-4 rounded-3xl overflow-hidden relative" style={{ aspectRatio: "2.5/1" }}>
+      <div
+        className="relative mx-4 mt-4 overflow-hidden rounded-[2rem] md:rounded-3xl"
+        style={{ aspectRatio: "2.5/1" }}
+      >
         <Image
           src={config.full_design_url}
           alt="banner design"
@@ -54,38 +61,58 @@ export function HeroBanner() {
     return (
       <>
         <div
-          className="mx-4 mt-4 rounded-3xl overflow-hidden relative"
-          style={{ background: `linear-gradient(135deg, ${config.bg_from}, ${config.bg_to})` }}
+          className="relative mx-4 mt-4 overflow-hidden rounded-[2rem] md:rounded-3xl"
+          style={{
+            background: `linear-gradient(135deg, ${config.bg_from}, ${config.bg_to})`,
+          }}
         >
-          <div className="flex items-stretch min-h-[160px]">
-            <div className="flex-1 p-5 flex flex-col justify-between" dir="rtl">
-              <span className="self-start bg-white/80 text-foreground text-xs font-bold px-3 py-1 rounded-full backdrop-blur-sm">
-                {config.featured_product_label || "جديد 🔥"}
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.22),transparent_38%)]" />
+          <div className="relative flex min-h-[180px] items-stretch">
+            <div className="flex flex-1 flex-col justify-between p-5 sm:p-6" dir="rtl">
+              <span className="self-start rounded-full bg-white/80 px-3 py-1 text-xs font-bold text-foreground backdrop-blur-sm">
+                {config.featured_product_label || "جديد"}
               </span>
 
               <div className="mt-3">
-                <h2 className="text-xl font-black text-foreground leading-tight line-clamp-2">{featuredProduct.name}</h2>
-                {featuredProduct.nameEn ? <p className="text-xs text-foreground/60 mt-0.5">{featuredProduct.nameEn}</p> : null}
-                <p className="text-lg font-black text-foreground/80 mt-1">
+                <h2 className="line-clamp-2 text-xl font-black leading-tight text-foreground">
+                  {featuredProduct.name}
+                </h2>
+                {featuredProduct.nameEn ? (
+                  <p className="mt-0.5 text-xs text-foreground/60">
+                    {featuredProduct.nameEn}
+                  </p>
+                ) : null}
+                <p className="mt-1 text-lg font-black text-foreground/80">
                   <PriceWithRiyalLogo value={featuredProduct.price} />
                 </p>
               </div>
 
               <button
+                type="button"
                 onClick={() => {
                   if (featuredNeedsConfiguration) {
+                    trackStorefrontEvent("hero_feature_opened", {
+                      productId: featuredProduct.id,
+                      category: featuredProduct.category,
+                      mode: "configured",
+                    })
                     setDrawerOpen(true)
                     return
                   }
 
                   addItem(featuredProduct, 1)
+                  trackStorefrontEvent("hero_quick_add", {
+                    productId: featuredProduct.id,
+                    category: featuredProduct.category,
+                    quantity: 1,
+                  })
                   setAdded(true)
-                  setTimeout(() => setAdded(false), 1500)
+                  window.setTimeout(() => setAdded(false), 1500)
                 }}
-                className="mt-4 self-start flex items-center gap-2 bg-foreground text-background rounded-full px-4 py-2.5 text-sm font-bold active:scale-95 transition-all shadow-lg"
+                className="mt-4 flex h-11 self-start items-center gap-2 rounded-full bg-foreground px-4 text-sm font-bold text-background shadow-lg transition-all active:scale-95"
               >
                 {added ? (
-                  <>✓ أضيف للسلة!</>
+                  <>تمت الإضافة للسلة</>
                 ) : (
                   <>
                     <ShoppingBag className="h-3.5 w-3.5" />
@@ -96,28 +123,49 @@ export function HeroBanner() {
             </div>
 
             <button
-              onClick={() => setDrawerOpen(true)}
-              className="relative w-40 flex-shrink-0 active:opacity-90 transition-opacity"
+              type="button"
+              onClick={() => {
+                trackStorefrontEvent("hero_feature_opened", {
+                  productId: featuredProduct.id,
+                  category: featuredProduct.category,
+                  mode: "details",
+                })
+                setDrawerOpen(true)
+              }}
+              className="relative w-[38%] min-w-[8.75rem] flex-shrink-0 transition-opacity active:opacity-90 sm:w-40"
+              aria-label={`عرض تفاصيل ${featuredProduct.name}`}
             >
               {featuredProduct.image ? (
-                <Image src={featuredProduct.image} alt={featuredProduct.name} fill sizes="160px" quality={75} className="object-cover" />
+                <Image
+                  src={featuredProduct.image}
+                  alt={featuredProduct.name}
+                  fill
+                  sizes="(max-width: 640px) 38vw, 160px"
+                  quality={70}
+                  loading="lazy"
+                  className="object-cover"
+                />
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/5">
                   <ShoppingBag className="h-12 w-12 opacity-20" />
                 </div>
               )}
-              <div className="absolute bottom-2 right-2 bg-black/30 text-white text-[10px] px-2 py-0.5 rounded-full backdrop-blur-sm">
+              <div className="absolute bottom-2 right-2 rounded-full bg-black/30 px-2 py-0.5 text-[10px] text-white backdrop-blur-sm">
                 التفاصيل
               </div>
             </button>
           </div>
 
-          <div className="absolute top-3 left-3 opacity-30">
+          <div className="absolute left-3 top-3 opacity-30">
             <Sparkles className="h-4 w-4 text-foreground" />
           </div>
         </div>
 
-        <ProductDrawer product={featuredProduct} open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+        <ProductDrawer
+          product={featuredProduct}
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+        />
       </>
     )
   }
@@ -126,11 +174,11 @@ export function HeroBanner() {
 
   return (
     <div
-      className="mx-4 mt-4 rounded-3xl p-6 text-center overflow-hidden relative"
+      className="relative mx-4 mt-4 overflow-hidden rounded-[2rem] p-6 text-center md:rounded-3xl"
       style={{ background: `linear-gradient(135deg, ${config.bg_from}, ${config.bg_to})` }}
     >
       {hasImage ? (
-        <div className="absolute inset-0 rounded-3xl overflow-hidden">
+        <div className="absolute inset-0 overflow-hidden rounded-[2rem] md:rounded-3xl">
           <Image
             src={config.image_url!}
             alt="banner"
@@ -147,10 +195,14 @@ export function HeroBanner() {
         </div>
       ) : null}
       <div className="relative z-10">
-        {config.show_badge && config.badge ? <span className="text-sm text-primary font-medium">{config.badge}</span> : null}
-        <h2 className="text-3xl font-bold text-foreground mt-2">{config.title}</h2>
+        {config.show_badge && config.badge ? (
+          <span className="text-sm font-medium text-primary">{config.badge}</span>
+        ) : null}
+        <h2 className="mt-2 text-3xl font-bold text-foreground">{config.title}</h2>
         {config.show_subtitle && config.subtitle ? (
-          <p className="text-muted-foreground mt-2 text-sm leading-relaxed whitespace-pre-line">{config.subtitle}</p>
+          <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
+            {config.subtitle}
+          </p>
         ) : null}
       </div>
     </div>

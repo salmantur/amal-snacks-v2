@@ -15,6 +15,7 @@ import {
 } from "lucide-react"
 import { PriceWithRiyalLogo } from "@/components/ui/price-with-riyal-logo"
 import { cn } from "@/lib/utils"
+import { decodePossibleMojibake } from "@/lib/text"
 
 function getWhatsAppData(rawWa: string) {
   if (!rawWa) return { waNumberUrl: "", text: "" }
@@ -24,7 +25,7 @@ function getWhatsAppData(rawWa: string) {
     const textParam = url.searchParams.get("text") || ""
     return {
       waNumberUrl: `${url.origin}${url.pathname}`,
-      text: decodeURIComponent(textParam),
+      text: decodePossibleMojibake(textParam),
     }
   } catch {
     return { waNumberUrl: "", text: "" }
@@ -43,13 +44,13 @@ function ConfirmationContent() {
   const [showEditor, setShowEditor] = useState(false)
   const [whatsAppOpened, setWhatsAppOpened] = useState(false)
 
-  const name = searchParams.get("name") || ""
-  const area = searchParams.get("area") || ""
+  const name = decodePossibleMojibake(searchParams.get("name") || "")
+  const area = decodePossibleMojibake(searchParams.get("area") || "")
   const totalValue = Number(searchParams.get("total") || 0)
   const discountValue = Number(searchParams.get("discount") || 0)
-  const couponCode = searchParams.get("code") || ""
+  const couponCode = decodePossibleMojibake(searchParams.get("code") || "")
   const type = searchParams.get("type") || "delivery"
-  const time = searchParams.get("time") || "غير محدد"
+  const time = decodePossibleMojibake(searchParams.get("time") || "غير محدد")
   const rawWa = searchParams.get("wa") || ""
   const isPickup = type === "pickup"
 
@@ -79,7 +80,9 @@ function ConfirmationContent() {
   const orderSummary = useMemo(() => {
     const lines = [
       `الاسم: ${name || "-"}`,
-      `نوع الطلب: ${isPickup ? "استلام من المحل" : `توصيل إلى ${area || "-"}`}`,
+      `نوع الطلب: ${
+        isPickup ? "استلام من المحل" : `توصيل إلى ${area || "-"}`
+      }`,
       `${isPickup ? "وقت الاستلام" : "موعد التوصيل"}: ${time || "-"}`,
       discountValue > 0
         ? `الخصم: ${discountValue}${couponCode ? ` (${couponCode})` : ""}`
@@ -154,7 +157,7 @@ function ConfirmationContent() {
           <div className="mt-4 flex flex-wrap justify-end gap-2">
             <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600">
               <Clock3 className="h-3.5 w-3.5" />
-              {"\u064a\u0628\u0642\u0649 \u0647\u0630\u0647 \u0627\u0644\u0635\u0641\u062d\u0629 \u0645\u0641\u062a\u0648\u062d\u0629 \u062d\u062a\u0649 \u062a\u0646\u062a\u0647\u064a"}
+              أبق هذه الصفحة مفتوحة حتى تنتهي
             </span>
             <span className="inline-flex items-center gap-2 rounded-full bg-[#25D366]/10 px-3 py-1.5 text-xs font-semibold text-[#1f8f48]">
               <MessageCircle className="h-3.5 w-3.5" />
@@ -166,9 +169,7 @@ function ConfirmationContent() {
         <section className="rounded-[2rem] border border-white/70 bg-white/78 p-4 shadow-[0_18px_45px_rgba(15,23,42,0.06)] backdrop-blur-xl">
           <div className="flex items-center justify-between gap-3">
             <div className="text-right">
-              <h2 className="text-lg font-black text-slate-900">
-                ملخص الطلب
-              </h2>
+              <h2 className="text-lg font-black text-slate-900">ملخص الطلب</h2>
               <p className="mt-1 text-sm text-slate-500">
                 راجع المعلومات بسرعة قبل الإرسال.
               </p>
@@ -245,9 +246,7 @@ function ConfirmationContent() {
         <section className="rounded-[2rem] border border-white/70 bg-white/78 p-4 shadow-[0_18px_45px_rgba(15,23,42,0.06)] backdrop-blur-xl">
           <div className="flex items-center justify-between gap-3">
             <div className="text-right">
-              <h2 className="text-lg font-black text-slate-900">
-                رسالة واتساب
-              </h2>
+              <h2 className="text-lg font-black text-slate-900">رسالة واتساب</h2>
               <p className="mt-1 text-sm text-slate-500">
                 عدل الرسالة فقط إذا احتجت قبل الإرسال.
               </p>

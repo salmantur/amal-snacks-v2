@@ -35,6 +35,10 @@ const statusPriority: Record<Order["status"], number> = {
 }
 
 const ORDERS_POLL_INTERVAL_MS = 5000
+const INITIAL_ORDER_HISTORY_DAYS = 365
+const INITIAL_ORDER_HISTORY_LIMIT = 5000
+const POLL_ORDER_HISTORY_DAYS = 30
+const POLL_ORDER_HISTORY_LIMIT = 500
 
 function mergeOrders(existing: Order[], incoming: Order[]): Order[] {
   const merged = new Map<string, Order>()
@@ -93,9 +97,13 @@ export default function AdminPage() {
     audioRef.current.play().catch(() => {})
   }, [soundEnabled])
 
-  const refreshOrders = useCallback(async () => {
+  const refreshOrders = useCallback(async (mode: "initial" | "poll" = "poll") => {
     try {
-      const data = await fetchRecentOrders()
+      const data = await fetchRecentOrders(
+        mode === "initial"
+          ? { days: INITIAL_ORDER_HISTORY_DAYS, maxRecords: INITIAL_ORDER_HISTORY_LIMIT }
+          : { days: POLL_ORDER_HISTORY_DAYS, maxRecords: POLL_ORDER_HISTORY_LIMIT }
+      )
       setOrders((prev) => mergeOrders(prev, data))
       setLoadError(null)
     } catch (error) {
@@ -113,21 +121,21 @@ export default function AdminPage() {
   }
 
   useEffect(() => {
-    void refreshOrders()
+    void refreshOrders("initial")
   }, [refreshOrders])
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
-      void refreshOrders()
+      void refreshOrders("poll")
     }, ORDERS_POLL_INTERVAL_MS)
 
     const handleWindowFocus = () => {
-      void refreshOrders()
+      void refreshOrders("poll")
     }
 
     const handleVisibilityChange = () => {
       if (!document.hidden) {
-        void refreshOrders()
+        void refreshOrders("poll")
       }
     }
 

@@ -1,6 +1,11 @@
 import { createClient } from "@/lib/supabase/client"
 import type { Order } from "@/lib/data"
 
+interface FetchOrdersOptions {
+  days?: number
+  maxRecords?: number
+}
+
 type OrderItemRow = {
   name?: string
   nameEn?: string
@@ -59,26 +64,47 @@ export async function updateOrderStatus(id: string, status: Order["status"]): Pr
   await supabase.from("orders").update({ status }).eq("id", id)
 }
 
-// Fetch recent orders (last 50, last 24h)
-export async function fetchRecentOrders(): Promise<Order[]> {
+// Fetch recent orders with a configurable history window.
+export async function fetchRecentOrders(options: FetchOrdersOptions = {}): Promise<Order[]> {
   const supabase = createClient()
-  const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days
+  const days = options.days ?? 30
+  const maxRecords = Math.max(1, options.maxRecords ?? 500)
+  const pageSize = Math.min(1000, maxRecords)
+  const rows: any[] = []
+  const since = Number.isFinite(days)
+    ? new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString()
+    : null
 
-  const { data, error } = await supabase
-    .from("orders")
-    .select("*")
-    .gte("created_at", since)
-    .order("created_at", { ascending: false })
-    .limit(500)
+  for (let from = 0; from < maxRecords; from += pageSize) {
+    let query = supabase
+      .from("orders")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .range(from, Math.min(from + pageSize - 1, maxRecords - 1))
 
-  if (error) {
-    throw new Error(`Unable to load orders: ${error.message}`)
+    if (since) {
+      query = query.gte("created_at", since)
+    }
+
+    const { data, error } = await query
+
+    if (error) {
+      throw new Error(`Unable to load orders: ${error.message}`)
+    }
+
+    if (!data?.length) {
+      break
+    }
+
+    rows.push(...data)
+
+    if (data.length < pageSize) {
+      break
+    }
   }
 
-  if (!data) return []
-
   const orders: Order[] = []
-  for (const row of data) {
+  for (const row of rows) {
     const order = dbRowToOrder(row)
     if (order) {
       orders.push(order)

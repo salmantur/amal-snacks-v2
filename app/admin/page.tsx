@@ -435,7 +435,7 @@ export default function AdminPage() {
                   الأصناف
                 </Link>
                 <button
-                  onClick={refreshOrders}
+                  onClick={() => void refreshOrders("poll")}
                   className="rounded-xl bg-gray-100 text-gray-700 px-3 py-2.5 text-sm font-medium inline-flex items-center justify-center gap-2"
                 >
                   <Bell className={cn("h-4 w-4", newOrderAlert && "text-primary animate-bounce")} />

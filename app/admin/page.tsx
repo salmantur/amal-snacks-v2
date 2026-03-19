@@ -543,7 +543,7 @@ export default function AdminPage() {
                         <p className="text-sm font-bold">{col.title}</p>
                         <span className="text-xs bg-gray-100 px-2 py-0.5 rounded-full">{col.items.length}</span>
                       </div>
-                      <div className="space-y-2 max-h-[65vh] overflow-y-auto lg:max-h-none lg:overflow-visible">
+                      <div className="space-y-2">
                         {col.items.map((order) => (
                           <button
                             key={order.id}

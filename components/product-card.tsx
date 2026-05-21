@@ -46,6 +46,23 @@ function QuickAddButton({ item }: { item: MenuItem }) {
   )
 }
 
+function ConfigureButton({ item, onSelect }: { item: MenuItem; onSelect: (item: MenuItem) => void }) {
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation()
+        onSelect(item)
+      }}
+      className="inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-full border border-foreground/15 bg-white px-3 text-xs font-bold text-foreground shadow-sm transition-transform active:scale-95"
+      aria-label={`\u0627\u062e\u062a\u064a\u0627\u0631 \u062e\u064a\u0627\u0631\u0627\u062a ${item.name}`}
+    >
+      <ShoppingBag className="h-3.5 w-3.5" />
+      {"\u0627\u062e\u062a\u064a\u0627\u0631"}
+    </button>
+  )
+}
+
 function parseVariantOption(raw: string, fallbackPrice: number): { label: string; price: number } {
   const value = (raw || "").trim()
   if (!value) return { label: "", price: fallbackPrice }
@@ -720,6 +737,11 @@ export const ProductCard = memo(function ProductCard({
             <span className="bg-white text-gray-800 text-xs font-bold px-3 py-1 rounded-full">{"\u0646\u0641\u062f\u062a \u0627\u0644\u0643\u0645\u064a\u0629"}</span>
           </div>
         ) : null}
+        {item.inStock !== false && item.isFeatured ? (
+          <span className="absolute right-2 top-2 rounded-full border border-white/60 bg-white/90 px-2.5 py-1 text-[11px] font-black text-primary shadow-sm backdrop-blur-sm">
+            {"\u0627\u0644\u0623\u0643\u062b\u0631 \u0637\u0644\u0628\u0627"}
+          </span>
+        ) : null}
       </div>
 
       <div className={cn("mt-4 text-right", v.content)}>
@@ -736,6 +758,8 @@ export const ProductCard = memo(function ProductCard({
           </div>
           {canQuickAdd ? (
             <QuickAddButton item={item} />
+          ) : item.inStock !== false ? (
+            <ConfigureButton item={item} onSelect={onSelect} />
           ) : null}
         </div>
       </div>

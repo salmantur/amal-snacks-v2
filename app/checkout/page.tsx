@@ -310,23 +310,42 @@ function CheckoutItemImage({ item }: { item: CartItem }) {
   );
 }
 
-function ProgressStep({ label, done }: { label: string; done: boolean }) {
+function ProgressStep({
+  label,
+  step,
+  state,
+}: {
+  label: string;
+  step: number;
+  state: "done" | "current" | "upcoming";
+}) {
+  const done = state === "done";
+  const current = state === "current";
+
   return (
-    <div className="flex items-center gap-2">
+    <div
+      className={cn(
+        "flex min-w-0 items-center gap-2 rounded-xl px-2 py-1.5",
+        current && "bg-primary/10",
+      )}
+      aria-current={current ? "step" : undefined}
+    >
       <div
         className={cn(
-          "w-6 h-6 rounded-full flex items-center justify-center border text-[10px] font-bold",
+          "flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-[11px] font-black",
           done
             ? "bg-primary text-primary-foreground border-primary"
-            : "bg-background text-muted-foreground border-border",
+            : current
+              ? "border-primary bg-background text-primary"
+              : "bg-background text-muted-foreground border-border",
         )}
       >
-        {done ? <CheckCircle2 className="h-3.5 w-3.5" /> : "•"}
+        {done ? <CheckCircle2 className="h-4 w-4" /> : step}
       </div>
       <span
         className={cn(
-          "text-xs font-medium",
-          done ? "text-foreground" : "text-muted-foreground",
+          "truncate text-xs font-bold",
+          done || current ? "text-foreground" : "text-muted-foreground",
         )}
       >
         {label}
@@ -1237,18 +1256,26 @@ function CheckoutContent() {
         <div className="hidden">
           <PriceWithRiyalLogo value={displayGrandTotal} />
         </div>
-        <div className="hidden">
-          <ProgressStep label="السلة" done={items.length > 0} />
-        </div>
-
         <div className={cn("mx-auto px-4 pb-3", layoutWidthClass)}>
-          <div className="grid grid-cols-3 gap-2 rounded-2xl border border-slate-200/80 bg-white/80 px-3 py-2 shadow-sm">
-            <ProgressStep label="البيانات" done={infoDone} />
-            <ProgressStep
-              label={isPickup ? "الاستلام" : "المنطقة"}
-              done={isPickup || Boolean(selectedArea)}
-            />
-            <ProgressStep label="الموعد" done={scheduleDone} />
+          <div className="rounded-2xl border border-slate-200/80 bg-white/80 px-2.5 py-2 shadow-sm">
+            <div className="grid grid-cols-3 gap-1" dir="rtl">
+              <ProgressStep label="السلة" step={1} state="done" />
+              <ProgressStep
+                label="التفاصيل"
+                step={2}
+                state={infoDone && (isPickup || Boolean(selectedArea)) && scheduleDone ? "done" : "current"}
+              />
+              <ProgressStep
+                label="التأكيد"
+                step={3}
+                state={infoDone && (isPickup || Boolean(selectedArea)) && scheduleDone ? "current" : "upcoming"}
+              />
+            </div>
+            <p className="mt-1 px-2 text-right text-[11px] font-medium text-muted-foreground" dir="rtl">
+              {infoDone && (isPickup || Boolean(selectedArea)) && scheduleDone
+                ? "راجع الطلب ثم أكمل التأكيد."
+                : "أكمل التفاصيل المطلوبة للانتقال إلى التأكيد."}
+            </p>
           </div>
         </div>
       </header>

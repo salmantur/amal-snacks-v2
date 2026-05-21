@@ -3,7 +3,7 @@
 import React, { memo, useState } from "react"
 import Image from "next/image"
 import { ShoppingBag } from "lucide-react"
-import { type MenuItem } from "@/components/cart-provider"
+import { useCart, type MenuItem } from "@/components/cart-provider"
 import { buildBestSellerOverlay, DEFAULT_BEST_SELLER_CARD_CONFIG, type BestSellerCardConfig } from "@/lib/best-seller-card-config"
 import { cn } from "@/lib/utils"
 import { PriceWithRiyalLogo } from "@/components/ui/price-with-riyal-logo"
@@ -21,6 +21,29 @@ interface ProductCardProps {
   forceUnifiedStyle?: boolean
   bestSellerStyle?: BestSellerCardStyle
   bestSellerCardConfig?: BestSellerCardConfig
+}
+
+function QuickAddButton({ item }: { item: MenuItem }) {
+  const { addItem } = useCart()
+  const [quickAdded, setQuickAdded] = useState(false)
+
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation()
+    addItem(item, 1)
+    setQuickAdded(true)
+    window.setTimeout(() => setQuickAdded(false), 1200)
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      className="inline-flex h-10 shrink-0 items-center justify-center rounded-full bg-foreground px-3 text-xs font-bold text-background shadow-sm transition-transform active:scale-95"
+      aria-label={`\u0625\u0636\u0627\u0641\u0629 ${item.name} \u0625\u0644\u0649 \u0627\u0644\u0633\u0644\u0629`}
+    >
+      {quickAdded ? "\u062a\u0645\u062a" : "\u0625\u0636\u0627\u0641\u0629"}
+    </button>
+  )
 }
 
 function parseVariantOption(raw: string, fallbackPrice: number): { label: string; price: number } {
@@ -186,6 +209,13 @@ export const ProductCard = memo(function ProductCard({
   const isMusakhanCard =
     normalizedNameAr.includes("مسخن") || normalizedNameEn.includes("musakhan") || normalizedNameEn.includes("muskhan")
   const useFloatingTrayStyle = forceUnifiedStyle || isTraySizeVariantCard || isMusakhanCard
+  const requiresConfiguration =
+    item.category === "trays" ||
+    item.category === "eid" ||
+    (item.limit || 0) > 0 ||
+    (item.ingredients?.length ?? 0) > 0 ||
+    (item.packageItems?.length ?? 0) > 0
+  const canQuickAdd = item.inStock !== false && !requiresConfiguration
 
   const trayCardOptions = isTraySizeVariantCard
     ? variantOptions
@@ -695,13 +725,18 @@ export const ProductCard = memo(function ProductCard({
       <div className={cn("mt-4 text-right", v.content)}>
         <h3 className={cn("font-bold text-base leading-tight", v.title)} style={titleColorStyle}>{item.name}</h3>
         <p className={cn("text-sm mt-1 line-clamp-2 leading-relaxed", v.desc)} style={descColorStyle}>{item.description}</p>
-        <div className="mt-2 text-right">
-          {hasVariantPricing ? (
-            <p className="text-xs text-muted-foreground mb-0.5">{"\u064a\u0628\u062f\u0623 \u0645\u0646"}</p>
+        <div className="mt-3 flex min-h-11 items-center justify-between gap-2" dir="rtl">
+          <div className="min-w-0 text-right">
+            {hasVariantPricing ? (
+              <p className="text-xs text-muted-foreground mb-0.5">{"\u064a\u0628\u062f\u0623 \u0645\u0646"}</p>
+            ) : null}
+            <p className={cn("font-bold", v.price)} style={priceColorStyle}>
+              <PriceWithRiyalLogo value={displayPrice} />
+            </p>
+          </div>
+          {canQuickAdd ? (
+            <QuickAddButton item={item} />
           ) : null}
-          <p className={cn("font-bold", v.price)} style={priceColorStyle}>
-            <PriceWithRiyalLogo value={displayPrice} />
-          </p>
         </div>
       </div>
       </>

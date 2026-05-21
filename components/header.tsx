@@ -20,7 +20,7 @@ function NewProductsTicker({ items }: { items: MenuItem[] }) {
   return (
     <div className="overflow-hidden bg-primary h-7 flex items-center">
       <div
-        className="flex gap-8 whitespace-nowrap"
+        className="new-products-ticker-track flex gap-8 whitespace-nowrap"
         style={{
           animation: "ticker 20s linear infinite",
           willChange: "transform",
@@ -38,6 +38,13 @@ function NewProductsTicker({ items }: { items: MenuItem[] }) {
         @keyframes ticker {
           0% { transform: translateX(0); }
           100% { transform: translateX(-50%); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .new-products-ticker-track {
+            animation: none !important;
+            transform: none !important;
+            will-change: auto !important;
+          }
         }
       `}</style>
     </div>

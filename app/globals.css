@@ -104,6 +104,11 @@
     min-height: 100%;
     overflow-x: hidden;
   }
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
 }
 
 /* Fixed bottom bars — account for iPhone home indicator */

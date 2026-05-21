@@ -76,25 +76,6 @@ export function MenuGrid({ searchQuery, onSearchQueryChange }: MenuGridProps) {
 
   useEffect(() => {
     setShowAllItems(false)
-
-    let timeoutId: ReturnType<typeof setTimeout> | null = null
-    let idleId: number | null = null
-    const revealAll = () => setShowAllItems(true)
-
-    if ("requestIdleCallback" in window) {
-      idleId = window.requestIdleCallback(revealAll, { timeout: 250 })
-    } else {
-      timeoutId = setTimeout(revealAll, 120)
-    }
-
-    return () => {
-      if (idleId !== null && "cancelIdleCallback" in window) {
-        window.cancelIdleCallback(idleId)
-      }
-      if (timeoutId) {
-        clearTimeout(timeoutId)
-      }
-    }
   }, [selectedCategory, debouncedSearch])
 
   useEffect(() => {
@@ -145,10 +126,33 @@ export function MenuGrid({ searchQuery, onSearchQueryChange }: MenuGridProps) {
     () => (shouldLimitItems ? filteredItems.slice(0, INITIAL_VISIBLE_ITEMS) : filteredItems),
     [filteredItems, shouldLimitItems]
   )
+  const hiddenFilteredItemsCount = Math.max(0, filteredItems.length - visibleFilteredItems.length)
+  const hiddenSectionItemsCount = useMemo(
+    () =>
+      sections && shouldLimitItems
+        ? sections.reduce((count, section) => {
+            const sectionCount = getItemsForCategory(section.dbCategory).length
+            return count + Math.max(0, sectionCount - INITIAL_VISIBLE_ITEMS)
+          }, 0)
+        : 0,
+    [getItemsForCategory, sections, shouldLimitItems]
+  )
   const catalogGridClass = "grid grid-cols-1 gap-3 min-[390px]:grid-cols-2 sm:gap-4 md:grid-cols-3 md:gap-8"
   const bestSellerGridClass = isBestSellersCategory
     ? "grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2 md:gap-8"
     : catalogGridClass
+  const renderShowMoreButton = (hiddenCount: number) =>
+    hiddenCount > 0 ? (
+      <div className="mt-6 flex justify-center" dir="rtl">
+        <button
+          type="button"
+          onClick={() => setShowAllItems(true)}
+          className="min-h-12 rounded-full border border-primary/25 bg-primary/10 px-6 text-sm font-black text-primary shadow-sm transition-transform active:scale-95"
+        >
+          {"عرض المزيد"} ({hiddenCount})
+        </button>
+      </div>
+    ) : null
 
   return (
     <div className="min-h-screen bg-background">
@@ -248,26 +252,30 @@ export function MenuGrid({ searchQuery, onSearchQueryChange }: MenuGridProps) {
                 </div>
               )
             })}
+            {renderShowMoreButton(hiddenSectionItemsCount)}
           </div>
         ) : (
-          <div className={bestSellerGridClass}>
-            {visibleFilteredItems.map((item, idx) =>
-              item.category === "eid" && !isBestSellersCategory ? (
-                <PackageCard key={item.id} item={item} onSelect={setSelectedProduct} priority={idx < 2} variant={itemVariant} />
-              ) : (
-                <ProductCard
-                  key={item.id}
-                  item={item}
-                  onSelect={setSelectedProduct}
-                  priority={idx < 2}
-                  variant={itemVariant}
-                  trayDesign={trayCardDesign}
-                  bestSellerStyle={isBestSellersCategory ? "s2" : undefined}
-                  bestSellerCardConfig={isBestSellersCategory ? bestSellerCardConfig : undefined}
-                />
-              )
-            )}
-          </div>
+          <>
+            <div className={bestSellerGridClass}>
+              {visibleFilteredItems.map((item, idx) =>
+                item.category === "eid" && !isBestSellersCategory ? (
+                  <PackageCard key={item.id} item={item} onSelect={setSelectedProduct} priority={idx < 2} variant={itemVariant} />
+                ) : (
+                  <ProductCard
+                    key={item.id}
+                    item={item}
+                    onSelect={setSelectedProduct}
+                    priority={idx < 2}
+                    variant={itemVariant}
+                    trayDesign={trayCardDesign}
+                    bestSellerStyle={isBestSellersCategory ? "s2" : undefined}
+                    bestSellerCardConfig={isBestSellersCategory ? bestSellerCardConfig : undefined}
+                  />
+                )
+              )}
+            </div>
+            {renderShowMoreButton(hiddenFilteredItemsCount)}
+          </>
         )}
       </div>
 

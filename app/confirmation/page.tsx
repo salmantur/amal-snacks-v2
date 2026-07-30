@@ -225,8 +225,8 @@ function ConfirmationContent() {
                 />
               </div>
               {discountValue > 0 ? (
-                <p className="mt-2 text-right text-xs font-semibold text-green-700">
-                  تم تطبيق خصم بقيمة {discountValue}
+                <p className="mt-2 flex items-center justify-end gap-1 text-right text-xs font-semibold text-green-700">
+                  تم تطبيق خصم بقيمة <PriceWithRiyalLogo value={discountValue} />
                   {couponCode ? ` عبر الكود ${couponCode}` : ""}
                 </p>
               ) : null}
@@ -263,7 +263,11 @@ function ConfirmationContent() {
 
           {showEditor ? (
             <div className="mt-4">
+              <label htmlFor="whatsapp-message" className="sr-only">
+                نص رسالة واتساب
+              </label>
               <textarea
+                id="whatsapp-message"
                 value={messageText}
                 onChange={(event) => setMessageText(event.target.value)}
                 rows={8}

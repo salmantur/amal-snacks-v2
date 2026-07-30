@@ -1,10 +1,17 @@
 "use client"
 
-import { ShoppingBag, X, ChevronLeft } from "lucide-react"
-import { useEffect, useRef } from "react"
+import Image from "next/image"
+import { ShoppingBag, X, ChevronLeft, Plus } from "lucide-react"
+import { useEffect, useMemo, useRef } from "react"
 import { useCart } from "@/components/cart-provider"
+import type { MenuItem } from "@/components/cart-provider"
+import { useMenu } from "@/hooks/use-menu"
 import { PriceWithRiyalLogo } from "@/components/ui/price-with-riyal-logo"
 import { trapFocusOnTab } from "@/lib/dialog-focus"
+
+function needsConfiguration(item: MenuItem): boolean {
+  return item.category === "trays" || item.category === "eid" || (item.ingredients?.length ?? 0) > 0
+}
 
 interface CartSheetProps {
   open: boolean
@@ -20,10 +27,16 @@ interface CartSheetProps {
  * where it's triggered from.
  */
 export function CartSheet({ open, onClose, onCheckout, id = "cart-sheet-dialog" }: CartSheetProps) {
-  const { items, totalItems, totalPrice, removeItem, updateQuantity } = useCart()
+  const { items, totalItems, totalPrice, removeItem, updateQuantity, addItem } = useCart()
+  const { menuItems } = useMenu()
   const dialogRef = useRef<HTMLDivElement | null>(null)
   const closeButtonRef = useRef<HTMLButtonElement | null>(null)
   const returnFocusRef = useRef<HTMLElement | null>(null)
+
+  const recommendations = useMemo(
+    () => menuItems.filter((item) => item.isFeatured && !needsConfiguration(item)).slice(0, 4),
+    [menuItems],
+  )
 
   useEffect(() => {
     if (!open) return
@@ -97,10 +110,41 @@ export function CartSheet({ open, onClose, onCheckout, id = "cart-sheet-dialog" 
 
         <div className="overflow-y-auto flex-1 px-4 py-3 space-y-2.5" dir="rtl">
           {items.length === 0 ? (
-            <div className="text-center py-16 text-muted-foreground">
-              <ShoppingBag className="h-14 w-14 mx-auto mb-3 opacity-10" />
-              <p className="font-medium">سلتك فارغة</p>
-              <p className="text-xs mt-1 opacity-60">أضف أصناف من القائمة</p>
+            <div className="py-6 text-center">
+              <ShoppingBag className="h-12 w-12 mx-auto mb-3 text-muted-foreground opacity-10" />
+              <p className="font-medium text-muted-foreground">سلتك فارغة</p>
+
+              {recommendations.length > 0 ? (
+                <div className="mt-6 text-right">
+                  <p className="mb-3 px-1 text-sm font-bold">الأكثر طلبًا</p>
+                  <div className="space-y-2.5">
+                    {recommendations.map((item) => (
+                      <div key={item.id} className="flex items-center gap-3 p-2.5 bg-[#f8f8f8] rounded-2xl">
+                        <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-xl bg-black/5">
+                          {item.image ? (
+                            <Image src={item.image} alt={item.name} fill sizes="56px" className="object-cover" />
+                          ) : null}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-sm truncate">{item.name}</p>
+                          <p className="text-sm font-bold text-primary mt-0.5">
+                            <PriceWithRiyalLogo value={item.price} />
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => addItem(item, 1)}
+                          className="h-10 w-10 rounded-full bg-foreground text-background flex items-center justify-center active:scale-95 flex-shrink-0"
+                          aria-label={`أضف ${item.name}`}
+                        >
+                          <Plus className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-xs mt-1 opacity-60">أضف أصناف من القائمة</p>
+              )}
             </div>
           ) : (
             items.map((item) => (

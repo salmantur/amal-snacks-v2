@@ -1,7 +1,7 @@
 "use client"
 
-import { ShoppingBag, X, Sparkles, Menu, ChevronLeft, ChevronRight } from "lucide-react"
-import { useState, useEffect, useRef, type KeyboardEvent as ReactKeyboardEvent } from "react"
+import { ShoppingBag, Sparkles, Menu, ChevronLeft, ChevronRight } from "lucide-react"
+import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import { useCart } from "@/components/cart-provider"
 import { OrderTypeModal } from "@/components/order-type-modal"
@@ -10,6 +10,8 @@ import { useMenu } from "@/hooks/use-menu"
 import { useCategories } from "@/hooks/use-categories"
 import type { MenuItem } from "@/components/cart-provider"
 import { PriceWithRiyalLogo } from "@/components/ui/price-with-riyal-logo"
+import { CartSheet } from "@/components/cart-sheet"
+import { trapFocusOnTab } from "@/lib/dialog-focus"
 
 function NewProductsTicker({ items }: { items: MenuItem[] }) {
   const newItems = items.filter((i) => i.isFeatured)
@@ -51,38 +53,6 @@ function NewProductsTicker({ items }: { items: MenuItem[] }) {
   )
 }
 
-function getFocusableElements(container: HTMLElement | null) {
-  if (!container) return []
-
-  return Array.from(
-    container.querySelectorAll<HTMLElement>(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-    )
-  ).filter((element) => !element.hasAttribute("disabled") && element.getAttribute("aria-hidden") !== "true")
-}
-
-function trapFocusOnTab(event: ReactKeyboardEvent<HTMLElement>, container: HTMLElement | null) {
-  if (event.key !== "Tab") return
-
-  const focusable = getFocusableElements(container)
-  if (focusable.length === 0) {
-    event.preventDefault()
-    return
-  }
-
-  const first = focusable[0]
-  const last = focusable[focusable.length - 1]
-  const activeElement = document.activeElement
-
-  if (event.shiftKey && activeElement === first) {
-    event.preventDefault()
-    last.focus()
-  } else if (!event.shiftKey && activeElement === last) {
-    event.preventDefault()
-    first.focus()
-  }
-}
-
 export function Header() {
   const [cartOpen, setCartOpen] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -92,14 +62,11 @@ export function Header() {
   const prevCount = useRef(0)
   const menuTriggerRef = useRef<HTMLButtonElement | null>(null)
   const cartTriggerRef = useRef<HTMLButtonElement | null>(null)
-  const cartDialogRef = useRef<HTMLDivElement | null>(null)
   const menuDialogRef = useRef<HTMLDivElement | null>(null)
-  const cartCloseButtonRef = useRef<HTMLButtonElement | null>(null)
   const menuCloseButtonRef = useRef<HTMLButtonElement | null>(null)
-  const cartReturnFocusRef = useRef<HTMLElement | null>(null)
   const menuReturnFocusRef = useRef<HTMLElement | null>(null)
   const router = useRouter()
-  const { items, totalItems, totalPrice, removeItem, updateQuantity } = useCart()
+  const { totalItems, totalPrice } = useCart()
 
   const { menuItems } = useMenu()
   const { categories } = useCategories()
@@ -119,7 +86,7 @@ export function Header() {
   }, [totalItems])
 
   useEffect(() => {
-    if (!cartOpen && !menuOpen) return
+    if (!menuOpen) return
 
     const previousOverflow = document.body.style.overflow
     const previousTouchAction = document.body.style.touchAction
@@ -131,23 +98,7 @@ export function Header() {
       document.body.style.overflow = previousOverflow
       document.body.style.touchAction = previousTouchAction
     }
-  }, [cartOpen, menuOpen])
-
-  useEffect(() => {
-    if (!cartOpen) return
-
-    cartReturnFocusRef.current =
-      document.activeElement instanceof HTMLElement ? document.activeElement : cartTriggerRef.current
-
-    const focusTimeout = window.setTimeout(() => {
-      cartCloseButtonRef.current?.focus()
-    }, 0)
-
-    return () => {
-      window.clearTimeout(focusTimeout)
-      cartReturnFocusRef.current?.focus()
-    }
-  }, [cartOpen])
+  }, [menuOpen])
 
   useEffect(() => {
     if (!menuOpen) return
@@ -166,18 +117,15 @@ export function Header() {
   }, [menuOpen])
 
   useEffect(() => {
-    if (!cartOpen && !menuOpen) return
+    if (!menuOpen) return
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        if (cartOpen) setCartOpen(false)
-        if (menuOpen) setMenuOpen(false)
-      }
+      if (event.key === "Escape") setMenuOpen(false)
     }
 
     window.addEventListener("keydown", handleKeyDown)
     return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [cartOpen, menuOpen])
+  }, [menuOpen])
 
   const handleOrderSelect = (type: "pickup" | "delivery") => {
     setOrderModalOpen(false)
@@ -254,115 +202,15 @@ export function Header() {
         </div>
       </header>
 
-      {cartOpen && (
-        <div className="fixed inset-0 z-[100]">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setCartOpen(false)} />
-          <div
-            id="header-cart-dialog"
-            ref={cartDialogRef}
-            className="absolute bottom-0 left-0 right-0 bg-background rounded-t-3xl flex flex-col"
-            style={{ maxHeight: "min(88dvh, 48rem)", paddingBottom: "env(safe-area-inset-bottom)" }}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="header-cart-title"
-            tabIndex={-1}
-            onKeyDown={(event) => trapFocusOnTab(event, cartDialogRef.current)}
-          >
-            <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
-              <div className="w-10 h-1 rounded-full bg-gray-200" />
-            </div>
-
-            <div className="flex items-center justify-between px-5 py-3 border-b border-border/50 flex-shrink-0" dir="rtl">
-                <h2 id="header-cart-title" className="text-lg font-bold">سلتك 🛍️</h2>
-                <div className="flex items-center gap-3">
-                {totalItems > 0 && (
-                  <span className="text-sm text-muted-foreground">
-                    {totalItems} عنصر · <PriceWithRiyalLogo value={totalPrice} />
-                  </span>
-                )}
-                  <button
-                    ref={cartCloseButtonRef}
-                    onClick={() => setCartOpen(false)}
-                    className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center active:scale-95"
-                    aria-label="إغلاق السلة"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-              </div>
-            </div>
-
-            <div className="overflow-y-auto flex-1 px-4 py-3 space-y-2.5" dir="rtl">
-              {items.length === 0 ? (
-                <div className="text-center py-16 text-muted-foreground">
-                  <ShoppingBag className="h-14 w-14 mx-auto mb-3 opacity-10" />
-                  <p className="font-medium">سلتك فارغة</p>
-                  <p className="text-xs mt-1 opacity-60">أضف أصناف من القائمة</p>
-                </div>
-              ) : (
-                items.map((item) => (
-                  <div key={item.cartKey} className="flex items-center gap-3 p-3 bg-[#f8f8f8] rounded-2xl">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm truncate">{item.name}</p>
-                      {item.selectedIngredients?.length ? (
-                        <p className="text-xs text-muted-foreground truncate mt-0.5">
-                          {item.selectedIngredients
-                            .map((s) => (s.includes("||") ? s.split("||")[0] : s))
-                            .join("، ")}
-                        </p>
-                      ) : null}
-                      <p className="text-sm font-bold text-primary mt-1">
-                        <PriceWithRiyalLogo value={item.price * item.quantity} />
-                      </p>
-                    </div>
-
-                    <div className="flex items-center gap-1.5 flex-shrink-0">
-                      <button
-                        onClick={() => item.quantity === 1 ? removeItem(item.cartKey) : updateQuantity(item.cartKey, item.quantity - 1)}
-                        className="h-10 w-10 rounded-full bg-white border border-gray-200 flex items-center justify-center active:scale-95 text-base font-bold"
-                      >
-                        {item.quantity === 1 ? <X className="h-3 w-3 text-red-400" /> : "-"}
-                      </button>
-                      <span className="w-6 text-center text-sm font-bold">{item.quantity}</span>
-                      <button
-                        onClick={() => updateQuantity(item.cartKey, item.quantity + 1)}
-                        className="h-10 w-10 rounded-full bg-foreground text-background flex items-center justify-center active:scale-95 text-base font-bold"
-                      >
-                        +
-                      </button>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-
-            {items.length > 0 && (
-              <div className="px-4 py-3 border-t border-border/30 flex-shrink-0">
-                <div className="flex justify-between items-center mb-3 px-1" dir="rtl">
-                  <span className="text-muted-foreground text-sm">المجموع</span>
-                  <span className="font-black text-lg">
-                    <PriceWithRiyalLogo value={totalPrice} />
-                  </span>
-                </div>
-                <div className="flex flex-col gap-3 sm:flex-row">
-                  <button
-                    onClick={() => setCartOpen(false)}
-                    className="py-3.5 px-5 rounded-2xl bg-[#f5f5f5] text-foreground font-medium active:scale-95 transition-transform text-sm"
-                  >
-                    تسوق أكثر
-                  </button>
-                  <button
-                    onClick={() => { setCartOpen(false); setOrderModalOpen(true) }}
-                    className="flex-1 py-3.5 rounded-2xl bg-foreground text-background font-bold active:scale-95 transition-transform text-sm flex items-center justify-center gap-2"
-                  >
-                    تأكيد الطلب
-                    <ChevronLeft className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      <CartSheet
+        id="header-cart-dialog"
+        open={cartOpen}
+        onClose={() => setCartOpen(false)}
+        onCheckout={() => {
+          setCartOpen(false)
+          setOrderModalOpen(true)
+        }}
+      />
 
       {menuOpen && (
         <div className="fixed inset-0 z-[100]" dir="rtl">

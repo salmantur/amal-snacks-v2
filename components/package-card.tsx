@@ -6,70 +6,32 @@ import { Search, ShoppingBag } from "lucide-react"
 import { type MenuItem } from "@/components/cart-provider"
 import { getEidRequiredHeaters } from "@/lib/eid-packages"
 import { cn } from "@/lib/utils"
-import type { ItemCardVariant } from "@/components/product-card"
 import { PriceWithRiyalLogo } from "@/components/ui/price-with-riyal-logo"
 
 interface PackageCardProps {
   item: MenuItem
   onSelect: (item: MenuItem) => void
   priority?: boolean
-  variant?: ItemCardVariant
 }
 
-function getVariantStyles(variant: ItemCardVariant) {
-  switch (variant) {
-    case "glass":
-      return {
-        container:
-          "bg-white/55 border-white/70 backdrop-blur-xl rounded-3xl shadow-[0_10px_24px_rgba(0,0,0,0.10)]",
-        cta: "bg-white/70 text-slate-900 border border-white/70",
-      }
-    case "editorial":
-      return {
-        container: "bg-white border-black/10 rounded-none shadow-none",
-        cta: "bg-black text-white border border-black",
-      }
-    case "warm":
-      return {
-        container: "bg-[#fff8ef] border-[#f0dfc9] rounded-3xl shadow-sm",
-        cta: "bg-[#6b3f1f] text-white border border-[#6b3f1f]",
-      }
-    case "minimal":
-      return {
-        container: "bg-white border-gray-200 rounded-2xl shadow-none",
-        cta: "bg-gray-900 text-white border border-gray-900",
-      }
-    default:
-      return {
-        container: "bg-white border-gray-100 rounded-3xl shadow-sm",
-        cta: "bg-[#1e293b] text-white border border-[#1e293b]",
-      }
-  }
+const cardStyle = {
+  container: "bg-white border-gray-100 rounded-3xl shadow-sm",
+  cta: "bg-[#1e293b] text-white border border-[#1e293b]",
 }
 
 export const PackageCard = memo(function PackageCard({
   item,
   onSelect,
   priority = false,
-  variant = "neo",
 }: PackageCardProps) {
   const [imgError, setImgError] = useState(false)
   const isOutOfStock = item.inStock === false
   const required = getEidRequiredHeaters(item)
-  const v = getVariantStyles(variant)
-  const useThemeCardColors = variant === "neo"
-  const cardSurfaceStyle = useThemeCardColors
-    ? { backgroundColor: "var(--item-card-bg)" }
-    : undefined
-  const titleColorStyle = useThemeCardColors
-    ? { color: "var(--item-card-title)" }
-    : undefined
-  const descColorStyle = useThemeCardColors
-    ? { color: "var(--item-card-desc)" }
-    : undefined
-  const priceColorStyle = useThemeCardColors
-    ? { color: "var(--item-card-price)" }
-    : undefined
+  const v = cardStyle
+  const cardSurfaceStyle = { backgroundColor: "var(--item-card-bg)" }
+  const titleColorStyle = { color: "var(--item-card-title)" }
+  const descColorStyle = { color: "var(--item-card-desc)" }
+  const priceColorStyle = { color: "var(--item-card-price)" }
 
   return (
     <div

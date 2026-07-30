@@ -47,15 +47,6 @@ export function MenuGrid({ searchQuery, onSearchQueryChange }: MenuGridProps) {
     () => (categories.some((c) => c.id === BEST_SELLERS_CATEGORY_ID) ? categories : [BEST_SELLERS_CATEGORY, ...categories]),
     [categories]
   )
-  const itemUiParam = searchParams.get("itemui")
-  const itemVariant =
-    itemUiParam === "glass" ||
-    itemUiParam === "editorial" ||
-    itemUiParam === "warm" ||
-    itemUiParam === "minimal" ||
-    itemUiParam === "neo"
-      ? itemUiParam
-      : "neo"
   const trayUiParam = searchParams.get("trayui")
   const trayCardDesign: TrayCardDesign =
     trayUiParam === "d2" || trayUiParam === "d3" || trayUiParam === "d1" ? trayUiParam : "d1"
@@ -222,7 +213,6 @@ export function MenuGrid({ searchQuery, onSearchQueryChange }: MenuGridProps) {
                     item={item}
                     onSelect={setSelectedProduct}
                     priority={idx < 2}
-                    variant={itemVariant}
                     trayDesign={trayCardDesign}
                     forceUnifiedStyle={isBestSellersCategory}
                   />
@@ -243,9 +233,9 @@ export function MenuGrid({ searchQuery, onSearchQueryChange }: MenuGridProps) {
                   <div className={catalogGridClass}>
                     {visibleSectionItems.map((item, idx) =>
                       item.category === "eid" ? (
-                        <PackageCard key={item.id} item={item} onSelect={setSelectedProduct} priority={idx < 4 && section.dbCategory === sections[0]?.dbCategory} variant={itemVariant} />
+                        <PackageCard key={item.id} item={item} onSelect={setSelectedProduct} priority={idx < 4 && section.dbCategory === sections[0]?.dbCategory} />
                       ) : (
-                        <ProductCard key={item.id} item={item} onSelect={setSelectedProduct} priority={idx < 4 && section.dbCategory === sections[0]?.dbCategory} variant={itemVariant} trayDesign={trayCardDesign} />
+                        <ProductCard key={item.id} item={item} onSelect={setSelectedProduct} priority={idx < 4 && section.dbCategory === sections[0]?.dbCategory} trayDesign={trayCardDesign} />
                       )
                     )}
                   </div>
@@ -259,14 +249,13 @@ export function MenuGrid({ searchQuery, onSearchQueryChange }: MenuGridProps) {
             <div className={bestSellerGridClass}>
               {visibleFilteredItems.map((item, idx) =>
                 item.category === "eid" && !isBestSellersCategory ? (
-                  <PackageCard key={item.id} item={item} onSelect={setSelectedProduct} priority={idx < 2} variant={itemVariant} />
+                  <PackageCard key={item.id} item={item} onSelect={setSelectedProduct} priority={idx < 2} />
                 ) : (
                   <ProductCard
                     key={item.id}
                     item={item}
                     onSelect={setSelectedProduct}
                     priority={idx < 2}
-                    variant={itemVariant}
                     trayDesign={trayCardDesign}
                     bestSellerStyle={isBestSellersCategory ? "s2" : undefined}
                     bestSellerCardConfig={isBestSellersCategory ? bestSellerCardConfig : undefined}

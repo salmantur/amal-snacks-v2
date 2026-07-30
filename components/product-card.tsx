@@ -8,7 +8,6 @@ import { buildBestSellerOverlay, DEFAULT_BEST_SELLER_CARD_CONFIG, type BestSelle
 import { cn } from "@/lib/utils"
 import { PriceWithRiyalLogo } from "@/components/ui/price-with-riyal-logo"
 
-export type ItemCardVariant = "neo" | "glass" | "editorial" | "warm" | "minimal"
 export type TrayCardDesign = "d1" | "d2" | "d3"
 export type BestSellerCardStyle = "s1" | "s2" | "s3"
 
@@ -16,7 +15,6 @@ interface ProductCardProps {
   item: MenuItem
   onSelect: (item: MenuItem) => void
   priority?: boolean
-  variant?: ItemCardVariant
   trayDesign?: TrayCardDesign
   forceUnifiedStyle?: boolean
   bestSellerStyle?: BestSellerCardStyle
@@ -108,54 +106,13 @@ function normalizeMenuImageSrc(src: string, base: string): string | null {
   return base ? `${base}${value}` : null
 }
 
-function getVariantStyles(variant: ItemCardVariant) {
-  switch (variant) {
-    case "glass":
-      return {
-        container: "rounded-3xl p-2 bg-white/50 backdrop-blur-lg border border-white/60 shadow-[0_10px_24px_rgba(0,0,0,0.10)]",
-        image: "rounded-2xl",
-        content: "px-1 pb-2",
-        title: "text-slate-900",
-        desc: "text-slate-600",
-        price: "text-slate-900",
-      }
-    case "editorial":
-      return {
-        container: "rounded-none border-y border-black/10 py-2",
-        image: "rounded-none",
-        content: "px-0 pb-0",
-        title: "text-black tracking-tight",
-        desc: "text-black/60",
-        price: "text-black",
-      }
-    case "warm":
-      return {
-        container: "rounded-3xl p-2 bg-[#fff8ef] border border-[#f0dfc9] shadow-sm",
-        image: "rounded-2xl",
-        content: "px-1 pb-1",
-        title: "text-[#6b3f1f]",
-        desc: "text-[#8a6a4b]",
-        price: "text-[#6b3f1f]",
-      }
-    case "minimal":
-      return {
-        container: "rounded-2xl p-0",
-        image: "rounded-2xl",
-        content: "px-0 pb-0",
-        title: "text-[#111827]",
-        desc: "text-[#6b7280]",
-        price: "text-[#111827]",
-      }
-    default:
-      return {
-        container: "rounded-2xl p-0",
-        image: "rounded-2xl",
-        content: "px-0 pb-0",
-        title: "text-[#1e293b]",
-        desc: "text-gray-500",
-        price: "text-[#1e293b]",
-      }
-  }
+const cardStyle = {
+  container: "rounded-2xl p-0",
+  image: "rounded-2xl",
+  content: "px-0 pb-0",
+  title: "text-[#1e293b]",
+  desc: "text-gray-500",
+  price: "text-[#1e293b]",
 }
 
 function getTrayCardStyles(design: TrayCardDesign) {
@@ -198,7 +155,6 @@ export const ProductCard = memo(function ProductCard({
   item,
   onSelect,
   priority = false,
-  variant = "neo",
   trayDesign = "d1",
   forceUnifiedStyle = false,
   bestSellerStyle,
@@ -206,7 +162,7 @@ export const ProductCard = memo(function ProductCard({
 }: ProductCardProps) {
   const [brokenImages, setBrokenImages] = useState<Record<string, boolean>>({})
   const [traySizeIndex, setTraySizeIndex] = useState(0)
-  const v = getVariantStyles(variant)
+  const v = cardStyle
   const trayStyle = getTrayCardStyles(trayDesign)
   const menuStorageBase = getMenuStorageBase(item.image || "")
   const normalizedAllImages = Array.from(
@@ -263,7 +219,7 @@ export const ProductCard = memo(function ProductCard({
     : hasVariantPricing
     ? Math.min(...variantPrices)
     : item.price
-  const useThemeCardColors = variant === "neo" || forceUnifiedStyle
+  const useThemeCardColors = true
   const cardSurfaceStyle = useThemeCardColors ? { backgroundColor: "var(--item-card-bg)" } : undefined
   const titleColorStyle = useThemeCardColors ? { color: "var(--item-card-title)" } : undefined
   const descColorStyle = useThemeCardColors ? { color: "var(--item-card-desc)" } : undefined

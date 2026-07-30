@@ -63,7 +63,14 @@ export function CategoryFilter({
   if (variant === "modern") {
     return (
       <div className="px-4 pt-3 md:px-6 md:pt-5">
-        <div className="mx-auto flex w-max min-w-full snap-x snap-mandatory gap-2.5 overflow-x-auto pb-1 touch-pan-x [scrollbar-width:none] [-ms-overflow-style:none] [scroll-padding-inline:1rem] [&::-webkit-scrollbar]:hidden md:min-w-0 md:justify-center">
+        <div
+          className="mx-auto flex w-max min-w-full snap-x snap-mandatory gap-2.5 overflow-x-auto pb-1 touch-pan-x [scrollbar-width:none] [-ms-overflow-style:none] [scroll-padding-inline:1rem] [&::-webkit-scrollbar]:hidden md:min-w-0 md:justify-center md:[mask-image:none] md:[-webkit-mask-image:none]"
+          style={{
+            maskImage: "linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent)",
+            WebkitMaskImage:
+              "linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent)",
+          }}
+        >
           {categories.map((category) => {
             const isActive = selectedCategory === category.id
             const Icon = getCategoryIcon(category)
@@ -101,7 +108,14 @@ export function CategoryFilter({
 
   return (
     <div className="px-4 pt-3 md:px-6 md:pt-5">
-      <div className="mx-auto flex snap-x snap-mandatory gap-2 overflow-x-auto pb-1 touch-pan-x [scrollbar-width:none] [-ms-overflow-style:none] [scroll-padding-inline:1rem] [&::-webkit-scrollbar]:hidden md:flex-wrap md:justify-center">
+      <div
+        className="mx-auto flex snap-x snap-mandatory gap-2 overflow-x-auto pb-1 touch-pan-x [scrollbar-width:none] [-ms-overflow-style:none] [scroll-padding-inline:1rem] [&::-webkit-scrollbar]:hidden md:flex-wrap md:justify-center md:[mask-image:none] md:[-webkit-mask-image:none]"
+        style={{
+          maskImage: "linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent)",
+          WebkitMaskImage:
+            "linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent)",
+        }}
+      >
       {categories.map((category) => (
         <button
           key={category.id}

@@ -489,6 +489,7 @@ function CheckoutContent() {
   const [couponStatus, setCouponStatus] = useState<string | null>(null);
   const [couponStatusTone, setCouponStatusTone] =
     useState<CouponStatusTone | null>(null);
+  const [step, setStep] = useState<2 | 3>(2);
 
   useEffect(() => {
     router.prefetch("/confirmation");
@@ -1022,6 +1023,26 @@ function CheckoutContent() {
   const headerTitle = "أمل سناك";
   const headerSubtitle = "تفاصيل التوصيل لإتمام طلبك";
 
+  const goToReview = useCallback(() => {
+    setSubmitted(true);
+    const nextErrors = validate();
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) {
+      showActionFeedback("يرجى تصحيح الحقول المحددة");
+      window.setTimeout(() => focusFirstInvalidSection(nextErrors), 120);
+      return;
+    }
+
+    trackCheckoutEvent("checkout_step_advanced", { orderType });
+    setStep(3);
+    window.setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 50);
+  }, [focusFirstInvalidSection, orderType, showActionFeedback, validate]);
+
+  const goToDetails = useCallback(() => {
+    setStep(2);
+    window.setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 50);
+  }, []);
+
   const handleWhatsAppCheckout = async () => {
     setSubmitted(true);
     setCheckoutIssue(null);
@@ -1260,19 +1281,21 @@ function CheckoutContent() {
           <div className="rounded-2xl border border-slate-200/80 bg-white/80 px-2.5 py-2 shadow-sm">
             <div className="grid grid-cols-3 gap-1" dir="rtl">
               <ProgressStep label="السلة" step={1} state="done" />
-              <ProgressStep
-                label="التفاصيل"
-                step={2}
-                state={infoDone && (isPickup || Boolean(selectedArea)) && scheduleDone ? "done" : "current"}
-              />
+              {step === 3 ? (
+                <button type="button" onClick={goToDetails} className="text-right">
+                  <ProgressStep label="التفاصيل" step={2} state="done" />
+                </button>
+              ) : (
+                <ProgressStep label="التفاصيل" step={2} state="current" />
+              )}
               <ProgressStep
                 label="التأكيد"
                 step={3}
-                state={infoDone && (isPickup || Boolean(selectedArea)) && scheduleDone ? "current" : "upcoming"}
+                state={step === 3 ? "current" : "upcoming"}
               />
             </div>
             <p className="mt-1 px-2 text-right text-[11px] font-medium text-muted-foreground" dir="rtl">
-              {infoDone && (isPickup || Boolean(selectedArea)) && scheduleDone
+              {step === 3
                 ? "راجع الطلب ثم أكمل التأكيد."
                 : "أكمل التفاصيل المطلوبة للانتقال إلى التأكيد."}
             </p>
@@ -1725,15 +1748,7 @@ function CheckoutContent() {
           </aside>
         </div>
 
-        {!canRevealFulfillmentDetails ? (
-          <section className={cn(theme.section, "lg:p-6")}>
-            <div className="rounded-3xl border border-dashed border-primary/30 bg-primary/5 p-5 text-right">
-              <p className="text-sm font-semibold text-primary">
-                اختر منطقة التوصيل أولًا
-              </p>
-            </div>
-          </section>
-        ) : (
+        {step === 2 && (
           <>
             <section
               className={cn(
@@ -2075,6 +2090,33 @@ function CheckoutContent() {
               ) : null}
             </section>
 
+            {missingCheckoutSteps.length > 0 ? (
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-right text-sm text-amber-800">
+                أكمل هذه البيانات أولًا: {missingCheckoutSteps.join("، ")}
+              </div>
+            ) : null}
+
+            <Button
+              type="button"
+              onClick={goToReview}
+              className="h-14 w-full rounded-[18px] text-base font-bold"
+            >
+              التالي: مراجعة الطلب
+            </Button>
+          </>
+        )}
+
+        {step === 3 && (
+          <>
+            <button
+              type="button"
+              onClick={goToDetails}
+              className="flex min-h-11 items-center gap-1.5 text-sm font-semibold text-primary"
+            >
+              <ArrowRight className="h-4 w-4 rotate-180" />
+              رجوع لتعديل البيانات
+            </button>
+
             <section className={cn(theme.section, "lg:p-6")}>
               <div className="mb-4 text-right">
                 <div className="text-right">
@@ -2390,20 +2432,24 @@ function CheckoutContent() {
             </a>
           ) : null}
 
-          {missingCheckoutSteps.length > 0 ? (
-            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-right text-sm text-amber-800">
-              أكمل هذه البيانات أولًا: {missingCheckoutSteps.join("، ")}
-            </div>
-          ) : null}
+          {step === 3 ? (
+            <>
+              {missingCheckoutSteps.length > 0 ? (
+                <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-right text-sm text-amber-800">
+                  أكمل هذه البيانات أولًا: {missingCheckoutSteps.join("، ")}
+                </div>
+              ) : null}
 
-          <Button
-            type="button"
-            onClick={handleWhatsAppCheckout}
-            disabled={checkoutDisabled}
-            className={ctaButtonClass}
-          >
-            {checkoutButtonLabel}
-          </Button>
+              <Button
+                type="button"
+                onClick={handleWhatsAppCheckout}
+                disabled={checkoutDisabled}
+                className={ctaButtonClass}
+              >
+                {checkoutButtonLabel}
+              </Button>
+            </>
+          ) : null}
         </div>
       </div>
     </main>

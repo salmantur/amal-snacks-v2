@@ -39,7 +39,7 @@ export function TrustSignals() {
         target="_blank"
         rel="noopener noreferrer"
         onClick={() => trackStorefrontEvent("trust_signal_whatsapp_clicked", {})}
-        className="flex shrink-0 items-center gap-1.5 rounded-full border border-[#25D366]/25 bg-[#25D366]/10 px-3 py-1.5 text-xs font-bold text-[#1f8f48]"
+        className="flex shrink-0 items-center gap-1.5 rounded-full border border-[#25D366]/25 bg-[#25D366]/10 px-3 py-1.5 text-xs font-bold text-[var(--whatsapp-green-dark)]"
       >
         <MessageCircle className="h-3.5 w-3.5" />
         تواصل مباشر عبر واتساب

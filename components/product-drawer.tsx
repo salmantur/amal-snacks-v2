@@ -428,13 +428,13 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
           {isTray && (!isTraySizeVariant || showTrayOptionsStep) ? (
             <div className="pb-4">
               <div className="flex items-center justify-between mb-3">
-                <span className={cn("text-sm font-medium px-3 py-1 rounded-full", trayComplete ? "bg-[#1e5631]/10 text-[#1e5631]" : "bg-amal-yellow/20 text-foreground")} aria-live="polite">
+                <span className={cn("text-sm font-medium px-3 py-1 rounded-full", trayComplete ? "bg-[#1e5631]/10 text-[var(--checkout-green)]" : "bg-amal-yellow/20 text-foreground")} aria-live="polite">
                   {traySelections.length} / {TRAY_REQUIRED}
                 </span>
                 <h3 className="font-bold text-[#1e293b]">اختر {TRAY_REQUIRED} أصناف</h3>
               </div>
               <div className="w-full h-2 bg-gray-200 rounded-full mb-4">
-                <div className={cn("h-2 rounded-full transition-all duration-300", trayComplete ? "bg-[#1e5631]" : "bg-amal-yellow")} style={{ width: `${(traySelections.length / TRAY_REQUIRED) * 100}%` }} />
+                <div className={cn("h-2 rounded-full transition-all duration-300", trayComplete ? "bg-[var(--checkout-green)]" : "bg-amal-yellow")} style={{ width: `${(traySelections.length / TRAY_REQUIRED) * 100}%` }} />
               </div>
               <div className="grid grid-cols-2 gap-2">
                 {TRAY_ITEMS.map((item) => {
@@ -442,7 +442,7 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
                   const isSelected = traySelections.includes(key)
                   const isDisabled = !isSelected && traySelections.length >= TRAY_REQUIRED
                   return (
-                    <button type="button" key={key} onClick={() => toggleTrayItem(item)} disabled={isDisabled} aria-pressed={isSelected} className={cn("flex items-center justify-between p-4 min-h-14 rounded-xl border-2 transition-all text-base text-right touch-manipulation", isSelected ? "border-[#1e5631] bg-[#1e5631]/10 text-[#1e5631]" : "border-gray-200 bg-white text-[#1e293b]", isDisabled && "opacity-40 cursor-not-allowed")}>
+                    <button type="button" key={key} onClick={() => toggleTrayItem(item)} disabled={isDisabled} aria-pressed={isSelected} className={cn("flex items-center justify-between p-4 min-h-14 rounded-xl border-2 transition-all text-base text-right touch-manipulation", isSelected ? "border-[var(--checkout-green)] bg-[#1e5631]/10 text-[var(--checkout-green)]" : "border-gray-200 bg-white text-[#1e293b]", isDisabled && "opacity-40 cursor-not-allowed")}>
                       <span className="flex-1">{item.ar}</span>
                       {isSelected ? <Check className="h-4 w-4 flex-shrink-0 mr-1" /> : null}
                     </button>
@@ -459,13 +459,13 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
                 <span className="font-semibold text-sm text-right">بلاتر الأجبان</span>
               </div>
               <div className="flex items-center justify-between mb-3">
-                <span className={cn("text-sm font-medium px-3 py-1 rounded-full", eidComplete ? "bg-[#1e5631]/10 text-[#1e5631]" : "bg-amal-yellow/20 text-foreground")} aria-live="polite">
+                <span className={cn("text-sm font-medium px-3 py-1 rounded-full", eidComplete ? "bg-[#1e5631]/10 text-[var(--checkout-green)]" : "bg-amal-yellow/20 text-foreground")} aria-live="polite">
                   {traySelections.length} / {eidRequired}
                 </span>
                 <h3 className="font-bold text-[#1e293b]">اختر {eidRequired} سخانات</h3>
               </div>
               <div className="w-full h-2 bg-gray-200 rounded-full mb-4">
-                <div className={cn("h-2 rounded-full transition-all duration-300", eidComplete ? "bg-[#1e5631]" : "bg-amal-yellow")} style={{ width: `${(traySelections.length / eidRequired) * 100}%` }} />
+                <div className={cn("h-2 rounded-full transition-all duration-300", eidComplete ? "bg-[var(--checkout-green)]" : "bg-amal-yellow")} style={{ width: `${(traySelections.length / eidRequired) * 100}%` }} />
               </div>
               <div className="grid grid-cols-1 gap-2">
                 {EID_HEATER_ITEMS.map((item) => {
@@ -473,7 +473,7 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
                   const isSelected = traySelections.includes(key)
                   const isDisabled = !isSelected && traySelections.length >= eidRequired
                   return (
-                    <button type="button" key={item} onClick={() => toggleTrayItem({ ar: item, en: item })} disabled={isDisabled} aria-pressed={isSelected} className={cn("flex items-center justify-between p-4 min-h-14 rounded-xl border-2 transition-all text-base text-right touch-manipulation", isSelected ? "border-[#1e5631] bg-[#1e5631]/10 text-[#1e5631]" : "border-gray-200 bg-white text-[#1e293b]", isDisabled && "opacity-40 cursor-not-allowed")}>
+                    <button type="button" key={item} onClick={() => toggleTrayItem({ ar: item, en: item })} disabled={isDisabled} aria-pressed={isSelected} className={cn("flex items-center justify-between p-4 min-h-14 rounded-xl border-2 transition-all text-base text-right touch-manipulation", isSelected ? "border-[var(--checkout-green)] bg-[#1e5631]/10 text-[var(--checkout-green)]" : "border-gray-200 bg-white text-[#1e293b]", isDisabled && "opacity-40 cursor-not-allowed")}>
                       <span className="flex-1">{item}</span>
                       {isSelected ? <Check className="h-4 w-4 flex-shrink-0 mr-1" /> : null}
                     </button>
@@ -577,7 +577,7 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
                     const isDisabled = !isSelected && maxSelections > 0 && selectedIngredients.length >= maxSelections
                     const parsed = parseVariantOption(ingredient, product.price)
                     return (
-                      <button type="button" key={ingredient} onClick={() => toggleIngredient(ingredient)} disabled={isDisabled} aria-pressed={isSelected} className={cn("flex items-center justify-between p-4 min-h-14 rounded-xl border-2 transition-all text-base touch-manipulation", isSelected ? "border-[#1e5631] bg-[#1e5631]/10 text-[#1e5631]" : "border-gray-200 bg-white text-[#1e293b]", isDisabled && "opacity-50 cursor-not-allowed")}>
+                      <button type="button" key={ingredient} onClick={() => toggleIngredient(ingredient)} disabled={isDisabled} aria-pressed={isSelected} className={cn("flex items-center justify-between p-4 min-h-14 rounded-xl border-2 transition-all text-base touch-manipulation", isSelected ? "border-[var(--checkout-green)] bg-[#1e5631]/10 text-[var(--checkout-green)]" : "border-gray-200 bg-white text-[#1e293b]", isDisabled && "opacity-50 cursor-not-allowed")}>
                         {isSelected ? <Check className="h-4 w-4 flex-shrink-0" /> : null}
                         <div className="flex-1 text-right">
                           <div>{parsed.label}</div>
@@ -625,8 +625,8 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
                     : ((isTray && !isTraySizeVariant) && !trayComplete) || (isEidPackage && !eidComplete)
                     ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                     : isAddedFeedback
-                    ? "bg-[#1e5631] text-white scale-[1.02]"
-                    : "bg-[#1e5631] text-white hover:bg-[#174425]"
+                    ? "bg-[var(--checkout-green)] text-white scale-[1.02]"
+                    : "bg-[var(--checkout-green)] text-white hover:bg-[#174425]"
                 )}
               >
                 {isAddedFeedback

@@ -194,7 +194,7 @@ export function MenuGrid({ searchQuery, onSearchQueryChange }: MenuGridProps) {
                       })
                       onSearchQueryChange(suggestion)
                     }}
-                    className="px-4 py-2 rounded-full border border-[#1e5631]/30 bg-white text-[#1e5631] text-sm hover:bg-[#1e5631]/5 transition-colors"
+                    className="px-4 py-2 rounded-full border border-[#1e5631]/30 bg-white text-[var(--checkout-green)] text-sm hover:bg-[#1e5631]/5 transition-colors"
                   >
                     {suggestion}
                   </button>

@@ -1322,14 +1322,14 @@ function CheckoutContent() {
             role="status"
             aria-live="polite"
           >
-            <p className="text-sm font-semibold text-[#1f8f48]">
+            <p className="text-sm font-semibold text-[var(--whatsapp-green-dark)]">
               زر واتساب اليدوي جاهز إذا احتجته
             </p>
             <a
               href={manualWhatsAppUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-3 inline-flex min-h-11 items-center justify-center rounded-full bg-[#25D366] px-4 text-sm font-bold text-white"
+              className="mt-3 inline-flex min-h-11 items-center justify-center rounded-full bg-[var(--whatsapp-green)] px-4 text-sm font-bold text-white"
               onClick={() =>
                 trackCheckoutEvent("manual_whatsapp_opened", {
                   source: "banner",
@@ -1360,7 +1360,7 @@ function CheckoutContent() {
                   href={manualWhatsAppUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex min-h-10 items-center justify-center rounded-full bg-[#25D366] px-4 text-sm font-bold text-white"
+                  className="inline-flex min-h-10 items-center justify-center rounded-full bg-[var(--whatsapp-green)] px-4 text-sm font-bold text-white"
                   onClick={() =>
                     trackCheckoutEvent("manual_whatsapp_opened", {
                       source: "issue_banner",
@@ -1627,7 +1627,7 @@ function CheckoutContent() {
                   <span
                     className={cn(
                       "font-semibold",
-                      isPickup && "text-[#1e5631]",
+                      isPickup && "text-[var(--checkout-green)]",
                     )}
                   >
                     {isPickup ? (
@@ -2221,7 +2221,7 @@ function CheckoutContent() {
 
                 <div className="flex items-center justify-between">
                   <span className={summaryMutedTextClass}>رسوم التوصيل</span>
-                  <span className={cn("font-semibold", isPickup && "text-[#1e5631]")}>
+                  <span className={cn("font-semibold", isPickup && "text-[var(--checkout-green)]")}>
                     {isPickup ? (
                       "مجاني"
                     ) : selectedArea ? (
@@ -2348,7 +2348,7 @@ function CheckoutContent() {
             href={`https://wa.me/${WHATSAPP_NUMBER}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded-full px-4 py-2 bg-[#25D366]/10 text-[#1f8f48] text-sm font-semibold hover:bg-[#25D366]/20 transition-colors"
+            className="inline-flex items-center gap-2 rounded-full px-4 py-2 bg-[#25D366]/10 text-[var(--whatsapp-green-dark)] text-sm font-semibold hover:bg-[#25D366]/20 transition-colors"
           >
             <MessageCircle className="h-4 w-4" />
             تواصل مباشر للدعم
@@ -2421,7 +2421,7 @@ function CheckoutContent() {
               href={manualWhatsAppUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex min-h-12 items-center justify-center rounded-full border border-[#25D366]/25 bg-[#25D366]/10 px-4 text-sm font-semibold text-[#1f8f48]"
+              className="flex min-h-12 items-center justify-center rounded-full border border-[#25D366]/25 bg-[#25D366]/10 px-4 text-sm font-semibold text-[var(--whatsapp-green-dark)]"
               onClick={() =>
                 trackCheckoutEvent("manual_whatsapp_opened", {
                   source: "sticky_cta",

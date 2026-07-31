@@ -2,13 +2,18 @@
 
 import Image from "next/image"
 import { useState } from "react"
+import dynamic from "next/dynamic"
 import { ShoppingBag, Sparkles } from "lucide-react"
 import { useBannerConfig } from "@/hooks/use-banner-config"
 import { useMenu } from "@/hooks/use-menu"
 import { useCart } from "@/components/cart-provider"
-import { ProductDrawer } from "@/components/product-drawer"
 import { PriceWithRiyalLogo } from "@/components/ui/price-with-riyal-logo"
 import { trackStorefrontEvent } from "@/lib/storefront-events"
+
+const ProductDrawer = dynamic(
+  () => import("@/components/product-drawer").then((mod) => ({ default: mod.ProductDrawer })),
+  { ssr: false }
+)
 
 export function HeroBanner() {
   const { config, loading } = useBannerConfig()

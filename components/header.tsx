@@ -2,9 +2,9 @@
 
 import { ShoppingBag, Sparkles, Menu, ChevronLeft, ChevronRight } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
+import dynamic from "next/dynamic"
 import Link from "next/link"
 import { useCart } from "@/components/cart-provider"
-import { OrderTypeModal } from "@/components/order-type-modal"
 import { useRouter } from "next/navigation"
 import { useMenu } from "@/hooks/use-menu"
 import { useCategories } from "@/hooks/use-categories"
@@ -12,6 +12,11 @@ import type { MenuItem } from "@/components/cart-provider"
 import { PriceWithRiyalLogo } from "@/components/ui/price-with-riyal-logo"
 import { CartSheet } from "@/components/cart-sheet"
 import { trapFocusOnTab } from "@/lib/dialog-focus"
+
+const OrderTypeModal = dynamic(
+  () => import("@/components/order-type-modal").then((mod) => ({ default: mod.OrderTypeModal })),
+  { ssr: false }
+)
 
 function NewProductsTicker({ items }: { items: MenuItem[] }) {
   const newItems = items.filter((i) => i.isFeatured)

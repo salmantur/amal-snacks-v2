@@ -2,11 +2,16 @@
 
 import { useRouter } from "next/navigation"
 import { ShoppingBag, ChevronLeft } from "lucide-react"
+import dynamic from "next/dynamic"
 import { useRef, useState } from "react"
 import { useCart } from "@/components/cart-provider"
-import { OrderTypeModal } from "@/components/order-type-modal"
 import { PriceWithRiyalLogo } from "@/components/ui/price-with-riyal-logo"
 import { CartSheet } from "@/components/cart-sheet"
+
+const OrderTypeModal = dynamic(
+  () => import("@/components/order-type-modal").then((mod) => ({ default: mod.OrderTypeModal })),
+  { ssr: false }
+)
 
 export function CartBar() {
   const { totalItems, totalPrice } = useCart()

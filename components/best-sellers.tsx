@@ -3,12 +3,17 @@
 import Image from "next/image"
 import { Star, ShoppingBag } from "lucide-react"
 import { useState } from "react"
+import dynamic from "next/dynamic"
 import type { MenuItem } from "@/components/cart-provider"
-import { ProductDrawer } from "@/components/product-drawer"
 import { SearchBar } from "@/components/search-bar"
 import { PriceWithRiyalLogo } from "@/components/ui/price-with-riyal-logo"
 import { useMenu } from "@/hooks/use-menu"
 import { trackStorefrontEvent } from "@/lib/storefront-events"
+
+const ProductDrawer = dynamic(
+  () => import("@/components/product-drawer").then((mod) => ({ default: mod.ProductDrawer })),
+  { ssr: false }
+)
 
 interface BestSellersProps {
   searchQuery: string

@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation"
 import { ShoppingBag, ChevronLeft, X } from "lucide-react"
+import dynamic from "next/dynamic"
 import {
   useEffect,
   useRef,
@@ -9,7 +10,11 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react"
 import { useCart } from "@/components/cart-provider"
-import { OrderTypeModal } from "@/components/order-type-modal"
+
+const OrderTypeModal = dynamic(
+  () => import("@/components/order-type-modal").then((mod) => ({ default: mod.OrderTypeModal })),
+  { ssr: false }
+)
 import { PriceWithRiyalLogo } from "@/components/ui/price-with-riyal-logo"
 
 function getFocusableElements(container: HTMLElement | null) {

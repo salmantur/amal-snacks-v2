@@ -166,7 +166,7 @@ export function MenuGrid({ searchQuery, onSearchQueryChange }: MenuGridProps) {
         </div>
       </div>
 
-      <div className="mx-auto max-w-6xl px-3 py-5 pb-40 sm:px-4 md:px-6 md:py-8 md:pb-32">
+      <div className="mx-auto max-w-6xl px-4 py-5 pb-40 md:px-6 md:py-8 md:pb-32">
         {loading ? (
           <div className={catalogGridClass}>
             {[1, 2, 3, 4, 5, 6].map((i) => (

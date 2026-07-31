@@ -1,6 +1,6 @@
 "use client"
 
-import { MessageCircle, Percent, Store } from "lucide-react"
+import { MessageCircle, Percent } from "lucide-react"
 import { useDiscountConfig } from "@/hooks/use-discount-config"
 import { WHATSAPP_NUMBER } from "@/lib/data"
 import { trackStorefrontEvent } from "@/lib/storefront-events"
@@ -11,8 +11,8 @@ function formatAutoDiscountLabel(type: "percent" | "fixed", value: number): stri
 
 /**
  * Small trust/urgency strip shown right under the hero. Every chip reflects
- * something actually true right now (live discount config, real pickup
- * policy, real WhatsApp number) rather than invented copy.
+ * something actually true right now (live discount config, real WhatsApp
+ * number) rather than invented copy.
  */
 export function TrustSignals() {
   const { config: discountConfig, loading } = useDiscountConfig()
@@ -28,11 +28,6 @@ export function TrustSignals() {
           {formatAutoDiscountLabel(discountConfig.autoDiscountType, discountConfig.autoDiscountValue)}
         </span>
       ) : null}
-
-      <span className="flex shrink-0 items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700">
-        <Store className="h-3.5 w-3.5" />
-        استلام من المحل بدون رسوم توصيل
-      </span>
 
       <a
         href={`https://wa.me/${WHATSAPP_NUMBER}`}

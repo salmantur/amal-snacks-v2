@@ -34,7 +34,10 @@ const statusPriority: Record<Order["status"], number> = {
   delivered: 3,
 }
 
-const ORDERS_POLL_INTERVAL_MS = 5000
+// Realtime subscription is the primary sync path (subscribeToOrders below).
+// This interval is a fallback only, in case the realtime channel silently
+// drops - it does not need to run every few seconds.
+const ORDERS_POLL_INTERVAL_MS = 60000
 const INITIAL_ORDER_HISTORY_DAYS = 365
 const INITIAL_ORDER_HISTORY_LIMIT = 5000
 const POLL_ORDER_HISTORY_DAYS = 30

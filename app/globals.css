@@ -11,6 +11,7 @@
 @layer base {
   :root {
     --checkout-green: #1e5631;
+    --checkout-brand-black: #1a1a1a;
     --whatsapp-green: #25D366;
     --whatsapp-green-dark: #1f8f48;
     --background: 0 0% 100%;

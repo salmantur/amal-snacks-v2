@@ -26,6 +26,7 @@ import {
   CheckCircle2,
   ShieldCheck,
   MessageCircle,
+  Flame,
 } from "lucide-react";
 import { useCart } from "@/components/cart-provider";
 import type { CartItem } from "@/components/cart-provider";
@@ -319,33 +320,27 @@ function ProgressStep({
   step: number;
   state: "done" | "current" | "upcoming";
 }) {
-  const done = state === "done";
-  const current = state === "current";
+  const active = state === "done" || state === "current";
 
   return (
     <div
-      className={cn(
-        "flex min-w-0 items-center gap-2 rounded-xl px-2 py-1.5",
-        current && "bg-primary/10",
-      )}
-      aria-current={current ? "step" : undefined}
+      className="flex flex-col items-center gap-2"
+      aria-current={state === "current" ? "step" : undefined}
     >
       <div
         className={cn(
-          "flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-[11px] font-black",
-          done
-            ? "bg-primary text-primary-foreground border-primary"
-            : current
-              ? "border-primary bg-background text-primary"
-              : "bg-background text-muted-foreground border-border",
+          "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold",
+          active
+            ? "bg-[var(--checkout-brand-black)] text-white"
+            : "bg-gray-100 text-gray-400",
         )}
       >
-        {done ? <CheckCircle2 className="h-4 w-4" /> : step}
+        {state === "done" ? <CheckCircle2 className="h-4 w-4" /> : step}
       </div>
       <span
         className={cn(
-          "truncate text-xs font-bold",
-          done || current ? "text-foreground" : "text-muted-foreground",
+          "text-[10px] font-bold",
+          active ? "text-[var(--checkout-brand-black)]" : "text-gray-400",
         )}
       >
         {label}
@@ -431,14 +426,14 @@ function CheckoutContent() {
   const orderType = (orderTypeParam as OrderMode) || "delivery";
   const isPickup = orderType === "pickup";
   const theme = {
-    main: "min-h-screen bg-[#fdfaf9] pb-24 text-slate-900",
+    main: "min-h-screen bg-[#fafafa] pb-24 text-[#1a1a1a]",
     header:
-      "sticky top-0 z-50 border-b border-slate-200/80 bg-[#fdfaf9]/90 backdrop-blur-md",
+      "sticky top-0 z-50 border-b border-gray-100 bg-white/90 backdrop-blur-md",
     section:
-      "rounded-[20px] border border-slate-200 bg-white p-4 shadow-[0_4px_20px_rgba(15,23,42,0.05)]",
+      "rounded-3xl border border-gray-100 bg-white p-5 shadow-sm sm:p-6",
     summary:
-      "rounded-[24px] border border-[#f7e8bf] bg-[#fffbe8] p-5 shadow-[0_4px_20px_rgba(236,91,19,0.05)]",
-    input: "bg-slate-50",
+      "rounded-3xl border border-[#f7e8bf] bg-[#fffbe8] p-5 shadow-sm",
+    input: "bg-gray-50",
     ctaWrap: "mx-auto w-full max-w-md px-4 pb-8 pt-2",
   };
 
@@ -984,7 +979,7 @@ function CheckoutContent() {
   const contentColumnClass = "space-y-4";
   const asideColumnClass = "hidden";
   const ctaButtonClass =
-    "h-14 w-full rounded-[18px] border-2 border-pink-200 bg-pink-50 text-lg font-bold text-pink-600 hover:bg-pink-100 disabled:cursor-not-allowed disabled:bg-pink-50 disabled:text-pink-300";
+    "h-14 w-full rounded-[2rem] bg-[var(--checkout-brand-black)] text-lg font-black text-white transition-transform active:scale-95 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500";
   const couponToneClass =
     appliedCouponCode || discountResult.codeDiscountAmount > 0
       ? "border-green-200 bg-green-50 text-green-700"
@@ -1278,23 +1273,25 @@ function CheckoutContent() {
           <PriceWithRiyalLogo value={displayGrandTotal} />
         </div>
         <div className={cn("mx-auto px-4 pb-3", layoutWidthClass)}>
-          <div className="rounded-2xl border border-slate-200/80 bg-white/80 px-2.5 py-2 shadow-sm">
-            <div className="grid grid-cols-3 gap-1" dir="rtl">
+          <div className="rounded-2xl border border-gray-100 bg-white px-4 py-4 shadow-sm">
+            <div className="mx-auto flex max-w-xs items-center justify-between" dir="rtl">
               <ProgressStep label="السلة" step={1} state="done" />
+              <div className="mx-2 h-[2px] flex-1 -translate-y-3 bg-gray-200" />
               {step === 3 ? (
-                <button type="button" onClick={goToDetails} className="text-right">
+                <button type="button" onClick={goToDetails}>
                   <ProgressStep label="التفاصيل" step={2} state="done" />
                 </button>
               ) : (
                 <ProgressStep label="التفاصيل" step={2} state="current" />
               )}
+              <div className="mx-2 h-[2px] flex-1 -translate-y-3 bg-gray-200" />
               <ProgressStep
                 label="التأكيد"
                 step={3}
                 state={step === 3 ? "current" : "upcoming"}
               />
             </div>
-            <p className="mt-1 px-2 text-right text-[11px] font-medium text-muted-foreground" dir="rtl">
+            <p className="mt-3 text-center text-[11px] font-medium text-gray-400" dir="rtl">
               {step === 3
                 ? "راجع الطلب ثم أكمل التأكيد."
                 : "أكمل التفاصيل المطلوبة للانتقال إلى التأكيد."}
@@ -1758,7 +1755,10 @@ function CheckoutContent() {
               ref={detailsSectionRef}
             >
               <div className="flex items-center justify-between mb-4 gap-3">
-                <div className="text-right">
+                <div className="flex items-center gap-3 text-right">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gray-50 text-[var(--checkout-brand-black)]">
+                    <User className="h-4 w-4" />
+                  </div>
                   <h2 className="text-lg font-bold">
                     {isPickup ? "بيانات الاستلام" : "بيانات التوصيل"}
                   </h2>
@@ -1914,15 +1914,20 @@ function CheckoutContent() {
               ref={areaSectionRef}
             >
               <div className="mb-4 flex items-center justify-between gap-3">
-                <div className="text-right">
-                  <h2 className="text-lg font-bold">
-                    {isPickup ? "معلومات الاستلام" : "منطقة التوصيل"}
-                  </h2>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {isPickup
-                      ? "لا توجد رسوم توصيل عند الاستلام من المحل"
-                      : "اختر المنطقة من القائمة لتحديث الرسوم"}
-                  </p>
+                <div className="flex items-center gap-3 text-right">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gray-50 text-[var(--checkout-brand-black)]">
+                    <MapPin className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold">
+                      {isPickup ? "معلومات الاستلام" : "منطقة التوصيل"}
+                    </h2>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {isPickup
+                        ? "لا توجد رسوم توصيل عند الاستلام من المحل"
+                        : "اختر المنطقة من القائمة لتحديث الرسوم"}
+                    </p>
+                  </div>
                 </div>
                 <SectionStatusBadge
                   done={isPickup || Boolean(selectedArea)}
@@ -2006,7 +2011,10 @@ function CheckoutContent() {
               ref={scheduleSectionRef}
             >
               <div className="flex items-center justify-between mb-2 gap-3">
-                <div className="text-right">
+                <div className="flex items-center gap-3 text-right">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gray-50 text-[var(--checkout-brand-black)]">
+                    <Clock3 className="h-4 w-4" />
+                  </div>
                   <h2 className="text-lg font-bold">
                     {isPickup ? "وقت الاستلام" : "موعد التوصيل"}
                   </h2>
@@ -2052,9 +2060,15 @@ function CheckoutContent() {
               </div>
 
               {minimumLeadTimeMinutes > 0 ? (
-                <div className="mb-3 rounded-xl bg-amal-yellow/20 p-3 text-right text-sm text-foreground">
-                  الحد الأدنى للتجهيز:{" "}
-                  <span className="font-bold">
+                <div
+                  className="mb-3 flex items-center justify-between rounded-2xl p-4 text-white"
+                  style={{ backgroundColor: "var(--checkout-brand-black)" }}
+                >
+                  <div className="flex items-center gap-3">
+                    <Flame className="h-5 w-5 text-[#fbcfe8]" />
+                    <span className="text-xs font-bold">الحد الأدنى لتجهيز الطلب:</span>
+                  </div>
+                  <span className="text-lg font-black tracking-tighter">
                     {formatArabicDuration(minimumLeadTimeMinutes)}
                   </span>
                 </div>
@@ -2099,9 +2113,12 @@ function CheckoutContent() {
             <Button
               type="button"
               onClick={goToReview}
-              className="h-14 w-full rounded-[18px] text-base font-bold"
+              className={ctaButtonClass}
             >
-              التالي: مراجعة الطلب
+              <span className="flex items-center justify-center gap-3">
+                التالي: مراجعة الطلب
+                <ArrowRight className="h-4 w-4 rotate-180" />
+              </span>
             </Button>
           </>
         )}
@@ -2111,7 +2128,7 @@ function CheckoutContent() {
             <button
               type="button"
               onClick={goToDetails}
-              className="flex min-h-11 items-center gap-1.5 text-sm font-semibold text-primary"
+              className="flex min-h-11 items-center gap-1.5 text-sm font-semibold text-[var(--checkout-brand-black)]"
             >
               <ArrowRight className="h-4 w-4 rotate-180" />
               رجوع لتعديل البيانات

@@ -474,7 +474,6 @@ function CheckoutContent() {
   const [isSchedulePickerHighlighted, setIsSchedulePickerHighlighted] =
     useState(false);
   const [schedulePickerOpenSignal, setSchedulePickerOpenSignal] = useState(0);
-  const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   const [manualWhatsAppUrl, setManualWhatsAppUrl] = useState<string | null>(
     null,
   );
@@ -560,37 +559,6 @@ function CheckoutContent() {
     setDeliveryInfo,
     showActionFeedback,
   ]);
-
-  const handleUseCurrentLocation = useCallback(() => {
-    if (typeof window === "undefined" || !("geolocation" in navigator)) {
-      showActionFeedback("المتصفح لا يدعم تحديد الموقع");
-      return;
-    }
-
-    setIsDetectingLocation(true);
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords;
-        const nextLocationUrl = `https://maps.google.com/?q=${latitude},${longitude}`;
-        setDeliveryInfo({
-          ...deliveryInfo,
-          locationUrl: nextLocationUrl,
-        });
-        setIsDetectingLocation(false);
-        trackCheckoutEvent("location_detected", { orderType });
-        showActionFeedback("تم إضافة موقعك الحالي");
-      },
-      () => {
-        setIsDetectingLocation(false);
-        showActionFeedback("تعذر الوصول إلى موقعك الحالي");
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0,
-      },
-    );
-  }, [deliveryInfo, orderType, setDeliveryInfo, showActionFeedback]);
 
   const pickArea = useCallback(
     (areaName: string) => {
@@ -993,16 +961,6 @@ function CheckoutContent() {
         : couponStatusTone === "info"
           ? "border-amber-200 bg-amber-50 text-amber-700"
           : "border-border/60 bg-background/70 text-muted-foreground";
-  const combinedOrderNotes = useMemo(() => {
-    const parts: string[] = [];
-    if (!isPickup && deliveryInfo.locationUrl.trim()) {
-      parts.push(`رابط الموقع: ${deliveryInfo.locationUrl.trim()}`);
-    }
-    if (deliveryInfo.notes.trim()) {
-      parts.push(deliveryInfo.notes.trim());
-    }
-    return parts.join("\n");
-  }, [deliveryInfo.locationUrl, deliveryInfo.notes, isPickup]);
   const missingCheckoutSteps = useMemo(() => {
     const steps: string[] = [];
 
@@ -1087,7 +1045,7 @@ function CheckoutContent() {
         quantity: item.quantity,
         selectedIngredients: item.selectedIngredients,
       })),
-      notes: combinedOrderNotes,
+      notes: "",
       scheduledTime: deliveryInfo.scheduledTime,
       couponCode: activeCouponCode,
     };
@@ -1886,79 +1844,6 @@ function CheckoutContent() {
                       {errors.phone}
                     </p>
                   ) : null}
-                </div>
-
-                {!isPickup ? (
-                  <>
-                    <div className="rounded-2xl border border-border/60 bg-background/70 p-3">
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="text-right">
-                          <p className="text-sm font-semibold">موقع التوصيل</p>
-                          <p
-                            id="checkout-location-hint"
-                            className="mt-1 text-xs text-muted-foreground"
-                          >
-                            الصق رابط الموقع من خرائط Google أو استخدم تحديد
-                            موقعي
-                          </p>
-                        </div>
-                        <Button
-                          type="button"
-                          onClick={handleUseCurrentLocation}
-                          disabled={isDetectingLocation}
-                          variant="outline"
-                          className="min-h-11 rounded-full px-4 text-xs font-semibold"
-                        >
-                          {isDetectingLocation
-                            ? "جارٍ التحديد..."
-                            : "استخدم موقعي"}
-                        </Button>
-                      </div>
-
-                      <label htmlFor="checkout-location" className="sr-only">
-                        رابط موقع التوصيل
-                      </label>
-                      <input
-                        id="checkout-location"
-                        type="url"
-                        inputMode="url"
-                        dir="ltr"
-                        placeholder="https://maps.google.com/..."
-                        value={deliveryInfo.locationUrl}
-                        onChange={(e) =>
-                          handleInputChange("locationUrl", e.target.value)
-                        }
-                        autoComplete="off"
-                        autoCapitalize="none"
-                        spellCheck={false}
-                        enterKeyHint="done"
-                        className={cn(
-                          "mt-3 h-12 rounded-2xl border border-border px-4 text-left",
-                          theme.input,
-                        )}
-                        aria-describedby="checkout-location-hint"
-                      />
-                    </div>
-                  </>
-                ) : null}
-
-                <div className="relative">
-                  <label htmlFor="checkout-notes" className="sr-only">
-                    ملاحظات على الطلب
-                  </label>
-                  <textarea
-                    id="checkout-notes"
-                    placeholder="ملاحظات على الطلب (اختياري) - مثال: بدون بصل"
-                    value={deliveryInfo.notes}
-                    onChange={(e) => handleInputChange("notes", e.target.value)}
-                    rows={3}
-                    enterKeyHint="done"
-                    className={cn(
-                      "w-full resize-none rounded-[16px] border border-slate-200",
-                      theme.input,
-                      "px-4 py-4 text-base text-slate-900 placeholder:text-slate-400 transition-all focus:outline-none focus:ring-2 focus:ring-primary/20",
-                    )}
-                  />
                 </div>
 
               </div>

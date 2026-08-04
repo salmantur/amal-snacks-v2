@@ -20,8 +20,6 @@ import {
   Trash2,
   Truck,
   MapPin,
-  User,
-  Phone,
   ShoppingBag,
   CheckCircle2,
   ShieldCheck,
@@ -1776,21 +1774,24 @@ function CheckoutContent() {
               ) : null}
 
               <div className="space-y-3">
-                <div className="relative">
-                  <User className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                  <label htmlFor="checkout-name" className="sr-only">
+                <div>
+                  <label
+                    htmlFor="checkout-name"
+                    className="mb-1 block text-right text-sm text-foreground"
+                  >
                     الاسم الكامل
                   </label>
                   <input
                     id="checkout-name"
                     type="text"
-                    placeholder="الاسم الكامل *"
+                    placeholder="أدخل اسمك هنا"
+                    dir="rtl"
                     value={deliveryInfo.name}
                     onChange={(e) => handleInputChange("name", e.target.value)}
                     autoComplete="name"
                     enterKeyHint="next"
                     className={cn(
-                      fieldBaseClass,
+                      "w-full min-h-12 rounded-[10px] border border-border/50 bg-white px-4 py-3 text-right text-base text-foreground placeholder:text-muted-foreground/50 transition-all focus:outline-none focus:ring-2 focus:ring-primary/20",
                       errors.name &&
                         "ring-2 ring-red-300 border border-red-300",
                     )}
@@ -1808,24 +1809,26 @@ function CheckoutContent() {
                   ) : null}
                 </div>
 
-                <div className="relative">
-                  <Phone className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                  <label htmlFor="checkout-phone" className="sr-only">
-                    رقم الهاتف
+                <div>
+                  <label
+                    htmlFor="checkout-phone"
+                    className="mb-1 block text-right text-sm text-foreground"
+                  >
+                    رقم الجوال
                   </label>
                   <input
                     id="checkout-phone"
                     type="tel"
                     inputMode="tel"
                     dir="ltr"
-                    placeholder="رقم الهاتف *"
+                    placeholder="05xxxxxxxx"
                     value={deliveryInfo.phone}
                     onChange={(e) => handleInputChange("phone", e.target.value)}
                     autoComplete="tel-national"
                     enterKeyHint={isPickup ? "done" : "next"}
                     maxLength={12}
                     className={cn(
-                      fieldBaseClass,
+                      "w-full min-h-12 rounded-[10px] border border-border/50 bg-white px-4 py-3 text-right text-base text-foreground placeholder:text-muted-foreground/50 transition-all focus:outline-none focus:ring-2 focus:ring-primary/20",
                       errors.phone &&
                         "ring-2 ring-red-300 border border-red-300",
                     )}
@@ -1879,7 +1882,7 @@ function CheckoutContent() {
               ) : (
                 <div className="space-y-3">
                   <div className="relative">
-                    <MapPin className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <MapPin className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 h-[18px] w-[18px] text-primary" />
                     <label htmlFor="checkout-area" className="sr-only">
                       منطقة التوصيل
                     </label>
@@ -1895,8 +1898,7 @@ function CheckoutContent() {
                         pickArea(value);
                       }}
                       className={cn(
-                        fieldBaseClass,
-                        "appearance-none pr-12",
+                        "w-full min-h-[50px] rounded-full border border-border/30 bg-muted/40 px-4 py-3 pr-12 text-right text-base text-foreground appearance-none transition-all focus:outline-none focus:ring-2 focus:ring-primary/20",
                         errors.area &&
                           "ring-2 ring-red-300 border border-red-300",
                       )}

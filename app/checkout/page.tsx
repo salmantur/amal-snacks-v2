@@ -40,7 +40,6 @@ import {
   WHATSAPP_NUMBER,
 } from "@/lib/data";
 import {
-  formatArabicDuration,
   generateDeliveryDaySlots,
   isSaudiDateClosed,
 } from "@/lib/checkout-schedule";
@@ -1993,15 +1992,6 @@ function CheckoutContent() {
                   </p>
                 </button>
               </div>
-
-              {minimumLeadTimeMinutes > 0 ? (
-                <div className="mb-3 rounded-xl bg-amal-yellow/20 p-3 text-right text-sm text-foreground">
-                  الحد الأدنى للتجهيز:{" "}
-                  <span className="font-bold">
-                    {formatArabicDuration(minimumLeadTimeMinutes)}
-                  </span>
-                </div>
-              ) : null}
 
               <div
                 ref={schedulePickerRef}

@@ -1,6 +1,7 @@
 import React from "react"
 import type { Metadata, Viewport } from 'next'
 import { Tajawal } from 'next/font/google'
+import localFont from 'next/font/local'
 import './globals.css'
 import { CartProvider } from '@/components/cart-provider'
 import { ThemeLoader } from '@/components/theme-loader'
@@ -10,6 +11,39 @@ const tajawal = Tajawal({
   subsets: ['arabic', 'latin'],
   weight: ['400', '500', '700', '800'],
   variable: '--font-tajawal',
+  display: 'swap',
+  preload: true,
+})
+
+const thmanyahSerifText = localFont({
+  src: [
+    {
+      path: './fonts/thmanyah-serif-text/thmanyahseriftext-Light.woff2',
+      weight: '300',
+      style: 'normal',
+    },
+    {
+      path: './fonts/thmanyah-serif-text/thmanyahseriftext-Regular.woff2',
+      weight: '400',
+      style: 'normal',
+    },
+    {
+      path: './fonts/thmanyah-serif-text/thmanyahseriftext-Medium.woff2',
+      weight: '500',
+      style: 'normal',
+    },
+    {
+      path: './fonts/thmanyah-serif-text/thmanyahseriftext-Bold.woff2',
+      weight: '700',
+      style: 'normal',
+    },
+    {
+      path: './fonts/thmanyah-serif-text/thmanyahseriftext-Black.woff2',
+      weight: '900',
+      style: 'normal',
+    },
+  ],
+  variable: '--font-thmanyah-serif-text',
   display: 'swap',
   preload: true,
 })
@@ -98,7 +132,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <link rel="dns-prefetch" href="https://wa.me" />
         <script dangerouslySetInnerHTML={{ __html: themePreloadScript }} />
       </head>
-      <body className={`${tajawal.variable} font-sans antialiased`}>
+      <body className={`${tajawal.variable} ${thmanyahSerifText.variable} font-sans antialiased`}>
         <CartProvider>
           <WebVitalsReporter />
           <ThemeLoader />

@@ -24,7 +24,6 @@ type AdminTab = "orders" | "banner" | "stock" | "categories" | "sales" | "colors
 type OrderFilter = Order["status"] | "all"
 type TypeFilter = "all" | "delivery" | "pickup"
 type SortBy = "newest" | "oldest" | "highest" | "status"
-type LayoutMode = "kanban" | "minimal"
 type AdminDesign = "design1" | "design2" | "design3" | "design4" | "design5"
 
 const statusPriority: Record<Order["status"], number> = {
@@ -67,7 +66,6 @@ export default function AdminPage() {
   const [filter, setFilter] = useState<OrderFilter>("all")
   const [typeFilter] = useState<TypeFilter>("all")
   const [sortBy] = useState<SortBy>("newest")
-  const [layoutMode, setLayoutMode] = useState<LayoutMode>("kanban")
   const [adminDesign] = useState<AdminDesign>("design1")
   const [searchQuery] = useState("")
   const [activeTab, setActiveTab] = useState<AdminTab>("orders")
@@ -208,16 +206,6 @@ export default function AdminPage() {
     return out
   }, [orders, filter, typeFilter, sortBy, searchQuery])
 
-  const groupedOrders = useMemo(
-    () => ({
-      pending: filteredOrders.filter((o) => o.status === "pending"),
-      preparing: filteredOrders.filter((o) => o.status === "preparing"),
-      ready: filteredOrders.filter((o) => o.status === "ready"),
-      delivered: filteredOrders.filter((o) => o.status === "delivered"),
-    }),
-    [filteredOrders]
-  )
-
   const statusLabelMap: Record<Order["status"], string> = {
     pending: "جديد",
     preparing: "قيد التحضير",
@@ -343,26 +331,6 @@ export default function AdminPage() {
                   )}
                 >
                   {f.label}
-                </button>
-              ))}
-            </div>
-
-            <div className="flex gap-2 overflow-x-auto scrollbar-hide pt-1">
-              {([
-                { id: "kanban", label: "Kanban" },
-                { id: "minimal", label: "Minimal" },
-              ] as const).map((layout) => (
-                <button
-                  key={layout.id}
-                  onClick={() => setLayoutMode(layout.id)}
-                  className={cn(
-                    "px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors flex-shrink-0 border",
-                    layoutMode === layout.id
-                      ? "bg-gray-900 text-white border-gray-900"
-                      : "bg-white text-gray-600 border-gray-200"
-                  )}
-                >
-                  {layout.label}
                 </button>
               ))}
             </div>
@@ -565,59 +533,24 @@ export default function AdminPage() {
                   {loadError}
                 </div>
               ) : null}
-              {layoutMode === "kanban" ? (
-                <div className="grid gap-3 lg:grid-cols-4">
-                  {([
-                    { key: "pending", title: "جديد", items: groupedOrders.pending },
-                    { key: "preparing", title: "قيد التحضير", items: groupedOrders.preparing },
-                    { key: "ready", title: "جاهز", items: groupedOrders.ready },
-                    { key: "delivered", title: "مكتمل", items: groupedOrders.delivered },
-                  ] as const).map((col) => (
-                    <div key={col.key} className="rounded-2xl border border-gray-200 bg-white p-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="text-sm font-bold">{col.title}</p>
-                        <span className="text-xs bg-gray-100 px-2 py-0.5 rounded-full">{col.items.length}</span>
-                      </div>
-                      <div className="space-y-2">
-                        {col.items.map((order) => (
-                          <button
-                            key={order.id}
-                            className="w-full touch-pan-y text-right rounded-xl border border-gray-200 bg-gray-50 p-2.5 hover:bg-gray-100 transition-colors"
-                          >
-                            <div className="flex items-center justify-between">
-                              <p className="font-semibold text-sm">#{order.orderNumber}</p>
-                              <span className="text-[11px] text-gray-500">{new Date(order.createdAt).toLocaleTimeString("ar-SA", { hour: "2-digit", minute: "2-digit" })}</span>
-                            </div>
-                            <p className="text-sm mt-1 truncate">{order.customerName}</p>
-                            <p className="text-xs text-gray-500 mt-0.5">{order.items.length} عناصر · {order.total} SAR</p>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
+              <div className="space-y-3">
+                <div className="flex gap-2 overflow-x-auto">
+                  {(["pending", "preparing", "ready", "delivered"] as const).map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => setFilter(s)}
+                      className={cn("px-4 py-2 rounded-full text-sm font-medium", filter === s ? "bg-gray-900 text-white" : "bg-white text-gray-600 border border-gray-200")}
+                    >
+                      {statusLabelMap[s]}
+                    </button>
                   ))}
                 </div>
-              ) : null}
-
-              {layoutMode === "minimal" ? (
-                <div className="space-y-3">
-                  <div className="flex gap-2 overflow-x-auto">
-                    {(["pending", "preparing", "ready", "delivered"] as const).map((s) => (
-                      <button
-                        key={s}
-                        onClick={() => setFilter(s)}
-                        className={cn("px-4 py-2 rounded-full text-sm font-medium", filter === s ? "bg-gray-900 text-white" : "bg-white text-gray-600 border border-gray-200")}
-                      >
-                        {statusLabelMap[s]}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {filteredOrders.map((order) => (
-                      <KitchenTicket key={order.id} order={order} onStatusChange={handleStatusChange} />
-                    ))}
-                  </div>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {filteredOrders.map((order) => (
+                    <KitchenTicket key={order.id} order={order} onStatusChange={handleStatusChange} />
+                  ))}
                 </div>
-              ) : null}
+              </div>
             </>
           )}
         </div>

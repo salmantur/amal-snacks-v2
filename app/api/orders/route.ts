@@ -6,6 +6,33 @@ import { fetchDeliveryAreasFromSupabase } from "@/lib/delivery-areas"
 import { getSupabaseConfig } from "@/lib/supabase/config"
 import { formatNewOrderTelegramMessage, normalizeTelegramConfig, sendTelegramMessage } from "@/lib/telegram"
 
+const RATE_LIMIT_WINDOW_MS = 60_000
+const RATE_LIMIT_MAX_REQUESTS = 5
+
+const rateLimitStore = new Map<string, { count: number; resetAt: number }>()
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now()
+  const existing = rateLimitStore.get(ip)
+
+  if (!existing || now > existing.resetAt) {
+    rateLimitStore.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS })
+    return false
+  }
+
+  existing.count += 1
+  return existing.count > RATE_LIMIT_MAX_REQUESTS
+}
+
+function extractClientIp(req: Request): string {
+  const xff = req.headers.get("x-forwarded-for")
+  if (xff) {
+    return xff.split(",")[0]?.trim() || "unknown"
+  }
+
+  return req.headers.get("x-real-ip") || "unknown"
+}
+
 const orderItemSchema = z.object({
   id: z.string().min(1),
   quantity: z.number().int().min(1).max(100),
@@ -63,6 +90,11 @@ function parseVariantOption(raw: string, fallbackPrice: number): { label: string
 
 export async function POST(req: Request) {
   try {
+    const clientIp = extractClientIp(req)
+    if (isRateLimited(clientIp)) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 })
+    }
+
     const { url, publishableKey } = getSupabaseConfig()
 
     const parsed = orderPayloadSchema.safeParse(await req.json())

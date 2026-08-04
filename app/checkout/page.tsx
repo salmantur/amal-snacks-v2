@@ -994,11 +994,15 @@ function CheckoutContent() {
           ? "border-amber-200 bg-amber-50 text-amber-700"
           : "border-border/60 bg-background/70 text-muted-foreground";
   const combinedOrderNotes = useMemo(() => {
-    if (isPickup) return "";
-    return deliveryInfo.locationUrl.trim()
-      ? `رابط الموقع: ${deliveryInfo.locationUrl.trim()}`
-      : "";
-  }, [deliveryInfo.locationUrl, isPickup]);
+    const parts: string[] = [];
+    if (!isPickup && deliveryInfo.locationUrl.trim()) {
+      parts.push(`رابط الموقع: ${deliveryInfo.locationUrl.trim()}`);
+    }
+    if (deliveryInfo.notes.trim()) {
+      parts.push(deliveryInfo.notes.trim());
+    }
+    return parts.join("\n");
+  }, [deliveryInfo.locationUrl, deliveryInfo.notes, isPickup]);
   const missingCheckoutSteps = useMemo(() => {
     const steps: string[] = [];
 
@@ -1090,38 +1094,73 @@ function CheckoutContent() {
     const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${message}`;
 
     if (isLikelyIOSDevice()) {
+      setIsSubmitting(true);
       setManualWhatsAppUrl(whatsappUrl);
-
-      try {
-        const payloadText = JSON.stringify(orderPayload);
-        const payloadBlob = new Blob([payloadText], {
-          type: "application/json",
-        });
-        const beaconSent =
-          typeof navigator !== "undefined" &&
-          typeof navigator.sendBeacon === "function"
-            ? navigator.sendBeacon("/api/orders", payloadBlob)
-            : false;
-
-        if (!beaconSent) {
-          void fetch("/api/orders", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: payloadText,
-            keepalive: true,
-          });
-        }
-      } catch {
-        // Best-effort save only; direct WhatsApp handoff is the priority on iPhone.
-      }
-
       trackCheckoutEvent("checkout_started", {
         orderType,
         itemsCount: items.length,
         areaSelected: Boolean(selectedArea),
-        handoffMode: "ios_direct",
+        handoffMode: "ios_await",
       });
-      window.location.href = whatsappUrl;
+
+      const iosController = new AbortController();
+      const iosTimeoutId = window.setTimeout(() => iosController.abort(), 15000);
+
+      try {
+        const orderResponse = await fetch("/api/orders", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(orderPayload),
+          signal: iosController.signal,
+        });
+
+        if (!orderResponse.ok) throw new Error("save failed");
+        const orderData: {
+          total?: number;
+          totalDiscount?: number;
+          codeApplied?: string | null;
+        } = await orderResponse.json();
+        window.clearTimeout(iosTimeoutId);
+
+        const confirmedTotal =
+          typeof orderData.total === "number" ? orderData.total : grandTotal;
+        const confirmedDiscount =
+          typeof orderData.totalDiscount === "number"
+            ? orderData.totalDiscount
+            : discountResult.totalDiscount;
+
+        clearCart();
+        if (typeof window !== "undefined") {
+          window.localStorage.setItem(PREFERRED_ORDER_TYPE_KEY, orderType);
+        }
+        const params = new URLSearchParams({
+          name: deliveryInfo.name,
+          area: isPickup ? "" : selectedArea?.name || "",
+          total: String(confirmedTotal),
+          discount: String(confirmedDiscount),
+          code: orderData.codeApplied ?? activeCouponCode ?? "",
+          type: isPickup ? "pickup" : "delivery",
+          time: deliveryInfo.scheduledTime ?? "",
+          wa: whatsappUrl,
+        });
+        trackCheckoutEvent("checkout_saved", {
+          orderType,
+          total: confirmedTotal,
+          discount: confirmedDiscount,
+        });
+        router.push(`/confirmation?${params.toString()}`);
+      } catch (error) {
+        window.clearTimeout(iosTimeoutId);
+        // Order save failed or timed out — still send the customer to WhatsApp,
+        // since that's the channel the business actually fulfills orders from.
+        trackCheckoutEvent("checkout_failed", {
+          reason: error instanceof Error ? error.name : "unknown",
+          handoffMode: "ios_await",
+        });
+        window.location.href = whatsappUrl;
+      } finally {
+        setIsSubmitting(false);
+      }
       return;
     }
 
@@ -1902,6 +1941,25 @@ function CheckoutContent() {
                     </div>
                   </>
                 ) : null}
+
+                <div className="relative">
+                  <label htmlFor="checkout-notes" className="sr-only">
+                    ملاحظات على الطلب
+                  </label>
+                  <textarea
+                    id="checkout-notes"
+                    placeholder="ملاحظات على الطلب (اختياري) - مثال: بدون بصل"
+                    value={deliveryInfo.notes}
+                    onChange={(e) => handleInputChange("notes", e.target.value)}
+                    rows={3}
+                    enterKeyHint="done"
+                    className={cn(
+                      "w-full resize-none rounded-[16px] border border-slate-200",
+                      theme.input,
+                      "px-4 py-4 text-base text-slate-900 placeholder:text-slate-400 transition-all focus:outline-none focus:ring-2 focus:ring-primary/20",
+                    )}
+                  />
+                </div>
 
               </div>
             </section>

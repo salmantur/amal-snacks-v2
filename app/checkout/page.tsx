@@ -331,7 +331,7 @@ function ProgressStep({
         className={cn(
           "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold",
           active
-            ? "bg-[var(--checkout-brand-black)] text-white"
+            ? "bg-primary text-primary-foreground"
             : "bg-gray-100 text-gray-400",
         )}
       >
@@ -340,7 +340,7 @@ function ProgressStep({
       <span
         className={cn(
           "text-[10px] font-bold",
-          active ? "text-[var(--checkout-brand-black)]" : "text-gray-400",
+          active ? "text-primary" : "text-gray-400",
         )}
       >
         {label}
@@ -979,7 +979,7 @@ function CheckoutContent() {
   const contentColumnClass = "space-y-4";
   const asideColumnClass = "hidden";
   const ctaButtonClass =
-    "h-14 w-full rounded-[2rem] bg-[var(--checkout-brand-black)] text-lg font-black text-white transition-transform active:scale-95 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500";
+    "h-14 w-full rounded-[2rem] bg-primary text-lg font-black text-primary-foreground transition-transform active:scale-95 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500";
   const couponToneClass =
     appliedCouponCode || discountResult.codeDiscountAmount > 0
       ? "border-green-200 bg-green-50 text-green-700"
@@ -1756,7 +1756,7 @@ function CheckoutContent() {
             >
               <div className="flex items-center justify-between mb-4 gap-3">
                 <div className="flex items-center gap-3 text-right">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gray-50 text-[var(--checkout-brand-black)]">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                     <User className="h-4 w-4" />
                   </div>
                   <h2 className="text-lg font-bold">
@@ -1915,7 +1915,7 @@ function CheckoutContent() {
             >
               <div className="mb-4 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3 text-right">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gray-50 text-[var(--checkout-brand-black)]">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                     <MapPin className="h-4 w-4" />
                   </div>
                   <div>
@@ -2012,7 +2012,7 @@ function CheckoutContent() {
             >
               <div className="flex items-center justify-between mb-2 gap-3">
                 <div className="flex items-center gap-3 text-right">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gray-50 text-[var(--checkout-brand-black)]">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                     <Clock3 className="h-4 w-4" />
                   </div>
                   <h2 className="text-lg font-bold">
@@ -2062,10 +2062,10 @@ function CheckoutContent() {
               {minimumLeadTimeMinutes > 0 ? (
                 <div
                   className="mb-3 flex items-center justify-between rounded-2xl p-4 text-white"
-                  style={{ backgroundColor: "var(--checkout-brand-black)" }}
+                  style={{ backgroundColor: "hsl(var(--primary))" }}
                 >
                   <div className="flex items-center gap-3">
-                    <Flame className="h-5 w-5 text-[#fbcfe8]" />
+                    <Flame className="h-5 w-5 text-white" />
                     <span className="text-xs font-bold">الحد الأدنى لتجهيز الطلب:</span>
                   </div>
                   <span className="text-lg font-black tracking-tighter">
@@ -2128,7 +2128,7 @@ function CheckoutContent() {
             <button
               type="button"
               onClick={goToDetails}
-              className="flex min-h-11 items-center gap-1.5 text-sm font-semibold text-[var(--checkout-brand-black)]"
+              className="flex min-h-11 items-center gap-1.5 text-sm font-semibold text-primary"
             >
               <ArrowRight className="h-4 w-4 rotate-180" />
               رجوع لتعديل البيانات

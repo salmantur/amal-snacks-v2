@@ -3,10 +3,10 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { ArrowRight, Bell, Volume2, VolumeX, RefreshCw, LogOut, ChefHat, Menu, X } from "lucide-react"
+import { ArrowRight, Bell, Volume2, VolumeX, RefreshCw, LogOut, ChefHat, Menu, X, AlertTriangle, ChevronDown } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { type Order } from "@/lib/data"
-import { fetchRecentOrders, subscribeToOrders, updateOrderStatus } from "@/lib/orders"
+import { fetchRecentOrders, subscribeToOrders, updateOrderStatus, fetchFailedOrders, resolveFailedOrder, type FailedOrder } from "@/lib/orders"
 import { KitchenTicket } from "@/components/kitchen-ticket"
 import { HeroBannerEditor } from "@/components/hero-banner-editor"
 import { StockManager } from "@/components/stock-manager"
@@ -74,6 +74,43 @@ export default function AdminPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [newOrderAlert, setNewOrderAlert] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
+
+  const [failedOrders, setFailedOrders] = useState<FailedOrder[]>([])
+  const [failedOrdersPanelOpen, setFailedOrdersPanelOpen] = useState(false)
+  const unresolvedFailedOrders = useMemo(
+    () => failedOrders.filter((f) => !f.resolved),
+    [failedOrders]
+  )
+
+  const refreshFailedOrders = useCallback(async () => {
+    try {
+      const data = await fetchFailedOrders()
+      setFailedOrders(data)
+    } catch (error) {
+      console.error("Failed to load failed-orders log", error)
+    }
+  }, [])
+
+  useEffect(() => {
+    void refreshFailedOrders()
+    const intervalId = window.setInterval(() => void refreshFailedOrders(), ORDERS_POLL_INTERVAL_MS)
+    return () => window.clearInterval(intervalId)
+  }, [refreshFailedOrders])
+
+  const handleResolveFailedOrder = async (id: string) => {
+    setFailedOrders((prev) => prev.map((f) => (f.id === id ? { ...f, resolved: true } : f)))
+    await resolveFailedOrder(id)
+  }
+
+  const failedOrderReasonLabel = (reason: string): string => {
+    if (reason === "rate_limited") return "تم رفض الطلب مؤقتًا (عدد كبير من الطلبات في وقت قصير)"
+    if (reason === "invalid_payload") return "بيانات الطلب غير مكتملة أو غير صحيحة"
+    if (reason.startsWith("unknown_menu_item")) return "أحد الأصناف لم يعد متوفرًا في القائمة"
+    if (reason === "invalid_delivery_area") return "منطقة التوصيل لم تعد صالحة"
+    if (reason === "menu_load_failed") return "تعذر تحميل أسعار القائمة"
+    if (reason.startsWith("db_insert_failed")) return "خطأ في حفظ الطلب في قاعدة البيانات"
+    return reason
+  }
 
   useEffect(() => {
     const root = document.documentElement

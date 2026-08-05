@@ -64,6 +64,79 @@ export async function updateOrderStatus(id: string, status: Order["status"]): Pr
   await supabase.from("orders").update({ status }).eq("id", id)
 }
 
+// Log a checkout attempt that failed to save, so staff can see it
+// in the dashboard and cross-check WhatsApp for that order.
+export async function logFailedOrder(entry: {
+  reason: string
+  statusCode?: number
+  customerName?: string
+  customerPhone?: string
+  customerArea?: string
+  orderType?: string
+  items?: unknown
+  rawPayload?: unknown
+}): Promise<void> {
+  try {
+    const supabase = createClient()
+    await supabase.from("failed_orders").insert({
+      reason: entry.reason,
+      status_code: entry.statusCode ?? null,
+      customer_name: entry.customerName ?? null,
+      customer_phone: entry.customerPhone ?? null,
+      customer_area: entry.customerArea ?? null,
+      order_type: entry.orderType ?? null,
+      items: entry.items ?? null,
+      raw_payload: entry.rawPayload ?? null,
+    })
+  } catch (error) {
+    console.error("Failed to log failed order:", error)
+  }
+}
+
+export interface FailedOrder {
+  id: string
+  createdAt: Date
+  reason: string
+  statusCode: number | null
+  customerName: string | null
+  customerPhone: string | null
+  customerArea: string | null
+  orderType: string | null
+  items: unknown
+  resolved: boolean
+}
+
+export async function fetchFailedOrders(limit = 100): Promise<FailedOrder[]> {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from("failed_orders")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(limit)
+
+  if (error) {
+    throw new Error(`Unable to load failed orders: ${error.message}`)
+  }
+
+  return (data ?? []).map((row: any) => ({
+    id: row.id,
+    createdAt: new Date(row.created_at),
+    reason: row.reason,
+    statusCode: row.status_code ?? null,
+    customerName: row.customer_name ?? null,
+    customerPhone: row.customer_phone ?? null,
+    customerArea: row.customer_area ?? null,
+    orderType: row.order_type ?? null,
+    items: row.items ?? null,
+    resolved: Boolean(row.resolved),
+  }))
+}
+
+export async function resolveFailedOrder(id: string): Promise<void> {
+  const supabase = createClient()
+  await supabase.from("failed_orders").update({ resolved: true }).eq("id", id)
+}
+
 // Fetch recent orders with a configurable history window.
 export async function fetchRecentOrders(options: FetchOrdersOptions = {}): Promise<Order[]> {
   const supabase = createClient()

@@ -568,6 +568,51 @@ export default function AdminPage() {
 
       {activeTab === "orders" ? (
         <div className={cn(designStyles.content)}>
+          {unresolvedFailedOrders.length > 0 ? (
+            <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setFailedOrdersPanelOpen((v) => !v)}
+                className="flex w-full items-center justify-between gap-2 px-4 py-3 text-right"
+              >
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-red-500 shrink-0" />
+                  <span className="text-sm font-bold text-red-700">
+                    {unresolvedFailedOrders.length} طلب لم يتم حفظه — راجع واتساب للتأكد منه
+                  </span>
+                </div>
+                <ChevronDown
+                  className={cn("h-4 w-4 text-red-500 transition-transform", failedOrdersPanelOpen && "rotate-180")}
+                />
+              </button>
+              {failedOrdersPanelOpen ? (
+                <div className="border-t border-red-200 divide-y divide-red-100">
+                  {unresolvedFailedOrders.map((f) => (
+                    <div key={f.id} className="flex items-center justify-between gap-3 px-4 py-3 text-right text-sm">
+                      <div className="min-w-0">
+                        <p className="font-semibold text-gray-900">
+                          {f.customerName || "بدون اسم"}
+                          {f.customerPhone ? ` · ${f.customerPhone}` : ""}
+                        </p>
+                        <p className="text-gray-500 mt-0.5">{failedOrderReasonLabel(f.reason)}</p>
+                        <p className="text-gray-400 text-xs mt-0.5">
+                          {f.createdAt.toLocaleString("ar-SA", { dateStyle: "medium", timeStyle: "short" })}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => void handleResolveFailedOrder(f.id)}
+                        className="shrink-0 rounded-full border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-100"
+                      >
+                        تم الحل
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
           {loading ? (
             <div className="text-center py-12">
               <div className="w-16 h-16 rounded-full bg-gray-100 mx-auto mb-4 flex items-center justify-center animate-pulse">

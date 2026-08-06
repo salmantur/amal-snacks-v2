@@ -264,23 +264,22 @@ export async function POST(req: Request) {
           })
           const total = discountResult.finalTotal
 
-      const { data: insertedOrder, error: insertError } = await supabase
-            .from("orders")
-            .insert({
-                      customer_name: payload.customerName,
-                      customer_phone: payload.customerPhone,
-                      customer_area: payload.orderType === "pickup" ? "استلام من المحل" : payload.customerArea,
-                      order_type: payload.orderType,
-                      items: normalizedItems,
-                      subtotal,
-                      delivery_fee: deliveryFee,
-                      total,
-                      notes: payload.notes,
-                      scheduled_time: payload.scheduledTime ?? null,
-                      status: "pending",
+      const { data: rpcResult, error: insertError } = await supabase
+            .rpc("create_order", {
+                      p_customer_name: payload.customerName,
+                      p_customer_phone: payload.customerPhone,
+                      p_customer_area: payload.orderType === "pickup" ? "استلام من المحل" : payload.customerArea,
+                      p_order_type: payload.orderType,
+                      p_items: normalizedItems,
+                      p_subtotal: subtotal,
+                      p_delivery_fee: deliveryFee,
+                      p_total: total,
+                      p_notes: payload.notes,
+                      p_scheduled_time: payload.scheduledTime ?? null,
             })
-            .select("id, order_number")
             .single()
+
+      const insertedOrder = rpcResult as { id: string; order_number: number } | null
 
       if (insertError || !insertedOrder) {
               console.error("Failed to save order to Supabase", {

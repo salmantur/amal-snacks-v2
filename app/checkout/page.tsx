@@ -1675,6 +1675,7 @@ function CheckoutContent() {
                 </div>
               </div>
 
+              {discountConfig.enabled ? (
               <div className="rounded-2xl border border-border/60 bg-background/70 p-3">
                 <label className="block text-sm font-medium mb-2 text-right">
                   كود الخصم
@@ -1737,6 +1738,7 @@ function CheckoutContent() {
                   </div>
                 ) : null}
               </div>
+              ) : null}
             </section>
 
           </aside>
@@ -2204,6 +2206,7 @@ function CheckoutContent() {
                 </div>
               </div>
 
+              {discountConfig.enabled ? (
               <div className="rounded-2xl border border-border/60 bg-background/70 p-3">
                 <label className="mb-2 block text-right text-sm font-medium">
                   كود الخصم
@@ -2269,6 +2272,7 @@ function CheckoutContent() {
                   </div>
                 ) : null}
               </div>
+                          ) : null}
             </section>
           </>
         )}

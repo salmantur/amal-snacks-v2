@@ -67,6 +67,14 @@
     min-height: 100dvh;
     overflow-x: hidden;
   }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-thmanyah-serif-text), var(--font-tajawal), serif;
+  }
   :lang(ar) {
     letter-spacing: 0;
     line-height: 1.65;

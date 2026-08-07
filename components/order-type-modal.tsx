@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { Check, Store, Truck } from "lucide-react"
-import { Dialog, DialogContent } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 
 interface OrderTypeModalProps {
@@ -52,12 +52,16 @@ export function OrderTypeModal({
             <p className="text-[0.72rem] font-semibold tracking-[0.24em] text-[#9b7a86]">
               طريقة الاستلام
             </p>
-            <h2 className="mt-2 text-[1.7rem] font-black tracking-tight text-[#08122d] sm:text-[1.9rem]">
-              اختر طريقة استلام الطلب
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-[#6f7382]">
-              اختر الخيار المناسب لك وسنكمل تفاصيل الطلب في الخطوة التالية.
-            </p>
+            <DialogTitle asChild>
+              <h2 className="mt-2 text-[1.7rem] font-black tracking-tight text-[#08122d] sm:text-[1.9rem]">
+                اختر طريقة استلام الطلب
+              </h2>
+            </DialogTitle>
+            <DialogDescription asChild>
+              <p className="mt-2 text-sm leading-6 text-[#6f7382]">
+                اختر الخيار المناسب لك وسنكمل تفاصيل الطلب في الخطوة التالية.
+              </p>
+            </DialogDescription>
           </div>
 
           <div className="mt-5 grid gap-3 sm:grid-cols-2">

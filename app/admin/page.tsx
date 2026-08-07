@@ -7,18 +7,24 @@ import { ArrowRight, Bell, Volume2, VolumeX, RefreshCw, LogOut, ChefHat, Menu, X
 import { createClient } from "@/lib/supabase/client"
 import { type Order } from "@/lib/data"
 import { fetchRecentOrders, subscribeToOrders, updateOrderStatus, fetchFailedOrders, resolveFailedOrder, type FailedOrder } from "@/lib/orders"
+import dynamic from "next/dynamic"
 import { KitchenTicket } from "@/components/kitchen-ticket"
-import { HeroBannerEditor } from "@/components/hero-banner-editor"
-import { StockManager } from "@/components/stock-manager"
-import { CategoryManager } from "@/components/category-manager"
-import { SalesDashboard } from "@/components/sales-dashboard"
-import { ThemeEditor } from "@/components/theme-editor"
-import { BestSellerCardEditor } from "@/components/best-seller-card-editor"
-import { DeliveryAreasManager } from "@/components/delivery-areas-manager"
-import { ClosedDatesManager } from "@/components/closed-dates-manager"
-import { DiscountManager } from "@/components/discount-manager"
-import { TelegramSettingsManager } from "@/components/telegram-settings-manager"
+const StockManager = dynamic(() => import("@/components/stock-manager").then((m) => ({ default: m.StockManager })), { loading: () => TAB_LOADING })
+const CategoryManager = dynamic(() => import("@/components/category-manager").then((m) => ({ default: m.CategoryManager })), { loading: () => TAB_LOADING })
+const SalesDashboard = dynamic(() => import("@/components/sales-dashboard").then((m) => ({ default: m.SalesDashboard })), { loading: () => TAB_LOADING })
+const HeroBannerEditor = dynamic(() => import("@/components/hero-banner-editor").then((m) => ({ default: m.HeroBannerEditor })), { loading: () => TAB_LOADING })
+const ThemeEditor = dynamic(() => import("@/components/theme-editor").then((m) => ({ default: m.ThemeEditor })), { loading: () => TAB_LOADING })
+const BestSellerCardEditor = dynamic(() => import("@/components/best-seller-card-editor").then((m) => ({ default: m.BestSellerCardEditor })), { loading: () => TAB_LOADING })
+const DeliveryAreasManager = dynamic(() => import("@/components/delivery-areas-manager").then((m) => ({ default: m.DeliveryAreasManager })), { loading: () => TAB_LOADING })
+const ClosedDatesManager = dynamic(() => import("@/components/closed-dates-manager").then((m) => ({ default: m.ClosedDatesManager })), { loading: () => TAB_LOADING })
+const DiscountManager = dynamic(() => import("@/components/discount-manager").then((m) => ({ default: m.DiscountManager })), { loading: () => TAB_LOADING })
+const TelegramSettingsManager = dynamic(() => import("@/components/telegram-settings-manager").then((m) => ({ default: m.TelegramSettingsManager })), { loading: () => TAB_LOADING })
 import { cn } from "@/lib/utils"
+
+// Each admin tab's editor is only ever rendered when that tab is active, so
+// code-split them out of the initial bundle (SalesDashboard alone pulls in
+// recharts) instead of paying for all nine up front.
+const TAB_LOADING = <div className="py-16 text-center text-sm text-gray-400">جارِ التحميل...</div>
 
 type AdminTab = "orders" | "banner" | "stock" | "categories" | "sales" | "colors" | "delivery" | "discounts" | "alerts"
 type OrderFilter = Order["status"] | "all"

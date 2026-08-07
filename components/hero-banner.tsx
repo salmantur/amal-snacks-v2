@@ -147,9 +147,9 @@ export function HeroBanner() {
                   fill
                   sizes="(max-width: 640px) 38vw, 160px"
                   quality={70}
-                  loading="lazy"
+                  priority
                   className="object-cover"
-                />
+                  />
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/5">
                   <ShoppingBag className="h-12 w-12 opacity-20" />
@@ -196,6 +196,7 @@ export function HeroBanner() {
               objectPosition: `${config.image_position_x}% ${config.image_position_y}%`,
               transform: `scale(${config.image_scale / 100})`,
             }}
+            priority
           />
         </div>
       ) : null}

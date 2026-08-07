@@ -48,6 +48,39 @@ const thmanyahSerifText = localFont({
   preload: true,
 })
 
+const thmanyahSans = localFont({
+  src: [
+    {
+      path: './fonts/thmanyah-sans/thmanyahsans-Light.otf',
+      weight: '300',
+      style: 'normal',
+    },
+    {
+      path: './fonts/thmanyah-sans/thmanyahsans-Regular.otf',
+      weight: '400',
+      style: 'normal',
+    },
+    {
+      path: './fonts/thmanyah-sans/thmanyahsans-Medium.otf',
+      weight: '500',
+      style: 'normal',
+    },
+    {
+      path: './fonts/thmanyah-sans/thmanyahsans-Bold.otf',
+      weight: '700',
+      style: 'normal',
+    },
+    {
+      path: './fonts/thmanyah-sans/thmanyahsans-Black.otf',
+      weight: '900',
+      style: 'normal',
+    },
+    ],
+  variable: '--font-thmanyah-sans',
+  display: 'swap',
+  preload: true,
+})
+
 export const metadata: Metadata = {
   title: 'أمل سناك | Amal Snacks',
   description: 'أفضل الوجبات المثلجة والساخنة بجودة عالمية مختارة لك',
@@ -132,7 +165,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <link rel="dns-prefetch" href="https://wa.me" />
         <script dangerouslySetInnerHTML={{ __html: themePreloadScript }} />
       </head>
-      <body className={`${tajawal.variable} ${thmanyahSerifText.variable} font-sans antialiased`}>
+      <body className={`${tajawal.variable} ${thmanyahSerifText.variable} ${thmanyahSans.variable} font-sans antialiased`}>
         <CartProvider>
           <WebVitalsReporter />
           <ThemeLoader />

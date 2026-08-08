@@ -242,7 +242,7 @@ export const ProductCard = memo(function ProductCard({
     { bg: "#f7f3ea", text: "#6d5d42", border: "#eadfca" },
   ]
   const cardBaseClass = cn(
-    "cursor-pointer group transition-transform duration-100",
+        "cursor-pointer group transition-all duration-200 hover:-translate-y-1 hover:shadow-lg",
     item.inStock !== false ? "active:scale-95" : "opacity-60 cursor-not-allowed"
   )
   const bestSellerCardClass = cn(cardBaseClass, "col-span-1")

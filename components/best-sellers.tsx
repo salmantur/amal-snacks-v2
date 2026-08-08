@@ -1,12 +1,11 @@
 "use client"
 
-import Image from "next/image"
-import { Star, ShoppingBag } from "lucide-react"
+import { Star } from "lucide-react"
 import { useState } from "react"
 import dynamic from "next/dynamic"
 import type { MenuItem } from "@/components/cart-provider"
 import { SearchBar } from "@/components/search-bar"
-import { PriceWithRiyalLogo } from "@/components/ui/price-with-riyal-logo"
+import { ProductCard } from "@/components/product-card"
 import { useMenu } from "@/hooks/use-menu"
 import { trackStorefrontEvent } from "@/lib/storefront-events"
 
@@ -50,51 +49,20 @@ export function BestSellers({
 
             <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 touch-pan-x [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
               {featured.map((item, idx) => (
-                <button
-                  type="button"
-                  key={item.id}
-                  onClick={() => {
-                    trackStorefrontEvent("best_seller_selected", {
-                      productId: item.id,
-                      category: item.category,
-                    })
-                    setSelected(item)
-                  }}
-                  className="w-[11rem] min-[390px]:w-40 snap-start flex-shrink-0 overflow-hidden rounded-2xl border border-black/5 bg-white text-right shadow-sm transition-transform active:scale-95"
-                >
-                  <div
-                    className="relative w-full bg-[#f5f5f5]"
-                    style={{ aspectRatio: "4/3" }}
-                  >
-                    {item.image ? (
-                      <Image
-                        src={item.image}
-                        alt={item.name}
-                        fill
-                        sizes="(max-width: 640px) 44vw, 160px"
-                        quality={68}
-                        priority={idx < 2}
-                        loading={idx < 2 ? "eager" : "lazy"}
-                        className="object-cover"
-                      />
-                    ) : (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <ShoppingBag className="h-8 w-8 text-gray-200" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-2.5" dir="rtl">
-                    <p className="truncate text-sm font-bold">{item.name}</p>
-                    {item.nameEn ? (
-                      <p className="truncate text-xs text-muted-foreground">
-                        {item.nameEn}
-                      </p>
-                    ) : null}
-                    <p className="mt-1 text-sm font-bold text-primary">
-                      <PriceWithRiyalLogo value={item.price} />
-                    </p>
-                  </div>
-                </button>
+                <div key={item.id} className="w-[11rem] min-[390px]:w-40 snap-start flex-shrink-0">
+                  <ProductCard
+                    item={item}
+                    onSelect={(selectedItem) => {
+                      trackStorefrontEvent("best_seller_selected", {
+                        productId: selectedItem.id,
+                        category: selectedItem.category,
+                      })
+                      setSelected(selectedItem)
+                    }}
+                    bestSellerStyle="s4"
+                    priority={idx < 2}
+                  />
+                </div>
               ))}
             </div>
           </>

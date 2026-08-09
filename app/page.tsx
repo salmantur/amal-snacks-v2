@@ -16,7 +16,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const params = searchParams ? await searchParams : undefined
   const homeui = params?.homeui
 
-  if (homeui === "studio" || homeui === "soft" || homeui === "market") {
+    if (homeui === "studio" || homeui === "soft" || homeui === "market" || homeui === "editorial") {
     return <HomeLayoutPreview variant={homeui} />
   }
 

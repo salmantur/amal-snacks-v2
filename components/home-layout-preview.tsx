@@ -12,14 +12,17 @@ import {
   Sparkles,
   User,
 } from "lucide-react"
-import { useMemo, useState, type ReactNode } from "react"
-import { useCart } from "@/components/cart-provider"
+import { useEffect, useMemo, useState, type MouseEvent, type ReactNode } from "react"
+import { useCart, type MenuItem } from "@/components/cart-provider"
 import { PriceWithRiyalLogo } from "@/components/ui/price-with-riyal-logo"
-import { useCategories } from "@/hooks/use-categories"
+import { SaudiRiyalIcon } from "@/components/ui/saudi-riyal-icon"
+import { useCategories, type Category } from "@/hooks/use-categories"
 import { useMenu } from "@/hooks/use-menu"
+import { getBestSellerCandidates } from "@/lib/best-sellers"
+import { smartFilterMenuItems } from "@/lib/smart-search"
 import { cn } from "@/lib/utils"
 
-export type HomePreviewVariant = "studio" | "soft" | "market"
+export type HomePreviewVariant = "studio" | "soft" | "market" | "editorial"
 
 function PreviewImage({
   src,
@@ -474,6 +477,603 @@ function MarketPreview() {
   )
 }
 
+const EDITORIAL_INK = "oklch(16% 0.01 280)"
+const EDITORIAL_ACCENT = "oklch(56% 0.17 28)"
+const EDITORIAL_MUTED = "oklch(45% 0.015 270)"
+const EDITORIAL_MUTED_SOFT = "oklch(48% 0.02 270)"
+const EDITORIAL_MUTED_FAINT = "oklch(52% 0.012 270)"
+const EDITORIAL_MUTED_FAINTER = "oklch(55% 0.02 270)"
+const EDITORIAL_SURFACE = "oklch(98% 0.003 75)"
+const EDITORIAL_BORDER = "oklch(93% 0.008 270)"
+const EDITORIAL_BORDER_STRONG = "oklch(90% 0.01 270)"
+const EDITORIAL_IMG_BG = "oklch(93% 0.02 75)"
+const EDITORIAL_BEST_ID = "editorial_best"
+
+type EditorialCategory = { id: string; label: string; dbCategories?: string[] }
+
+function EditorialBagIcon() {
+  return (
+    <span className="relative inline-block h-[15px] w-[17px]">
+      <span
+        className="absolute right-[3.5px] top-[-5px] h-[7px] w-[9px] rounded-t-[9px] box-border"
+        style={{ border: `1.6px solid ${EDITORIAL_INK}`, borderBottom: "none" }}
+      />
+      <span
+        className="absolute bottom-0 right-0 h-[12px] w-[17px] box-border"
+        style={{ border: `1.6px solid ${EDITORIAL_INK}` }}
+      />
+    </span>
+  )
+}
+
+function EditorialProductImage({ src, alt, className }: { src?: string; alt: string; className?: string }) {
+  if (!src) {
+    return <div className={cn("rounded-[inherit]", className)} style={{ background: EDITORIAL_IMG_BG }} />
+  }
+  return (
+    <div className={cn("relative overflow-hidden rounded-[inherit]", className)} style={{ background: EDITORIAL_IMG_BG }}>
+      <Image src={src} alt={alt} fill sizes="240px" className="object-cover" />
+    </div>
+  )
+}
+
+function EditorialPreview() {
+  const { menuItems, isLoading } = useMenu()
+  const { categories } = useCategories()
+  const { items: cartItems, addItem, updateQuantity, totalItems, totalPrice } = useCart()
+
+  const [selectedCategory, setSelectedCategory] = useState<string>(EDITORIAL_BEST_ID)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [cartOpen, setCartOpen] = useState(false)
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const [selectedProduct, setSelectedProduct] = useState<MenuItem | null>(null)
+  const [drawerQty, setDrawerQty] = useState(1)
+  const [flashId, setFlashId] = useState<string | null>(null)
+
+  const uiCategories = useMemo<EditorialCategory[]>(
+    () => [
+      { id: EDITORIAL_BEST_ID, label: "الأكثر طلبًا" },
+      ...categories.filter((c: Category) => c.isVisible).map((c) => ({ id: c.id, label: c.label, dbCategories: c.dbCategories })),
+    ],
+    [categories]
+  )
+
+  useEffect(() => {
+    if (!uiCategories.some((c) => c.id === selectedCategory)) setSelectedCategory(EDITORIAL_BEST_ID)
+  }, [uiCategories, selectedCategory])
+
+  const isSearching = searchQuery.trim().length > 0
+  const searchResults = useMemo(
+    () => (isSearching ? smartFilterMenuItems(menuItems, searchQuery) : []),
+    [isSearching, menuItems, searchQuery]
+  )
+  const isBestCategory = selectedCategory === EDITORIAL_BEST_ID
+  const featuredItems = useMemo(() => getBestSellerCandidates(menuItems, []), [menuItems])
+  const activeCategory = uiCategories.find((c) => c.id === selectedCategory)
+  const baseGrid = isBestCategory
+    ? featuredItems
+    : menuItems.filter((item) => (activeCategory?.dbCategories || []).includes(item.category))
+  const gridItems = isSearching ? searchResults : baseGrid
+  const gridSectionLabel = isSearching
+    ? `نتائج البحث (${gridItems.length})`
+    : activeCategory?.label || ""
+
+  const openProduct = (item: MenuItem) => {
+    setSelectedProduct(item)
+    setDrawerQty(1)
+    setDrawerOpen(true)
+  }
+
+  const quickAdd = (item: MenuItem, e: MouseEvent) => {
+    e.stopPropagation()
+    addItem(item, 1)
+    setFlashId(item.id)
+    window.setTimeout(() => setFlashId((cur) => (cur === item.id ? null : cur)), 900)
+  }
+
+  const addFromDrawer = () => {
+    if (!selectedProduct) return
+    addItem(selectedProduct, drawerQty)
+    setDrawerOpen(false)
+  }
+
+  const jumpToCategory = (id: string) => {
+    setSelectedCategory(id)
+    setSearchQuery("")
+    setMenuOpen(false)
+  }
+
+  const drawerTotal = selectedProduct ? selectedProduct.price * drawerQty : 0
+
+  return (
+    <div className="min-h-screen" dir="rtl" style={{ background: EDITORIAL_SURFACE }}>
+      <div className="mx-auto flex min-h-screen max-w-[430px] flex-col" style={{ background: EDITORIAL_SURFACE }}>
+        <div
+          className="sticky top-0 z-30 flex flex-shrink-0 items-center justify-between px-5 pb-2.5 pt-[18px]"
+          style={{ background: EDITORIAL_SURFACE }}
+        >
+          <button
+            type="button"
+            onClick={() => setMenuOpen(true)}
+            aria-label="فتح القائمة"
+            className="flex h-[34px] w-[34px] flex-col items-start justify-center gap-[5px] border-none bg-transparent p-0"
+          >
+            <span className="h-[1.5px] w-[18px]" style={{ background: EDITORIAL_INK }} />
+            <span className="h-[1.5px] w-[11px]" style={{ background: EDITORIAL_INK }} />
+          </button>
+          <span className="font-serif-text text-[17px] font-black tracking-[0.2px]" style={{ color: EDITORIAL_INK }}>
+            أمل سناك
+          </span>
+          <button
+            type="button"
+            onClick={() => setCartOpen(true)}
+            aria-label="فتح السلة"
+            className="relative flex h-[34px] w-[34px] items-center justify-center border-none bg-transparent p-0"
+          >
+            <EditorialBagIcon />
+            {totalItems > 0 ? (
+              <span
+                className="absolute -right-1 -top-1 flex h-[15px] min-w-[15px] items-center justify-center rounded-full px-[3px] text-[9px] font-extrabold text-white"
+                style={{ background: EDITORIAL_ACCENT }}
+              >
+                {totalItems}
+              </span>
+            ) : null}
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto overflow-x-hidden">
+          <div className="px-5 pb-[22px] pt-5">
+            <span
+              className="mb-2.5 block text-[11px] font-bold uppercase tracking-[1.5px]"
+              style={{ color: EDITORIAL_ACCENT }}
+            >
+              مأكولات وضيافة
+            </span>
+            <h1 className="font-serif-text m-0 text-[40px] font-black leading-[1.05]" style={{ color: EDITORIAL_INK }}>
+              تُحضّر بحب
+              <br />
+              لمناسباتك
+            </h1>
+          </div>
+
+          <div
+            className="relative mx-5 mb-5 flex items-center pb-2.5"
+            style={{ borderBottom: `1.5px solid ${EDITORIAL_INK}` }}
+          >
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="ابحث عن وجبتك المفضلة"
+              className="flex-1 border-none bg-transparent p-0 text-[15px] outline-none"
+              style={{ color: EDITORIAL_INK }}
+            />
+            {isSearching ? (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                aria-label="مسح البحث"
+                className="border-none bg-transparent p-0 text-[16px] font-bold leading-none"
+                style={{ color: EDITORIAL_MUTED_FAINTER }}
+              >
+                ×
+              </button>
+            ) : null}
+          </div>
+
+          {isSearching ? (
+            <div>
+              <h2
+                className="mx-5 mb-3.5 text-right text-[13px] font-bold tracking-[0.4px]"
+                style={{ color: EDITORIAL_MUTED }}
+              >
+                {gridSectionLabel}
+              </h2>
+              {gridItems.length === 0 ? (
+                <div className="px-6 py-10 text-center text-[13px]" style={{ color: EDITORIAL_MUTED_FAINTER }}>
+                  لا توجد نتائج مطابقة لبحثك
+                </div>
+              ) : null}
+              <div className="grid grid-cols-2 gap-x-3.5 gap-y-5 px-5 pb-3">
+                {gridItems.map((item) => {
+                  const isFlashed = flashId === item.id
+                  return (
+                    <div
+                      key={item.id}
+                      onClick={() => openProduct(item)}
+                      className="cursor-pointer transition-opacity duration-150 hover:opacity-85"
+                    >
+                      <EditorialProductImage src={item.image} alt={item.name} className="aspect-square" />
+                      <div className="pt-2.5 text-right">
+                        <h3 className="m-0 text-[13.5px] font-bold leading-[1.3]" style={{ color: EDITORIAL_INK }}>
+                          {item.name}
+                        </h3>
+                        <div className="mt-1.5 flex items-center justify-between">
+                          <span className="text-[13px] font-bold" style={{ color: EDITORIAL_MUTED }}>
+                            <PriceWithRiyalLogo value={item.price} />
+                          </span>
+                          <button
+                            type="button"
+                            onClick={(e) => quickAdd(item, e)}
+                            aria-label="إضافة"
+                            className="flex h-[26px] w-[26px] items-center justify-center rounded-full text-[14px] font-black leading-none transition-colors"
+                            style={{
+                              border: `1.5px solid ${EDITORIAL_INK}`,
+                              background: isFlashed ? EDITORIAL_INK : "transparent",
+                              color: isFlashed ? "#fff" : EDITORIAL_INK,
+                            }}
+                          >
+                            {isFlashed ? "✓" : "+"}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          ) : (
+            <div>
+              <div
+                className="sticky z-[6] mt-1.5 py-2.5 backdrop-blur-[8px]"
+                style={{ top: 0, background: "oklch(98% 0.003 75 / 0.92)" }}
+              >
+                <div className="flex gap-2 overflow-x-auto px-5 pb-0.5">
+                  {uiCategories.map((cat) => {
+                    const isActive = cat.id === selectedCategory
+                    return (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => setSelectedCategory(cat.id)}
+                        className="flex-shrink-0 whitespace-nowrap rounded-full border-none px-4 py-2.5 text-[12.5px] font-bold transition-colors"
+                        style={{
+                          background: isActive ? EDITORIAL_INK : "transparent",
+                          color: isActive ? "#fff" : EDITORIAL_MUTED,
+                        }}
+                      >
+                        {cat.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              <div className="mt-2.5 px-5 pb-6">
+                <h2 className="mb-3.5 text-right text-[13px] font-bold tracking-[0.4px]" style={{ color: EDITORIAL_MUTED }}>
+                  {gridSectionLabel}
+                </h2>
+
+                {isLoading ? (
+                  <div className="grid grid-cols-2 gap-3.5">
+                    {[1, 2, 3, 4].map((i) => (
+                      <div key={i} className="aspect-square animate-pulse rounded-[14px]" style={{ background: EDITORIAL_IMG_BG }} />
+                    ))}
+                  </div>
+                ) : isBestCategory ? (
+                  <div className="grid grid-cols-2 gap-3.5">
+                    {gridItems.map((item) => (
+                      <div
+                        key={item.id}
+                        onClick={() => openProduct(item)}
+                        className="relative cursor-pointer rounded-[24px] p-[9px] transition-transform duration-200 hover:-translate-y-1 active:scale-[0.985]"
+                        style={{ filter: "drop-shadow(0px 4px 4px rgba(0,0,0,0.15)) drop-shadow(0px 1px 1.5px rgba(0,0,0,0.3))" }}
+                      >
+                        <div className="relative w-full overflow-hidden rounded-[14px]" style={{ aspectRatio: "0.78", background: EDITORIAL_IMG_BG }}>
+                          <EditorialProductImage src={item.image} alt={item.name} className="absolute inset-0" />
+                          <h3
+                            className="font-serif-text absolute right-3.5 top-3.5 left-3.5 m-0 text-right text-[15px] font-black leading-[1.25]"
+                            style={{ color: EDITORIAL_INK }}
+                          >
+                            {item.name}
+                          </h3>
+                          <div
+                            className="absolute bottom-3.5 left-3.5 flex items-center justify-center gap-1 rounded-full px-[13px] py-1.5"
+                            style={{
+                              background: "rgba(255,255,255,0.65)",
+                              border: "1px solid #d7d2cf",
+                              boxShadow: "0 10px 24px 0 rgba(0,0,0,0.1)",
+                            }}
+                          >
+                            <SaudiRiyalIcon className="h-[11px] w-[11px] shrink-0 text-[#212430]" />
+                            <span className="text-[15px] font-extrabold leading-none text-[#212430]">
+                              {item.price}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-x-3.5 gap-y-[22px]">
+                    {gridItems.map((item) => {
+                      const isFlashed = flashId === item.id
+                      return (
+                        <div
+                          key={item.id}
+                          onClick={() => openProduct(item)}
+                          className="cursor-pointer transition-opacity duration-150 hover:opacity-85"
+                        >
+                          <EditorialProductImage src={item.image} alt={item.name} className="aspect-square" />
+                          <div className="pt-2.5 text-right">
+                            <h3 className="m-0 text-[13.5px] font-bold leading-[1.3]" style={{ color: EDITORIAL_INK }}>
+                              {item.name}
+                            </h3>
+                            <p
+                              className="m-0 mt-[5px] overflow-hidden text-[11.5px] leading-[1.4]"
+                              style={{
+                                color: EDITORIAL_MUTED_FAINT,
+                                display: "-webkit-box",
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: "vertical",
+                              }}
+                            >
+                              {item.description}
+                            </p>
+                            <div className="mt-2 flex items-center justify-between">
+                              <span className="text-[13px] font-bold" style={{ color: EDITORIAL_MUTED }}>
+                                <PriceWithRiyalLogo value={item.price} />
+                              </span>
+                              <button
+                                type="button"
+                                onClick={(e) => quickAdd(item, e)}
+                                aria-label="إضافة"
+                                className="flex h-[26px] w-[26px] items-center justify-center rounded-full text-[14px] font-black leading-none transition-colors"
+                                style={{
+                                  border: `1.5px solid ${EDITORIAL_INK}`,
+                                  background: isFlashed ? EDITORIAL_INK : "transparent",
+                                  color: isFlashed ? "#fff" : EDITORIAL_INK,
+                                }}
+                              >
+                                {isFlashed ? "✓" : "+"}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {totalItems > 0 ? <div className="h-[74px] flex-shrink-0" /> : null}
+        </div>
+
+        {totalItems > 0 ? (
+          <div className="fixed inset-x-0 bottom-[18px] z-20 mx-auto max-w-[430px] px-4">
+            <button
+              type="button"
+              onClick={() => setCartOpen(true)}
+              className="flex w-full items-center justify-between rounded-[14px] border-none px-5 py-4 transition-transform active:scale-[0.97]"
+              style={{ background: EDITORIAL_INK, boxShadow: "0 16px 30px -10px rgba(0,0,0,0.4)" }}
+            >
+              <span className="text-[14px] font-extrabold text-white">
+                <PriceWithRiyalLogo value={totalPrice} />
+              </span>
+              <span className="text-[13px] font-semibold text-white/75">عرض السلة ({totalItems}) ‹</span>
+            </button>
+          </div>
+        ) : null}
+      </div>
+
+      {drawerOpen && selectedProduct ? (
+        <div className="fixed inset-0 z-50" dir="rtl">
+          <div
+            onClick={() => setDrawerOpen(false)}
+            className="absolute inset-0 animate-fade-in"
+            style={{ background: "rgba(15,10,8,0.4)" }}
+          />
+          <div
+            className="absolute inset-x-0 bottom-0 mx-auto flex max-h-[88%] max-w-[430px] flex-col overflow-hidden rounded-t-[24px] animate-slide-up"
+            style={{ background: EDITORIAL_SURFACE }}
+          >
+            <div className="flex-1 overflow-y-auto">
+              <div className="relative">
+                <div className="relative w-full" style={{ aspectRatio: "1.3", background: EDITORIAL_IMG_BG }}>
+                  <EditorialProductImage src={selectedProduct.image} alt={selectedProduct.name} className="absolute inset-0" />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setDrawerOpen(false)}
+                  aria-label="إغلاق"
+                  className="absolute left-4 top-4 flex h-8 w-8 items-center justify-center rounded-full border-none text-[15px] font-bold"
+                  style={{ background: "rgba(255,255,255,0.92)", color: EDITORIAL_INK }}
+                >
+                  ×
+                </button>
+              </div>
+              <div className="px-5 pb-1 pt-[22px] text-right">
+                <h2 className="font-serif-text m-0 text-[22px] font-black" style={{ color: EDITORIAL_INK }}>
+                  {selectedProduct.name}
+                </h2>
+                <p className="mt-2 text-[13px] leading-[1.6]" style={{ color: EDITORIAL_MUTED_SOFT }}>
+                  {selectedProduct.description}
+                </p>
+                <p className="mt-3.5 text-[19px] font-extrabold" style={{ color: EDITORIAL_MUTED }}>
+                  <PriceWithRiyalLogo value={selectedProduct.price} />
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-shrink-0 items-center gap-3 px-5 pb-[22px] pt-4">
+              <div
+                className="flex items-center gap-3.5 rounded-full px-4 py-2"
+                style={{ border: `1.5px solid ${EDITORIAL_BORDER_STRONG}` }}
+              >
+                <button
+                  type="button"
+                  onClick={() => setDrawerQty((q) => q + 1)}
+                  aria-label="زيادة"
+                  className="border-none bg-transparent text-[18px] font-black leading-none"
+                  style={{ color: EDITORIAL_INK }}
+                >
+                  +
+                </button>
+                <span className="min-w-[16px] text-center text-[15px] font-extrabold">{drawerQty}</span>
+                <button
+                  type="button"
+                  onClick={() => setDrawerQty((q) => Math.max(1, q - 1))}
+                  aria-label="تقليل"
+                  className="border-none bg-transparent text-[18px] font-black leading-none"
+                  style={{ color: EDITORIAL_INK }}
+                >
+                  –
+                </button>
+              </div>
+              <button
+                type="button"
+                onClick={addFromDrawer}
+                className="flex h-[50px] flex-1 items-center justify-center gap-2 rounded-full border-none text-[15px] font-extrabold text-white"
+                style={{ background: EDITORIAL_INK }}
+              >
+                أضف إلى السلة · <PriceWithRiyalLogo value={drawerTotal} />
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {cartOpen ? (
+        <div className="fixed inset-0 z-50" dir="rtl">
+          <div
+            onClick={() => setCartOpen(false)}
+            className="absolute inset-0 animate-fade-in"
+            style={{ background: "rgba(15,10,8,0.4)" }}
+          />
+          <div
+            className="absolute inset-x-0 bottom-0 mx-auto flex max-h-[82%] max-w-[430px] flex-col rounded-t-[24px] animate-slide-up"
+            style={{ background: EDITORIAL_SURFACE }}
+          >
+            <div className="flex flex-shrink-0 items-center justify-between px-5 pb-3 pt-5">
+              <h2 className="m-0 text-[16px] font-extrabold" style={{ color: EDITORIAL_INK }}>
+                سلتك
+              </h2>
+              <button
+                type="button"
+                onClick={() => setCartOpen(false)}
+                aria-label="إغلاق"
+                className="flex h-[30px] w-[30px] items-center justify-center rounded-full border-none bg-transparent text-[16px] font-bold"
+                style={{ color: EDITORIAL_INK }}
+              >
+                ×
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto px-5 py-1.5">
+              {cartItems.length > 0 ? (
+                <div className="flex flex-col">
+                  {cartItems.map((ci) => (
+                    <div
+                      key={ci.cartKey}
+                      className="flex items-center gap-3 py-3"
+                      style={{ borderBottom: `1px solid ${EDITORIAL_BORDER}` }}
+                    >
+                      <div className="flex-1 text-right">
+                        <p className="m-0 text-[13.5px] font-bold" style={{ color: EDITORIAL_INK }}>
+                          {ci.name}
+                        </p>
+                        <p className="mt-1 text-[12.5px] font-bold" style={{ color: EDITORIAL_MUTED }}>
+                          <PriceWithRiyalLogo value={ci.price * ci.quantity} />
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2.5">
+                        <button
+                          type="button"
+                          onClick={() => updateQuantity(ci.cartKey, ci.quantity + 1)}
+                          className="border-none bg-transparent text-[14px] font-black"
+                          style={{ color: EDITORIAL_INK }}
+                        >
+                          +
+                        </button>
+                        <span className="min-w-[14px] text-center text-[13px] font-extrabold">{ci.quantity}</span>
+                        <button
+                          type="button"
+                          onClick={() => updateQuantity(ci.cartKey, ci.quantity - 1)}
+                          className="border-none bg-transparent text-[14px] font-black"
+                          style={{ color: EDITORIAL_INK }}
+                        >
+                          –
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="px-5 py-[50px] text-center text-[13px]" style={{ color: EDITORIAL_MUTED_FAINTER }}>
+                  سلتك فارغة، أضف شيئًا لذيذًا
+                </div>
+              )}
+            </div>
+            {cartItems.length > 0 ? (
+              <div className="flex-shrink-0 px-5 pb-5 pt-3.5">
+                <div className="mb-3 flex items-center justify-between">
+                  <span className="text-[13px]" style={{ color: EDITORIAL_MUTED_SOFT }}>
+                    المجموع
+                  </span>
+                  <span className="text-[17px] font-black" style={{ color: EDITORIAL_INK }}>
+                    <PriceWithRiyalLogo value={totalPrice} />
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  className="h-[50px] w-full rounded-full border-none text-[15px] font-extrabold text-white"
+                  style={{ background: EDITORIAL_INK }}
+                >
+                  تأكيد الطلب
+                </button>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+
+      {menuOpen ? (
+        <div className="fixed inset-0 z-[60]" dir="rtl">
+          <div
+            onClick={() => setMenuOpen(false)}
+            className="absolute inset-0 animate-fade-in"
+            style={{ background: "rgba(15,10,8,0.35)" }}
+          />
+          <div
+            className="absolute inset-y-0 right-0 flex w-[76%] max-w-[290px] flex-col"
+            style={{ background: EDITORIAL_SURFACE }}
+          >
+            <div className="flex flex-shrink-0 items-center justify-between px-5 pb-4 pt-5">
+              <span className="font-serif-text text-[16px] font-black" style={{ color: EDITORIAL_INK }}>
+                القائمة
+              </span>
+              <button
+                type="button"
+                onClick={() => setMenuOpen(false)}
+                aria-label="إغلاق"
+                className="flex h-[30px] w-[30px] items-center justify-center border-none bg-transparent text-[16px] font-bold"
+                style={{ color: EDITORIAL_INK }}
+              >
+                ×
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto px-5">
+              {uiCategories.map((cat) => (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => jumpToCategory(cat.id)}
+                  className="block w-full border-none bg-transparent py-3.5 text-right text-[15px] font-semibold"
+                  style={{ color: "oklch(20% 0.01 280)", borderBottom: `1px solid ${EDITORIAL_BORDER}` }}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
 export function HomeLayoutPreview({
   variant,
 }: {
@@ -481,5 +1081,6 @@ export function HomeLayoutPreview({
 }) {
   if (variant === "soft") return <SoftPreview />
   if (variant === "market") return <MarketPreview />
+  if (variant === "editorial") return <EditorialPreview />
   return <StudioPreview />
 }

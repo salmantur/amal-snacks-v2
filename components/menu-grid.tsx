@@ -257,7 +257,7 @@ export function MenuGrid({ searchQuery, onSearchQueryChange }: MenuGridProps) {
                     onSelect={setSelectedProduct}
                     priority={idx < 2}
                     trayDesign={trayCardDesign}
-                    bestSellerStyle={isBestSellersCategory ? "s2" : undefined}
+                    bestSellerStyle={isBestSellersCategory ? "s4" : undefined}
                     bestSellerCardConfig={isBestSellersCategory ? bestSellerCardConfig : undefined}
                   />
                 )

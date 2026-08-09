@@ -191,7 +191,7 @@ export function BestSellerCardEditor() {
                       item={previewItem}
                       onSelect={() => {}}
                       priority
-                      bestSellerStyle="s2"
+                      bestSellerStyle="s4"
                       bestSellerCardConfig={current}
                     />
                   </div>
@@ -424,6 +424,46 @@ export function BestSellerCardEditor() {
           suffix="px"
           onChange={(value) => update("size_label_px", value)}
         />
+      </section>
+
+      <section className="space-y-4 rounded-2xl border border-gray-200 bg-white p-4">
+        <h4 className="text-sm font-bold text-gray-900">اسم الصنف على الصورة</h4>
+        <p className="text-xs text-gray-500">يظهر هذا التحكم فقط عند استخدام تصميم البطاقة s4.</p>
+        <SliderField
+          label="حجم الاسم"
+          value={current.s4_name_size_px}
+          min={11}
+          max={28}
+          suffix="px"
+          onChange={(value) => update("s4_name_size_px", value)}
+        />
+        <SliderField
+          label="موضع الاسم عموديًا"
+          value={current.s4_name_top_percent}
+          min={2}
+          max={40}
+          suffix="%"
+          onChange={(value) => update("s4_name_top_percent", value)}
+        />
+        <label className="space-y-2 block">
+          <span className="text-sm font-medium text-gray-700">محاذاة الاسم</span>
+          <div className="flex gap-2">
+            {(["right", "center", "left"] as const).map((align) => (
+              <button
+                key={align}
+                type="button"
+                onClick={() => update("s4_name_align", align)}
+                className={
+                  current.s4_name_align === align
+                    ? "flex-1 rounded-xl bg-[#ef4b86] px-3 py-2 text-sm font-semibold text-white"
+                    : "flex-1 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700"
+                }
+              >
+                {align === "right" ? "يمين" : align === "center" ? "وسط" : "يسار"}
+              </button>
+            ))}
+          </div>
+        </label>
       </section>
     </div>
   )

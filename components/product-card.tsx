@@ -598,7 +598,7 @@ export const ProductCard = memo(function ProductCard({
               src={bestSellerImage}
               alt={item.name}
               fill
-              sizes="(max-width: 640px) 44vw, 176px"
+              sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 400px"
               quality={76}
               className="object-cover"
               onError={() => markImageBroken(bestSellerImage)}

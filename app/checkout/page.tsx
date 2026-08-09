@@ -44,6 +44,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { PriceWithRiyalLogo } from "@/components/ui/price-with-riyal-logo";
+import { DeliveryFlowEditorialPreview } from "@/components/checkout-layout-preview";
 
 type CheckoutErrors = {
   name?: string;
@@ -2395,10 +2396,18 @@ function CheckoutContent() {
   );
 }
 
+function CheckoutRouter() {
+  const searchParams = useSearchParams();
+  if (searchParams.get("checkoutui") === "editorial") {
+    return <DeliveryFlowEditorialPreview />;
+  }
+  return <CheckoutContent />;
+}
+
 export default function CheckoutPage() {
   return (
     <Suspense>
-      <CheckoutContent />
+      <CheckoutRouter />
     </Suspense>
   );
 }

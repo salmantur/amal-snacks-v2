@@ -12,6 +12,7 @@ import {
   Sparkles,
   User,
 } from "lucide-react"
+import { useRouter } from "next/navigation"
 import { useEffect, useMemo, useState, type MouseEvent, type ReactNode } from "react"
 import { useCart, type MenuItem } from "@/components/cart-provider"
 import { PriceWithRiyalLogo } from "@/components/ui/price-with-riyal-logo"
@@ -518,6 +519,7 @@ function EditorialProductImage({ src, alt, className }: { src?: string; alt: str
 }
 
 function EditorialPreview() {
+  const router = useRouter()
   const { menuItems, isLoading } = useMenu()
   const { categories } = useCategories()
   const { items: cartItems, addItem, updateQuantity, totalItems, totalPrice } = useCart()
@@ -1018,6 +1020,7 @@ function EditorialPreview() {
                 </div>
                 <button
                   type="button"
+                  onClick={() => router.push("/checkout")}
                   className="h-[50px] w-full rounded-full border-none text-[15px] font-extrabold text-white"
                   style={{ background: EDITORIAL_INK }}
                 >

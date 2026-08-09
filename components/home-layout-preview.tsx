@@ -480,7 +480,8 @@ export function HomeLayoutPreview({
 }: {
   variant: HomePreviewVariant
 }) {
-  if (variant === "soft") return <SoftPreview />
+   if (variant === "soft") return <SoftPreview />
   if (variant === "market") return <MarketPreview />
+  if (variant === "editorial") return <EditorialPreview />
   return <StudioPreview />
 }

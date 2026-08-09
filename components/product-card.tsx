@@ -583,6 +583,10 @@ export const ProductCard = memo(function ProductCard({
   }
 
   if (bestSellerStyle === "s4") {
+    const s4Config = bestSellerCardConfig ?? DEFAULT_BEST_SELLER_CARD_CONFIG
+    const s4NameSizePx = s4Config.s4_name_size_px
+    const s4NameTopPercent = s4Config.s4_name_top_percent
+    const s4NameAlign = s4Config.s4_name_align
     return (
       <div
         onClick={() => item.inStock !== false && onSelect(item)}
@@ -598,7 +602,7 @@ export const ProductCard = memo(function ProductCard({
               src={bestSellerImage}
               alt={item.name}
               fill
-              sizes="(max-width: 640px) 44vw, 176px"
+              sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 400px"
               quality={76}
               className="object-cover"
               onError={() => markImageBroken(bestSellerImage)}
@@ -610,6 +614,16 @@ export const ProductCard = memo(function ProductCard({
               <ShoppingBag className="h-8 w-8" />
             </div>
           )}
+          <div className="absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-white/70 to-transparent pointer-events-none" />
+          <h3
+            className={cn(
+              "absolute right-[6%] left-[6%] font-serif-text font-black leading-snug text-[#1a1a1a]",
+              s4NameAlign === "center" ? "text-center" : s4NameAlign === "left" ? "text-left" : "text-right"
+            )}
+            style={{ top: `${s4NameTopPercent}%`, fontSize: `${s4NameSizePx}px` }}
+          >
+            {item.name}
+          </h3>
           <div className="absolute left-[10%] bottom-[8%] flex items-center gap-[4px] rounded-full border border-[#d7d2cf] bg-white/[0.7] px-2.5 py-1.5 shadow-[0_6px_14px_rgba(0,0,0,0.12)] backdrop-blur-sm">
             <PriceWithRiyalLogo value={displayPrice} className="text-[13px] font-extrabold text-[#212430]" iconClassName="h-[11px] w-[11px]" />
           </div>

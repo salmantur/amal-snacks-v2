@@ -30,6 +30,9 @@ export interface BestSellerCardConfig {
   price_badge_blur_px: number
   price_badge_padding_x_px: number
   price_badge_padding_y_px: number
+  s4_name_size_px: number
+  s4_name_top_percent: number
+  s4_name_align: "right" | "center" | "left"
 }
 
 export const BEST_SELLER_CARD_CONFIG_KEY = "best_seller_card_style_v2"
@@ -63,6 +66,9 @@ export const DEFAULT_BEST_SELLER_CARD_CONFIG: BestSellerCardConfig = {
   price_badge_blur_px: 16,
   price_badge_padding_x_px: 24,
   price_badge_padding_y_px: 12,
+  s4_name_size_px: 15,
+  s4_name_top_percent: 6,
+  s4_name_align: "right",
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -166,6 +172,16 @@ export function normalizeBestSellerCardConfig(value: unknown): BestSellerCardCon
       6,
       22
     ),
+    s4_name_size_px: clamp(Math.round(toNumber(raw.s4_name_size_px, DEFAULT_BEST_SELLER_CARD_CONFIG.s4_name_size_px)), 11, 28),
+    s4_name_top_percent: clamp(
+      Math.round(toNumber(raw.s4_name_top_percent, DEFAULT_BEST_SELLER_CARD_CONFIG.s4_name_top_percent)),
+      2,
+      40
+    ),
+    s4_name_align:
+      raw.s4_name_align === "center" || raw.s4_name_align === "left" || raw.s4_name_align === "right"
+        ? raw.s4_name_align
+        : DEFAULT_BEST_SELLER_CARD_CONFIG.s4_name_align,
   }
 }
 

@@ -18,8 +18,9 @@ import { PriceWithRiyalLogo } from "@/components/ui/price-with-riyal-logo"
 import { useCategories } from "@/hooks/use-categories"
 import { useMenu } from "@/hooks/use-menu"
 import { cn } from "@/lib/utils"
+import { EditorialPreview } from "@/components/editorial-preview"
 
-export type HomePreviewVariant = "studio" | "soft" | "market"
+export type HomePreviewVariant = "studio" | "soft" | "market" | "editorial"
 
 function PreviewImage({
   src,

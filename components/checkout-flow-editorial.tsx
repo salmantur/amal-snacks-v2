@@ -49,6 +49,7 @@ export interface DeliveryFlowEditorialProps {
   onGoToReview: () => void
   onGoToDetails: () => void
   missingCheckoutSteps: string[]
+  actionFeedback: string | null
 
   items: CartItem[]
   totalPrice: number
@@ -356,6 +357,7 @@ function ReviewScreen(props: DeliveryFlowEditorialProps & { onBack: () => void }
   } = props
   const methodSummary = isPickup ? "استلام من المحل" : "توصيل للمنزل"
   const contactSummary = `${deliveryInfo.name || "بدون اسم"} · ${deliveryInfo.phone || "بدون رقم"}`
+  const scheduleSummary = deliveryInfo.scheduledTime || "لم يُحدَّد موعد بعد"
 
   return (
     <div className="absolute inset-0 flex flex-col animate-fade-in" style={{ background: DF_SURFACE }}>
@@ -378,6 +380,12 @@ function ReviewScreen(props: DeliveryFlowEditorialProps & { onBack: () => void }
           </div>
           <span className="text-right text-[12px]" style={{ color: "rgba(255,255,255,0.65)" }}>
             {contactSummary}
+          </span>
+          <span
+            className="text-right text-[12px]"
+            style={{ color: deliveryInfo.scheduledTime ? "rgba(255,255,255,0.65)" : "oklch(70% 0.19 8)" }}
+          >
+            {scheduleSummary}
           </span>
         </div>
 
@@ -484,8 +492,30 @@ export function DeliveryFlowEditorial(props: DeliveryFlowEditorialProps) {
     setPhase("flow")
   }
 
+  // Confirm re-validates on click (a field can go stale between reaching review and
+  // confirming — e.g. a selected delivery slot falling outside the live availability
+  // window). If that happens while showing the review screen, the field-level error only
+  // renders on the details screen, so bounce back there instead of leaving confirm looking
+  // like a dead button with no visible feedback.
+  useEffect(() => {
+    if (phase === "flow" && props.step === 3 && props.missingCheckoutSteps.length > 0) {
+      props.onGoToDetails()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, props.step, props.missingCheckoutSteps])
+
   return (
     <div dir="rtl" className="min-h-screen" style={{ background: DF_SURFACE }}>
+      {props.actionFeedback ? (
+        <div
+          className="fixed inset-x-4 top-4 z-[300] mx-auto max-w-[398px] rounded-2xl px-4 py-3 text-center text-[13px] font-bold text-white shadow-lg animate-fade-in"
+          style={{ background: DF_INK }}
+          role="status"
+          aria-live="polite"
+        >
+          {props.actionFeedback}
+        </div>
+      ) : null}
       <div className="relative mx-auto min-h-screen max-w-[430px] overflow-hidden">
         {phase === "fulfillment" ? (
           <FulfillmentScreen isPickup={props.isPickup} onSelectFulfillment={handleSelectFulfillment} />

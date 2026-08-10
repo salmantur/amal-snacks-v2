@@ -90,6 +90,33 @@ const EDITORIAL_BORDER_STRONG = "oklch(90% 0.01 270)"
 const EDITORIAL_IMG_BG = "oklch(93% 0.02 75)"
 const EDITORIAL_BEST_ID = "editorial_best"
 
+// صينية مشكل's build-your-own step: same fixed 20-item list and pick-7 requirement as the
+// classic drawer's tray builder (components/product-drawer.tsx), reused verbatim so the two
+// drawers stay in sync rather than drifting with separately-maintained copies.
+const MIXED_TRAY_ITEMS: { ar: string; en: string }[] = [
+  { ar: "كبة", en: "Kibbeh" },
+  { ar: "سبرنق رول", en: "Spring Roll" },
+  { ar: "سمبوسة بطاطس", en: "Potato Samosa" },
+  { ar: "معجنات جبن", en: "Cheese Pastry" },
+  { ar: "ميني ساندوتش حلومي", en: "Mini Halloumi Sandwich" },
+  { ar: "ميني شاورما", en: "Mini Shawarma" },
+  { ar: "ورق عنب", en: "Grape Leaves" },
+  { ar: "مطبق مغلف", en: "Wrapped Matazeez" },
+  { ar: "معجنات زعتر", en: "Zaatar Pastry" },
+  { ar: "ميني ساندوتش لبنه", en: "Mini Labneh Sandwich" },
+  { ar: "مسخن", en: "Musakhan" },
+  { ar: "ميني برجر", en: "Mini Burger" },
+  { ar: "ميني تورتيلا", en: "Mini Tortilla" },
+  { ar: "معجنات بيتزا", en: "Pizza Pastry" },
+  { ar: "ميني ساندوتش ديك رومي", en: "Mini Turkey Sandwich" },
+  { ar: "بف لحم", en: "Beef Puff" },
+  { ar: "بف دجاج", en: "Chicken Puff" },
+  { ar: "سمبوسة جبن", en: "Cheese Samosa" },
+  { ar: "معجنات لبنه", en: "Labneh Pastry" },
+  { ar: "ميني ساندوتش فلافل", en: "Mini Falafel Sandwich" },
+]
+const MIXED_TRAY_REQUIRED = 7
+
 type EditorialCategory = { id: string; label: string; dbCategories?: string[] }
 
 function EditorialBagIcon() {
@@ -238,6 +265,7 @@ function EditorialPreview() {
   const [drawerIngredients, setDrawerIngredients] = useState<string[]>([])
   const [flashId, setFlashId] = useState<string | null>(null)
   const [sizeDetailsOpen, setSizeDetailsOpen] = useState(false)
+  const [drawerTrayPicks, setDrawerTrayPicks] = useState<string[]>([])
 
   const uiCategories = useMemo<EditorialCategory[]>(
     () => [
@@ -311,6 +339,7 @@ function EditorialPreview() {
       item.limit === 1 && (item.ingredients?.length ?? 0) > 0
     setDrawerIngredients(hasSingleVariant && item.ingredients ? [item.ingredients[0]] : [])
     setSizeDetailsOpen(false)
+    setDrawerTrayPicks([])
     setDrawerOpen(true)
   }, [])
 
@@ -336,11 +365,24 @@ function EditorialPreview() {
     })
   }
 
+  const toggleTrayPick = (key: string) => {
+    setDrawerTrayPicks((prev) => {
+      if (prev.includes(key)) return prev.filter((v) => v !== key)
+      if (prev.length >= MIXED_TRAY_REQUIRED) return prev
+      return [...prev, key]
+    })
+  }
+  const trayPickComplete = !isMixedTrayDrawer || drawerTrayPicks.length === MIXED_TRAY_REQUIRED
+
   const addFromDrawer = () => {
     if (!selectedProduct) return
-    const selectedLabels = drawerIngredients
-      .map((raw) => parseVariantOption(raw, selectedProduct.price).label)
-      .filter(Boolean)
+    if (isMixedTrayDrawer && !trayPickComplete) return
+    const selectedLabels = isMixedTrayDrawer
+      ? [
+          ...drawerIngredients.map((raw) => splitSizeDetail(parseVariantOption(raw, selectedProduct.price).label).short),
+          ...drawerTrayPicks.map((key) => key.split("||")[0]),
+        ].filter(Boolean)
+      : drawerIngredients.map((raw) => parseVariantOption(raw, selectedProduct.price).label).filter(Boolean)
     addItem(
       { ...selectedProduct, price: drawerUnitPrice },
       drawerQty,
@@ -696,6 +738,55 @@ function EditorialPreview() {
                 </div>
               ) : null}
 
+              {isMixedTrayDrawer ? (
+                <div className="px-5 pt-5">
+                  <div className="mb-3 flex items-baseline justify-between">
+                    <span
+                      className="text-[12px] font-bold"
+                      style={{ color: trayPickComplete ? "oklch(48% 0.13 150)" : EDITORIAL_ACCENT }}
+                    >
+                      {trayPickComplete ? `${MIXED_TRAY_REQUIRED} عناصر — تم` : `اختر ${MIXED_TRAY_REQUIRED - drawerTrayPicks.length} من ${MIXED_TRAY_REQUIRED}`}
+                    </span>
+                    <h3 className="m-0 text-[15px] font-extrabold" style={{ color: EDITORIAL_INK }}>
+                      اختر الأصناف
+                    </h3>
+                  </div>
+                  <div className="grid grid-cols-4 gap-2.5">
+                    {MIXED_TRAY_ITEMS.map((item) => {
+                      const key = `${item.ar}||${item.en}`
+                      const isSelected = drawerTrayPicks.includes(key)
+                      const isDisabled = !isSelected && drawerTrayPicks.length >= MIXED_TRAY_REQUIRED
+                      return (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => toggleTrayPick(key)}
+                          disabled={isDisabled}
+                          aria-pressed={isSelected}
+                          className="relative flex h-16 flex-col items-center justify-center gap-1.5 rounded-2xl border-none text-center transition-transform active:scale-95"
+                          style={{
+                            background: "#fff",
+                            boxShadow: "0 6px 14px -10px rgba(20,15,10,0.2)",
+                            border: `1.5px solid ${isSelected ? EDITORIAL_ACCENT : "transparent"}`,
+                            opacity: isDisabled ? 0.4 : 1,
+                          }}
+                        >
+                          {isSelected ? (
+                            <span
+                              className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full"
+                              style={{ background: EDITORIAL_ACCENT }}
+                            />
+                          ) : null}
+                          <span className="px-1 text-[10.5px] font-bold leading-[1.2]" style={{ color: EDITORIAL_INK }}>
+                            {item.ar}
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              ) : null}
+
               {drawerMultiOptions.length > 0 ? (
                 <div className="flex flex-wrap justify-end gap-2 px-5 pt-4">
                   {drawerMultiOptions.map((opt) => {
@@ -747,10 +838,17 @@ function EditorialPreview() {
               <button
                 type="button"
                 onClick={addFromDrawer}
-                className="flex h-[50px] flex-1 items-center justify-center gap-2 rounded-full border-none text-[15px] font-extrabold text-white"
-                style={{ background: EDITORIAL_INK }}
+                disabled={!trayPickComplete}
+                className="flex h-[50px] flex-1 items-center justify-center gap-2 rounded-full border-none text-[15px] font-extrabold text-white disabled:cursor-not-allowed"
+                style={{ background: trayPickComplete ? EDITORIAL_INK : EDITORIAL_BORDER_STRONG, color: trayPickComplete ? "#fff" : EDITORIAL_MUTED_FAINTER }}
               >
-                أضف إلى السلة · <PriceWithRiyalLogo value={drawerTotal} />
+                {trayPickComplete ? (
+                  <>
+                    أضف إلى السلة · <PriceWithRiyalLogo value={drawerTotal} />
+                  </>
+                ) : (
+                  `أضف ${MIXED_TRAY_REQUIRED - drawerTrayPicks.length} أصناف أخرى`
+                )}
               </button>
             </div>
           </div>
@@ -801,6 +899,11 @@ function EditorialPreview() {
                         <p className="m-0 text-[13.5px] font-bold" style={{ color: EDITORIAL_INK }}>
                           {ci.name}
                         </p>
+                        {ci.selectedIngredients?.length ? (
+                          <p className="mt-1 truncate text-[11.5px]" style={{ color: EDITORIAL_MUTED_FAINTER }}>
+                            {ci.selectedIngredients.map((s) => (s.includes("||") ? s.split("||")[0] : s)).join("، ")}
+                          </p>
+                        ) : null}
                         <p className="mt-1 text-[12.5px] font-bold" style={{ color: EDITORIAL_MUTED }}>
                           <PriceWithRiyalLogo value={ci.price * ci.quantity} />
                         </p>

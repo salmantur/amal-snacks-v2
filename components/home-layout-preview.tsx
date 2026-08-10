@@ -183,12 +183,17 @@ const EditorialBestSellerCard = memo(function EditorialBestSellerCard({
     >
       <div className="relative w-full overflow-hidden rounded-[14px]" style={{ aspectRatio: "0.78", background: EDITORIAL_IMG_BG }}>
         <EditorialProductImage src={item.image} alt={item.name} className="absolute inset-0" />
-        <h3
-          className="font-serif-text absolute right-3.5 top-3.5 left-3.5 m-0 text-right text-[15px] font-black leading-[1.25]"
-          style={{ color: EDITORIAL_INK }}
+        <div
+          className="absolute right-3.5 top-3.5 left-3.5 rounded-[10px] px-2.5 py-1.5"
+          style={{ background: "rgba(255,255,255,0.65)", backdropFilter: "blur(3px)" }}
         >
-          {item.name}
-        </h3>
+          <h3
+            className="font-serif-text m-0 text-right text-[15px] font-black leading-[1.25]"
+            style={{ color: EDITORIAL_INK }}
+          >
+            {item.name}
+          </h3>
+        </div>
         <div
           className="absolute bottom-3.5 left-3.5 flex items-center justify-center gap-1 rounded-full px-[13px] py-1.5"
           style={{
@@ -212,7 +217,7 @@ function EditorialPreview() {
   const { menuItems, isLoading, error } = useMenu()
   const { categories } = useCategories()
   const { orderIds: bestSellerOrder } = useBestSellersConfig()
-  const { items: cartItems, addItem, updateQuantity, totalItems, totalPrice } = useCart()
+  const { items: cartItems, addItem, updateQuantity, removeItem, totalItems, totalPrice } = useCart()
 
   const [selectedCategory, setSelectedCategory] = useState<string>(EDITORIAL_BEST_ID)
   const [searchQuery, setSearchQuery] = useState("")
@@ -347,10 +352,12 @@ function EditorialPreview() {
             type="button"
             onClick={() => setMenuOpen(true)}
             aria-label="فتح القائمة"
-            className="flex h-[34px] w-[34px] flex-col items-start justify-center gap-[5px] border-none bg-transparent p-0"
+            className="-m-[5px] flex h-11 w-11 items-center justify-center border-none bg-transparent p-0"
           >
-            <span className="h-[1.5px] w-[18px]" style={{ background: EDITORIAL_INK }} />
-            <span className="h-[1.5px] w-[11px]" style={{ background: EDITORIAL_INK }} />
+            <span className="flex h-[34px] w-[34px] flex-col items-start justify-center gap-[5px]">
+              <span className="h-[1.5px] w-[18px]" style={{ background: EDITORIAL_INK }} />
+              <span className="h-[1.5px] w-[11px]" style={{ background: EDITORIAL_INK }} />
+            </span>
           </button>
           <span className="font-serif-text text-[17px] font-black tracking-[0.2px]" style={{ color: EDITORIAL_INK }}>
             أمل سناك
@@ -359,17 +366,19 @@ function EditorialPreview() {
             type="button"
             onClick={() => setCartOpen(true)}
             aria-label="فتح السلة"
-            className="relative flex h-[34px] w-[34px] items-center justify-center border-none bg-transparent p-0"
+            className="-m-[5px] flex h-11 w-11 items-center justify-center border-none bg-transparent p-0"
           >
-            <EditorialBagIcon />
-            {totalItems > 0 ? (
-              <span
-                className="absolute -right-1 -top-1 flex h-[15px] min-w-[15px] items-center justify-center rounded-full px-[3px] text-[9px] font-extrabold text-white"
-                style={{ background: EDITORIAL_ACCENT }}
-              >
-                {totalItems}
-              </span>
-            ) : null}
+            <span className="relative flex h-[34px] w-[34px] items-center justify-center">
+              <EditorialBagIcon />
+              {totalItems > 0 ? (
+                <span
+                  className="absolute -right-1 -top-1 flex h-[15px] min-w-[15px] items-center justify-center rounded-full px-[3px] text-[9px] font-extrabold text-white"
+                  style={{ background: EDITORIAL_ACCENT }}
+                >
+                  {totalItems}
+                </span>
+              ) : null}
+            </span>
           </button>
         </div>
 
@@ -482,6 +491,10 @@ function EditorialPreview() {
                       <div key={i} className="aspect-square animate-pulse rounded-[14px]" style={{ background: EDITORIAL_IMG_BG }} />
                     ))}
                   </div>
+                ) : gridItems.length === 0 ? (
+                  <div className="px-6 py-10 text-center text-[13px]" style={{ color: EDITORIAL_MUTED_FAINTER }}>
+                    لا توجد أصناف في هذا القسم حاليًا
+                  </div>
                 ) : isBestCategory ? (
                   <div className="grid grid-cols-2 gap-3.5">
                     {gridItems.map((item) => (
@@ -510,7 +523,10 @@ function EditorialPreview() {
         </div>
 
         {totalItems > 0 ? (
-          <div className="fixed inset-x-0 bottom-[18px] z-20 mx-auto max-w-[430px] px-4">
+          <div
+            className="fixed inset-x-0 z-20 mx-auto max-w-[430px] px-4"
+            style={{ bottom: "calc(18px + env(safe-area-inset-bottom))" }}
+          >
             <button
               type="button"
               onClick={() => setCartOpen(true)}
@@ -702,11 +718,12 @@ function EditorialPreview() {
                           <PriceWithRiyalLogo value={ci.price * ci.quantity} />
                         </p>
                       </div>
-                      <div className="flex items-center gap-2.5">
+                      <div className="flex items-center gap-1">
                         <button
                           type="button"
                           onClick={() => updateQuantity(ci.cartKey, ci.quantity + 1)}
-                          className="border-none bg-transparent text-[14px] font-black"
+                          aria-label="زيادة الكمية"
+                          className="flex h-[30px] w-[30px] items-center justify-center border-none bg-transparent text-[14px] font-black"
                           style={{ color: EDITORIAL_INK }}
                         >
                           +
@@ -714,11 +731,14 @@ function EditorialPreview() {
                         <span className="min-w-[14px] text-center text-[13px] font-extrabold">{ci.quantity}</span>
                         <button
                           type="button"
-                          onClick={() => updateQuantity(ci.cartKey, ci.quantity - 1)}
-                          className="border-none bg-transparent text-[14px] font-black"
-                          style={{ color: EDITORIAL_INK }}
+                          onClick={() =>
+                            ci.quantity === 1 ? removeItem(ci.cartKey) : updateQuantity(ci.cartKey, ci.quantity - 1)
+                          }
+                          aria-label={ci.quantity === 1 ? "حذف العنصر" : "تقليل الكمية"}
+                          className="flex h-[30px] w-[30px] items-center justify-center border-none bg-transparent text-[14px] font-black"
+                          style={{ color: ci.quantity === 1 ? "oklch(55% 0.18 25)" : EDITORIAL_INK }}
                         >
-                          –
+                          {ci.quantity === 1 ? "×" : "–"}
                         </button>
                       </div>
                     </div>
@@ -733,11 +753,11 @@ function EditorialPreview() {
             {cartItems.length > 0 ? (
               <div className="flex-shrink-0 px-5 pb-5 pt-3.5">
                 <div className="mb-3 flex items-center justify-between">
-                  <span className="text-[13px]" style={{ color: EDITORIAL_MUTED_SOFT }}>
-                    المجموع
-                  </span>
                   <span className="text-[17px] font-black" style={{ color: EDITORIAL_INK }}>
                     <PriceWithRiyalLogo value={totalPrice} />
+                  </span>
+                  <span className="text-[13px]" style={{ color: EDITORIAL_MUTED_SOFT }}>
+                    المجموع
                   </span>
                 </div>
                 <button

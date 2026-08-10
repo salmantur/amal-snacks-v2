@@ -358,11 +358,13 @@ function CheckoutContent() {
     tone: CheckoutIssueTone;
     message: string;
   } | null>(null);
+  const [couponInput, setCouponInput] = useState("");
   const [appliedCouponCode, setAppliedCouponCode] = useState<string | null>(
     null,
   );
-  const [, setCouponStatus] = useState<string | null>(null);
-  const [, setCouponStatusTone] = useState<CouponStatusTone | null>(null);
+  const [couponStatus, setCouponStatus] = useState<string | null>(null);
+  const [couponStatusTone, setCouponStatusTone] =
+    useState<CouponStatusTone | null>(null);
   const [step, setStep] = useState<2 | 3>(2);
 
   useEffect(() => {
@@ -480,6 +482,57 @@ function CheckoutContent() {
   );
   const grandTotal = discountResult.finalTotal;
   const activeCouponCode = discountResult.codeApplied ?? null;
+
+  const applyCoupon = useCallback(() => {
+    const normalized = couponInput.trim().toUpperCase();
+    if (!normalized) {
+      setAppliedCouponCode(null);
+      setCouponStatus("اكتب كود الخصم أولا");
+      setCouponStatusTone("info");
+      return;
+    }
+    if (!discountConfig.enabled) {
+      setAppliedCouponCode(null);
+      setCouponStatus("الخصومات غير مفعلة حاليا");
+      setCouponStatusTone("error");
+      return;
+    }
+    const matched = discountConfig.codes.find(
+      (code) => code.code === normalized && code.active,
+    );
+    if (!matched) {
+      setAppliedCouponCode(null);
+      setCouponStatus("كود الخصم غير صحيح أو غير فعال");
+      setCouponStatusTone("error");
+      return;
+    }
+    const currentTotal = totalPrice + deliveryFee;
+    if (matched.minOrder && currentTotal < matched.minOrder) {
+      setAppliedCouponCode(null);
+      setCouponStatus(`هذا الكود يتطلب حد أدنى ${matched.minOrder}`);
+      setCouponStatusTone("error");
+      return;
+    }
+    setAppliedCouponCode(normalized);
+    setCouponStatus("تم تطبيق الكود");
+    setCouponStatusTone("success");
+    trackCheckoutEvent("coupon_applied", { code: normalized });
+    showActionFeedback("تم تطبيق كود الخصم");
+  }, [
+    couponInput,
+    discountConfig,
+    totalPrice,
+    deliveryFee,
+    showActionFeedback,
+  ]);
+
+  const clearCoupon = useCallback(() => {
+    setAppliedCouponCode(null);
+    setCouponInput("");
+    setCouponStatus(null);
+    setCouponStatusTone(null);
+  }, []);
+
   const maxMakingTime = items.reduce(
     (max, item) =>
       Math.max(max, normalizeMakingTimeMinutes(item.makingTime || 0)),
@@ -1020,6 +1073,13 @@ function CheckoutContent() {
         totalDiscount={discountResult.totalDiscount}
         grandTotal={displayGrandTotal}
         isFinalTotalReady={isFinalTotalReady}
+        couponInput={couponInput}
+        onCouponInputChange={setCouponInput}
+        onApplyCoupon={applyCoupon}
+        onClearCoupon={clearCoupon}
+        appliedCouponCode={activeCouponCode}
+        couponStatus={couponStatus}
+        couponStatusTone={couponStatusTone}
         onConfirmOrder={handleWhatsAppCheckout}
         isSubmitting={isSubmitting}
         checkoutButtonLabel={checkoutButtonLabel}

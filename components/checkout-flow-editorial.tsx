@@ -58,6 +58,14 @@ export interface DeliveryFlowEditorialProps {
   grandTotal: number
   isFinalTotalReady: boolean
 
+  couponInput: string
+  onCouponInputChange: (v: string) => void
+  onApplyCoupon: () => void
+  onClearCoupon: () => void
+  appliedCouponCode: string | null
+  couponStatus: string | null
+  couponStatusTone: "success" | "error" | "info" | null
+
   onConfirmOrder: () => void
   isSubmitting: boolean
   checkoutButtonLabel: string
@@ -73,8 +81,15 @@ function StepDots({ step, onBack }: { step: 1 | 2 | 3; onBack?: () => void }) {
   return (
     <div className="flex flex-shrink-0 items-center gap-2.5 px-6 pb-4.5 pt-6.5">
       {onBack ? (
-        <button type="button" onClick={onBack} aria-label="رجوع" className="border-none bg-transparent p-0">
-          {dot(false)}
+        <button
+          type="button"
+          onClick={onBack}
+          aria-label="رجوع"
+          className="-my-4 -ml-1 flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full border-none bg-transparent p-0"
+        >
+          <span className="text-[17px] font-bold leading-none" style={{ color: DF_INK }}>
+            →
+          </span>
         </button>
       ) : (
         dot(step === 1)
@@ -182,7 +197,7 @@ function FulfillmentScreen({
           </p>
         </div>
       </div>
-      <div className="flex-shrink-0 px-6 pb-7 pt-2">
+      <div className="flex-shrink-0 px-6 pt-2" style={{ paddingBottom: "calc(1.75rem + env(safe-area-inset-bottom))" }}>
         <button
           type="button"
           onClick={() => onSelectFulfillment(isPickup ? "pickup" : "delivery")}
@@ -264,8 +279,11 @@ function DetailsScreen(props: DeliveryFlowEditorialProps & { onBack: () => void 
               className="flex w-full items-center justify-between rounded-[18px] bg-transparent px-5 py-4.5"
               style={{ border: `1.5px solid ${areaError ? DF_ACCENT : DF_BORDER}` }}
             >
-              <span className="text-[20px]" style={{ color: DF_ACCENT }}>
-                {zonePickerOpen ? "↓" : "←"}
+              <span
+                className="inline-block text-[20px] transition-transform duration-200"
+                style={{ color: DF_ACCENT, transform: zonePickerOpen ? "rotate(-90deg)" : "none" }}
+              >
+                ←
               </span>
               <div className="text-right">
                 <span className="mb-1 block text-[10.5px] font-extrabold uppercase tracking-[1.5px]" style={{ color: DF_STEP_LABEL }}>
@@ -330,7 +348,7 @@ function DetailsScreen(props: DeliveryFlowEditorialProps & { onBack: () => void 
           </button>
           {scheduleError ? <p className="m-0 px-1 text-right text-[11.5px] font-bold" style={{ color: DF_ACCENT }}>{scheduleError}</p> : null}
         </div>
-        <p className="m-0 px-1 text-right text-[11.5px]" style={{ color: DF_ACCENT }}>
+        <p className="m-0 px-1 text-right text-[11.5px]" style={{ color: DF_STEP_LABEL }}>
           {deliveryAccuracyText}
         </p>
 
@@ -340,7 +358,7 @@ function DetailsScreen(props: DeliveryFlowEditorialProps & { onBack: () => void 
           </p>
         ) : null}
       </div>
-      <div className="flex-shrink-0 px-6 pb-7 pt-2">
+      <div className="flex-shrink-0 px-6 pt-2" style={{ paddingBottom: "calc(1.75rem + env(safe-area-inset-bottom))" }}>
         <button
           type="button"
           onClick={onGoToReview}
@@ -364,6 +382,13 @@ function ReviewScreen(props: DeliveryFlowEditorialProps & { onBack: () => void }
     totalDiscount,
     grandTotal,
     isFinalTotalReady,
+    couponInput,
+    onCouponInputChange,
+    onApplyCoupon,
+    onClearCoupon,
+    appliedCouponCode,
+    couponStatus,
+    couponStatusTone,
     onConfirmOrder,
     isSubmitting,
     checkoutButtonLabel,
@@ -452,6 +477,62 @@ function ReviewScreen(props: DeliveryFlowEditorialProps & { onBack: () => void }
           </div>
         </div>
 
+        <div className="flex flex-col gap-2.5 rounded-[18px] p-5" style={{ border: `1.5px solid ${DF_BORDER}` }}>
+          <span className="text-right text-[10.5px] font-extrabold uppercase tracking-[1.5px]" style={{ color: DF_ACCENT }}>
+            كود الخصم
+          </span>
+          {appliedCouponCode ? (
+            <div className="flex items-center justify-between rounded-[14px] px-4 py-3" style={{ background: "oklch(95% 0.05 150)" }}>
+              <button
+                type="button"
+                onClick={onClearCoupon}
+                className="border-none bg-transparent p-0 text-[12px] font-bold underline"
+                style={{ color: "oklch(40% 0.1 150)" }}
+              >
+                إزالة
+              </button>
+              <span className="text-[13px] font-bold" style={{ color: "oklch(35% 0.12 150)" }}>
+                {appliedCouponCode} ✓
+              </span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={onApplyCoupon}
+                className="flex h-11 flex-shrink-0 items-center justify-center rounded-[12px] border-none px-4 text-[12.5px] font-extrabold text-white"
+                style={{ background: DF_INK }}
+              >
+                تطبيق
+              </button>
+              <input
+                type="text"
+                value={couponInput}
+                onChange={(e) => onCouponInputChange(e.target.value)}
+                placeholder="أدخل كود الخصم"
+                dir="rtl"
+                className="h-11 flex-1 rounded-[12px] border-none px-4 text-right text-[13px] outline-none"
+                style={{ background: DF_BLOCK_INACTIVE_BG, color: DF_INK }}
+              />
+            </div>
+          )}
+          {couponStatus ? (
+            <p
+              className="m-0 text-right text-[11.5px] font-bold"
+              style={{
+                color:
+                  couponStatusTone === "success"
+                    ? "oklch(40% 0.1 150)"
+                    : couponStatusTone === "error"
+                      ? "oklch(45% 0.15 25)"
+                      : DF_STEP_LABEL,
+              }}
+            >
+              {couponStatus}
+            </p>
+          ) : null}
+        </div>
+
         {checkoutIssue ? (
           <div
             className="rounded-[16px] px-4 py-3 text-right"
@@ -485,7 +566,7 @@ function ReviewScreen(props: DeliveryFlowEditorialProps & { onBack: () => void }
           </p>
         ) : null}
       </div>
-      <div className="flex-shrink-0 px-6 pb-7 pt-2">
+      <div className="flex-shrink-0 px-6 pt-2" style={{ paddingBottom: "calc(1.75rem + env(safe-area-inset-bottom))" }}>
         <button
           type="button"
           onClick={onConfirmOrder}
@@ -526,8 +607,8 @@ export function DeliveryFlowEditorial(props: DeliveryFlowEditorialProps) {
     <div dir="rtl" className="min-h-screen" style={{ background: DF_SURFACE }}>
       {props.actionFeedback ? (
         <div
-          className="fixed inset-x-4 top-4 z-[300] mx-auto max-w-[398px] rounded-2xl px-4 py-3 text-center text-[13px] font-bold text-white shadow-lg animate-fade-in"
-          style={{ background: DF_INK }}
+          className="fixed inset-x-4 z-[300] mx-auto max-w-[398px] rounded-2xl px-4 py-3 text-center text-[13px] font-bold text-white shadow-lg animate-fade-in"
+          style={{ background: DF_INK, top: "max(1rem, env(safe-area-inset-top))" }}
           role="status"
           aria-live="polite"
         >

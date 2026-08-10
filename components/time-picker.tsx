@@ -1,8 +1,9 @@
 ﻿"use client"
 
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { ChevronDown, ChevronLeft, CalendarDays } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { trapFocusOnTab } from "@/lib/dialog-focus"
 import {
   CLOSE_HOUR,
   OPEN_HOUR,
@@ -19,41 +20,20 @@ interface TimePickerProps {
   required?: boolean
   closedDates?: string[]
   openSignal?: number
+  /** Set when the trigger button is visually hidden and opened via `openSignal` from an
+   *  external control instead - keeps the invisible button out of the tab order. */
+  hideTrigger?: boolean
 }
 
-function getFocusableElements(container: HTMLElement | null) {
-  if (!container) return []
-
-  return Array.from(
-    container.querySelectorAll<HTMLElement>(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-    )
-  ).filter((element) => !element.hasAttribute("disabled") && element.getAttribute("aria-hidden") !== "true")
-}
-
-function trapFocusOnTab(event: ReactKeyboardEvent<HTMLElement>, container: HTMLElement | null) {
-  if (event.key !== "Tab") return
-
-  const focusable = getFocusableElements(container)
-  if (focusable.length === 0) {
-    event.preventDefault()
-    return
-  }
-
-  const first = focusable[0]
-  const last = focusable[focusable.length - 1]
-  const activeElement = document.activeElement
-
-  if (event.shiftKey && activeElement === first) {
-    event.preventDefault()
-    last.focus()
-  } else if (!event.shiftKey && activeElement === last) {
-    event.preventDefault()
-    first.focus()
-  }
-}
-
-export function TimePicker({ value, onChange, minMinutes = 0, required = false, closedDates = [], openSignal = 0 }: TimePickerProps) {
+export function TimePicker({
+  value,
+  onChange,
+  minMinutes = 0,
+  required = false,
+  closedDates = [],
+  openSignal = 0,
+  hideTrigger = false,
+}: TimePickerProps) {
   const [open, setOpen] = useState(false)
   const [selectedDayIdx, setSelectedDayIdx] = useState(0)
   const triggerRef = useRef<HTMLButtonElement | null>(null)
@@ -140,6 +120,8 @@ export function TimePicker({ value, onChange, minMinutes = 0, required = false, 
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-controls="time-picker-dialog"
+        tabIndex={hideTrigger ? -1 : undefined}
+        aria-hidden={hideTrigger || undefined}
       >
         <div className="flex items-center gap-3">
           <div className="text-right">

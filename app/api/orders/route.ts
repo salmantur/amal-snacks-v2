@@ -5,6 +5,8 @@ import { normalizeDiscountConfig, resolveDiscount } from "@/lib/discounts"
 import { fetchDeliveryAreasFromSupabase } from "@/lib/delivery-areas"
 import { getSupabaseConfig } from "@/lib/supabase/config"
 import { formatNewOrderTelegramMessage, normalizeTelegramConfig, sendTelegramMessage } from "@/lib/telegram"
+import { generateDeliveryDaySlots } from "@/lib/checkout-schedule"
+import { normalizeOrderScheduleConfig } from "@/lib/order-schedule-config"
 
 const RATE_LIMIT_WINDOW_MS = 60_000
 const RATE_LIMIT_MAX_REQUESTS = 5
@@ -94,6 +96,16 @@ interface MenuRow {
     price: number
     ingredients?: string[] | string | null
     limit?: number | null
+    making_time?: number | null
+}
+
+const DELIVERY_BUFFER_MINUTES = 120
+
+function normalizeMakingTimeMinutes(value: number): number {
+  if (!value || value <= 0) return 0
+  // Backward compatibility: some old records stored "24" meaning 24 hours.
+  if (value === 24) return 24 * 60
+  return value
 }
 
 
@@ -157,16 +169,22 @@ export async function POST(req: Request) {
       const itemIds = Array.from(new Set(payload.items.map((item) => item.id)))
           const menuPromise = supabase
             .from("menu")
-            .select("id,name,name_en,price,ingredients,limit")
+            .select("id,name,name_en,price,ingredients,limit,making_time")
             .in("id", itemIds)
           const settingsPromise = supabase
             .from("app_settings")
             .select("key,value")
-            .in("key", ["discount_config", "telegram_alerts"])
+            .in("key", ["discount_config", "telegram_alerts", "order_schedule"])
+          // Doesn't depend on menu/settings data - fetch it alongside them instead of as its
+          // own awaited step afterward, so a delivery order isn't paying for a fourth
+          // sequential round trip.
+          const deliveryAreasPromise =
+            payload.orderType === "delivery" ? fetchDeliveryAreasFromSupabase(supabase) : Promise.resolve(null)
 
-      const [{ data: menuRows, error: menuError }, { data: settingsRows }] = await Promise.all([
+      const [{ data: menuRows, error: menuError }, { data: settingsRows }, deliveryAreasResult] = await Promise.all([
               menuPromise,
               settingsPromise,
+              deliveryAreasPromise,
             ])
 
       if (menuError || !menuRows) {
@@ -191,6 +209,7 @@ export async function POST(req: Request) {
                             price: Number(row.price) || 0,
                             ingredients: row.ingredients ?? null,
                             limit: Number(row.limit) || 0,
+                            making_time: Number(row.making_time) || 0,
                   })
           }
 
@@ -210,8 +229,7 @@ export async function POST(req: Request) {
 
       let deliveryFee = 0
           let unmatchedAreaNote = ""
-          if (payload.orderType === "delivery") {
-                  const deliveryAreasResult = await fetchDeliveryAreasFromSupabase(supabase)
+          if (payload.orderType === "delivery" && deliveryAreasResult) {
                   const areaRow = deliveryAreasResult.areas.find((area) => area.name === payload.customerArea && area.is_active)
 
             if (!areaRow) {
@@ -263,6 +281,29 @@ export async function POST(req: Request) {
           })
           const total = discountResult.finalTotal
 
+      // Don't reject over a stale/mismatched scheduled time (client had a cached slot list,
+      // clock skew, etc.) - register the order with a flag so staff confirm it, same as the
+      // delivery-area-mismatch handling above.
+      let scheduleNote = ""
+          if (payload.scheduledTime) {
+                  const orderScheduleConfig = normalizeOrderScheduleConfig(settingsMap.get("order_schedule"))
+                  const maxMakingTime = normalizedItems.reduce((max, item) => {
+                            const menuItem = menuById.get(item.id)
+                            return Math.max(max, normalizeMakingTimeMinutes(menuItem?.making_time || 0))
+                  }, 0)
+                  const minimumLeadTimeMinutes = maxMakingTime + DELIVERY_BUFFER_MINUTES
+                  const availableLabels = new Set(
+                            generateDeliveryDaySlots(minimumLeadTimeMinutes, orderScheduleConfig.closedDates).flatMap((day) =>
+                                      day.slots.map((slot) => `${day.dayLabel} ${day.dateLabel} - ${slot}`)
+                            )
+                  )
+                  if (!availableLabels.has(payload.scheduledTime)) {
+                            scheduleNote = `[موعد غير متاح حاليًا: "${payload.scheduledTime}" — يرجى تأكيد الموعد مع العميل]`
+                  }
+          }
+
+      const combinedNotePrefix = [unmatchedAreaNote, scheduleNote].filter(Boolean).join(" ")
+
       const { data: rpcResult, error: insertError } = await supabase
             .rpc("create_order", {
                       p_customer_name: payload.customerName || "بدون اسم",
@@ -273,7 +314,7 @@ export async function POST(req: Request) {
                       p_subtotal: subtotal,
                       p_delivery_fee: deliveryFee,
                       p_total: total,
-                      p_notes: unmatchedAreaNote ? `${unmatchedAreaNote} ${payload.notes}`.trim() : payload.notes,
+                      p_notes: combinedNotePrefix ? `${combinedNotePrefix} ${payload.notes}`.trim() : payload.notes,
                       p_scheduled_time: payload.scheduledTime ?? null,
             })
             .single()

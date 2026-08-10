@@ -134,9 +134,10 @@ export async function fetchFailedOrders(limit = 100): Promise<FailedOrder[]> {
   }))
 }
 
-export async function resolveFailedOrder(id: string): Promise<void> {
+export async function resolveFailedOrder(id: string): Promise<{ error: string | null }> {
   const supabase = createClient()
-  await supabase.from("failed_orders").update({ resolved: true }).eq("id", id)
+  const { error } = await supabase.from("failed_orders").update({ resolved: true }).eq("id", id)
+  return { error: error ? error.message : null }
 }
 
 // Fetch recent orders with a configurable history window.

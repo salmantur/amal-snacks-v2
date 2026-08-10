@@ -561,6 +561,7 @@ export function DeliveryFlowEditorial(props: DeliveryFlowEditorialProps) {
                 required={false}
                 closedDates={props.closedDates}
                 openSignal={props.schedulePickerOpenSignal}
+                hideTrigger
               />
             </div>,
             document.body

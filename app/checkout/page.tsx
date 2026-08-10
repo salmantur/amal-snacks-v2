@@ -1285,6 +1285,7 @@ function CheckoutContent() {
         onGoToReview={goToReview}
         onGoToDetails={goToDetails}
         missingCheckoutSteps={missingCheckoutSteps}
+        actionFeedback={actionFeedback}
         items={items}
         totalPrice={totalPrice}
         deliveryFee={deliveryFee}

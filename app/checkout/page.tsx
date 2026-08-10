@@ -904,15 +904,8 @@ function CheckoutContent() {
   const validate = useCallback((): CheckoutErrors => {
     const next: CheckoutErrors = {};
     if (!deliveryInfo.name.trim()) next.name = "الاسم مطلوب";
-    else if (deliveryInfo.name.trim().length < 2)
-      next.name = "الاسم يجب أن يكون حرفين على الأقل";
 
     if (!deliveryInfo.phone.trim()) next.phone = "رقم الهاتف مطلوب";
-    else {
-      const digitsOnly = normalizeSaudiPhoneDigits(deliveryInfo.phone);
-      if (digitsOnly.length !== 10 || !digitsOnly.startsWith("05"))
-        next.phone = "أدخل رقم جوال سعودي صحيح";
-    }
 
     if (!isPickup && !selectedArea) next.area = "اختر منطقة التوصيل من القائمة";
     if (!hasAvailableScheduleDays)

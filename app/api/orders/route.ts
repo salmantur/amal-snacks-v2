@@ -73,8 +73,12 @@ const orderItemSchema = z.object({
 })
 
 const orderPayloadSchema = z.object({
-    customerName: z.string().trim().min(2).max(120),
-    customerPhone: z.string().trim().min(7).max(30),
+    // Name/phone are intentionally lenient (no min length): the business would
+    // rather register an order with incomplete contact info - and follow up via
+    // the WhatsApp message that's sent regardless - than silently drop a real
+    // order over strict formatting.
+    customerName: z.string().trim().max(120).optional().default(""),
+    customerPhone: z.string().trim().max(30).optional().default(""),
     customerArea: z.string().trim().max(120),
     orderType: z.enum(["delivery", "pickup"]),
     items: z.array(orderItemSchema).min(1).max(50),
@@ -205,24 +209,19 @@ export async function POST(req: Request) {
           }
 
       let deliveryFee = 0
+          let unmatchedAreaNote = ""
           if (payload.orderType === "delivery") {
                   const deliveryAreasResult = await fetchDeliveryAreasFromSupabase(supabase)
                   const areaRow = deliveryAreasResult.areas.find((area) => area.name === payload.customerArea && area.is_active)
 
             if (!areaRow) {
-                      await logFailedOrder(supabase, {
-                                  reason: "invalid_delivery_area",
-                                  statusCode: 400,
-                                  customerName: payload.customerName,
-                                  customerPhone: payload.customerPhone,
-                                  customerArea: payload.customerArea,
-                                  orderType: payload.orderType,
-                                  items: payload.items,
-                      })
-                      return NextResponse.json({ error: "Invalid delivery area" }, { status: 400 })
+                      // Don't drop the order over an area mismatch (stale client-side area list,
+                      // a renamed/disabled area, etc.) - register it with a flag so staff catch
+                      // the missing delivery fee instead of losing the order entirely.
+                      unmatchedAreaNote = `[منطقة غير معروفة: "${payload.customerArea || "بدون منطقة"}" — يرجى تأكيد رسوم التوصيل يدويًا]`
+            } else {
+                      deliveryFee = Number(areaRow.price) || 0
             }
-
-            deliveryFee = Number(areaRow.price) || 0
           }
 
       const normalizedItems = payload.items.map((item) => {
@@ -266,15 +265,15 @@ export async function POST(req: Request) {
 
       const { data: rpcResult, error: insertError } = await supabase
             .rpc("create_order", {
-                      p_customer_name: payload.customerName,
-                      p_customer_phone: payload.customerPhone,
+                      p_customer_name: payload.customerName || "بدون اسم",
+                      p_customer_phone: payload.customerPhone || "بدون رقم",
                       p_customer_area: payload.orderType === "pickup" ? "استلام من المحل" : payload.customerArea,
                       p_order_type: payload.orderType,
                       p_items: normalizedItems,
                       p_subtotal: subtotal,
                       p_delivery_fee: deliveryFee,
                       p_total: total,
-                      p_notes: payload.notes,
+                      p_notes: unmatchedAreaNote ? `${unmatchedAreaNote} ${payload.notes}`.trim() : payload.notes,
                       p_scheduled_time: payload.scheduledTime ?? null,
             })
             .single()

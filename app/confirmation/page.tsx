@@ -42,7 +42,10 @@ function ConfirmationContent() {
   const [copied, setCopied] = useState(false)
   const [feedback, setFeedback] = useState<string | null>(null)
   const [showEditor, setShowEditor] = useState(false)
-  const [whatsAppOpened, setWhatsAppOpened] = useState(false)
+  // Desktop checkout already opens WhatsApp itself (a popup primed before the async save)
+  // before ever navigating here - waOpened=1 says so, so the auto-open effect below doesn't
+  // fire a second, redundant tab on top of it.
+  const [whatsAppOpened, setWhatsAppOpened] = useState(() => searchParams.get("waOpened") === "1")
 
   const name = decodePossibleMojibake(searchParams.get("name") || "")
   const area = decodePossibleMojibake(searchParams.get("area") || "")

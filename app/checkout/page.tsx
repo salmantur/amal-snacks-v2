@@ -44,7 +44,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { PriceWithRiyalLogo } from "@/components/ui/price-with-riyal-logo";
-import { DeliveryFlowEditorialPreview } from "@/components/checkout-layout-preview";
+import { DeliveryFlowEditorial } from "@/components/checkout-flow-editorial";
 
 type CheckoutErrors = {
   name?: string;
@@ -428,6 +428,7 @@ function CheckoutContent() {
   const orderTypeParam = searchParams.get("type");
   const orderType = (orderTypeParam as OrderMode) || "delivery";
   const isPickup = orderType === "pickup";
+  const checkoutUi = searchParams.get("checkoutui");
   const theme = {
     main: "min-h-screen bg-[#fdfaf9] pb-24 text-slate-900",
     header:
@@ -1248,6 +1249,55 @@ function CheckoutContent() {
           <Button className="rounded-full px-8">تصفح المنتجات</Button>
         </Link>
       </main>
+    );
+  }
+
+  if (checkoutUi !== "classic") {
+    const selectFulfillment = (method: OrderMode) => {
+      const nextParams = new URLSearchParams(searchParams.toString());
+      nextParams.set("type", method);
+      nextParams.set("checkoutui", "editorial");
+      router.replace(`/checkout?${nextParams.toString()}`, { scroll: false });
+    };
+
+    return (
+      <DeliveryFlowEditorial
+        isPickup={isPickup}
+        onSelectFulfillment={selectFulfillment}
+        deliveryInfo={deliveryInfo}
+        onNameChange={(v) => handleInputChange("name", v)}
+        onPhoneChange={(v) => handleInputChange("phone", v)}
+        nameError={errors.name}
+        phoneError={errors.phone}
+        deliveryAreas={deliveryAreas}
+        selectedArea={selectedArea}
+        onPickArea={pickArea}
+        areaError={errors.area}
+        scheduledTime={deliveryInfo.scheduledTime}
+        onScheduleChange={handleScheduleChange}
+        minimumLeadTimeMinutes={minimumLeadTimeMinutes}
+        closedDates={closedDates}
+        schedulePickerOpenSignal={schedulePickerOpenSignal}
+        onOpenSchedulePicker={focusSchedulePicker}
+        deliveryAccuracyText={deliveryAccuracyText}
+        scheduleError={errors.scheduledTime}
+        step={step}
+        onGoToReview={goToReview}
+        onGoToDetails={goToDetails}
+        missingCheckoutSteps={missingCheckoutSteps}
+        items={items}
+        totalPrice={totalPrice}
+        deliveryFee={deliveryFee}
+        totalDiscount={discountResult.totalDiscount}
+        grandTotal={displayGrandTotal}
+        isFinalTotalReady={isFinalTotalReady}
+        onConfirmOrder={handleWhatsAppCheckout}
+        isSubmitting={isSubmitting}
+        checkoutButtonLabel={checkoutButtonLabel}
+        manualWhatsAppUrl={manualWhatsAppUrl}
+        checkoutIssue={checkoutIssue}
+        onDismissCheckoutIssue={() => setCheckoutIssue(null)}
+      />
     );
   }
 
@@ -2396,18 +2446,10 @@ function CheckoutContent() {
   );
 }
 
-function CheckoutRouter() {
-  const searchParams = useSearchParams();
-  if (searchParams.get("checkoutui") === "editorial") {
-    return <DeliveryFlowEditorialPreview />;
-  }
-  return <CheckoutContent />;
-}
-
 export default function CheckoutPage() {
   return (
     <Suspense>
-      <CheckoutRouter />
+      <CheckoutContent />
     </Suspense>
   );
 }

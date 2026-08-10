@@ -16,19 +16,23 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const params = searchParams ? await searchParams : undefined
   const homeui = params?.homeui
 
-  if (homeui === "studio" || homeui === "soft" || homeui === "market" || homeui === "editorial") {
+  if (homeui === "studio" || homeui === "soft" || homeui === "market") {
     return <HomeLayoutPreview variant={homeui} />
   }
 
-  return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,#fffdf9_0%,#ffffff_18rem)] pb-[calc(9rem+env(safe-area-inset-bottom))] md:bg-background md:pb-24">
-      <Header />
-      <HeroBanner />
-      <TrustSignals />
-      <Suspense fallback={null}>
-        <HomeContent />
-      </Suspense>
-      <CartBar />
-    </main>
-  )
+  if (homeui === "classic") {
+    return (
+      <main className="min-h-screen bg-[linear-gradient(180deg,#fffdf9_0%,#ffffff_18rem)] pb-[calc(9rem+env(safe-area-inset-bottom))] md:bg-background md:pb-24">
+        <Header />
+        <HeroBanner />
+        <TrustSignals />
+        <Suspense fallback={null}>
+          <HomeContent />
+        </Suspense>
+        <CartBar />
+      </main>
+    )
+  }
+
+  return <HomeLayoutPreview variant="editorial" />
 }

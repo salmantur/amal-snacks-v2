@@ -478,6 +478,18 @@ function MarketPreview() {
   )
 }
 
+function parseVariantOption(raw: string, fallbackPrice: number): { label: string; price: number } {
+  const value = (raw || "").trim()
+  if (!value) return { label: "", price: fallbackPrice }
+  const [labelPart, pricePart] = value.split("::")
+  const label = (labelPart || value).trim()
+  const parsedPrice = Number((pricePart || "").replace(/[^\d.]/g, ""))
+  return {
+    label,
+    price: Number.isFinite(parsedPrice) && parsedPrice > 0 ? parsedPrice : fallbackPrice,
+  }
+}
+
 const EDITORIAL_INK = "oklch(16% 0.01 280)"
 const EDITORIAL_ACCENT = "oklch(56% 0.17 28)"
 const EDITORIAL_MUTED = "oklch(45% 0.015 270)"
@@ -531,6 +543,7 @@ function EditorialPreview() {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<MenuItem | null>(null)
   const [drawerQty, setDrawerQty] = useState(1)
+  const [drawerIngredients, setDrawerIngredients] = useState<string[]>([])
   const [flashId, setFlashId] = useState<string | null>(null)
 
   const uiCategories = useMemo<EditorialCategory[]>(
@@ -561,9 +574,33 @@ function EditorialPreview() {
     ? `نتائج البحث (${gridItems.length})`
     : activeCategory?.label || ""
 
+  // Some products require picking one priced option (e.g. tray sizes) before they can be
+  // added correctly - ingredients formatted "label::price", exactly one selectable. Adding
+  // without this always charged the base price and recorded no selection at all.
+  const drawerVariantOptions = useMemo(
+    () =>
+      selectedProduct?.limit === 1 && (selectedProduct.ingredients?.length ?? 0) > 0
+        ? (selectedProduct.ingredients ?? []).map((raw) => ({ raw, ...parseVariantOption(raw, selectedProduct.price) }))
+        : [],
+    [selectedProduct]
+  )
+  const drawerHasSingleVariant = drawerVariantOptions.length > 0
+  const drawerMultiOptions =
+    !drawerHasSingleVariant && selectedProduct?.ingredients?.length
+      ? selectedProduct.ingredients.map((raw) => ({ raw, ...parseVariantOption(raw, selectedProduct.price) }))
+      : []
+  const drawerMaxMultiSelections = selectedProduct?.limit || 0
+  const selectedVariant = drawerHasSingleVariant
+    ? drawerVariantOptions.find((opt) => opt.raw === drawerIngredients[0])
+    : undefined
+  const drawerUnitPrice = selectedVariant?.price ?? selectedProduct?.price ?? 0
+
   const openProduct = (item: MenuItem) => {
     setSelectedProduct(item)
     setDrawerQty(1)
+    const hasSingleVariant =
+      item.limit === 1 && (item.ingredients?.length ?? 0) > 0
+    setDrawerIngredients(hasSingleVariant && item.ingredients ? [item.ingredients[0]] : [])
     setDrawerOpen(true)
   }
 
@@ -574,9 +611,28 @@ function EditorialPreview() {
     window.setTimeout(() => setFlashId((cur) => (cur === item.id ? null : cur)), 900)
   }
 
+  const toggleDrawerIngredient = (raw: string) => {
+    if (drawerHasSingleVariant) {
+      setDrawerIngredients([raw])
+      return
+    }
+    setDrawerIngredients((prev) => {
+      if (prev.includes(raw)) return prev.filter((v) => v !== raw)
+      if (drawerMaxMultiSelections > 0 && prev.length >= drawerMaxMultiSelections) return prev
+      return [...prev, raw]
+    })
+  }
+
   const addFromDrawer = () => {
     if (!selectedProduct) return
-    addItem(selectedProduct, drawerQty)
+    const selectedLabels = drawerIngredients
+      .map((raw) => parseVariantOption(raw, selectedProduct.price).label)
+      .filter(Boolean)
+    addItem(
+      { ...selectedProduct, price: drawerUnitPrice },
+      drawerQty,
+      selectedLabels.length > 0 ? selectedLabels : undefined
+    )
     setDrawerOpen(false)
   }
 
@@ -586,7 +642,7 @@ function EditorialPreview() {
     setMenuOpen(false)
   }
 
-  const drawerTotal = selectedProduct ? selectedProduct.price * drawerQty : 0
+  const drawerTotal = selectedProduct ? drawerUnitPrice * drawerQty : 0
 
   return (
     <div className="min-h-screen" dir="rtl" style={{ background: EDITORIAL_SURFACE }}>
@@ -896,9 +952,55 @@ function EditorialPreview() {
                   {selectedProduct.description}
                 </p>
                 <p className="mt-3.5 text-[19px] font-extrabold" style={{ color: EDITORIAL_MUTED }}>
-                  <PriceWithRiyalLogo value={selectedProduct.price} />
+                  <PriceWithRiyalLogo value={drawerUnitPrice} />
                 </p>
               </div>
+
+              {drawerHasSingleVariant ? (
+                <div className="flex flex-wrap justify-end gap-2 px-5 pt-4">
+                  {drawerVariantOptions.map((opt) => {
+                    const isSelected = drawerIngredients[0] === opt.raw
+                    return (
+                      <button
+                        key={opt.raw}
+                        type="button"
+                        onClick={() => toggleDrawerIngredient(opt.raw)}
+                        className="rounded-full px-4 py-2 text-[13px] font-bold transition-colors"
+                        style={{
+                          border: `1.5px solid ${isSelected ? EDITORIAL_INK : EDITORIAL_BORDER_STRONG}`,
+                          background: isSelected ? EDITORIAL_INK : "transparent",
+                          color: isSelected ? "#fff" : EDITORIAL_INK,
+                        }}
+                      >
+                        {opt.label} · <PriceWithRiyalLogo value={opt.price} />
+                      </button>
+                    )
+                  })}
+                </div>
+              ) : null}
+
+              {drawerMultiOptions.length > 0 ? (
+                <div className="flex flex-wrap justify-end gap-2 px-5 pt-4">
+                  {drawerMultiOptions.map((opt) => {
+                    const isSelected = drawerIngredients.includes(opt.raw)
+                    return (
+                      <button
+                        key={opt.raw}
+                        type="button"
+                        onClick={() => toggleDrawerIngredient(opt.raw)}
+                        className="rounded-full px-4 py-2 text-[13px] font-bold transition-colors"
+                        style={{
+                          border: `1.5px solid ${isSelected ? EDITORIAL_INK : EDITORIAL_BORDER_STRONG}`,
+                          background: isSelected ? EDITORIAL_INK : "transparent",
+                          color: isSelected ? "#fff" : EDITORIAL_INK,
+                        }}
+                      >
+                        {opt.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              ) : null}
             </div>
             <div className="flex flex-shrink-0 items-center gap-3 px-5 pb-[22px] pt-4">
               <div

@@ -51,27 +51,27 @@ const thmanyahSerifText = localFont({
 const thmanyahSans = localFont({
   src: [
     {
-      path: './fonts/thmanyah-sans/thmanyahsans-Light.otf',
+      path: './fonts/thmanyah-sans/thmanyahsans-Light.woff2',
       weight: '300',
       style: 'normal',
     },
     {
-      path: './fonts/thmanyah-sans/thmanyahsans-Regular.otf',
+      path: './fonts/thmanyah-sans/thmanyahsans-Regular.woff2',
       weight: '400',
       style: 'normal',
     },
     {
-      path: './fonts/thmanyah-sans/thmanyahsans-Medium.otf',
+      path: './fonts/thmanyah-sans/thmanyahsans-Medium.woff2',
       weight: '500',
       style: 'normal',
     },
     {
-      path: './fonts/thmanyah-sans/thmanyahsans-Bold.otf',
+      path: './fonts/thmanyah-sans/thmanyahsans-Bold.woff2',
       weight: '700',
       style: 'normal',
     },
     {
-      path: './fonts/thmanyah-sans/thmanyahsans-Black.otf',
+      path: './fonts/thmanyah-sans/thmanyahsans-Black.woff2',
       weight: '900',
       style: 'normal',
     },

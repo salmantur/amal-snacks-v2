@@ -120,9 +120,18 @@ function FulfillmentScreen({
           تستلم طلبك؟
         </h1>
       </div>
-      <div className="flex flex-1 flex-col gap-3.5 overflow-y-auto px-6 pb-5 pt-5.5">
+      <div className="flex flex-1 flex-col gap-3.5 overflow-y-auto px-6 pb-5 pt-5.5" role="radiogroup" aria-label="طريقة الاستلام">
         <div
+          role="radio"
+          aria-checked={isDel}
+          tabIndex={0}
           onClick={() => onSelectFulfillment("delivery")}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault()
+              onSelectFulfillment("delivery")
+            }
+          }}
           className={blockBase}
           style={{ background: isDel ? DF_ACCENT : DF_BLOCK_INACTIVE_BG }}
         >
@@ -144,7 +153,16 @@ function FulfillmentScreen({
         </div>
 
         <div
+          role="radio"
+          aria-checked={isPickup}
+          tabIndex={0}
           onClick={() => onSelectFulfillment("pickup")}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault()
+              onSelectFulfillment("pickup")
+            }
+          }}
           className={blockBase}
           style={{ background: isPickup ? DF_ACCENT : DF_BLOCK_INACTIVE_BG }}
         >

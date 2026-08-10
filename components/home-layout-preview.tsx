@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation"
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from "react"
 import { useCart, type MenuItem } from "@/components/cart-provider"
 import { PriceWithRiyalLogo } from "@/components/ui/price-with-riyal-logo"
-import { SaudiRiyalIcon } from "@/components/ui/saudi-riyal-icon"
 import { useBestSellersConfig } from "@/hooks/use-best-sellers-config"
 import { useCategories, type Category } from "@/hooks/use-categories"
 import { useMenu } from "@/hooks/use-menu"
@@ -82,7 +81,6 @@ const EDITORIAL_INK = "oklch(16% 0.01 280)"
 const EDITORIAL_ACCENT = "oklch(56% 0.17 28)"
 const EDITORIAL_MUTED = "oklch(45% 0.015 270)"
 const EDITORIAL_MUTED_SOFT = "oklch(48% 0.02 270)"
-const EDITORIAL_MUTED_FAINT = "oklch(52% 0.012 270)"
 const EDITORIAL_MUTED_FAINTER = "oklch(55% 0.02 270)"
 const EDITORIAL_SURFACE = "oklch(98% 0.003 75)"
 const EDITORIAL_BORDER = "oklch(93% 0.008 270)"
@@ -145,104 +143,48 @@ function EditorialProductImage({ src, alt, className }: { src?: string; alt: str
   )
 }
 
+// "2a" reference card: image with an overlaid quick-add circle, name and price below.
+// No description - kept deliberately minimal, same layout for every grid on the home page
+// (search results, category browsing, and the best-sellers landing view).
 const EditorialProductCard = memo(function EditorialProductCard({
   item,
   isFlashed,
-  showDescription,
   onOpen,
   onQuickAdd,
 }: {
   item: MenuItem
   isFlashed: boolean
-  showDescription: boolean
   onOpen: (item: MenuItem) => void
   onQuickAdd: (item: MenuItem, e: MouseEvent) => void
 }) {
   return (
     <div
       onClick={() => onOpen(item)}
-      className="cursor-pointer transition-opacity duration-150 hover:opacity-85"
+      className="cursor-pointer transition-transform duration-200 hover:-translate-y-1 active:scale-[0.98]"
     >
-      <EditorialProductImage src={item.image} alt={item.name} className="aspect-square" />
-      <div className="pt-2.5 text-right">
-        <h3 className="m-0 text-[13.5px] font-bold leading-[1.3]" style={{ color: EDITORIAL_INK }}>
-          {item.name}
-        </h3>
-        {showDescription ? (
-          <p
-            className="m-0 mt-[5px] overflow-hidden text-[11.5px] leading-[1.4]"
-            style={{
-              color: EDITORIAL_MUTED_FAINT,
-              display: "-webkit-box",
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: "vertical",
-            }}
-          >
-            {item.description}
-          </p>
-        ) : null}
-        <div className={cn("flex items-center justify-between", showDescription ? "mt-2" : "mt-1.5")}>
-          <span className="text-[13px] font-bold" style={{ color: EDITORIAL_MUTED }}>
-            <PriceWithRiyalLogo value={item.price} />
-          </span>
-          <button
-            type="button"
-            onClick={(e) => onQuickAdd(item, e)}
-            aria-label="إضافة"
-            className="flex h-[26px] w-[26px] items-center justify-center rounded-full text-[14px] font-black leading-none transition-colors"
-            style={{
-              border: `1.5px solid ${EDITORIAL_INK}`,
-              background: isFlashed ? EDITORIAL_INK : "transparent",
-              color: isFlashed ? "#fff" : EDITORIAL_INK,
-            }}
-          >
-            {isFlashed ? "✓" : "+"}
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-})
-
-const EditorialBestSellerCard = memo(function EditorialBestSellerCard({
-  item,
-  onOpen,
-}: {
-  item: MenuItem
-  onOpen: (item: MenuItem) => void
-}) {
-  return (
-    <div
-      onClick={() => onOpen(item)}
-      className="relative cursor-pointer rounded-[24px] p-[9px] transition-transform duration-200 hover:-translate-y-1 active:scale-[0.985]"
-      style={{ filter: "drop-shadow(0px 4px 4px rgba(0,0,0,0.15)) drop-shadow(0px 1px 1.5px rgba(0,0,0,0.3))" }}
-    >
-      <div className="relative w-full overflow-hidden rounded-[14px]" style={{ aspectRatio: "0.78", background: EDITORIAL_IMG_BG }}>
+      <div className="relative overflow-hidden rounded-[20px]" style={{ aspectRatio: "1" }}>
         <EditorialProductImage src={item.image} alt={item.name} className="absolute inset-0" />
-        <div
-          className="absolute right-3.5 top-3.5 left-3.5 rounded-[10px] px-2.5 py-1.5"
-          style={{ background: "rgba(255,255,255,0.65)", backdropFilter: "blur(3px)" }}
-        >
-          <h3
-            className="font-serif-text m-0 text-right text-[15px] font-black leading-[1.25]"
-            style={{ color: EDITORIAL_INK }}
-          >
-            {item.name}
-          </h3>
-        </div>
-        <div
-          className="absolute bottom-3.5 left-3.5 flex items-center justify-center gap-1 rounded-full px-[13px] py-1.5"
+        <button
+          type="button"
+          onClick={(e) => onQuickAdd(item, e)}
+          aria-label={`إضافة ${item.name}`}
+          className="absolute left-2.5 top-2.5 flex h-[30px] w-[30px] items-center justify-center rounded-full border-none text-[15px] font-semibold leading-none backdrop-blur-md transition-transform active:scale-90"
           style={{
-            background: "rgba(255,255,255,0.65)",
-            border: "1px solid #d7d2cf",
-            boxShadow: "0 10px 24px 0 rgba(0,0,0,0.1)",
+            background: isFlashed ? EDITORIAL_INK : "rgba(255,255,255,0.85)",
+            color: isFlashed ? "#fff" : EDITORIAL_INK,
+            boxShadow: "0 4px 10px rgba(0,0,0,0.12)",
           }}
         >
-          <SaudiRiyalIcon className="h-[11px] w-[11px] shrink-0 text-[#212430]" />
-          <span className="text-[15px] font-extrabold leading-none text-[#212430]">
-            {item.price}
-          </span>
-        </div>
+          {isFlashed ? "✓" : "+"}
+        </button>
+      </div>
+      <div className="pt-4 text-right">
+        <h3 className="m-0 text-[15px] font-semibold leading-[1.3]" style={{ color: EDITORIAL_INK }}>
+          {item.name}
+        </h3>
+        <p className="mt-1.5 inline-flex items-center gap-1 text-[13px] font-medium tracking-[0.02em]" style={{ color: EDITORIAL_MUTED_FAINTER }}>
+          <PriceWithRiyalLogo value={item.price} />
+        </p>
       </div>
     </div>
   )
@@ -513,7 +455,6 @@ function EditorialPreview() {
                     key={item.id}
                     item={item}
                     isFlashed={flashId === item.id}
-                    showDescription={false}
                     onOpen={openProduct}
                     onQuickAdd={quickAdd}
                   />
@@ -562,20 +503,13 @@ function EditorialPreview() {
                   <div className="px-6 py-10 text-center text-[13px]" style={{ color: EDITORIAL_MUTED_FAINTER }}>
                     لا توجد أصناف في هذا القسم حاليًا
                   </div>
-                ) : isBestCategory ? (
-                  <div className="grid grid-cols-2 gap-3.5">
-                    {gridItems.map((item) => (
-                      <EditorialBestSellerCard key={item.id} item={item} onOpen={openProduct} />
-                    ))}
-                  </div>
                 ) : (
-                  <div className="grid grid-cols-2 gap-x-3.5 gap-y-[22px]">
+                  <div className="grid grid-cols-2 gap-x-3.5 gap-y-5">
                     {gridItems.map((item) => (
                       <EditorialProductCard
                         key={item.id}
                         item={item}
                         isFlashed={flashId === item.id}
-                        showDescription
                         onOpen={openProduct}
                         onQuickAdd={quickAdd}
                       />

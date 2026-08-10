@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
+import { NextResponse, after } from "next/server"
+import { createClient, type SupabaseClient } from "@supabase/supabase-js"
 import { z } from "zod"
 import { normalizeDiscountConfig, resolveDiscount } from "@/lib/discounts"
 import { fetchDeliveryAreasFromSupabase } from "@/lib/delivery-areas"
@@ -40,7 +40,7 @@ function extractClientIp(req: Request): string {
 // never throw or block the response — it only makes the failure visible in
 // the admin dashboard instead of silently vanishing.
 async function logFailedOrder(
-    supabaseClient: any,
+    supabaseClient: SupabaseClient,
     entry: {
           reason: string
           statusCode: number
@@ -144,20 +144,22 @@ export async function POST(req: Request) {
 
       const clientIp = extractClientIp(req)
           if (isRateLimited(clientIp)) {
-                  await logFailedOrder(supabase, { reason: "rate_limited", statusCode: 429 })
+                  after(() => logFailedOrder(supabase, { reason: "rate_limited", statusCode: 429 }))
                   return NextResponse.json({ error: "Too many requests" }, { status: 429 })
           }
 
       const rawBody = await req.json()
           const parsed = orderPayloadSchema.safeParse(rawBody)
           if (!parsed.success) {
-                  await logFailedOrder(supabase, {
-                            reason: "invalid_payload",
-                            statusCode: 400,
-                            customerName: typeof rawBody?.customerName === "string" ? rawBody.customerName : undefined,
-                            customerPhone: typeof rawBody?.customerPhone === "string" ? rawBody.customerPhone : undefined,
-                            rawPayload: rawBody,
-                  })
+                  after(() =>
+                    logFailedOrder(supabase, {
+                              reason: "invalid_payload",
+                              statusCode: 400,
+                              customerName: typeof rawBody?.customerName === "string" ? rawBody.customerName : undefined,
+                              customerPhone: typeof rawBody?.customerPhone === "string" ? rawBody.customerPhone : undefined,
+                              rawPayload: rawBody,
+                    })
+                  )
                   return NextResponse.json(
                     { error: "Invalid order payload", details: parsed.error.flatten() },
                     { status: 400 }
@@ -188,15 +190,17 @@ export async function POST(req: Request) {
             ])
 
       if (menuError || !menuRows) {
-              await logFailedOrder(supabase, {
-                        reason: "menu_load_failed",
-                        statusCode: 500,
-                        customerName: payload.customerName,
-                        customerPhone: payload.customerPhone,
-                        customerArea: payload.customerArea,
-                        orderType: payload.orderType,
-                        items: payload.items,
-              })
+              after(() =>
+                logFailedOrder(supabase, {
+                          reason: "menu_load_failed",
+                          statusCode: 500,
+                          customerName: payload.customerName,
+                          customerPhone: payload.customerPhone,
+                          customerArea: payload.customerArea,
+                          orderType: payload.orderType,
+                          items: payload.items,
+                })
+              )
               return NextResponse.json({ error: "Unable to load menu prices" }, { status: 500 })
       }
 
@@ -215,15 +219,17 @@ export async function POST(req: Request) {
 
       const missingItemId = itemIds.find((id) => !menuById.has(id))
           if (missingItemId) {
-                  await logFailedOrder(supabase, {
-                            reason: `unknown_menu_item:${missingItemId}`,
-                            statusCode: 400,
-                            customerName: payload.customerName,
-                            customerPhone: payload.customerPhone,
-                            customerArea: payload.customerArea,
-                            orderType: payload.orderType,
-                            items: payload.items,
-                  })
+                  after(() =>
+                    logFailedOrder(supabase, {
+                              reason: `unknown_menu_item:${missingItemId}`,
+                              statusCode: 400,
+                              customerName: payload.customerName,
+                              customerPhone: payload.customerPhone,
+                              customerArea: payload.customerArea,
+                              orderType: payload.orderType,
+                              items: payload.items,
+                    })
+                  )
                   return NextResponse.json({ error: `Unknown menu item: ${missingItemId}` }, { status: 400 })
           }
 
@@ -328,15 +334,17 @@ export async function POST(req: Request) {
                         customerArea: payload.customerArea,
                         itemsCount: payload.items.length,
               })
-              await logFailedOrder(supabase, {
-                        reason: `db_insert_failed:${insertError?.message ?? "unknown"}`,
-                        statusCode: 500,
-                        customerName: payload.customerName,
-                        customerPhone: payload.customerPhone,
-                        customerArea: payload.customerArea,
-                        orderType: payload.orderType,
-                        items: normalizedItems,
-              })
+              after(() =>
+                logFailedOrder(supabase, {
+                          reason: `db_insert_failed:${insertError?.message ?? "unknown"}`,
+                          statusCode: 500,
+                          customerName: payload.customerName,
+                          customerPhone: payload.customerPhone,
+                          customerArea: payload.customerArea,
+                          orderType: payload.orderType,
+                          items: normalizedItems,
+                })
+              )
               return NextResponse.json(
                 {
                             error: "Failed to save order",

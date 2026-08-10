@@ -133,7 +133,6 @@ export function generateWhatsAppMessage(
     address: string
     locationUrl?: string
     area: string
-    notes: string
     scheduledTime: string | null
   },
   deliveryFeeOverride?: number,
@@ -171,10 +170,6 @@ export function generateWhatsAppMessage(
   }
   message += `*الإجمالي:* ${total} SAR\n`
 
-  if (deliveryInfo.notes) {
-    message += `\n*ملاحظات:* ${deliveryInfo.notes}`
-  }
-
   return encodeURIComponent(message)
 }
 
@@ -188,7 +183,6 @@ export function generatePickupWhatsAppMessage(
   deliveryInfo: {
     name: string
     scheduledTime: string | null
-    notes: string
   },
   discount?: WhatsAppDiscountInfo
 ): string {
@@ -216,10 +210,6 @@ export function generatePickupWhatsAppMessage(
   }
   message += `\n*الإجمالي:* ${total} SAR\n`
   message += `*نوع الطلب:* استلام من المحل 🏪\n`
-
-  if (deliveryInfo.notes) {
-    message += `\n*ملاحظات:* ${deliveryInfo.notes}`
-  }
 
   return encodeURIComponent(message)
 }

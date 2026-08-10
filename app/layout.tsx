@@ -99,6 +99,14 @@ export const metadata: Metadata = {
   formatDetection: { telephone: false },
 }
 
+const SUPABASE_HOST = (() => {
+  try {
+    return new URL(process.env.NEXT_PUBLIC_SUPABASE_URL || '').host
+  } catch {
+    return 'eejlqdydoilbjpegxvbq.supabase.co'
+  }
+})()
+
 export const viewport: Viewport = {
   themeColor: '#FB7185',
   width: 'device-width',
@@ -159,8 +167,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="ar" dir="rtl" suppressHydrationWarning>
       <head>
-        <link rel="preconnect" href="https://eejlqdydoilbjpegxvbq.supabase.co" />
-        <link rel="dns-prefetch" href="https://eejlqdydoilbjpegxvbq.supabase.co" />
+        <link rel="preconnect" href={`https://${SUPABASE_HOST}`} />
+        <link rel="dns-prefetch" href={`https://${SUPABASE_HOST}`} />
         <link rel="preconnect" href="https://wa.me" />
         <link rel="dns-prefetch" href="https://wa.me" />
         <script dangerouslySetInnerHTML={{ __html: themePreloadScript }} />

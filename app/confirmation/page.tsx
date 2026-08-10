@@ -112,12 +112,12 @@ function ConfirmationContent() {
     window.open(finalWaUrl, "_blank", "noopener,noreferrer")
   }
 
-  // Desktop already auto-opens WhatsApp during checkout itself (a popup primed inside
-  // the confirm click, before the async save, so it isn't blocked). iOS has no such path -
-  // handleWhatsAppCheckout only navigates here, and this page previously waited for the
-  // customer to tap the button below. Auto-trigger it on arrival instead, for every device,
-  // so the order and the WhatsApp message move together with no separate tap needed. If a
-  // browser's popup blocker still catches this (script-triggered, not a direct gesture), the
+  // Desktop and iOS both already redirect straight to WhatsApp from checkout itself now
+  // (a primed popup on desktop, window.location.href on iOS/Safari), so this page is
+  // normally only reached afterward, if at all. Auto-trigger it on arrival too, so a
+  // customer who lands here directly (back button, bookmark, a flow that skipped the
+  // redirect) still gets sent to WhatsApp with no separate tap needed. If a browser's
+  // popup blocker still catches this (script-triggered, not a direct gesture), the
   // button below remains as a fallback - "تم فتح واتساب" only flips once it actually runs.
   useEffect(() => {
     if (!finalWaUrl || whatsAppOpened) return

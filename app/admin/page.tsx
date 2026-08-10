@@ -594,8 +594,8 @@ export default function AdminPage() {
               {failedOrdersPanelOpen ? (
                 <div className="border-t border-red-200 divide-y divide-red-100">
                   {unresolvedFailedOrders.map((f) => (
-                    <div key={f.id} className="flex items-center justify-between gap-3 px-4 py-3 text-right text-sm">
-                      <div className="min-w-0">
+                    <div key={f.id} className="flex items-start justify-between gap-3 px-4 py-3 text-right text-sm">
+                      <div className="min-w-0 flex-1">
                         <p className="font-semibold text-gray-900">
                           {f.customerName || "بدون اسم"}
                           {f.customerPhone ? ` · ${f.customerPhone}` : ""}
@@ -604,6 +604,14 @@ export default function AdminPage() {
                         <p className="text-gray-400 text-xs mt-0.5">
                           {f.createdAt.toLocaleString("ar-SA", { dateStyle: "medium", timeStyle: "short" })}
                         </p>
+                        {f.rawPayload ? (
+                          <pre
+                            dir="ltr"
+                            className="mt-2 max-h-40 overflow-auto rounded-lg bg-gray-900 p-2 text-left text-[11px] leading-relaxed text-gray-100"
+                          >
+                            {JSON.stringify(f.rawPayload, null, 2)}
+                          </pre>
+                        ) : null}
                       </div>
                       <button
                         type="button"

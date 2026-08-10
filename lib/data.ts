@@ -114,6 +114,15 @@ export function getAvailableTimeSlots(minMinutes = 0): { date: string; slots: st
 // Delivery areas with prices
 export const deliveryAreas = DEFAULT_DELIVERY_AREAS.map(({ id, name, price }) => ({ id, name, price }))
 
+export interface WhatsAppDiscountInfo {
+  /** Final total after the discount, i.e. subtotal + deliveryFee - amount. Passed explicitly
+   *  (rather than recomputed here) so this always matches lib/discounts.ts's resolveDiscount()
+   *  output that the customer already saw on-screen, instead of drifting from it. */
+  total: number
+  amount: number
+  code?: string | null
+}
+
 // WhatsApp message generator
 export function generateWhatsAppMessage(
   items: { name: string; quantity: number; price: number; selectedIngredients?: string[] }[],
@@ -127,11 +136,12 @@ export function generateWhatsAppMessage(
     notes: string
     scheduledTime: string | null
   },
-  deliveryFeeOverride?: number
+  deliveryFeeOverride?: number,
+  discount?: WhatsAppDiscountInfo
 ): string {
   const deliveryArea = deliveryAreas.find((area) => area.name === deliveryInfo.area)
   const deliveryFee = deliveryFeeOverride ?? deliveryArea?.price ?? 0
-  const total = subtotal + deliveryFee
+  const total = discount?.total ?? subtotal + deliveryFee
 
   let message = `*طلب جديد من أمل سناك*\n\n`
   message += `*الاسم:* ${deliveryInfo.name}\n`
@@ -155,6 +165,10 @@ export function generateWhatsAppMessage(
 
   message += `\n*المجموع الفرعي:* ${subtotal} SAR\n`
   message += `*رسوم التوصيل (${deliveryInfo.area}):* ${deliveryFee} SAR\n`
+  if (discount && discount.amount > 0) {
+    const codeLabel = discount.code ? ` (${discount.code})` : ""
+    message += `*الخصم${codeLabel}:* -${discount.amount} SAR\n`
+  }
   message += `*الإجمالي:* ${total} SAR\n`
 
   if (deliveryInfo.notes) {
@@ -175,8 +189,11 @@ export function generatePickupWhatsAppMessage(
     name: string
     scheduledTime: string | null
     notes: string
-  }
+  },
+  discount?: WhatsAppDiscountInfo
 ): string {
+  const total = discount?.total ?? subtotal
+
   let message = `*طلب استلام من المحل - أمل سناك*\n\n`
   message += `*الاسم:* ${deliveryInfo.name}\n`
 
@@ -192,7 +209,12 @@ export function generatePickupWhatsAppMessage(
     }
   })
 
-  message += `\n*الإجمالي:* ${subtotal} SAR\n`
+  if (discount && discount.amount > 0) {
+    const codeLabel = discount.code ? ` (${discount.code})` : ""
+    message += `\n*المجموع الفرعي:* ${subtotal} SAR\n`
+    message += `*الخصم${codeLabel}:* -${discount.amount} SAR\n`
+  }
+  message += `\n*الإجمالي:* ${total} SAR\n`
   message += `*نوع الطلب:* استلام من المحل 🏪\n`
 
   if (deliveryInfo.notes) {

@@ -1020,13 +1020,19 @@ function CheckoutContent() {
       makingTime: item.makingTime || 0,
     }));
 
+    const whatsAppDiscount = {
+      total: grandTotal,
+      amount: discountResult.totalDiscount,
+      code: activeCouponCode,
+    };
     const message = isPickup
-      ? generatePickupWhatsAppMessage(cartItems, totalPrice, deliveryInfo)
+      ? generatePickupWhatsAppMessage(cartItems, totalPrice, deliveryInfo, whatsAppDiscount)
       : generateWhatsAppMessage(
           cartItems,
           totalPrice,
           deliveryInfo,
           deliveryFee,
+          whatsAppDiscount,
         );
 
     const orderPayload = {

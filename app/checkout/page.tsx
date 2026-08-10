@@ -1085,22 +1085,18 @@ function CheckoutContent() {
         if (typeof window !== "undefined") {
           window.localStorage.setItem(PREFERRED_ORDER_TYPE_KEY, orderType);
         }
-        const params = new URLSearchParams({
-          name: deliveryInfo.name,
-          area: isPickup ? "" : selectedArea?.name || "",
-          total: String(confirmedTotal),
-          discount: String(confirmedDiscount),
-          code: orderData.codeApplied ?? activeCouponCode ?? "",
-          type: isPickup ? "pickup" : "delivery",
-          time: deliveryInfo.scheduledTime ?? "",
-          wa: whatsappUrl,
-        });
         trackCheckoutEvent("checkout_saved", {
           orderType,
           total: confirmedTotal,
           discount: confirmedDiscount,
         });
-        router.push(`/confirmation?${params.toString()}`);
+        // Go straight to WhatsApp instead of routing through /confirmation first: Safari
+        // only reliably treats window.location.href as a same-app navigation - opening
+        // another app's URL scheme (wa.me -> WhatsApp) without a direct, in-page tap is
+        // liable to be silently blocked once a route change has happened in between and
+        // the click's user-activation is gone. This mirrors the failure branch below,
+        // which already used this exact approach because it's the one proven to work.
+        window.location.href = whatsappUrl;
       } catch (error) {
         window.clearTimeout(iosTimeoutId);
         // Order save failed or timed out — still send the customer to WhatsApp,
@@ -1171,6 +1167,7 @@ function CheckoutContent() {
       if (typeof window !== "undefined") {
         window.localStorage.setItem(PREFERRED_ORDER_TYPE_KEY, orderType);
       }
+      const whatsappAlreadyOpened = Boolean(whatsappWindow && !whatsappWindow.closed);
       const params = new URLSearchParams({
         name: deliveryInfo.name,
         area: isPickup ? "" : selectedArea?.name || "",
@@ -1180,6 +1177,7 @@ function CheckoutContent() {
         type: isPickup ? "pickup" : "delivery",
         time: deliveryInfo.scheduledTime ?? "",
         wa: whatsappUrl,
+        waOpened: whatsappAlreadyOpened ? "1" : "0",
       });
       const confirmationUrl = `/confirmation?${params.toString()}`;
       trackCheckoutEvent("checkout_saved", {

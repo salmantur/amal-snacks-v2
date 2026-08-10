@@ -618,26 +618,43 @@ function EditorialPreview() {
               </div>
 
               {drawerHasSingleVariant ? (
-                <div className="flex flex-wrap justify-end gap-2 px-5 pt-4">
-                  {drawerVariantOptions.map((opt) => {
-                    const isSelected = drawerIngredients[0] === opt.raw
-                    const chipLabel = isMixedTrayDrawer ? splitSizeDetail(opt.label).short : opt.label
-                    return (
-                      <button
-                        key={opt.raw}
-                        type="button"
-                        onClick={() => toggleDrawerIngredient(opt.raw)}
-                        className="rounded-full px-4 py-2 text-[13px] font-bold transition-colors"
-                        style={{
-                          border: `1.5px solid ${isSelected ? EDITORIAL_INK : EDITORIAL_BORDER_STRONG}`,
-                          background: isSelected ? EDITORIAL_INK : "transparent",
-                          color: isSelected ? "#fff" : EDITORIAL_INK,
-                        }}
-                      >
-                        {chipLabel} · <PriceWithRiyalLogo value={opt.price} />
-                      </button>
-                    )
-                  })}
+                <div className="px-5 pt-4">
+                  {isMixedTrayDrawer ? (
+                    <span className="mb-2.5 block text-right text-[12px] font-bold" style={{ color: EDITORIAL_MUTED_FAINTER }}>
+                      حدد الحجم
+                    </span>
+                  ) : null}
+                  <div className={isMixedTrayDrawer ? "flex gap-2" : "flex flex-wrap justify-end gap-2"}>
+                    {drawerVariantOptions.map((opt) => {
+                      const isSelected = drawerIngredients[0] === opt.raw
+                      const chipLabel = isMixedTrayDrawer ? splitSizeDetail(opt.label).short : opt.label
+                      return (
+                        <button
+                          key={opt.raw}
+                          type="button"
+                          onClick={() => toggleDrawerIngredient(opt.raw)}
+                          className={
+                            isMixedTrayDrawer
+                              ? "flex-1 rounded-full py-2.5 text-center text-[13px] font-bold transition-colors"
+                              : "rounded-full px-4 py-2 text-[13px] font-bold transition-colors"
+                          }
+                          style={{
+                            border: `1.5px solid ${isSelected ? EDITORIAL_INK : EDITORIAL_BORDER_STRONG}`,
+                            background: isSelected ? EDITORIAL_INK : "transparent",
+                            color: isSelected ? "#fff" : EDITORIAL_INK,
+                          }}
+                        >
+                          {isMixedTrayDrawer ? (
+                            chipLabel
+                          ) : (
+                            <>
+                              {chipLabel} · <PriceWithRiyalLogo value={opt.price} />
+                            </>
+                          )}
+                        </button>
+                      )
+                    })}
+                  </div>
                 </div>
               ) : null}
 

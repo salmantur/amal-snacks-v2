@@ -228,7 +228,7 @@ const EditorialBestSellerCardP1 = memo(function EditorialBestSellerCardP1({
           type="button"
           onClick={(e) => onQuickAdd(item, e)}
           aria-label={`إضافة ${item.name}`}
-          className="mt-1 flex h-[42px] w-auto shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-full px-5.5 text-[13px] font-bold leading-none text-white transition-colors active:scale-[0.97]"
+          className="mt-1 flex h-[42px] w-auto shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-full px-[22px] text-[13px] font-bold leading-none text-white transition-colors active:scale-[0.97]"
           style={{ background: isFlashed ? EDITORIAL_INK : EDITORIAL_ACCENT }}
         >
           {isFlashed ? "أُضيف ✓" : "أضف للطلب"}

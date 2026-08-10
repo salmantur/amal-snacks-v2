@@ -103,6 +103,7 @@ export interface FailedOrder {
   customerArea: string | null
   orderType: string | null
   items: unknown
+  rawPayload: unknown
   resolved: boolean
 }
 
@@ -128,6 +129,7 @@ export async function fetchFailedOrders(limit = 100): Promise<FailedOrder[]> {
     customerArea: row.customer_area ?? null,
     orderType: row.order_type ?? null,
     items: row.items ?? null,
+    rawPayload: row.raw_payload ?? null,
     resolved: Boolean(row.resolved),
   }))
 }

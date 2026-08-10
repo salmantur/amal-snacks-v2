@@ -221,7 +221,7 @@ function CardP1({ item, onAdd }: { item: MenuItem; onAdd: (item: MenuItem, e: Mo
             setCount((c) => c + 1)
           }}
           className={cn(
-            "mt-1 flex h-[42px] items-center justify-center gap-1.5 rounded-full px-5.5 text-[13px] font-bold text-white transition-colors",
+            "mt-1 flex h-[42px] w-auto shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-full px-5.5 text-[13px] font-bold leading-none text-white transition-colors",
             count > 0 ? "bg-[#1e293b]" : "bg-[#e94a3a]"
           )}
         >

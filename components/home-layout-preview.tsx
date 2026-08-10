@@ -69,6 +69,15 @@ function parseVariantOption(raw: string, fallbackPrice: number): { label: string
   }
 }
 
+// Splits a variant label like "صغير (84 قطعة - 12 من كل صنف)" into a short chip
+// label and the parenthetical detail text, so long size descriptions can move into
+// an expandable panel instead of bloating the selection chip itself.
+function splitSizeDetail(rawLabel: string): { short: string; detail: string | null } {
+  const match = rawLabel.match(/^(.*?)\s*\(([^)]+)\)\s*$/)
+  if (match) return { short: match[1].trim(), detail: match[2].trim() }
+  return { short: rawLabel.trim(), detail: null }
+}
+
 const EDITORIAL_INK = "oklch(16% 0.01 280)"
 const EDITORIAL_ACCENT = "oklch(56% 0.17 28)"
 const EDITORIAL_MUTED = "oklch(45% 0.015 270)"
@@ -228,6 +237,7 @@ function EditorialPreview() {
   const [drawerQty, setDrawerQty] = useState(1)
   const [drawerIngredients, setDrawerIngredients] = useState<string[]>([])
   const [flashId, setFlashId] = useState<string | null>(null)
+  const [sizeDetailsOpen, setSizeDetailsOpen] = useState(false)
 
   const uiCategories = useMemo<EditorialCategory[]>(
     () => [
@@ -284,6 +294,15 @@ function EditorialPreview() {
     ? drawerVariantOptions.find((opt) => opt.raw === drawerIngredients[0])
     : undefined
   const drawerUnitPrice = selectedVariant?.price ?? selectedProduct?.price ?? 0
+  // Gives this specific product a richer drawer presentation (eyebrow label, larger hero,
+  // expandable per-size breakdown) - scoped by name rather than a generic flag since this
+  // treatment was requested for this one product, not tray products broadly.
+  const isMixedTrayDrawer = selectedProduct?.name === "صينية مشكل"
+  const sizeDetailOptions = isMixedTrayDrawer
+    ? drawerVariantOptions
+        .map((opt) => ({ raw: opt.raw, ...splitSizeDetail(opt.label) }))
+        .filter((opt): opt is typeof opt & { detail: string } => Boolean(opt.detail))
+    : []
 
   const openProduct = useCallback((item: MenuItem) => {
     setSelectedProduct(item)
@@ -291,6 +310,7 @@ function EditorialPreview() {
     const hasSingleVariant =
       item.limit === 1 && (item.ingredients?.length ?? 0) > 0
     setDrawerIngredients(hasSingleVariant && item.ingredients ? [item.ingredients[0]] : [])
+    setSizeDetailsOpen(false)
     setDrawerOpen(true)
   }, [])
 
@@ -561,7 +581,10 @@ function EditorialPreview() {
           >
             <div className="flex-1 overflow-y-auto">
               <div className="relative">
-                <div className="relative w-full" style={{ aspectRatio: "1.3", background: EDITORIAL_IMG_BG }}>
+                <div
+                  className="relative w-full"
+                  style={{ aspectRatio: isMixedTrayDrawer ? "1.05" : "1.3", background: EDITORIAL_IMG_BG }}
+                >
                   <EditorialProductImage src={selectedProduct.image} alt={selectedProduct.name} className="absolute inset-0" />
                 </div>
                 <button
@@ -575,6 +598,14 @@ function EditorialPreview() {
                 </button>
               </div>
               <div className="px-5 pb-1 pt-[22px] text-right">
+                {isMixedTrayDrawer ? (
+                  <span
+                    className="mb-2 block text-[11px] font-bold uppercase tracking-[1.5px]"
+                    style={{ color: EDITORIAL_ACCENT }}
+                  >
+                    من الأكثر طلبًا
+                  </span>
+                ) : null}
                 <h2 id="editorial-drawer-title" className="font-serif-text m-0 text-[22px] font-black" style={{ color: EDITORIAL_INK }}>
                   {selectedProduct.name}
                 </h2>
@@ -590,6 +621,7 @@ function EditorialPreview() {
                 <div className="flex flex-wrap justify-end gap-2 px-5 pt-4">
                   {drawerVariantOptions.map((opt) => {
                     const isSelected = drawerIngredients[0] === opt.raw
+                    const chipLabel = isMixedTrayDrawer ? splitSizeDetail(opt.label).short : opt.label
                     return (
                       <button
                         key={opt.raw}
@@ -602,10 +634,48 @@ function EditorialPreview() {
                           color: isSelected ? "#fff" : EDITORIAL_INK,
                         }}
                       >
-                        {opt.label} · <PriceWithRiyalLogo value={opt.price} />
+                        {chipLabel} · <PriceWithRiyalLogo value={opt.price} />
                       </button>
                     )
                   })}
+                </div>
+              ) : null}
+
+              {sizeDetailOptions.length > 0 ? (
+                <div className="px-5 pt-5">
+                  <button
+                    type="button"
+                    onClick={() => setSizeDetailsOpen((v) => !v)}
+                    className="flex w-full items-center justify-between border-none bg-transparent px-0 pt-4"
+                    style={{ borderTop: `1px solid ${EDITORIAL_BORDER}` }}
+                  >
+                    <span
+                      className="text-[13px]"
+                      style={{
+                        color: EDITORIAL_MUTED_FAINTER,
+                        display: "inline-block",
+                        transition: "transform 0.2s ease",
+                        transform: sizeDetailsOpen ? "rotate(180deg)" : "none",
+                      }}
+                    >
+                      ﹀
+                    </span>
+                    <span className="text-[14px] font-extrabold" style={{ color: EDITORIAL_INK }}>
+                      تفاصيل الأحجام
+                    </span>
+                  </button>
+                  {sizeDetailsOpen ? (
+                    <div className="mt-3 flex flex-col gap-1.5">
+                      {sizeDetailOptions.map((opt) => (
+                        <p key={opt.raw} className="m-0 text-right text-[12.5px] leading-[1.7]" style={{ color: EDITORIAL_MUTED_SOFT }}>
+                          <span className="font-bold" style={{ color: EDITORIAL_INK }}>
+                            {opt.short}:
+                          </span>{" "}
+                          {opt.detail}
+                        </p>
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
               ) : null}
 

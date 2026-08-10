@@ -190,6 +190,54 @@ const EditorialProductCard = memo(function EditorialProductCard({
   )
 })
 
+// "P1" reference card: full-width vertical layout with a translucent price badge, serif
+// name, description, and a labeled add button - used only for the "الأكثر طلبًا" landing
+// view, where the larger format and description give best-sellers more visual weight.
+const EditorialBestSellerCardP1 = memo(function EditorialBestSellerCardP1({
+  item,
+  isFlashed,
+  onOpen,
+  onQuickAdd,
+}: {
+  item: MenuItem
+  isFlashed: boolean
+  onOpen: (item: MenuItem) => void
+  onQuickAdd: (item: MenuItem, e: MouseEvent) => void
+}) {
+  return (
+    <div onClick={() => onOpen(item)} className="flex w-full cursor-pointer flex-col gap-3.5">
+      <div className="relative h-[280px] overflow-hidden rounded-[24px]" style={{ boxShadow: "0 16px 32px -20px rgba(20,15,10,0.32)" }}>
+        <EditorialProductImage src={item.image} alt={item.name} className="absolute inset-0" />
+        <div
+          className="absolute left-3.5 top-3.5 flex h-8 items-center rounded-full px-3.5 text-[14px] font-extrabold backdrop-blur-md"
+          style={{ background: "rgba(255,255,255,0.88)", color: EDITORIAL_INK, boxShadow: "0 1px 2px rgba(0,0,0,0.06)" }}
+        >
+          <PriceWithRiyalLogo value={item.price} />
+        </div>
+      </div>
+      <div className="flex flex-col items-center gap-1.5 px-2 text-center">
+        <h3 className="font-serif-text m-0 text-[19px] font-black leading-[1.3]" style={{ color: EDITORIAL_INK }}>
+          {item.name}
+        </h3>
+        {item.description ? (
+          <p className="m-0 text-[13.5px] leading-[1.7]" style={{ color: EDITORIAL_MUTED_SOFT }}>
+            {item.description}
+          </p>
+        ) : null}
+        <button
+          type="button"
+          onClick={(e) => onQuickAdd(item, e)}
+          aria-label={`إضافة ${item.name}`}
+          className="mt-1 flex h-[42px] w-auto shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-full px-5.5 text-[13px] font-bold leading-none text-white transition-colors active:scale-[0.97]"
+          style={{ background: isFlashed ? EDITORIAL_INK : EDITORIAL_ACCENT }}
+        >
+          {isFlashed ? "أُضيف ✓" : "أضف للطلب"}
+        </button>
+      </div>
+    </div>
+  )
+})
+
 function EditorialPreview() {
   const router = useRouter()
   const { menuItems, isLoading, error } = useMenu()
@@ -494,14 +542,30 @@ function EditorialPreview() {
                 </h2>
 
                 {isLoading ? (
-                  <div className="grid grid-cols-2 gap-3.5">
-                    {[1, 2, 3, 4].map((i) => (
-                      <div key={i} className="aspect-square animate-pulse rounded-[14px]" style={{ background: EDITORIAL_IMG_BG }} />
+                  <div className={isBestCategory ? "flex flex-col gap-8" : "grid grid-cols-2 gap-3.5"}>
+                    {(isBestCategory ? [1, 2, 3] : [1, 2, 3, 4]).map((i) => (
+                      <div
+                        key={i}
+                        className={cn("animate-pulse", isBestCategory ? "h-[280px] rounded-[24px]" : "aspect-square rounded-[14px]")}
+                        style={{ background: EDITORIAL_IMG_BG }}
+                      />
                     ))}
                   </div>
                 ) : gridItems.length === 0 ? (
                   <div className="px-6 py-10 text-center text-[13px]" style={{ color: EDITORIAL_MUTED_FAINTER }}>
                     لا توجد أصناف في هذا القسم حاليًا
+                  </div>
+                ) : isBestCategory ? (
+                  <div className="flex flex-col gap-8">
+                    {gridItems.map((item) => (
+                      <EditorialBestSellerCardP1
+                        key={item.id}
+                        item={item}
+                        isFlashed={flashId === item.id}
+                        onOpen={openProduct}
+                        onQuickAdd={quickAdd}
+                      />
+                    ))}
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 gap-x-3.5 gap-y-5">

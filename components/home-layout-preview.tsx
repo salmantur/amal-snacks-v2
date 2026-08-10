@@ -331,6 +331,11 @@ function EditorialPreview() {
         .map((opt) => ({ raw: opt.raw, ...splitSizeDetail(opt.label) }))
         .filter((opt): opt is typeof opt & { detail: string } => Boolean(opt.detail))
     : []
+  // Once a size is chosen, swap the generic "اختر الحجم..." copy for that size's own piece
+  // breakdown, so the customer sees what they're getting without opening the details panel.
+  const selectedSizeDetail =
+    isMixedTrayDrawer && selectedVariant ? splitSizeDetail(selectedVariant.label).detail : null
+  const drawerDescription = selectedSizeDetail ?? selectedProduct?.description
 
   const openProduct = useCallback((item: MenuItem) => {
     setSelectedProduct(item)
@@ -652,7 +657,7 @@ function EditorialPreview() {
                   {selectedProduct.name}
                 </h2>
                 <p className="mt-2 text-[13px] leading-[1.6]" style={{ color: EDITORIAL_MUTED_SOFT }}>
-                  {selectedProduct.description}
+                  {drawerDescription}
                 </p>
                 <p className="mt-3.5 text-[19px] font-extrabold" style={{ color: EDITORIAL_MUTED }}>
                   <PriceWithRiyalLogo value={drawerUnitPrice} />

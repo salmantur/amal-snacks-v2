@@ -3,7 +3,7 @@
 import Image from "next/image"
 import dynamic from "next/dynamic"
 import { useRouter } from "next/navigation"
-import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react"
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from "react"
 import { useCart, type MenuItem } from "@/components/cart-provider"
 import { PriceWithRiyalLogo } from "@/components/ui/price-with-riyal-logo"
 import { SaudiRiyalIcon } from "@/components/ui/saudi-riyal-icon"
@@ -109,6 +109,104 @@ function EditorialProductImage({ src, alt, className }: { src?: string; alt: str
   )
 }
 
+const EditorialProductCard = memo(function EditorialProductCard({
+  item,
+  isFlashed,
+  showDescription,
+  onOpen,
+  onQuickAdd,
+}: {
+  item: MenuItem
+  isFlashed: boolean
+  showDescription: boolean
+  onOpen: (item: MenuItem) => void
+  onQuickAdd: (item: MenuItem, e: MouseEvent) => void
+}) {
+  return (
+    <div
+      onClick={() => onOpen(item)}
+      className="cursor-pointer transition-opacity duration-150 hover:opacity-85"
+    >
+      <EditorialProductImage src={item.image} alt={item.name} className="aspect-square" />
+      <div className="pt-2.5 text-right">
+        <h3 className="m-0 text-[13.5px] font-bold leading-[1.3]" style={{ color: EDITORIAL_INK }}>
+          {item.name}
+        </h3>
+        {showDescription ? (
+          <p
+            className="m-0 mt-[5px] overflow-hidden text-[11.5px] leading-[1.4]"
+            style={{
+              color: EDITORIAL_MUTED_FAINT,
+              display: "-webkit-box",
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: "vertical",
+            }}
+          >
+            {item.description}
+          </p>
+        ) : null}
+        <div className={cn("flex items-center justify-between", showDescription ? "mt-2" : "mt-1.5")}>
+          <span className="text-[13px] font-bold" style={{ color: EDITORIAL_MUTED }}>
+            <PriceWithRiyalLogo value={item.price} />
+          </span>
+          <button
+            type="button"
+            onClick={(e) => onQuickAdd(item, e)}
+            aria-label="إضافة"
+            className="flex h-[26px] w-[26px] items-center justify-center rounded-full text-[14px] font-black leading-none transition-colors"
+            style={{
+              border: `1.5px solid ${EDITORIAL_INK}`,
+              background: isFlashed ? EDITORIAL_INK : "transparent",
+              color: isFlashed ? "#fff" : EDITORIAL_INK,
+            }}
+          >
+            {isFlashed ? "✓" : "+"}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+})
+
+const EditorialBestSellerCard = memo(function EditorialBestSellerCard({
+  item,
+  onOpen,
+}: {
+  item: MenuItem
+  onOpen: (item: MenuItem) => void
+}) {
+  return (
+    <div
+      onClick={() => onOpen(item)}
+      className="relative cursor-pointer rounded-[24px] p-[9px] transition-transform duration-200 hover:-translate-y-1 active:scale-[0.985]"
+      style={{ filter: "drop-shadow(0px 4px 4px rgba(0,0,0,0.15)) drop-shadow(0px 1px 1.5px rgba(0,0,0,0.3))" }}
+    >
+      <div className="relative w-full overflow-hidden rounded-[14px]" style={{ aspectRatio: "0.78", background: EDITORIAL_IMG_BG }}>
+        <EditorialProductImage src={item.image} alt={item.name} className="absolute inset-0" />
+        <h3
+          className="font-serif-text absolute right-3.5 top-3.5 left-3.5 m-0 text-right text-[15px] font-black leading-[1.25]"
+          style={{ color: EDITORIAL_INK }}
+        >
+          {item.name}
+        </h3>
+        <div
+          className="absolute bottom-3.5 left-3.5 flex items-center justify-center gap-1 rounded-full px-[13px] py-1.5"
+          style={{
+            background: "rgba(255,255,255,0.65)",
+            border: "1px solid #d7d2cf",
+            boxShadow: "0 10px 24px 0 rgba(0,0,0,0.1)",
+          }}
+        >
+          <SaudiRiyalIcon className="h-[11px] w-[11px] shrink-0 text-[#212430]" />
+          <span className="text-[15px] font-extrabold leading-none text-[#212430]">
+            {item.price}
+          </span>
+        </div>
+      </div>
+    </div>
+  )
+})
+
 function EditorialPreview() {
   const router = useRouter()
   const { menuItems, isLoading, error } = useMenu()
@@ -182,21 +280,24 @@ function EditorialPreview() {
     : undefined
   const drawerUnitPrice = selectedVariant?.price ?? selectedProduct?.price ?? 0
 
-  const openProduct = (item: MenuItem) => {
+  const openProduct = useCallback((item: MenuItem) => {
     setSelectedProduct(item)
     setDrawerQty(1)
     const hasSingleVariant =
       item.limit === 1 && (item.ingredients?.length ?? 0) > 0
     setDrawerIngredients(hasSingleVariant && item.ingredients ? [item.ingredients[0]] : [])
     setDrawerOpen(true)
-  }
+  }, [])
 
-  const quickAdd = (item: MenuItem, e: MouseEvent) => {
-    e.stopPropagation()
-    addItem(item, 1)
-    setFlashId(item.id)
-    window.setTimeout(() => setFlashId((cur) => (cur === item.id ? null : cur)), 900)
-  }
+  const quickAdd = useCallback(
+    (item: MenuItem, e: MouseEvent) => {
+      e.stopPropagation()
+      addItem(item, 1)
+      setFlashId(item.id)
+      window.setTimeout(() => setFlashId((cur) => (cur === item.id ? null : cur)), 900)
+    },
+    [addItem]
+  )
 
   const toggleDrawerIngredient = (raw: string) => {
     if (drawerHasSingleVariant) {
@@ -331,41 +432,16 @@ function EditorialPreview() {
                 </div>
               ) : null}
               <div className="grid grid-cols-2 gap-x-3.5 gap-y-5 px-5 pb-3">
-                {gridItems.map((item) => {
-                  const isFlashed = flashId === item.id
-                  return (
-                    <div
-                      key={item.id}
-                      onClick={() => openProduct(item)}
-                      className="cursor-pointer transition-opacity duration-150 hover:opacity-85"
-                    >
-                      <EditorialProductImage src={item.image} alt={item.name} className="aspect-square" />
-                      <div className="pt-2.5 text-right">
-                        <h3 className="m-0 text-[13.5px] font-bold leading-[1.3]" style={{ color: EDITORIAL_INK }}>
-                          {item.name}
-                        </h3>
-                        <div className="mt-1.5 flex items-center justify-between">
-                          <span className="text-[13px] font-bold" style={{ color: EDITORIAL_MUTED }}>
-                            <PriceWithRiyalLogo value={item.price} />
-                          </span>
-                          <button
-                            type="button"
-                            onClick={(e) => quickAdd(item, e)}
-                            aria-label="إضافة"
-                            className="flex h-[26px] w-[26px] items-center justify-center rounded-full text-[14px] font-black leading-none transition-colors"
-                            style={{
-                              border: `1.5px solid ${EDITORIAL_INK}`,
-                              background: isFlashed ? EDITORIAL_INK : "transparent",
-                              color: isFlashed ? "#fff" : EDITORIAL_INK,
-                            }}
-                          >
-                            {isFlashed ? "✓" : "+"}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
+                {gridItems.map((item) => (
+                  <EditorialProductCard
+                    key={item.id}
+                    item={item}
+                    isFlashed={flashId === item.id}
+                    showDescription={false}
+                    onOpen={openProduct}
+                    onQuickAdd={quickAdd}
+                  />
+                ))}
               </div>
             </div>
           ) : (
@@ -409,85 +485,21 @@ function EditorialPreview() {
                 ) : isBestCategory ? (
                   <div className="grid grid-cols-2 gap-3.5">
                     {gridItems.map((item) => (
-                      <div
-                        key={item.id}
-                        onClick={() => openProduct(item)}
-                        className="relative cursor-pointer rounded-[24px] p-[9px] transition-transform duration-200 hover:-translate-y-1 active:scale-[0.985]"
-                        style={{ filter: "drop-shadow(0px 4px 4px rgba(0,0,0,0.15)) drop-shadow(0px 1px 1.5px rgba(0,0,0,0.3))" }}
-                      >
-                        <div className="relative w-full overflow-hidden rounded-[14px]" style={{ aspectRatio: "0.78", background: EDITORIAL_IMG_BG }}>
-                          <EditorialProductImage src={item.image} alt={item.name} className="absolute inset-0" />
-                          <h3
-                            className="font-serif-text absolute right-3.5 top-3.5 left-3.5 m-0 text-right text-[15px] font-black leading-[1.25]"
-                            style={{ color: EDITORIAL_INK }}
-                          >
-                            {item.name}
-                          </h3>
-                          <div
-                            className="absolute bottom-3.5 left-3.5 flex items-center justify-center gap-1 rounded-full px-[13px] py-1.5"
-                            style={{
-                              background: "rgba(255,255,255,0.65)",
-                              border: "1px solid #d7d2cf",
-                              boxShadow: "0 10px 24px 0 rgba(0,0,0,0.1)",
-                            }}
-                          >
-                            <SaudiRiyalIcon className="h-[11px] w-[11px] shrink-0 text-[#212430]" />
-                            <span className="text-[15px] font-extrabold leading-none text-[#212430]">
-                              {item.price}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
+                      <EditorialBestSellerCard key={item.id} item={item} onOpen={openProduct} />
                     ))}
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 gap-x-3.5 gap-y-[22px]">
-                    {gridItems.map((item) => {
-                      const isFlashed = flashId === item.id
-                      return (
-                        <div
-                          key={item.id}
-                          onClick={() => openProduct(item)}
-                          className="cursor-pointer transition-opacity duration-150 hover:opacity-85"
-                        >
-                          <EditorialProductImage src={item.image} alt={item.name} className="aspect-square" />
-                          <div className="pt-2.5 text-right">
-                            <h3 className="m-0 text-[13.5px] font-bold leading-[1.3]" style={{ color: EDITORIAL_INK }}>
-                              {item.name}
-                            </h3>
-                            <p
-                              className="m-0 mt-[5px] overflow-hidden text-[11.5px] leading-[1.4]"
-                              style={{
-                                color: EDITORIAL_MUTED_FAINT,
-                                display: "-webkit-box",
-                                WebkitLineClamp: 2,
-                                WebkitBoxOrient: "vertical",
-                              }}
-                            >
-                              {item.description}
-                            </p>
-                            <div className="mt-2 flex items-center justify-between">
-                              <span className="text-[13px] font-bold" style={{ color: EDITORIAL_MUTED }}>
-                                <PriceWithRiyalLogo value={item.price} />
-                              </span>
-                              <button
-                                type="button"
-                                onClick={(e) => quickAdd(item, e)}
-                                aria-label="إضافة"
-                                className="flex h-[26px] w-[26px] items-center justify-center rounded-full text-[14px] font-black leading-none transition-colors"
-                                style={{
-                                  border: `1.5px solid ${EDITORIAL_INK}`,
-                                  background: isFlashed ? EDITORIAL_INK : "transparent",
-                                  color: isFlashed ? "#fff" : EDITORIAL_INK,
-                                }}
-                              >
-                                {isFlashed ? "✓" : "+"}
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      )
-                    })}
+                    {gridItems.map((item) => (
+                      <EditorialProductCard
+                        key={item.id}
+                        item={item}
+                        isFlashed={flashId === item.id}
+                        showDescription
+                        onOpen={openProduct}
+                        onQuickAdd={quickAdd}
+                      />
+                    ))}
                   </div>
                 )}
               </div>

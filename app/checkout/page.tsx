@@ -897,7 +897,24 @@ function CheckoutContent() {
       if (typeof window !== "undefined") {
         window.localStorage.setItem(PREFERRED_ORDER_TYPE_KEY, orderType);
       }
-      const whatsappAlreadyOpened = Boolean(whatsappWindow && !whatsappWindow.closed);
+
+      if (whatsappWindow && !whatsappWindow.closed) {
+        renderWhatsAppHandoffWindow(whatsappWindow, "opening", whatsappUrl);
+        // Wait out the same 250ms so the "opening" state is visible before redirecting, but
+        // await it (rather than fire-and-forget) so we can re-check whether the popup is
+        // still open *after* the redirect attempt - if the customer closed it during this
+        // window, waOpened must reflect that so the confirmation page still offers a retry.
+        await new Promise((resolve) => window.setTimeout(resolve, 250));
+        try {
+          whatsappWindow.opener = null;
+          whatsappWindow.location.replace(whatsappUrl);
+        } catch {
+          // Async continuation (past the awaited delay) - a browser popup blocker may
+          // silently drop this without a user gesture; the closed-check below covers it.
+          window.open(whatsappUrl, "_blank");
+        }
+      }
+      const whatsappActuallyOpened = Boolean(whatsappWindow && !whatsappWindow.closed);
       const params = new URLSearchParams({
         name: deliveryInfo.name,
         area: isPickup ? "" : selectedArea?.name || "",
@@ -907,7 +924,7 @@ function CheckoutContent() {
         type: isPickup ? "pickup" : "delivery",
         time: deliveryInfo.scheduledTime ?? "",
         wa: whatsappUrl,
-        waOpened: whatsappAlreadyOpened ? "1" : "0",
+        waOpened: whatsappActuallyOpened ? "1" : "0",
       });
       const confirmationUrl = `/confirmation?${params.toString()}`;
       trackCheckoutEvent("checkout_saved", {
@@ -915,17 +932,6 @@ function CheckoutContent() {
         total: confirmedTotal,
         discount: confirmedDiscount,
       });
-      if (whatsappWindow && !whatsappWindow.closed) {
-        renderWhatsAppHandoffWindow(whatsappWindow, "opening", whatsappUrl);
-        window.setTimeout(() => {
-          try {
-            whatsappWindow.opener = null;
-            whatsappWindow.location.replace(whatsappUrl);
-          } catch {
-            window.open(whatsappUrl, "_blank");
-          }
-        }, 250);
-      }
       router.push(confirmationUrl);
     } catch (error) {
       window.clearTimeout(timeoutId);

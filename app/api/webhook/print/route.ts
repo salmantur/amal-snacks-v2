@@ -1,7 +1,21 @@
 ﻿import { NextRequest, NextResponse } from "next/server"
 import { timingSafeEqual } from "crypto"
+import { createClient } from "@supabase/supabase-js"
+import { getSupabaseConfig } from "@/lib/supabase/config"
+import { normalizePrinterConfig } from "@/lib/printer-config"
 
-const PRINTER_IP = process.env.PRINTER_IP || "192.168.100.205"
+async function resolvePrinterIp(): Promise<string> {
+  try {
+    const { url, publishableKey } = getSupabaseConfig()
+    const supabase = createClient(url, publishableKey)
+    const { data } = await supabase.from("app_settings").select("value").eq("key", "printer_config").single()
+    const config = normalizePrinterConfig(data?.value)
+    if (config.ip) return config.ip
+  } catch (error) {
+    console.error("Failed to load centralized printer config, falling back to env var", error)
+  }
+  return process.env.PRINTER_IP || "192.168.100.205"
+}
 
 function escapeXml(str: string): string {
   return String(str)
@@ -123,7 +137,8 @@ export async function POST(req: NextRequest) {
     }
 
     const xml = buildTicketXml(order)
-    const url = `http://${PRINTER_IP}/cgi-bin/epos/service.cgi?devid=local_printer&timeout=10000`
+    const printerIp = await resolvePrinterIp()
+    const url = `http://${printerIp}/cgi-bin/epos/service.cgi?devid=local_printer&timeout=10000`
 
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), 15000)

@@ -51,27 +51,27 @@ const thmanyahSerifText = localFont({
 const thmanyahSans = localFont({
   src: [
     {
-      path: './fonts/thmanyah-sans/thmanyahsans-Light.otf',
+      path: './fonts/thmanyah-sans/thmanyahsans-Light.woff2',
       weight: '300',
       style: 'normal',
     },
     {
-      path: './fonts/thmanyah-sans/thmanyahsans-Regular.otf',
+      path: './fonts/thmanyah-sans/thmanyahsans-Regular.woff2',
       weight: '400',
       style: 'normal',
     },
     {
-      path: './fonts/thmanyah-sans/thmanyahsans-Medium.otf',
+      path: './fonts/thmanyah-sans/thmanyahsans-Medium.woff2',
       weight: '500',
       style: 'normal',
     },
     {
-      path: './fonts/thmanyah-sans/thmanyahsans-Bold.otf',
+      path: './fonts/thmanyah-sans/thmanyahsans-Bold.woff2',
       weight: '700',
       style: 'normal',
     },
     {
-      path: './fonts/thmanyah-sans/thmanyahsans-Black.otf',
+      path: './fonts/thmanyah-sans/thmanyahsans-Black.woff2',
       weight: '900',
       style: 'normal',
     },
@@ -98,6 +98,14 @@ export const metadata: Metadata = {
   },
   formatDetection: { telephone: false },
 }
+
+const SUPABASE_HOST = (() => {
+  try {
+    return new URL(process.env.NEXT_PUBLIC_SUPABASE_URL || '').host
+  } catch {
+    return 'eejlqdydoilbjpegxvbq.supabase.co'
+  }
+})()
 
 export const viewport: Viewport = {
   themeColor: '#FB7185',
@@ -159,8 +167,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="ar" dir="rtl" suppressHydrationWarning>
       <head>
-        <link rel="preconnect" href="https://eejlqdydoilbjpegxvbq.supabase.co" />
-        <link rel="dns-prefetch" href="https://eejlqdydoilbjpegxvbq.supabase.co" />
+        <link rel="preconnect" href={`https://${SUPABASE_HOST}`} />
+        <link rel="dns-prefetch" href={`https://${SUPABASE_HOST}`} />
         <link rel="preconnect" href="https://wa.me" />
         <link rel="dns-prefetch" href="https://wa.me" />
         <script dangerouslySetInnerHTML={{ __html: themePreloadScript }} />

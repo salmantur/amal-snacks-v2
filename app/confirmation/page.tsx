@@ -112,12 +112,12 @@ function ConfirmationContent() {
     window.open(finalWaUrl, "_blank", "noopener,noreferrer")
   }
 
-  // Desktop already auto-opens WhatsApp during checkout itself (a popup primed inside
-  // the confirm click, before the async save, so it isn't blocked). iOS has no such path -
-  // handleWhatsAppCheckout only navigates here, and this page previously waited for the
-  // customer to tap the button below. Auto-trigger it on arrival instead, for every device,
-  // so the order and the WhatsApp message move together with no separate tap needed. If a
-  // browser's popup blocker still catches this (script-triggered, not a direct gesture), the
+  // Desktop and iOS both already redirect straight to WhatsApp from checkout itself now
+  // (a primed popup on desktop, window.location.href on iOS/Safari), so this page is
+  // normally only reached afterward, if at all. Auto-trigger it on arrival too, so a
+  // customer who lands here directly (back button, bookmark, a flow that skipped the
+  // redirect) still gets sent to WhatsApp with no separate tap needed. If a browser's
+  // popup blocker still catches this (script-triggered, not a direct gesture), the
   // button below remains as a fallback - "تم فتح واتساب" only flips once it actually runs.
   useEffect(() => {
     if (!finalWaUrl || whatsAppOpened) return
@@ -146,7 +146,7 @@ function ConfirmationContent() {
           <div className="flex items-start justify-between gap-3">
             <div className="text-right">
               <p className="text-xs font-semibold tracking-[0.2em] text-[var(--whatsapp-green-dark)]">
-                ORDER READY
+                الطلب جاهز
               </p>
               <h1 className="mt-2 text-[1.9rem] font-black tracking-tight text-[#0f172a]">
                 تم تجهيز طلبك
@@ -159,7 +159,7 @@ function ConfirmationContent() {
             <div className="relative flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-[1.4rem] bg-[#25D366]/12 text-[var(--whatsapp-green-dark)]">
               <CheckCircle2 className="h-9 w-9" strokeWidth={1.7} />
               <span className="absolute -bottom-1 -left-1 rounded-full bg-[var(--whatsapp-green)] px-2 py-0.5 text-[10px] font-black text-white">
-                DONE
+                تم
               </span>
             </div>
           </div>

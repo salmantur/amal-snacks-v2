@@ -9,25 +9,9 @@ import {
   useRef,
 } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { useSearchParams, useRouter } from "next/navigation";
-import {
-  ArrowRight,
-  Clock3,
-  Store,
-  Minus,
-  Plus,
-  Trash2,
-  Truck,
-  MapPin,
-  ShoppingBag,
-  CheckCircle2,
-  ShieldCheck,
-  MessageCircle,
-} from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { useCart } from "@/components/cart-provider";
-import type { CartItem } from "@/components/cart-provider";
-import { TimePicker } from "@/components/time-picker";
 import { useDeliveryAreas } from "@/hooks/use-delivery-areas";
 import { useDiscountConfig } from "@/hooks/use-discount-config";
 import { useOrderScheduleConfig } from "@/hooks/use-order-schedule-config";
@@ -43,7 +27,6 @@ import {
 } from "@/lib/checkout-schedule";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { PriceWithRiyalLogo } from "@/components/ui/price-with-riyal-logo";
 import { DeliveryFlowEditorial } from "@/components/checkout-flow-editorial";
 
 type CheckoutErrors = {
@@ -55,16 +38,6 @@ type CheckoutErrors = {
 type OrderMode = "pickup" | "delivery";
 type CouponStatusTone = "success" | "error" | "info";
 type CheckoutIssueTone = "warning" | "error";
-
-const EMPTY_DELIVERY_INFO = {
-  name: "",
-  phone: "",
-  address: "",
-  locationUrl: "",
-  area: "",
-  notes: "",
-  scheduledTime: null,
-};
 
 const PREFERRED_ORDER_TYPE_KEY = "amal_preferred_order_type";
 const CHECKOUT_EVENTS_KEY = "amal_checkout_events";
@@ -121,21 +94,6 @@ function scrollToSection(node: HTMLElement | null) {
 function isLikelyIOSDevice() {
   if (typeof navigator === "undefined") return false;
   return /iPad|iPhone|iPod/i.test(navigator.userAgent);
-}
-
-function SectionStatusBadge({ done, label }: { done: boolean; label: string }) {
-  return (
-    <span
-      className={cn(
-        "rounded-full px-3 py-1 text-xs font-semibold",
-        done
-          ? "bg-emerald-100 text-emerald-700"
-          : "bg-amber-100 text-amber-700",
-      )}
-    >
-      {label}
-    </span>
-  );
 }
 
 function renderWhatsAppHandoffWindow(
@@ -284,74 +242,6 @@ function renderWhatsAppHandoffWindow(
 
 void renderWhatsAppHandoffWindow;
 
-function CheckoutItemImage({ item }: { item: CartItem }) {
-  const [imgError, setImgError] = useState(false);
-  if (!item.image || imgError) {
-    return (
-      <div className="w-16 h-16 rounded-xl flex-shrink-0 bg-muted flex items-center justify-center">
-        <ShoppingBag className="h-6 w-6 text-muted-foreground" />
-      </div>
-    );
-  }
-
-  return (
-    <div className="relative w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-muted">
-      <Image
-        src={item.image}
-        alt={item.name}
-        fill
-        sizes="64px"
-        className="object-cover"
-        onError={() => setImgError(true)}
-      />
-    </div>
-  );
-}
-
-function ProgressStep({
-  label,
-  step,
-  state,
-}: {
-  label: string;
-  step: number;
-  state: "done" | "current" | "upcoming";
-}) {
-  const done = state === "done";
-  const current = state === "current";
-
-  return (
-    <div
-      className={cn(
-        "flex min-w-0 items-center gap-2 rounded-xl px-2 py-1.5",
-        current && "bg-primary/10",
-      )}
-      aria-current={current ? "step" : undefined}
-    >
-      <div
-        className={cn(
-          "flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-[11px] font-black",
-          done
-            ? "bg-primary text-primary-foreground border-primary"
-            : current
-              ? "border-primary bg-background text-primary"
-              : "bg-background text-muted-foreground border-border",
-        )}
-      >
-        {done ? <CheckCircle2 className="h-4 w-4" /> : step}
-      </div>
-      <span
-        className={cn(
-          "truncate text-xs font-bold",
-          done || current ? "text-foreground" : "text-muted-foreground",
-        )}
-      >
-        {label}
-      </span>
-    </div>
-  );
-}
-
 function normalizeText(value: string): string {
   return value
     .toLowerCase()
@@ -428,7 +318,6 @@ function CheckoutContent() {
   const orderTypeParam = searchParams.get("type");
   const orderType = (orderTypeParam as OrderMode) || "delivery";
   const isPickup = orderType === "pickup";
-  const checkoutUi = searchParams.get("checkoutui");
   const theme = {
     main: "min-h-screen bg-[#fdfaf9] pb-24 text-slate-900",
     header:
@@ -442,15 +331,8 @@ function CheckoutContent() {
   };
 
   const router = useRouter();
-  const {
-    items,
-    totalPrice,
-    updateQuantity,
-    removeItem,
-    deliveryInfo,
-    setDeliveryInfo,
-    clearCart,
-  } = useCart();
+  const { items, totalPrice, deliveryInfo, setDeliveryInfo, clearCart } =
+    useCart();
   const { areas: deliveryAreas } = useDeliveryAreas();
   const { config: discountConfig } = useDiscountConfig();
   const { config: orderScheduleConfig } = useOrderScheduleConfig();
@@ -465,13 +347,9 @@ function CheckoutContent() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<CheckoutErrors>({});
   const [submitted, setSubmitted] = useState(false);
-  const [areaFocused, setAreaFocused] = useState(false);
+  const [, setAreaFocused] = useState(false);
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
-  const [highlightedCartKey, setHighlightedCartKey] = useState<string | null>(
-    null,
-  );
-  const [isSchedulePickerHighlighted, setIsSchedulePickerHighlighted] =
-    useState(false);
+  const [, setIsSchedulePickerHighlighted] = useState(false);
   const [schedulePickerOpenSignal, setSchedulePickerOpenSignal] = useState(0);
   const [manualWhatsAppUrl, setManualWhatsAppUrl] = useState<string | null>(
     null,
@@ -541,24 +419,6 @@ function CheckoutContent() {
     [deliveryInfo, setDeliveryInfo, submitted, errors],
   );
 
-  const handleResetRememberedDetails = useCallback(() => {
-    setDeliveryInfo({
-      ...EMPTY_DELIVERY_INFO,
-      scheduledTime: deliveryInfo.scheduledTime,
-    });
-    setErrors({});
-    setSubmitted(false);
-    setManualWhatsAppUrl(null);
-    trackCheckoutEvent("details_reset", { orderType });
-    showActionFeedback("تم مسح البيانات المحفوظة");
-    window.setTimeout(() => scrollToSection(detailsSectionRef.current), 120);
-  }, [
-    deliveryInfo.scheduledTime,
-    orderType,
-    setDeliveryInfo,
-    showActionFeedback,
-  ]);
-
   const pickArea = useCallback(
     (areaName: string) => {
       handleInputChange("area", areaName);
@@ -566,49 +426,6 @@ function CheckoutContent() {
       showActionFeedback("تم تحديث رسوم التوصيل");
     },
     [handleInputChange, showActionFeedback],
-  );
-
-  const handleDecrease = useCallback(
-    (item: CartItem) => {
-      const nextQty = item.quantity - 1;
-      updateQuantity(item.cartKey, nextQty);
-      setHighlightedCartKey(item.cartKey);
-      window.setTimeout(
-        () =>
-          setHighlightedCartKey((prev) =>
-            prev === item.cartKey ? null : prev,
-          ),
-        500,
-      );
-      showActionFeedback(
-        nextQty <= 0 ? "تم حذف الصنف من السلة" : "تم تحديث الكمية",
-      );
-    },
-    [updateQuantity, showActionFeedback],
-  );
-
-  const handleIncrease = useCallback(
-    (item: CartItem) => {
-      updateQuantity(item.cartKey, item.quantity + 1);
-      setHighlightedCartKey(item.cartKey);
-      window.setTimeout(
-        () =>
-          setHighlightedCartKey((prev) =>
-            prev === item.cartKey ? null : prev,
-          ),
-        500,
-      );
-      showActionFeedback("تم تحديث الكمية");
-    },
-    [updateQuantity, showActionFeedback],
-  );
-
-  const handleRemove = useCallback(
-    (item: CartItem) => {
-      removeItem(item.cartKey);
-      showActionFeedback("تم حذف الصنف من السلة");
-    },
-    [removeItem, showActionFeedback],
   );
 
   const handleScheduleChange = useCallback(
@@ -651,13 +468,6 @@ function CheckoutContent() {
 
   const selectedArea = deliveryAreas.find((a) => a.name === deliveryInfo.area);
   const deliveryFee = isPickup ? 0 : selectedArea?.price || 0;
-  const hasStoredDetails = Boolean(
-    deliveryInfo.name ||
-    deliveryInfo.phone ||
-    deliveryInfo.area ||
-    deliveryInfo.locationUrl,
-  );
-  const isScheduled = Boolean(deliveryInfo.scheduledTime);
   const canRevealFulfillmentDetails = true;
   const isFinalTotalReady = isPickup || Boolean(selectedArea);
   const discountResult = useMemo(
@@ -672,107 +482,6 @@ function CheckoutContent() {
   );
   const grandTotal = discountResult.finalTotal;
   const activeCouponCode = discountResult.codeApplied ?? null;
-  const maxMakingTime = items.reduce(
-    (max, item) =>
-      Math.max(max, normalizeMakingTimeMinutes(item.makingTime || 0)),
-    0,
-  );
-  const minimumLeadTimeMinutes = maxMakingTime + DELIVERY_BUFFER_MINUTES;
-  const closedDates = orderScheduleConfig.closedDates;
-  const availableScheduleDays = useMemo(
-    () => generateDeliveryDaySlots(minimumLeadTimeMinutes, closedDates),
-    [closedDates, minimumLeadTimeMinutes],
-  );
-  const availableScheduleLabels = useMemo(
-    () =>
-      new Set(
-        availableScheduleDays.flatMap((day) =>
-          day.slots.map((slot) => `${day.dayLabel} ${day.dateLabel} - ${slot}`),
-        ),
-      ),
-    [availableScheduleDays],
-  );
-  const isTodayClosed = useMemo(
-    () => isSaudiDateClosed(new Date(), closedDates),
-    [closedDates],
-  );
-  const hasAvailableScheduleDays = availableScheduleDays.length > 0;
-  const [displayGrandTotal, setDisplayGrandTotal] = useState(grandTotal);
-  const [isTotalAnimating, setIsTotalAnimating] = useState(false);
-  const checkoutSnapshot = useMemo(
-    () =>
-      JSON.stringify({
-        orderType,
-        area: selectedArea?.name ?? deliveryInfo.area,
-        name: deliveryInfo.name,
-        phone: deliveryInfo.phone,
-        locationUrl: deliveryInfo.locationUrl,
-        scheduledTime: deliveryInfo.scheduledTime,
-        couponCode: activeCouponCode,
-        items: items.map((item) => ({
-          cartKey: item.cartKey,
-          quantity: item.quantity,
-        })),
-      }),
-    [
-      activeCouponCode,
-      deliveryInfo.area,
-      deliveryInfo.locationUrl,
-      deliveryInfo.name,
-      deliveryInfo.phone,
-      deliveryInfo.scheduledTime,
-      items,
-      orderType,
-      selectedArea?.name,
-    ],
-  );
-
-  const filteredAreas = useMemo(() => {
-    if (isPickup) return [];
-    const q = normalizeText(deliveryInfo.area || "");
-    if (!q) return deliveryAreas;
-    return deliveryAreas.filter((a) => normalizeText(a.name).includes(q));
-  }, [deliveryInfo.area, isPickup, deliveryAreas]);
-
-  const quickAreas = useMemo(() => deliveryAreas.slice(0, 6), [deliveryAreas]);
-  useEffect(() => {
-    if (animatedTotalRef.current === null) {
-      animatedTotalRef.current = grandTotal;
-      setDisplayGrandTotal(grandTotal);
-      return;
-    }
-
-    const previousValue = animatedTotalRef.current;
-    if (previousValue === grandTotal) {
-      setDisplayGrandTotal(grandTotal);
-      return;
-    }
-
-    const durationMs = 360;
-    const startTime = performance.now();
-    setIsTotalAnimating(true);
-
-    const step = (timestamp: number) => {
-      const progress = Math.min((timestamp - startTime) / durationMs, 1);
-      const nextValue = Math.round(
-        previousValue + (grandTotal - previousValue) * progress,
-      );
-      animatedTotalRef.current = nextValue;
-      setDisplayGrandTotal(nextValue);
-
-      if (progress < 1) {
-        window.requestAnimationFrame(step);
-        return;
-      }
-
-      animatedTotalRef.current = grandTotal;
-      setDisplayGrandTotal(grandTotal);
-      window.setTimeout(() => setIsTotalAnimating(false), 180);
-    };
-
-    const frame = window.requestAnimationFrame(step);
-    return () => window.cancelAnimationFrame(frame);
-  }, [grandTotal]);
 
   const applyCoupon = useCallback(() => {
     const normalized = couponInput.trim().toUpperCase();
@@ -823,6 +532,100 @@ function CheckoutContent() {
     setCouponStatus(null);
     setCouponStatusTone(null);
   }, []);
+
+  const maxMakingTime = items.reduce(
+    (max, item) =>
+      Math.max(max, normalizeMakingTimeMinutes(item.makingTime || 0)),
+    0,
+  );
+  const minimumLeadTimeMinutes = maxMakingTime + DELIVERY_BUFFER_MINUTES;
+  const closedDates = orderScheduleConfig.closedDates;
+  const availableScheduleDays = useMemo(
+    () => generateDeliveryDaySlots(minimumLeadTimeMinutes, closedDates),
+    [closedDates, minimumLeadTimeMinutes],
+  );
+  const availableScheduleLabels = useMemo(
+    () =>
+      new Set(
+        availableScheduleDays.flatMap((day) =>
+          day.slots.map((slot) => `${day.dayLabel} ${day.dateLabel} - ${slot}`),
+        ),
+      ),
+    [availableScheduleDays],
+  );
+  const isTodayClosed = useMemo(
+    () => isSaudiDateClosed(new Date(), closedDates),
+    [closedDates],
+  );
+  const hasAvailableScheduleDays = availableScheduleDays.length > 0;
+  const [displayGrandTotal, setDisplayGrandTotal] = useState(grandTotal);
+  const [, setIsTotalAnimating] = useState(false);
+  const checkoutSnapshot = useMemo(
+    () =>
+      JSON.stringify({
+        orderType,
+        area: selectedArea?.name ?? deliveryInfo.area,
+        name: deliveryInfo.name,
+        phone: deliveryInfo.phone,
+        locationUrl: deliveryInfo.locationUrl,
+        scheduledTime: deliveryInfo.scheduledTime,
+        couponCode: activeCouponCode,
+        items: items.map((item) => ({
+          cartKey: item.cartKey,
+          quantity: item.quantity,
+        })),
+      }),
+    [
+      activeCouponCode,
+      deliveryInfo.area,
+      deliveryInfo.locationUrl,
+      deliveryInfo.name,
+      deliveryInfo.phone,
+      deliveryInfo.scheduledTime,
+      items,
+      orderType,
+      selectedArea?.name,
+    ],
+  );
+
+  useEffect(() => {
+    if (animatedTotalRef.current === null) {
+      animatedTotalRef.current = grandTotal;
+      setDisplayGrandTotal(grandTotal);
+      return;
+    }
+
+    const previousValue = animatedTotalRef.current;
+    if (previousValue === grandTotal) {
+      setDisplayGrandTotal(grandTotal);
+      return;
+    }
+
+    const durationMs = 360;
+    const startTime = performance.now();
+    setIsTotalAnimating(true);
+
+    const step = (timestamp: number) => {
+      const progress = Math.min((timestamp - startTime) / durationMs, 1);
+      const nextValue = Math.round(
+        previousValue + (grandTotal - previousValue) * progress,
+      );
+      animatedTotalRef.current = nextValue;
+      setDisplayGrandTotal(nextValue);
+
+      if (progress < 1) {
+        window.requestAnimationFrame(step);
+        return;
+      }
+
+      animatedTotalRef.current = grandTotal;
+      setDisplayGrandTotal(grandTotal);
+      window.setTimeout(() => setIsTotalAnimating(false), 180);
+    };
+
+    const frame = window.requestAnimationFrame(step);
+    return () => window.cancelAnimationFrame(frame);
+  }, [grandTotal]);
 
   useEffect(() => {
     if (!appliedCouponCode || activeCouponCode === appliedCouponCode) return;
@@ -933,28 +736,6 @@ function CheckoutContent() {
       return `التسليم المتوقع ضمن 15-25 دقيقة من الموعد: ${deliveryInfo.scheduledTime}`;
     return "سنؤكد وقت التسليم المناسب بعد مراجعة وقت التحضير.";
   }, [isPickup, isTodayClosed, deliveryInfo.scheduledTime]);
-  const scheduleDone = Boolean(deliveryInfo.scheduledTime);
-  const scheduleBadgeLabel = deliveryInfo.scheduledTime ? "تم التحديد" : "مطلوب";
-
-  const fieldBaseClass = `w-full min-h-12 rounded-[16px] border border-slate-200 ${theme.input} px-4 py-4 pr-12 text-base text-slate-900 placeholder:text-slate-400 transition-all focus:outline-none focus:ring-2 focus:ring-primary/20`;
-  const mutedTextClass = "text-slate-500";
-  const summaryMutedTextClass = "text-slate-600";
-  const headerActionClass =
-    "flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm transition-transform active:scale-95";
-  const layoutWidthClass = "max-w-md";
-  const contentGridClass = "grid gap-4 items-start";
-  const contentColumnClass = "space-y-4";
-  const asideColumnClass = "hidden";
-  const ctaButtonClass =
-    "h-14 w-full rounded-[18px] border-2 border-pink-200 bg-pink-50 text-lg font-bold text-pink-600 hover:bg-pink-100 disabled:cursor-not-allowed disabled:bg-pink-50 disabled:text-pink-300";
-  const couponToneClass =
-    appliedCouponCode || discountResult.codeDiscountAmount > 0
-      ? "border-green-200 bg-green-50 text-green-700"
-      : couponStatusTone === "error"
-        ? "border-red-200 bg-red-50 text-red-700"
-        : couponStatusTone === "info"
-          ? "border-amber-200 bg-amber-50 text-amber-700"
-          : "border-border/60 bg-background/70 text-muted-foreground";
   const missingCheckoutSteps = useMemo(() => {
     const steps: string[] = [];
 
@@ -971,13 +752,9 @@ function CheckoutContent() {
     isPickup,
     selectedArea,
   ]);
-  const checkoutDisabled = isSubmitting;
   const checkoutButtonLabel = isSubmitting
     ? "جاري الإرسال..."
     : "إتمام الطلب عبر واتساب";
-
-  const headerTitle = "أمل سناك";
-  const headerSubtitle = "تفاصيل التوصيل لإتمام طلبك";
 
   const goToReview = useCallback(() => {
     setSubmitted(true);
@@ -1020,13 +797,19 @@ function CheckoutContent() {
       makingTime: item.makingTime || 0,
     }));
 
+    const whatsAppDiscount = {
+      total: grandTotal,
+      amount: discountResult.totalDiscount,
+      code: activeCouponCode,
+    };
     const message = isPickup
-      ? generatePickupWhatsAppMessage(cartItems, totalPrice, deliveryInfo)
+      ? generatePickupWhatsAppMessage(cartItems, totalPrice, deliveryInfo, whatsAppDiscount)
       : generateWhatsAppMessage(
           cartItems,
           totalPrice,
           deliveryInfo,
           deliveryFee,
+          whatsAppDiscount,
         );
 
     const orderPayload = {
@@ -1167,7 +950,24 @@ function CheckoutContent() {
       if (typeof window !== "undefined") {
         window.localStorage.setItem(PREFERRED_ORDER_TYPE_KEY, orderType);
       }
-      const whatsappAlreadyOpened = Boolean(whatsappWindow && !whatsappWindow.closed);
+
+      if (whatsappWindow && !whatsappWindow.closed) {
+        renderWhatsAppHandoffWindow(whatsappWindow, "opening", whatsappUrl);
+        // Wait out the same 250ms so the "opening" state is visible before redirecting, but
+        // await it (rather than fire-and-forget) so we can re-check whether the popup is
+        // still open *after* the redirect attempt - if the customer closed it during this
+        // window, waOpened must reflect that so the confirmation page still offers a retry.
+        await new Promise((resolve) => window.setTimeout(resolve, 250));
+        try {
+          whatsappWindow.opener = null;
+          whatsappWindow.location.replace(whatsappUrl);
+        } catch {
+          // Async continuation (past the awaited delay) - a browser popup blocker may
+          // silently drop this without a user gesture; the closed-check below covers it.
+          window.open(whatsappUrl, "_blank");
+        }
+      }
+      const whatsappActuallyOpened = Boolean(whatsappWindow && !whatsappWindow.closed);
       const params = new URLSearchParams({
         name: deliveryInfo.name,
         area: isPickup ? "" : selectedArea?.name || "",
@@ -1177,7 +977,7 @@ function CheckoutContent() {
         type: isPickup ? "pickup" : "delivery",
         time: deliveryInfo.scheduledTime ?? "",
         wa: whatsappUrl,
-        waOpened: whatsappAlreadyOpened ? "1" : "0",
+        waOpened: whatsappActuallyOpened ? "1" : "0",
       });
       const confirmationUrl = `/confirmation?${params.toString()}`;
       trackCheckoutEvent("checkout_saved", {
@@ -1185,17 +985,6 @@ function CheckoutContent() {
         total: confirmedTotal,
         discount: confirmedDiscount,
       });
-      if (whatsappWindow && !whatsappWindow.closed) {
-        renderWhatsAppHandoffWindow(whatsappWindow, "opening", whatsappUrl);
-        window.setTimeout(() => {
-          try {
-            whatsappWindow.opener = null;
-            whatsappWindow.location.replace(whatsappUrl);
-          } catch {
-            window.open(whatsappUrl, "_blank");
-          }
-        }, 250);
-      }
       router.push(confirmationUrl);
     } catch (error) {
       window.clearTimeout(timeoutId);
@@ -1245,11 +1034,10 @@ function CheckoutContent() {
     );
   }
 
-  if (checkoutUi !== "classic") {
+  {
     const selectFulfillment = (method: OrderMode) => {
       const nextParams = new URLSearchParams(searchParams.toString());
       nextParams.set("type", method);
-      nextParams.set("checkoutui", "editorial");
       router.replace(`/checkout?${nextParams.toString()}`, { scroll: false });
     };
 
@@ -1285,6 +1073,13 @@ function CheckoutContent() {
         totalDiscount={discountResult.totalDiscount}
         grandTotal={displayGrandTotal}
         isFinalTotalReady={isFinalTotalReady}
+        couponInput={couponInput}
+        onCouponInputChange={setCouponInput}
+        onApplyCoupon={applyCoupon}
+        onClearCoupon={clearCoupon}
+        appliedCouponCode={activeCouponCode}
+        couponStatus={couponStatus}
+        couponStatusTone={couponStatusTone}
         onConfirmOrder={handleWhatsAppCheckout}
         isSubmitting={isSubmitting}
         checkoutButtonLabel={checkoutButtonLabel}
@@ -1295,1149 +1090,6 @@ function CheckoutContent() {
     );
   }
 
-  return (
-    <main className={theme.main}>
-      <header className={theme.header}>
-        <div
-          className={cn(
-            "mx-auto flex items-center justify-between gap-4 px-4 py-3",
-            layoutWidthClass,
-          )}
-        >
-          <Link href="/" className={headerActionClass}>
-            <ArrowRight className="h-5 w-5" />
-          </Link>
-          <div className="text-right">
-            <h1 className="text-xl font-bold">{headerTitle}</h1>
-            <p className={cn("text-xs", mutedTextClass)}>{headerSubtitle}</p>
-          </div>
-        </div>
-
-        <div className="hidden">
-          <PriceWithRiyalLogo value={displayGrandTotal} />
-        </div>
-        <div className={cn("mx-auto px-4 pb-3", layoutWidthClass)}>
-          <div className="rounded-2xl border border-slate-200/80 bg-white/80 px-2.5 py-2 shadow-sm">
-            <div className="grid grid-cols-3 gap-1" dir="rtl">
-              <ProgressStep label="السلة" step={1} state="done" />
-              {step === 3 ? (
-                <button type="button" onClick={goToDetails} className="text-right">
-                  <ProgressStep label="التفاصيل" step={2} state="done" />
-                </button>
-              ) : (
-                <ProgressStep label="التفاصيل" step={2} state="current" />
-              )}
-              <ProgressStep
-                label="التأكيد"
-                step={3}
-                state={step === 3 ? "current" : "upcoming"}
-              />
-            </div>
-            <p className="mt-1 px-2 text-right text-[11px] font-medium text-muted-foreground" dir="rtl">
-              {step === 3
-                ? "راجع الطلب ثم أكمل التأكيد."
-                : "أكمل التفاصيل المطلوبة للانتقال إلى التأكيد."}
-            </p>
-          </div>
-        </div>
-      </header>
-
-      {actionFeedback ? (
-        <div className="px-4 pt-3">
-          <div
-            className="rounded-2xl border border-primary/25 bg-primary/10 px-4 py-3 text-sm font-medium text-primary animate-in fade-in slide-in-from-top-1 duration-300"
-            role="status"
-            aria-live="polite"
-          >
-            {actionFeedback}
-          </div>
-        </div>
-      ) : null}
-
-      {manualWhatsAppUrl ? (
-        <div className="px-4 pt-3">
-          <div
-            className="rounded-2xl border border-[#25D366]/25 bg-[#25D366]/10 px-4 py-3 text-right"
-            role="status"
-            aria-live="polite"
-          >
-            <p className="text-sm font-semibold text-[var(--whatsapp-green-dark)]">
-              زر واتساب اليدوي جاهز إذا احتجته
-            </p>
-            <a
-              href={manualWhatsAppUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-3 inline-flex min-h-11 items-center justify-center rounded-full bg-[var(--whatsapp-green)] px-4 text-sm font-bold text-white"
-              onClick={() =>
-                trackCheckoutEvent("manual_whatsapp_opened", {
-                  source: "banner",
-                })
-              }
-            >
-              فتح واتساب يدويًا
-            </a>
-          </div>
-        </div>
-      ) : null}
-
-      {checkoutIssue ? (
-        <div className="px-4 pt-3">
-          <div
-            className={cn(
-              "rounded-2xl border px-4 py-3 text-right",
-              checkoutIssue.tone === "error"
-                ? "border-red-200 bg-red-50 text-red-700"
-                : "border-amber-200 bg-amber-50 text-amber-800",
-            )}
-            role="alert"
-          >
-            <p className="text-sm font-semibold">{checkoutIssue.message}</p>
-            <div className="mt-3 flex flex-wrap justify-end gap-2">
-              {manualWhatsAppUrl ? (
-                <a
-                  href={manualWhatsAppUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex min-h-10 items-center justify-center rounded-full bg-[var(--whatsapp-green)] px-4 text-sm font-bold text-white"
-                  onClick={() =>
-                    trackCheckoutEvent("manual_whatsapp_opened", {
-                      source: "issue_banner",
-                    })
-                  }
-                >
-                  فتح واتساب يدويًا
-                </a>
-              ) : null}
-              <button
-                type="button"
-                onClick={() => setCheckoutIssue(null)}
-                className="inline-flex min-h-10 items-center justify-center rounded-full border border-current/20 px-4 text-sm font-semibold"
-              >
-                إخفاء التنبيه
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
-
-      <div className={cn("mx-auto p-4 space-y-5 lg:space-y-6", layoutWidthClass)}>
-        <div className={contentGridClass}>
-          <div className={contentColumnClass}>
-            <section className="hidden">
-              <div className="mb-4 flex items-start justify-between gap-3">
-                <div className="text-right">
-                  <h2 className="text-lg font-bold">
-                    {isPickup ? "الاستلام من المحل" : "التوصيل"}
-                  </h2>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {isPickup ? "الخطوة الأولى لإكمال الطلب" : "حدد المنطقة ثم أكمل بياناتك"}
-                  </p>
-                </div>
-                <div className="flex flex-col items-end gap-2">
-                  <SectionStatusBadge done={true} label="محدد" />
-                  {hasStoredDetails ? (
-                    <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-                      تم تعبئة آخر بياناتك تلقائيًا
-                    </span>
-                  ) : null}
-                </div>
-              </div>
-
-              <div
-                className={cn(
-                  "rounded-3xl border p-4 text-right",
-                  isPickup
-                    ? "border-emerald-200 bg-emerald-50"
-                    : "border-primary/20 bg-primary/5",
-                )}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="font-bold">
-                      {isPickup ? "استلام من المحل" : "توصيل للمنزل"}
-                    </p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {isPickup ? "محدد مسبقًا" : "اختر المنطقة"}
-                    </p>
-                  </div>
-                  {isPickup ? (
-                    <Store className="h-5 w-5 text-emerald-700" />
-                  ) : (
-                    <Truck className="h-5 w-5 text-primary" />
-                  )}
-                </div>
-              </div>
-
-              {hasStoredDetails ? (
-                <div className="mt-3 flex justify-end">
-                  <button
-                    type="button"
-                    onClick={handleResetRememberedDetails}
-                    className="rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground transition-colors hover:border-primary/30"
-                  >
-                    ليست بياناتك؟ امسح البيانات المحفوظة
-                  </button>
-                </div>
-              ) : null}
-
-              {!isPickup ? (
-                <div className="mt-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="text-right">
-                      <p className="text-sm font-semibold">المنطقة</p>
-                    </div>
-                    <div className="rounded-full bg-background/70 px-3 py-1 text-xs font-semibold text-primary">
-                      {selectedArea ? (
-                        <PriceWithRiyalLogo value={selectedArea.price} />
-                      ) : (
-                        "الرسوم حسب المنطقة"
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="mb-3 flex flex-wrap justify-end gap-2">
-                    {quickAreas.map((area) => (
-                      <button
-                        key={`quick-card-${area.id}`}
-                        type="button"
-                        onClick={() => pickArea(area.name)}
-                        className={cn(
-                          "inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm transition-all active:scale-[0.98]",
-                          selectedArea?.id === area.id
-                            ? "border-primary bg-primary/10 text-primary shadow-sm"
-                            : "border-border/70 bg-white/80 text-foreground hover:border-primary/30 hover:bg-white",
-                        )}
-                      >
-                        <PriceWithRiyalLogo value={area.price} />
-                        <span className="font-medium">{area.name}</span>
-                      </button>
-                    ))}
-                  </div>
-
-                  <div className="relative rounded-[28px] border border-white/70 bg-white/45 p-3 shadow-[0_10px_30px_rgba(15,23,42,0.04)] backdrop-blur-sm">
-                    <MapPin className="absolute right-4 top-4 h-5 w-5 text-muted-foreground" />
-                    <input
-                      type="text"
-                      placeholder="ابحث عن المنطقة أو اختر من القائمة *"
-                      value={deliveryInfo.area}
-                      onFocus={() => setAreaFocused(true)}
-                      onBlur={() =>
-                        setTimeout(() => setAreaFocused(false), 120)
-                      }
-                      onChange={(e) =>
-                        handleInputChange("area", e.target.value)
-                      }
-                      className={cn(
-                        fieldBaseClass,
-                        "pl-20 pr-12",
-                        errors.area &&
-                          "ring-2 ring-red-300 border border-red-300",
-                      )}
-                        aria-invalid={Boolean(errors.area)}
-                        aria-autocomplete="list"
-                    />
-
-                    <div className="pointer-events-none absolute left-6 top-1/2 -translate-y-1/2 rounded-full bg-white/85 px-2.5 py-1 text-[11px] font-semibold text-muted-foreground shadow-sm">
-                      {filteredAreas.length} منطقة
-                    </div>
-
-                    <div
-                      className={cn(
-                        "absolute z-20 mt-2 w-full overflow-hidden rounded-[26px] border border-white/80 bg-white/92 shadow-[0_18px_45px_rgba(15,23,42,0.12)] backdrop-blur-xl transition-all duration-200",
-                        areaFocused
-                          ? "pointer-events-auto translate-y-0 opacity-100"
-                          : "pointer-events-none -translate-y-1 opacity-0",
-                      )}
-                    >
-                      <div className="border-b border-border/50 px-4 py-3 text-right">
-                        <p className="text-xs font-semibold text-muted-foreground">
-                          اختر المنطقة المناسبة للتوصيل
-                        </p>
-                      </div>
-                      <div className="max-h-64 overflow-y-auto py-1">
-                        {filteredAreas.length > 0 ? (
-                          filteredAreas.map((area) => {
-                            const isSelected = selectedArea?.id === area.id;
-
-                            return (
-                            <button
-                              key={area.id}
-                              type="button"
-                              onMouseDown={(event) => {
-                                event.preventDefault();
-                                pickArea(area.name);
-                              }}
-                              className={cn(
-                                "w-full px-4 py-3 text-right transition-all hover:bg-amal-grey/55",
-                                isSelected && "bg-primary/5",
-                              )}
-                            >
-                              <div className="flex items-center justify-between gap-3">
-                                <div className="text-right">
-                                  <p
-                                    className={cn(
-                                      "font-medium",
-                                      isSelected && "text-primary",
-                                    )}
-                                  >
-                                    {area.name}
-                                  </p>
-                                  <p className="mt-1 text-xs text-muted-foreground">
-                                    رسوم التوصيل
-                                  </p>
-                                </div>
-                                <span
-                                  className={cn(
-                                    "rounded-full px-2.5 py-1 text-xs font-semibold",
-                                    isSelected
-                                      ? "bg-primary/10 text-primary"
-                                      : "bg-muted text-muted-foreground",
-                                  )}
-                                >
-                                  <PriceWithRiyalLogo value={area.price} />
-                                </span>
-                              </div>
-                            </button>
-                            );
-                          })
-                        ) : (
-                          <div className="px-4 py-5 text-right text-sm text-muted-foreground">
-                            لا توجد منطقة مطابقة، جرّب كتابة اسم آخر.
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {errors.area ? (
-                    <p
-                      className="text-sm font-medium text-red-600 pr-2"
-                      role="alert"
-                    >
-                      {errors.area}
-                    </p>
-                  ) : null}
-                  {selectedArea ? (
-                    <p className="text-sm text-right text-primary">
-                      <span className="font-semibold">
-                        <PriceWithRiyalLogo value={selectedArea.price} />
-                      </span>
-                    </p>
-                  ) : null}
-                </div>
-              ) : (
-                <div className="mt-4 rounded-3xl border border-emerald-200 bg-emerald-50 p-4 text-right">
-                  <p className="font-semibold text-emerald-800">
-                    بدون رسوم توصيل
-                  </p>
-                </div>
-              )}
-            </section>
-          </div>
-
-          <aside className={asideColumnClass}>
-            <section className={cn(theme.summary, "space-y-4 lg:p-6")}>
-              <div className="flex items-start justify-between gap-3">
-                <div className="text-right">
-                  <h2 className="text-lg font-bold">ملخص الطلب المباشر</h2>
-                </div>
-                <div className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-                  {isPickup
-                    ? "استلام"
-                    : selectedArea
-                      ? `توصيل ${selectedArea.name}`
-                      : "بانتظار المنطقة"}
-                </div>
-              </div>
-
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center justify-between">
-                  <span className={summaryMutedTextClass}>المجموع الفرعي</span>
-                  <span className="font-semibold">
-                    <PriceWithRiyalLogo value={totalPrice} />
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <span className={summaryMutedTextClass}>
-                    {isPickup ? "رسوم التوصيل" : "رسوم التوصيل"}
-                  </span>
-                  <span
-                    className={cn(
-                      "font-semibold",
-                      isPickup && "text-[var(--checkout-green)]",
-                    )}
-                  >
-                    {isPickup ? (
-                      "مجاني"
-                    ) : selectedArea ? (
-                      <PriceWithRiyalLogo value={deliveryFee} />
-                    ) : (
-                      "اختر المنطقة"
-                    )}
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <span className={summaryMutedTextClass}>إجمالي الخصومات</span>
-                  <span
-                    className={cn(
-                      "font-semibold",
-                      discountResult.totalDiscount > 0
-                        ? "text-green-600"
-                        : summaryMutedTextClass,
-                    )}
-                  >
-                    {discountResult.totalDiscount > 0 ? (
-                      <>
-                        -
-                        <PriceWithRiyalLogo
-                          value={discountResult.totalDiscount}
-                        />
-                      </>
-                    ) : (
-                      "لا يوجد"
-                    )}
-                  </span>
-                </div>
-
-                <div
-                  className={cn(
-                    "flex items-center justify-between rounded-2xl border px-4 py-3 transition-transform duration-300",
-                    isTotalAnimating && "scale-[1.02]",
-                    "border-primary/15 bg-background/75",
-                  )}
-                >
-                  <span className="font-bold">الإجمالي النهائي</span>
-                  <span className="font-bold text-primary">
-                    {isFinalTotalReady ? (
-                      <PriceWithRiyalLogo value={displayGrandTotal} />
-                    ) : (
-                      "اختر المنطقة"
-                    )}
-                  </span>
-                </div>
-              </div>
-
-              {discountConfig.enabled ? (
-              <div className="rounded-2xl border border-border/60 bg-background/70 p-3">
-                <label className="block text-sm font-medium mb-2 text-right">
-                  كود الخصم
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={couponInput}
-                    onChange={(e) =>
-                      setCouponInput(e.target.value.toUpperCase())
-                    }
-                    placeholder="WELCOME10"
-                    className={cn(
-                      "flex-1 h-11 rounded-xl px-3 border border-border text-right",
-                      theme.input,
-                    )}
-                  />
-                  <Button
-                    type="button"
-                    onClick={applyCoupon}
-                    className="h-11 rounded-xl px-4"
-                  >
-                    تطبيق
-                  </Button>
-                </div>
-
-                {couponStatus ? (
-                  <div
-                    className={cn(
-                      "mt-3 flex items-center justify-between gap-3 rounded-2xl border px-3 py-2 text-sm transition-all duration-300",
-                      couponToneClass,
-                      couponStatusTone === "success" &&
-                        "scale-[1.01] shadow-sm",
-                    )}
-                  >
-                    <span>{couponStatus}</span>
-                    {discountResult.codeDiscountAmount > 0 ? (
-                      <span className="rounded-full bg-white/70 px-2 py-1 text-xs font-bold text-green-700">
-                        وفرت{" "}
-                        <PriceWithRiyalLogo
-                          value={discountResult.codeDiscountAmount}
-                        />
-                      </span>
-                    ) : null}
-                  </div>
-                ) : null}
-
-                {activeCouponCode ? (
-                  <div className="mt-3 flex items-center justify-between gap-3">
-                    <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
-                      تم تطبيق {activeCouponCode}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={clearCoupon}
-                      className="text-xs font-semibold text-primary"
-                    >
-                      إلغاء الكود
-                    </button>
-                  </div>
-                ) : null}
-              </div>
-              ) : null}
-            </section>
-
-          </aside>
-        </div>
-
-        {step === 2 && (
-          <>
-            <section
-              className={cn(
-                theme.section,
-                "animate-in fade-in slide-in-from-bottom-2 duration-500 lg:p-6",
-              )}
-              ref={detailsSectionRef}
-            >
-              <div className="flex items-center justify-between mb-4 gap-3">
-                <div className="text-right">
-                  <h2 className="text-lg font-bold">
-                    {isPickup ? "بيانات الاستلام" : "بيانات التوصيل"}
-                  </h2>
-                </div>
-                <div className="flex flex-col items-end gap-2">
-                  <SectionStatusBadge
-                    done={infoDone}
-                    label={infoDone ? "تم" : "قيد الإكمال"}
-                  />
-                </div>
-              </div>
-
-              {!isPickup && selectedArea ? (
-                <div className="mb-4 rounded-2xl border border-primary/15 bg-primary/5 px-4 py-3 text-right">
-                  <p className="text-sm font-semibold text-primary">
-                    المنطقة المختارة: {selectedArea.name}
-                  </p>
-                </div>
-              ) : null}
-
-              <div className="space-y-3">
-                <div>
-                  <label
-                    htmlFor="checkout-name"
-                    className="mb-1 block text-right text-sm text-foreground"
-                  >
-                    الاسم الكامل
-                  </label>
-                  <input
-                    id="checkout-name"
-                    type="text"
-                    placeholder="أدخل اسمك هنا"
-                    dir="rtl"
-                    value={deliveryInfo.name}
-                    onChange={(e) => handleInputChange("name", e.target.value)}
-                    autoComplete="name"
-                    enterKeyHint="next"
-                    className={cn(
-                      "w-full min-h-12 rounded-[10px] border border-border/50 bg-white px-4 py-3 text-right text-base text-foreground placeholder:text-muted-foreground/50 transition-all focus:outline-none focus:ring-2 focus:ring-primary/20",
-                      errors.name &&
-                        "ring-2 ring-red-300 border border-red-300",
-                    )}
-                    aria-invalid={Boolean(errors.name)}
-                    aria-describedby={errors.name ? "checkout-name-error" : undefined}
-                  />
-                  {errors.name ? (
-                    <p
-                      id="checkout-name-error"
-                      className="text-sm font-medium text-red-600 mt-1 pr-2"
-                      role="alert"
-                    >
-                      {errors.name}
-                    </p>
-                  ) : null}
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="checkout-phone"
-                    className="mb-1 block text-right text-sm text-foreground"
-                  >
-                    رقم الجوال
-                  </label>
-                  <input
-                    id="checkout-phone"
-                    type="tel"
-                    inputMode="tel"
-                    dir="ltr"
-                    placeholder="05xxxxxxxx"
-                    value={deliveryInfo.phone}
-                    onChange={(e) => handleInputChange("phone", e.target.value)}
-                    autoComplete="tel-national"
-                    enterKeyHint={isPickup ? "done" : "next"}
-                    maxLength={12}
-                    className={cn(
-                      "w-full min-h-12 rounded-[10px] border border-border/50 bg-white px-4 py-3 text-right text-base text-foreground placeholder:text-muted-foreground/50 transition-all focus:outline-none focus:ring-2 focus:ring-primary/20",
-                      errors.phone &&
-                        "ring-2 ring-red-300 border border-red-300",
-                    )}
-                    aria-invalid={Boolean(errors.phone)}
-                    aria-describedby={
-                      errors.phone ? "checkout-phone-error" : undefined
-                    }
-                  />
-                  {errors.phone ? (
-                    <p
-                      id="checkout-phone-error"
-                      className="text-sm font-medium text-red-600 mt-1 pr-2"
-                      role="alert"
-                    >
-                      {errors.phone}
-                    </p>
-                  ) : null}
-                </div>
-
-              </div>
-            </section>
-
-            <section
-              className={cn(
-                theme.section,
-                "animate-in fade-in slide-in-from-bottom-2 duration-500 lg:p-6",
-              )}
-              ref={areaSectionRef}
-            >
-              <div className="mb-4 flex items-center justify-between gap-3">
-                <div className="text-right">
-                  <h2 className="text-lg font-bold">
-                    {isPickup ? "معلومات الاستلام" : "منطقة التوصيل"}
-                  </h2>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {isPickup
-                      ? "لا توجد رسوم توصيل عند الاستلام من المحل"
-                      : "اختر المنطقة من القائمة لتحديث الرسوم"}
-                  </p>
-                </div>
-                <SectionStatusBadge
-                  done={isPickup || Boolean(selectedArea)}
-                  label={isPickup || selectedArea ? "تم" : "مطلوب"}
-                />
-              </div>
-
-              {isPickup ? (
-                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-right">
-                  <p className="font-semibold text-emerald-800">بدون رسوم توصيل</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <div className="relative">
-                    <MapPin className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 h-[18px] w-[18px] text-primary" />
-                    <label htmlFor="checkout-area" className="sr-only">
-                      منطقة التوصيل
-                    </label>
-                    <select
-                      id="checkout-area"
-                      value={deliveryInfo.area}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        if (!value) {
-                          handleInputChange("area", "");
-                          return;
-                        }
-                        pickArea(value);
-                      }}
-                      className={cn(
-                        "w-full min-h-[50px] rounded-full border border-border/30 bg-muted/40 px-4 py-3 pr-12 text-right text-base text-foreground appearance-none transition-all focus:outline-none focus:ring-2 focus:ring-primary/20",
-                        errors.area &&
-                          "ring-2 ring-red-300 border border-red-300",
-                      )}
-                      aria-invalid={Boolean(errors.area)}
-                      aria-describedby={
-                        errors.area ? "checkout-area-error" : undefined
-                      }
-                    >
-                      <option value="">اختر منطقة التوصيل *</option>
-                      {deliveryAreas.map((area) => (
-                        <option key={area.id} value={area.name}>
-                          {area.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {errors.area ? (
-                    <p
-                      id="checkout-area-error"
-                      className="pr-2 text-sm font-medium text-red-600"
-                      role="alert"
-                    >
-                      {errors.area}
-                    </p>
-                  ) : null}
-
-                  {selectedArea ? (
-                    <div className="rounded-2xl border border-primary/15 bg-primary/5 px-4 py-3 text-right">
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="font-semibold text-primary">
-                          {selectedArea.name}
-                        </span>
-                        <span className="rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-primary">
-                          <PriceWithRiyalLogo value={selectedArea.price} />
-                        </span>
-                      </div>
-                    </div>
-                  ) : null}
-                </div>
-              )}
-            </section>
-
-            <section
-              className={cn(
-                theme.section,
-                "animate-in fade-in slide-in-from-bottom-2 duration-500 lg:p-6",
-              )}
-              ref={scheduleSectionRef}
-            >
-              <div className="flex items-center justify-between mb-2 gap-3">
-                <div className="text-right">
-                  <h2 className="text-lg font-bold">
-                    {isPickup ? "وقت الاستلام" : "موعد التوصيل"}
-                  </h2>
-                </div>
-                <div className="flex flex-col items-end gap-2">
-                  <SectionStatusBadge
-                    done={scheduleDone}
-                    label={scheduleBadgeLabel}
-                  />
-                </div>
-              </div>
-
-              {isTodayClosed ? (
-                <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-right">
-                  <p className="text-sm font-semibold text-red-700">
-                    اليوم مغلق لاستقبال الطلبات
-                  </p>
-                </div>
-              ) : null}
-
-              <div className="mb-4 grid grid-cols-1 gap-3">
-                <button
-                  type="button"
-                  onClick={focusSchedulePicker}
-                  className={cn(
-                    "rounded-2xl border p-3 text-right transition-all active:scale-[0.99]",
-                    isScheduled
-                      ? "border-primary bg-primary/10"
-                      : "border-border bg-background hover:border-primary/30",
-                  )}
-                >
-                  <Clock3
-                    className={cn(
-                      "mb-2 h-5 w-5",
-                      isScheduled ? "text-primary" : "text-muted-foreground",
-                    )}
-                  />
-                  <p className="font-semibold">تحديد وقت</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {deliveryInfo.scheduledTime ?? "اختر الوقت المناسب لك"}
-                  </p>
-                </button>
-              </div>
-
-              <div
-                ref={schedulePickerRef}
-                className={cn(
-                  "rounded-3xl transition-all duration-300",
-                  isSchedulePickerHighlighted &&
-                    "ring-2 ring-primary/30 ring-offset-2 ring-offset-transparent",
-                )}
-              >
-                <TimePicker
-                  value={deliveryInfo.scheduledTime}
-                  onChange={handleScheduleChange}
-                  minMinutes={minimumLeadTimeMinutes}
-                  required={false}
-                  closedDates={closedDates}
-                  openSignal={schedulePickerOpenSignal}
-                />
-              </div>
-              <p className={cn("mt-3 text-right text-sm leading-7", mutedTextClass)}>
-                {deliveryAccuracyText}
-              </p>
-              {errors.scheduledTime ? (
-                <p
-                  className="mt-2 pr-2 text-sm font-medium text-red-600"
-                  role="alert"
-                >
-                  {errors.scheduledTime}
-                </p>
-              ) : null}
-            </section>
-
-            {missingCheckoutSteps.length > 0 ? (
-              <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-right text-sm text-amber-800">
-                أكمل هذه البيانات أولًا: {missingCheckoutSteps.join("، ")}
-              </div>
-            ) : null}
-
-            <Button
-              type="button"
-              onClick={goToReview}
-              className="h-14 w-full rounded-[18px] text-base font-bold"
-            >
-              التالي: مراجعة الطلب
-            </Button>
-          </>
-        )}
-
-        {step === 3 && (
-          <>
-            <button
-              type="button"
-              onClick={goToDetails}
-              className="flex min-h-11 items-center gap-1.5 text-sm font-semibold text-primary"
-            >
-              <ArrowRight className="h-4 w-4 rotate-180" />
-              رجوع لتعديل البيانات
-            </button>
-
-            <section className={cn(theme.section, "lg:p-6")}>
-              <div className="mb-4 text-right">
-                <div className="text-right">
-                  <h2 className="text-lg font-bold">الأصناف ({items.length})</h2>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    راجع الكمية قبل إتمام الطلب
-                  </p>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                {items.map((item) => (
-                  <div
-                    key={item.cartKey}
-                    className={cn(
-                      "rounded-2xl border border-border/50 bg-background p-3 transition-all duration-300",
-                      highlightedCartKey === item.cartKey &&
-                        "scale-[1.01] ring-2 ring-primary/30",
-                    )}
-                  >
-                    <div className="flex items-start gap-3">
-                      <CheckoutItemImage item={item} />
-                      <div className="min-w-0 flex-1 text-right">
-                        <h3 className="break-words font-bold text-foreground leading-tight">
-                          {item.name}
-                        </h3>
-                        {item.selectedIngredients?.length ? (
-                          <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
-                            {item.selectedIngredients.join("، ")}
-                          </p>
-                        ) : null}
-                        <p className="mt-1 font-medium text-primary">
-                          <PriceWithRiyalLogo value={item.price * item.quantity} />
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="mt-3 flex items-center justify-between">
-                      <button
-                        onClick={() => handleRemove(item)}
-                        className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-destructive/10 text-destructive transition-transform active:scale-95"
-                        aria-label="حذف"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleDecrease(item)}
-                          className={cn(
-                            "flex h-11 w-11 items-center justify-center rounded-full transition-transform active:scale-95",
-                            theme.input,
-                          )}
-                          aria-label="تقليل"
-                        >
-                          <Minus className="h-4 w-4" />
-                        </button>
-                        <span className="w-7 text-center font-medium">
-                          {item.quantity}
-                        </span>
-                        <button
-                          onClick={() => handleIncrease(item)}
-                          className={cn(
-                            "flex h-11 w-11 items-center justify-center rounded-full transition-transform active:scale-95",
-                            theme.input,
-                          )}
-                          aria-label="زيادة"
-                        >
-                          <Plus className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            <section className={cn(theme.summary, "space-y-4 lg:p-6")}>
-              <div className="flex items-start justify-between gap-3">
-                <div className="text-right">
-                  <h2 className="text-lg font-bold">الإجمالي</h2>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    آخر خطوة قبل الإرسال إلى واتساب
-                  </p>
-                </div>
-                <div className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-                  {isPickup
-                    ? "استلام"
-                    : selectedArea
-                      ? `توصيل ${selectedArea.name}`
-                      : "بانتظار المنطقة"}
-                </div>
-              </div>
-
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center justify-between">
-                  <span className={summaryMutedTextClass}>المجموع الفرعي</span>
-                  <span className="font-semibold">
-                    <PriceWithRiyalLogo value={totalPrice} />
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <span className={summaryMutedTextClass}>رسوم التوصيل</span>
-                  <span className={cn("font-semibold", isPickup && "text-[var(--checkout-green)]")}>
-                    {isPickup ? (
-                      "مجاني"
-                    ) : selectedArea ? (
-                      <PriceWithRiyalLogo value={deliveryFee} />
-                    ) : (
-                      "اختر المنطقة"
-                    )}
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <span className={summaryMutedTextClass}>إجمالي الخصومات</span>
-                  <span
-                    className={cn(
-                      "font-semibold",
-                      discountResult.totalDiscount > 0
-                        ? "text-green-600"
-                        : summaryMutedTextClass,
-                    )}
-                  >
-                    {discountResult.totalDiscount > 0 ? (
-                      <>
-                        -<PriceWithRiyalLogo value={discountResult.totalDiscount} />
-                      </>
-                    ) : (
-                      "لا يوجد"
-                    )}
-                  </span>
-                </div>
-
-                <div
-                  className={cn(
-                    "flex items-center justify-between rounded-2xl border border-primary/15 bg-background/75 px-4 py-3 transition-transform duration-300",
-                    isTotalAnimating && "scale-[1.02]",
-                  )}
-                >
-                  <span className="font-bold">الإجمالي النهائي</span>
-                  <span className="font-bold text-primary">
-                    {isFinalTotalReady ? (
-                      <PriceWithRiyalLogo value={displayGrandTotal} />
-                    ) : (
-                      "اختر المنطقة"
-                    )}
-                  </span>
-                </div>
-              </div>
-
-              {discountConfig.enabled ? (
-              <div className="rounded-2xl border border-border/60 bg-background/70 p-3">
-                <label className="mb-2 block text-right text-sm font-medium">
-                  كود الخصم
-                </label>
-                <div className="flex gap-2">
-                  <label htmlFor="checkout-coupon" className="sr-only">
-                    كود الخصم
-                  </label>
-                  <input
-                    id="checkout-coupon"
-                    type="text"
-                    value={couponInput}
-                    onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
-                    placeholder="WELCOME10"
-                    dir="ltr"
-                    autoComplete="off"
-                    autoCapitalize="none"
-                    spellCheck={false}
-                    enterKeyHint="done"
-                    className={cn(
-                      "h-11 flex-1 rounded-xl border border-border px-3 text-right",
-                      theme.input,
-                    )}
-                  />
-                  <Button
-                    type="button"
-                    onClick={applyCoupon}
-                    className="h-11 rounded-xl px-4"
-                  >
-                    تطبيق
-                  </Button>
-                </div>
-
-                {couponStatus ? (
-                  <div
-                    className={cn(
-                      "mt-3 flex items-center justify-between gap-3 rounded-2xl border px-3 py-2 text-sm transition-all duration-300",
-                      couponToneClass,
-                      couponStatusTone === "success" && "scale-[1.01] shadow-sm",
-                    )}
-                  >
-                    <span>{couponStatus}</span>
-                    {discountResult.codeDiscountAmount > 0 ? (
-                      <span className="rounded-full bg-white/70 px-2 py-1 text-xs font-bold text-green-700">
-                        وفرت <PriceWithRiyalLogo value={discountResult.codeDiscountAmount} />
-                      </span>
-                    ) : null}
-                  </div>
-                ) : null}
-
-                {activeCouponCode ? (
-                  <div className="mt-3 flex items-center justify-between gap-3">
-                    <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
-                      تم تطبيق {activeCouponCode}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={clearCoupon}
-                      className="text-xs font-semibold text-primary"
-                    >
-                      إلغاء الكود
-                    </button>
-                  </div>
-                ) : null}
-              </div>
-                          ) : null}
-            </section>
-          </>
-        )}
-
-        <section className="hidden" dir="rtl">
-          <div className="flex items-center gap-2 mb-3">
-            <ShieldCheck className="h-5 w-5 text-emerald-600" />
-            <h3 className="font-bold text-base">ضمانات الطلب</h3>
-          </div>
-
-          <a
-            href={`https://wa.me/${WHATSAPP_NUMBER}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded-full px-4 py-2 bg-[#25D366]/10 text-[var(--whatsapp-green-dark)] text-sm font-semibold hover:bg-[#25D366]/20 transition-colors"
-          >
-            <MessageCircle className="h-4 w-4" />
-            تواصل مباشر للدعم
-          </a>
-        </section>
-      </div>
-
-      <div
-        className={theme.ctaWrap}
-        style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}
-      >
-        <div className="space-y-3">
-          <div
-            className={cn(
-              "hidden rounded-3xl border px-4 py-3 shadow-lg transition-transform duration-300",
-              isTotalAnimating && "scale-[1.01]",
-              "border-white/60 bg-white/90 backdrop-blur-md",
-            )}
-          >
-            <div className="mb-2 flex items-center justify-between text-xs font-medium">
-              <span className={mutedTextClass}>المجموع الفرعي</span>
-              <span>
-                <PriceWithRiyalLogo value={totalPrice} />
-              </span>
-            </div>
-            <div className="mb-2 flex items-center justify-between text-xs font-medium">
-              <span className={mutedTextClass}>التوصيل</span>
-              <span>
-                {isPickup ? (
-                  "مجاني"
-                ) : selectedArea ? (
-                  <PriceWithRiyalLogo value={deliveryFee} />
-                ) : (
-                  "اختر المنطقة"
-                )}
-              </span>
-            </div>
-            <div className="mb-3 flex items-center justify-between text-xs font-medium">
-              <span className={mutedTextClass}>الخصم</span>
-              <span
-                className={
-                  discountResult.totalDiscount > 0
-                    ? "text-green-600"
-                    : mutedTextClass
-                }
-              >
-                {discountResult.totalDiscount > 0 ? (
-                  <>
-                    -<PriceWithRiyalLogo value={discountResult.totalDiscount} />
-                  </>
-                ) : (
-                  "لا يوجد"
-                )}
-              </span>
-            </div>
-            <div className="flex items-center justify-between border-t border-primary/10 pt-3">
-              <span className="text-sm font-bold">الإجمالي النهائي</span>
-              <span className="text-lg font-bold text-primary">
-                {isFinalTotalReady ? (
-                  <PriceWithRiyalLogo value={displayGrandTotal} />
-                ) : (
-                  "اختر المنطقة"
-                )}
-              </span>
-            </div>
-          </div>
-
-          {manualWhatsAppUrl ? (
-            <a
-              href={manualWhatsAppUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex min-h-12 items-center justify-center rounded-full border border-[#25D366]/25 bg-[#25D366]/10 px-4 text-sm font-semibold text-[var(--whatsapp-green-dark)]"
-              onClick={() =>
-                trackCheckoutEvent("manual_whatsapp_opened", {
-                  source: "sticky_cta",
-                })
-              }
-            >
-              فتح واتساب يدويًا
-            </a>
-          ) : null}
-
-          {step === 3 ? (
-            <>
-              {missingCheckoutSteps.length > 0 ? (
-                <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-right text-sm text-amber-800">
-                  أكمل هذه البيانات أولًا: {missingCheckoutSteps.join("، ")}
-                </div>
-              ) : null}
-
-              <Button
-                type="button"
-                onClick={handleWhatsAppCheckout}
-                disabled={checkoutDisabled}
-                className={ctaButtonClass}
-              >
-                {checkoutButtonLabel}
-              </Button>
-            </>
-          ) : null}
-        </div>
-      </div>
-    </main>
-  );
 }
 
 export default function CheckoutPage() {

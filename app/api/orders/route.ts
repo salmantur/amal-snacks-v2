@@ -1,10 +1,12 @@
-import { NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
+import { NextResponse, after } from "next/server"
+import { createClient, type SupabaseClient } from "@supabase/supabase-js"
 import { z } from "zod"
 import { normalizeDiscountConfig, resolveDiscount } from "@/lib/discounts"
 import { fetchDeliveryAreasFromSupabase } from "@/lib/delivery-areas"
 import { getSupabaseConfig } from "@/lib/supabase/config"
 import { formatNewOrderTelegramMessage, normalizeTelegramConfig, sendTelegramMessage } from "@/lib/telegram"
+import { generateDeliveryDaySlots } from "@/lib/checkout-schedule"
+import { normalizeOrderScheduleConfig } from "@/lib/order-schedule-config"
 
 const RATE_LIMIT_WINDOW_MS = 60_000
 const RATE_LIMIT_MAX_REQUESTS = 5
@@ -38,7 +40,7 @@ function extractClientIp(req: Request): string {
 // never throw or block the response — it only makes the failure visible in
 // the admin dashboard instead of silently vanishing.
 async function logFailedOrder(
-    supabaseClient: any,
+    supabaseClient: SupabaseClient,
     entry: {
           reason: string
           statusCode: number
@@ -94,6 +96,16 @@ interface MenuRow {
     price: number
     ingredients?: string[] | string | null
     limit?: number | null
+    making_time?: number | null
+}
+
+const DELIVERY_BUFFER_MINUTES = 120
+
+function normalizeMakingTimeMinutes(value: number): number {
+  if (!value || value <= 0) return 0
+  // Backward compatibility: some old records stored "24" meaning 24 hours.
+  if (value === 24) return 24 * 60
+  return value
 }
 
 
@@ -132,20 +144,22 @@ export async function POST(req: Request) {
 
       const clientIp = extractClientIp(req)
           if (isRateLimited(clientIp)) {
-                  await logFailedOrder(supabase, { reason: "rate_limited", statusCode: 429 })
+                  after(() => logFailedOrder(supabase, { reason: "rate_limited", statusCode: 429 }))
                   return NextResponse.json({ error: "Too many requests" }, { status: 429 })
           }
 
       const rawBody = await req.json()
           const parsed = orderPayloadSchema.safeParse(rawBody)
           if (!parsed.success) {
-                  await logFailedOrder(supabase, {
-                            reason: "invalid_payload",
-                            statusCode: 400,
-                            customerName: typeof rawBody?.customerName === "string" ? rawBody.customerName : undefined,
-                            customerPhone: typeof rawBody?.customerPhone === "string" ? rawBody.customerPhone : undefined,
-                            rawPayload: rawBody,
-                  })
+                  after(() =>
+                    logFailedOrder(supabase, {
+                              reason: "invalid_payload",
+                              statusCode: 400,
+                              customerName: typeof rawBody?.customerName === "string" ? rawBody.customerName : undefined,
+                              customerPhone: typeof rawBody?.customerPhone === "string" ? rawBody.customerPhone : undefined,
+                              rawPayload: rawBody,
+                    })
+                  )
                   return NextResponse.json(
                     { error: "Invalid order payload", details: parsed.error.flatten() },
                     { status: 400 }
@@ -157,28 +171,36 @@ export async function POST(req: Request) {
       const itemIds = Array.from(new Set(payload.items.map((item) => item.id)))
           const menuPromise = supabase
             .from("menu")
-            .select("id,name,name_en,price,ingredients,limit")
+            .select("id,name,name_en,price,ingredients,limit,making_time")
             .in("id", itemIds)
           const settingsPromise = supabase
             .from("app_settings")
             .select("key,value")
-            .in("key", ["discount_config", "telegram_alerts"])
+            .in("key", ["discount_config", "telegram_alerts", "order_schedule"])
+          // Doesn't depend on menu/settings data - fetch it alongside them instead of as its
+          // own awaited step afterward, so a delivery order isn't paying for a fourth
+          // sequential round trip.
+          const deliveryAreasPromise =
+            payload.orderType === "delivery" ? fetchDeliveryAreasFromSupabase(supabase) : Promise.resolve(null)
 
-      const [{ data: menuRows, error: menuError }, { data: settingsRows }] = await Promise.all([
+      const [{ data: menuRows, error: menuError }, { data: settingsRows }, deliveryAreasResult] = await Promise.all([
               menuPromise,
               settingsPromise,
+              deliveryAreasPromise,
             ])
 
       if (menuError || !menuRows) {
-              await logFailedOrder(supabase, {
-                        reason: "menu_load_failed",
-                        statusCode: 500,
-                        customerName: payload.customerName,
-                        customerPhone: payload.customerPhone,
-                        customerArea: payload.customerArea,
-                        orderType: payload.orderType,
-                        items: payload.items,
-              })
+              after(() =>
+                logFailedOrder(supabase, {
+                          reason: "menu_load_failed",
+                          statusCode: 500,
+                          customerName: payload.customerName,
+                          customerPhone: payload.customerPhone,
+                          customerArea: payload.customerArea,
+                          orderType: payload.orderType,
+                          items: payload.items,
+                })
+              )
               return NextResponse.json({ error: "Unable to load menu prices" }, { status: 500 })
       }
 
@@ -191,27 +213,29 @@ export async function POST(req: Request) {
                             price: Number(row.price) || 0,
                             ingredients: row.ingredients ?? null,
                             limit: Number(row.limit) || 0,
+                            making_time: Number(row.making_time) || 0,
                   })
           }
 
       const missingItemId = itemIds.find((id) => !menuById.has(id))
           if (missingItemId) {
-                  await logFailedOrder(supabase, {
-                            reason: `unknown_menu_item:${missingItemId}`,
-                            statusCode: 400,
-                            customerName: payload.customerName,
-                            customerPhone: payload.customerPhone,
-                            customerArea: payload.customerArea,
-                            orderType: payload.orderType,
-                            items: payload.items,
-                  })
+                  after(() =>
+                    logFailedOrder(supabase, {
+                              reason: `unknown_menu_item:${missingItemId}`,
+                              statusCode: 400,
+                              customerName: payload.customerName,
+                              customerPhone: payload.customerPhone,
+                              customerArea: payload.customerArea,
+                              orderType: payload.orderType,
+                              items: payload.items,
+                    })
+                  )
                   return NextResponse.json({ error: `Unknown menu item: ${missingItemId}` }, { status: 400 })
           }
 
       let deliveryFee = 0
           let unmatchedAreaNote = ""
-          if (payload.orderType === "delivery") {
-                  const deliveryAreasResult = await fetchDeliveryAreasFromSupabase(supabase)
+          if (payload.orderType === "delivery" && deliveryAreasResult) {
                   const areaRow = deliveryAreasResult.areas.find((area) => area.name === payload.customerArea && area.is_active)
 
             if (!areaRow) {
@@ -263,6 +287,29 @@ export async function POST(req: Request) {
           })
           const total = discountResult.finalTotal
 
+      // Don't reject over a stale/mismatched scheduled time (client had a cached slot list,
+      // clock skew, etc.) - register the order with a flag so staff confirm it, same as the
+      // delivery-area-mismatch handling above.
+      let scheduleNote = ""
+          if (payload.scheduledTime) {
+                  const orderScheduleConfig = normalizeOrderScheduleConfig(settingsMap.get("order_schedule"))
+                  const maxMakingTime = normalizedItems.reduce((max, item) => {
+                            const menuItem = menuById.get(item.id)
+                            return Math.max(max, normalizeMakingTimeMinutes(menuItem?.making_time || 0))
+                  }, 0)
+                  const minimumLeadTimeMinutes = maxMakingTime + DELIVERY_BUFFER_MINUTES
+                  const availableLabels = new Set(
+                            generateDeliveryDaySlots(minimumLeadTimeMinutes, orderScheduleConfig.closedDates).flatMap((day) =>
+                                      day.slots.map((slot) => `${day.dayLabel} ${day.dateLabel} - ${slot}`)
+                            )
+                  )
+                  if (!availableLabels.has(payload.scheduledTime)) {
+                            scheduleNote = `[موعد غير متاح حاليًا: "${payload.scheduledTime}" — يرجى تأكيد الموعد مع العميل]`
+                  }
+          }
+
+      const combinedNotePrefix = [unmatchedAreaNote, scheduleNote].filter(Boolean).join(" ")
+
       const { data: rpcResult, error: insertError } = await supabase
             .rpc("create_order", {
                       p_customer_name: payload.customerName || "بدون اسم",
@@ -273,7 +320,7 @@ export async function POST(req: Request) {
                       p_subtotal: subtotal,
                       p_delivery_fee: deliveryFee,
                       p_total: total,
-                      p_notes: unmatchedAreaNote ? `${unmatchedAreaNote} ${payload.notes}`.trim() : payload.notes,
+                      p_notes: combinedNotePrefix ? `${combinedNotePrefix} ${payload.notes}`.trim() : payload.notes,
                       p_scheduled_time: payload.scheduledTime ?? null,
             })
             .single()
@@ -287,15 +334,17 @@ export async function POST(req: Request) {
                         customerArea: payload.customerArea,
                         itemsCount: payload.items.length,
               })
-              await logFailedOrder(supabase, {
-                        reason: `db_insert_failed:${insertError?.message ?? "unknown"}`,
-                        statusCode: 500,
-                        customerName: payload.customerName,
-                        customerPhone: payload.customerPhone,
-                        customerArea: payload.customerArea,
-                        orderType: payload.orderType,
-                        items: normalizedItems,
-              })
+              after(() =>
+                logFailedOrder(supabase, {
+                          reason: `db_insert_failed:${insertError?.message ?? "unknown"}`,
+                          statusCode: 500,
+                          customerName: payload.customerName,
+                          customerPhone: payload.customerPhone,
+                          customerArea: payload.customerArea,
+                          orderType: payload.orderType,
+                          items: normalizedItems,
+                })
+              )
               return NextResponse.json(
                 {
                             error: "Failed to save order",

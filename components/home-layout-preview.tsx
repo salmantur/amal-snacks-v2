@@ -292,7 +292,7 @@ function EditorialPreview() {
   const [drawerTrayPicks, setDrawerTrayPicks] = useState<string[]>([])
   // TEMPORARY test-only scaffold for comparing cart-affordance designs on the real layout -
   // not part of the approved design, strip before merging to main.
-  const [testCartBarVariant, setTestCartBarVariant] = useState<"current" | "a" | "b" | "c" | "d">("current")
+  const [testCartBarVariant, setTestCartBarVariant] = useState<"current" | "a" | "b" | "c" | "d" | "e">("current")
 
   const uiCategories = useMemo<EditorialCategory[]>(
     () => [
@@ -456,24 +456,47 @@ function EditorialPreview() {
           <span className="font-serif-text text-[17px] font-black tracking-[0.2px]" style={{ color: EDITORIAL_INK }}>
             أمل سناك
           </span>
-          <button
-            type="button"
-            onClick={() => setCartOpen(true)}
-            aria-label="فتح السلة"
-            className="-m-[5px] flex h-11 w-11 items-center justify-center border-none bg-transparent p-0"
-          >
-            <span className="relative flex h-[34px] w-[34px] items-center justify-center">
-              <EditorialBagIcon />
-              {totalItems > 0 ? (
+          {testCartBarVariant === "e" && totalItems > 0 ? (
+            <button
+              type="button"
+              onClick={() => setCartOpen(true)}
+              aria-label="فتح السلة"
+              className="-m-[5px] flex items-center gap-2 rounded-full border-none py-[7px] pl-3.5 pr-[9px] transition-transform active:scale-95"
+              style={{ background: "oklch(94% 0.03 28)" }}
+            >
+              <span className="text-[12.5px] font-extrabold" style={{ color: EDITORIAL_ACCENT }}>
+                <PriceWithRiyalLogo value={totalPrice} />
+              </span>
+              <span className="relative flex h-[26px] w-[26px] items-center justify-center">
+                <EditorialBagIcon />
                 <span
-                  className="absolute -right-1 -top-1 flex h-[15px] min-w-[15px] items-center justify-center rounded-full px-[3px] text-[9px] font-extrabold text-white"
-                  style={{ background: EDITORIAL_ACCENT }}
+                  className="absolute -right-1.5 -top-1.5 flex h-[15px] min-w-[15px] items-center justify-center rounded-full px-[3px] text-[9px] font-extrabold text-white"
+                  style={{ background: EDITORIAL_ACCENT, border: `1.5px solid oklch(94% 0.03 28)` }}
                 >
                   {totalItems}
                 </span>
-              ) : null}
-            </span>
-          </button>
+              </span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setCartOpen(true)}
+              aria-label="فتح السلة"
+              className="-m-[5px] flex h-11 w-11 items-center justify-center border-none bg-transparent p-0"
+            >
+              <span className="relative flex h-[34px] w-[34px] items-center justify-center">
+                <EditorialBagIcon />
+                {totalItems > 0 ? (
+                  <span
+                    className="absolute -right-1 -top-1 flex h-[15px] min-w-[15px] items-center justify-center rounded-full px-[3px] text-[9px] font-extrabold text-white"
+                    style={{ background: EDITORIAL_ACCENT }}
+                  >
+                    {totalItems}
+                  </span>
+                ) : null}
+              </span>
+            </button>
+          )}
         </div>
 
         <div className="flex-1 overflow-y-auto overflow-x-hidden">
@@ -621,7 +644,7 @@ function EditorialPreview() {
             </div>
           )}
 
-          {(testCartBarVariant === "d" || totalItems > 0) ? (
+          {(testCartBarVariant === "d" || (testCartBarVariant !== "e" && totalItems > 0)) ? (
             <div className="flex-shrink-0" style={{ height: testCartBarVariant === "d" ? 64 : 74 }} />
           ) : null}
         </div>
@@ -631,7 +654,7 @@ function EditorialPreview() {
           className="fixed inset-x-0 top-0 z-30 flex justify-center gap-1.5 px-4 py-2.5"
           style={{ background: "rgba(255,251,235,0.95)", borderBottom: "1px solid rgba(217,180,60,0.4)" }}
         >
-          {(["current", "a", "b", "c", "d"] as const).map((v) => (
+          {(["current", "a", "b", "c", "d", "e"] as const).map((v) => (
             <button
               key={v}
               type="button"

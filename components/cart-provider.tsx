@@ -39,7 +39,6 @@ export interface DeliveryInfo {
   address: string
   locationUrl: string
   area: string
-  notes: string
   scheduledTime: string | null
 }
 
@@ -105,7 +104,6 @@ function isValidDeliveryInfo(value: unknown): value is DeliveryInfo {
     typeof info.address === "string" &&
     locationUrlOk &&
     typeof info.area === "string" &&
-    typeof info.notes === "string" &&
     scheduledTimeOk
   )
 }
@@ -124,7 +122,6 @@ const DEFAULT_DELIVERY_INFO: DeliveryInfo = {
   address: "",
   locationUrl: "",
   area: "",
-  notes: "",
   scheduledTime: null,
 }
 

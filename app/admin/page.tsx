@@ -99,7 +99,11 @@ export default function AdminOrdersPage() {
 
   const handleResolveFailedOrder = async (id: string) => {
     setFailedOrders((prev) => prev.map((f) => (f.id === id ? { ...f, resolved: true } : f)))
-    await resolveFailedOrder(id)
+    const { error } = await resolveFailedOrder(id)
+    if (error) {
+      setFailedOrders((prev) => prev.map((f) => (f.id === id ? { ...f, resolved: false } : f)))
+      window.alert(`تعذر تعليم الطلب كمُعالَج، حاول مرة أخرى (${error})`)
+    }
   }
 
   const playNotificationSound = useCallback(() => {

@@ -5,7 +5,7 @@
 
 import useSWR from "swr"
 import type { MenuItem } from "@/components/cart-provider"
-import { decodePossibleMojibake } from "@/lib/text"
+import { decodeMenuItems } from "@/lib/text"
 
 const IS_DEV = process.env.NODE_ENV !== "production"
 
@@ -21,23 +21,7 @@ const fetcher = async (url: string) => {
 
   return {
     error: json.error ?? null,
-    data: (json.data || []).map((item) => ({
-      ...item,
-      name: decodePossibleMojibake(item.name || ""),
-      nameEn: decodePossibleMojibake(item.nameEn || ""),
-      description: decodePossibleMojibake(item.description || ""),
-      ingredients: Array.isArray(item.ingredients)
-        ? item.ingredients.map((ingredient) =>
-            decodePossibleMojibake(String(ingredient || "")),
-          )
-        : item.ingredients,
-      packageItems: Array.isArray(item.packageItems)
-        ? item.packageItems.map((pkg) => ({
-            ...pkg,
-            label: decodePossibleMojibake(String(pkg.label || "")),
-          }))
-        : item.packageItems,
-    })),
+    data: decodeMenuItems(json.data || []),
   } satisfies { data: MenuItem[]; error: string | null }
 }
 

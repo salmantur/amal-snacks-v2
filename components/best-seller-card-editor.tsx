@@ -33,8 +33,8 @@ function SliderField({
   return (
     <label className="space-y-2">
       <div className="flex items-center justify-between gap-3">
-        <span className="text-sm font-medium text-gray-700">{label}</span>
-        <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-600">
+        <span className="text-sm font-medium text-admin-muted">{label}</span>
+        <span className="rounded-full bg-admin-bg px-2.5 py-1 text-xs font-semibold text-admin-muted">
           {value}
           {suffix}
         </span>
@@ -64,12 +64,12 @@ function ColorField({
   return (
     <label className="space-y-2">
       <div className="flex items-center justify-between gap-3">
-        <span className="text-sm font-medium text-gray-700">{label}</span>
-        <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-mono font-semibold text-gray-600">
+        <span className="text-sm font-medium text-admin-muted">{label}</span>
+        <span className="rounded-full bg-admin-bg px-2.5 py-1 text-xs font-mono font-semibold text-admin-muted">
           {value}
         </span>
       </div>
-      <div className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-3 py-2">
+      <div className="flex items-center gap-3 rounded-xl border border-admin-border-soft bg-white px-3 py-2">
         <input
           type="color"
           value={value}
@@ -80,7 +80,7 @@ function ColorField({
           type="text"
           value={value}
           onChange={(event) => onChange(event.target.value)}
-          className="h-10 flex-1 rounded-lg border border-gray-200 px-3 text-left text-sm font-mono"
+          className="h-10 flex-1 rounded-lg border border-admin-border-soft px-3 text-left text-sm font-mono"
           dir="ltr"
         />
       </div>
@@ -100,16 +100,16 @@ function ToggleField({
   onChange: (nextValue: boolean) => void
 }) {
   return (
-    <label className="flex cursor-pointer items-start justify-between gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3">
+    <label className="flex cursor-pointer items-start justify-between gap-3 rounded-2xl border border-admin-border-soft bg-white px-4 py-3">
       <div className="space-y-1 text-right">
-        <div className="text-sm font-semibold text-gray-800">{label}</div>
-        {description ? <div className="text-xs text-gray-500">{description}</div> : null}
+        <div className="text-sm font-semibold text-admin-ink">{label}</div>
+        {description ? <div className="text-xs text-admin-muted-2">{description}</div> : null}
       </div>
       <input
         type="checkbox"
         checked={checked}
         onChange={(event) => onChange(event.target.checked)}
-        className="mt-1 h-5 w-5 rounded border-gray-300 accent-[#ef4b86]"
+        className="mt-1 h-5 w-5 rounded border-admin-border accent-[#ef4b86]"
       />
     </label>
   )
@@ -161,17 +161,17 @@ export function BestSellerCardEditor() {
   }
 
   if (loading) {
-    return <div className="h-64 animate-pulse rounded-2xl bg-gray-100" />
+    return <div className="h-64 animate-pulse rounded-2xl bg-admin-bg" />
   }
 
   return (
     <div className="space-y-5" dir="rtl">
-      <section className="sticky top-[5.5rem] z-20 rounded-2xl border border-gray-200 bg-white p-4 shadow-[0_12px_28px_rgba(15,23,42,0.08)] md:static md:shadow-none">
+      <section className="sticky top-[5.5rem] z-20 rounded-2xl border border-admin-border-soft bg-white p-4 shadow-[0_12px_28px_rgba(15,23,42,0.08)] md:static md:shadow-none">
         <div className="space-y-4">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h3 className="text-base font-bold text-gray-900">بطاقة الأكثر طلبًا</h3>
-              <p className="mt-1 text-sm text-gray-500">
+              <h3 className="text-base font-bold text-admin-ink">بطاقة الأكثر طلبًا</h3>
+              <p className="mt-1 text-sm text-admin-muted-2">
                 تحكم في التدرج، أماكن العناصر، والأحجام لبطاقة أفضل المبيعات.
               </p>
             </div>
@@ -182,7 +182,7 @@ export function BestSellerCardEditor() {
             ) : null}
           </div>
 
-          <div className="rounded-[28px] border border-dashed border-gray-200 bg-[#faf8f6] p-3">
+          <div className="rounded-[28px] border border-dashed border-admin-border-soft bg-[#faf8f6] p-3">
             {previewItem ? (
               <div className="mx-auto max-w-xl">
                 <div className="mx-auto h-[275px] w-full overflow-hidden md:h-auto">
@@ -198,7 +198,7 @@ export function BestSellerCardEditor() {
                 </div>
               </div>
             ) : (
-              <div className="rounded-2xl bg-gray-100 px-4 py-10 text-center text-sm text-gray-500">
+              <div className="rounded-2xl bg-admin-bg px-4 py-10 text-center text-sm text-admin-muted-2">
                 لا توجد أصناف كافية للمعاينة الآن.
               </div>
             )}
@@ -210,11 +210,11 @@ export function BestSellerCardEditor() {
             </div>
           ) : null}
 
-          <div className="flex flex-wrap justify-end gap-2 border-t border-gray-100 pt-3">
+          <div className="flex flex-wrap justify-end gap-2 border-t border-admin-border-soft pt-3">
             <button
               type="button"
               onClick={handleReset}
-              className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700"
+              className="inline-flex items-center gap-2 rounded-xl border border-admin-border-soft bg-white px-4 py-2 text-sm font-semibold text-admin-muted"
             >
               <RotateCcw className="h-4 w-4" />
               القيم الأصلية
@@ -226,7 +226,7 @@ export function BestSellerCardEditor() {
                 setSaved(false)
                 setSaveError(null)
               }}
-              className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700"
+              className="inline-flex items-center gap-2 rounded-xl border border-admin-border-soft bg-white px-4 py-2 text-sm font-semibold text-admin-muted"
             >
               إلغاء التعديلات
             </button>
@@ -249,8 +249,8 @@ export function BestSellerCardEditor() {
         </div>
       </section>
 
-      <section className="space-y-4 rounded-2xl border border-gray-200 bg-white p-4">
-        <h4 className="text-sm font-bold text-gray-900">التدرج والشفافية</h4>
+      <section className="space-y-4 rounded-2xl border border-admin-border-soft bg-white p-4">
+        <h4 className="text-sm font-bold text-admin-ink">التدرج والشفافية</h4>
         <ColorField
           label="لون بداية التدرج"
           value={current.overlay_lead_color}
@@ -308,8 +308,8 @@ export function BestSellerCardEditor() {
         />
       </section>
 
-      <section className="space-y-4 rounded-2xl border border-gray-200 bg-white p-4">
-        <h4 className="text-sm font-bold text-gray-900">أماكن العناصر</h4>
+      <section className="space-y-4 rounded-2xl border border-admin-border-soft bg-white p-4">
+        <h4 className="text-sm font-bold text-admin-ink">أماكن العناصر</h4>
         <ToggleField
           label="إظهار الوصف"
           description="يمكنك إخفاء وصف المنتج من بطاقة الأكثر طلبًا."
@@ -366,8 +366,8 @@ export function BestSellerCardEditor() {
         />
       </section>
 
-      <section className="space-y-4 rounded-2xl border border-gray-200 bg-white p-4">
-        <h4 className="text-sm font-bold text-gray-900">الأحجام</h4>
+      <section className="space-y-4 rounded-2xl border border-admin-border-soft bg-white p-4">
+        <h4 className="text-sm font-bold text-admin-ink">الأحجام</h4>
         <SliderField
           label="ارتفاع البطاقة"
           value={current.card_height}
@@ -426,9 +426,9 @@ export function BestSellerCardEditor() {
         />
       </section>
 
-      <section className="space-y-4 rounded-2xl border border-gray-200 bg-white p-4">
-        <h4 className="text-sm font-bold text-gray-900">اسم الصنف على الصورة</h4>
-        <p className="text-xs text-gray-500">يظهر هذا التحكم فقط عند استخدام تصميم البطاقة s4.</p>
+      <section className="space-y-4 rounded-2xl border border-admin-border-soft bg-white p-4">
+        <h4 className="text-sm font-bold text-admin-ink">اسم الصنف على الصورة</h4>
+        <p className="text-xs text-admin-muted-2">يظهر هذا التحكم فقط عند استخدام تصميم البطاقة s4.</p>
         <SliderField
           label="حجم الاسم"
           value={current.s4_name_size_px}
@@ -446,7 +446,7 @@ export function BestSellerCardEditor() {
           onChange={(value) => update("s4_name_top_percent", value)}
         />
         <label className="space-y-2 block">
-          <span className="text-sm font-medium text-gray-700">محاذاة الاسم</span>
+          <span className="text-sm font-medium text-admin-muted">محاذاة الاسم</span>
           <div className="flex gap-2">
             {(["right", "center", "left"] as const).map((align) => (
               <button
@@ -456,7 +456,7 @@ export function BestSellerCardEditor() {
                 className={
                   current.s4_name_align === align
                     ? "flex-1 rounded-xl bg-[#ef4b86] px-3 py-2 text-sm font-semibold text-white"
-                    : "flex-1 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700"
+                    : "flex-1 rounded-xl border border-admin-border-soft bg-white px-3 py-2 text-sm font-semibold text-admin-muted"
                 }
               >
                 {align === "right" ? "يمين" : align === "center" ? "وسط" : "يسار"}

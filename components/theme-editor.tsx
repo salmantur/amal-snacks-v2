@@ -156,7 +156,7 @@ function Swatch({
       >
         {selected ? <Check className="h-3.5 w-3.5" style={{ color: light ? "#111827" : "#ffffff" }} /> : null}
       </div>
-      <p className="text-[10px] mt-1 text-gray-500 truncate">{label}</p>
+      <p className="text-[10px] mt-1 text-admin-muted-2 truncate">{label}</p>
     </button>
   )
 }
@@ -175,10 +175,10 @@ function ColorBlock({
   return (
     <section className="space-y-3">
       <div className="flex items-center justify-between gap-2">
-        <p className="text-sm font-bold text-gray-800">{title}</p>
-        <div className="inline-flex items-center gap-2 rounded-full bg-gray-100 px-2 py-1">
+        <p className="text-sm font-bold text-admin-ink">{title}</p>
+        <div className="inline-flex items-center gap-2 rounded-full bg-admin-bg px-2 py-1">
           <span className="w-4 h-4 rounded-full border border-black/10" style={{ backgroundColor: value }} />
-          <span className="text-[11px] font-mono text-gray-500">{value}</span>
+          <span className="text-[11px] font-mono text-admin-muted-2">{value}</span>
         </div>
       </div>
 
@@ -194,14 +194,14 @@ function ColorBlock({
         ))}
       </div>
 
-      <div className="flex items-center gap-3 bg-gray-50 rounded-xl border border-gray-200 p-3">
+      <div className="flex items-center gap-3 bg-admin-bg rounded-xl border border-admin-border-soft p-3">
         <input
           type="color"
           value={value}
           onChange={(e) => onChange(e.target.value)}
           className="h-9 w-10 rounded-lg border-0 bg-transparent cursor-pointer"
         />
-        <p className="text-xs text-gray-500">اختيار لون مخصص</p>
+        <p className="text-xs text-admin-muted-2">اختيار لون مخصص</p>
       </div>
     </section>
   )
@@ -246,20 +246,20 @@ export function ThemeEditor() {
     applyDraft(DEFAULT_THEME)
   }
 
-  if (loading) return <div className="h-48 rounded-2xl bg-gray-100 animate-pulse" />
+  if (loading) return <div className="h-48 rounded-2xl bg-admin-bg animate-pulse" />
 
   return (
     <div className="space-y-5" dir="rtl">
-      <section className="rounded-2xl border border-gray-200 bg-white p-4 space-y-3">
+      <section className="rounded-2xl border border-admin-border-soft bg-white p-4 space-y-3">
         <div className="flex items-center justify-between">
-          <p className="text-sm font-bold text-gray-800">معاينة فورية</p>
+          <p className="text-sm font-bold text-admin-ink">معاينة فورية</p>
           {dirty ? <span className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded-full">تغييرات غير محفوظة</span> : null}
         </div>
 
-        <div className="rounded-2xl border border-gray-200 overflow-hidden" style={{ backgroundColor: current.background }}>
+        <div className="rounded-2xl border border-admin-border-soft overflow-hidden" style={{ backgroundColor: current.background }}>
           <div className="h-10 px-3 flex items-center justify-between border-b border-black/5" style={{ backgroundColor: current.bar_background }}>
-            <span className="text-xs text-gray-500">الشريط العلوي</span>
-            <span className="text-xs text-gray-500">بحث + تصنيفات</span>
+            <span className="text-xs text-admin-muted-2">الشريط العلوي</span>
+            <span className="text-xs text-admin-muted-2">بحث + تصنيفات</span>
           </div>
           <div className="p-3 space-y-3">
             <div className="rounded-full px-4 py-2 w-fit" style={{ backgroundColor: current.primary, color: current.primary_foreground }}>
@@ -279,7 +279,7 @@ export function ThemeEditor() {
               </div>
             </div>
             <div
-              className="rounded-2xl border border-gray-200 p-3"
+              className="rounded-2xl border border-admin-border-soft p-3"
               style={{ backgroundColor: current.item_card_background }}
             >
               <p className="text-sm font-bold" style={{ color: current.item_card_title }}>اسم الصنف</p>
@@ -292,10 +292,10 @@ export function ThemeEditor() {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-gray-200 bg-white p-4 space-y-3">
+      <section className="rounded-2xl border border-admin-border-soft bg-white p-4 space-y-3">
         <div className="flex items-center justify-between gap-2">
-          <p className="text-sm font-bold text-gray-800">Tray Design</p>
-          <span className="text-xs text-gray-500">Design C / Floating-3</span>
+          <p className="text-sm font-bold text-admin-ink">Tray Design</p>
+          <span className="text-xs text-admin-muted-2">Design C / Floating-3</span>
         </div>
         <div className="grid grid-cols-2 gap-2">
           <button
@@ -303,8 +303,8 @@ export function ThemeEditor() {
             onClick={() => update({ tray_variant_design: "design_c" })}
             className={`rounded-xl border px-3 py-2.5 text-sm font-semibold transition-colors ${
               trayDesign === "design_c"
-                ? "border-gray-900 bg-gray-900 text-white"
-                : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+                ? "border-admin-ink bg-admin-ink text-white"
+                : "border-admin-border-soft bg-white text-admin-muted hover:bg-admin-bg"
             }`}
           >
             DESIGN C
@@ -314,8 +314,8 @@ export function ThemeEditor() {
             onClick={() => update({ tray_variant_design: "floating_3" })}
             className={`rounded-xl border px-3 py-2.5 text-sm font-semibold transition-colors ${
               trayDesign === "floating_3"
-                ? "border-gray-900 bg-gray-900 text-white"
-                : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+                ? "border-admin-ink bg-admin-ink text-white"
+                : "border-admin-border-soft bg-white text-admin-muted hover:bg-admin-bg"
             }`}
           >
             FLOATING-3
@@ -323,8 +323,8 @@ export function ThemeEditor() {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-gray-200 bg-white p-4 space-y-3">
-        <div className="flex items-center gap-2 text-gray-700">
+      <section className="rounded-2xl border border-admin-border-soft bg-white p-4 space-y-3">
+        <div className="flex items-center gap-2 text-admin-muted">
           <Sparkles className="h-4 w-4" />
           <p className="text-sm font-bold">ثيمات جاهزة</p>
         </div>
@@ -334,35 +334,35 @@ export function ThemeEditor() {
               key={preset.id}
               type="button"
               onClick={() => applyPreset(preset)}
-              className="text-right rounded-xl border border-gray-200 p-3 hover:border-gray-300 hover:bg-gray-50 transition-colors active:scale-[0.99]"
+              className="text-right rounded-xl border border-admin-border-soft p-3 hover:border-admin-border hover:bg-admin-bg transition-colors active:scale-[0.99]"
             >
-              <p className="text-sm font-bold text-gray-800">{preset.name}</p>
-              <p className="text-xs text-gray-500 mt-0.5">{preset.description}</p>
+              <p className="text-sm font-bold text-admin-ink">{preset.name}</p>
+              <p className="text-xs text-admin-muted-2 mt-0.5">{preset.description}</p>
             </button>
           ))}
         </div>
       </section>
 
-      <section className="rounded-2xl border border-gray-200 bg-white p-4 space-y-4">
-        <div className="flex gap-2 rounded-xl bg-gray-100 p-1">
+      <section className="rounded-2xl border border-admin-border-soft bg-white p-4 space-y-4">
+        <div className="flex gap-2 rounded-xl bg-admin-bg p-1">
           <button
             type="button"
             onClick={() => setTab("main")}
-            className={`flex-1 rounded-lg py-2 text-sm font-medium transition-colors ${tab === "main" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500"}`}
+            className={`flex-1 rounded-lg py-2 text-sm font-medium transition-colors ${tab === "main" ? "bg-white text-admin-ink shadow-sm" : "text-admin-muted-2"}`}
           >
             ألوان الأزرار
           </button>
           <button
             type="button"
             onClick={() => setTab("background")}
-            className={`flex-1 rounded-lg py-2 text-sm font-medium transition-colors ${tab === "background" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500"}`}
+            className={`flex-1 rounded-lg py-2 text-sm font-medium transition-colors ${tab === "background" ? "bg-white text-admin-ink shadow-sm" : "text-admin-muted-2"}`}
           >
             الخلفيات
           </button>
           <button
             type="button"
             onClick={() => setTab("cards")}
-            className={`flex-1 rounded-lg py-2 text-sm font-medium transition-colors ${tab === "cards" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500"}`}
+            className={`flex-1 rounded-lg py-2 text-sm font-medium transition-colors ${tab === "cards" ? "bg-white text-admin-ink shadow-sm" : "text-admin-muted-2"}`}
           >
             بطاقات المنتجات
           </button>
@@ -420,7 +420,7 @@ export function ThemeEditor() {
             <button
               type="button"
               onClick={() => update({ bar_background: current.background })}
-              className="w-full rounded-xl border border-dashed border-gray-300 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 active:scale-[0.99] transition-all inline-flex items-center justify-center gap-2"
+              className="w-full rounded-xl border border-dashed border-admin-border py-3 text-sm font-medium text-admin-muted hover:bg-admin-bg active:scale-[0.99] transition-all inline-flex items-center justify-center gap-2"
             >
               <Copy className="h-4 w-4" />
               مطابقة لون الشريط مع الخلفية
@@ -460,7 +460,7 @@ export function ThemeEditor() {
         <button
           type="button"
           onClick={handleReset}
-          className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-gray-100 text-gray-600 text-sm font-medium active:scale-95 transition-transform"
+          className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-admin-bg text-admin-muted text-sm font-medium active:scale-95 transition-transform"
         >
           <RotateCcw className="h-4 w-4" />
           استرجاع الافتراضي

@@ -52,7 +52,7 @@ export function CategoryManager() {
   }
 
   if (loading) {
-    return <div className="h-40 bg-amal-grey rounded-2xl animate-pulse" />
+    return <div className="h-40 bg-admin-bg rounded-2xl animate-pulse" />
   }
 
   const visibleCount = displayed.filter((c) => c.isVisible).length
@@ -64,11 +64,11 @@ export function CategoryManager() {
       <div className="flex gap-3">
         <div className="flex-1 bg-[#1e5631]/10 rounded-2xl p-3 text-center">
           <p className="text-2xl font-bold text-[#1e5631]">{visibleCount}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">ظاهر</p>
+          <p className="text-xs text-admin-muted mt-0.5">ظاهر</p>
         </div>
-        <div className="flex-1 bg-amal-grey rounded-2xl p-3 text-center">
-          <p className="text-2xl font-bold text-foreground">{hiddenCount}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">مخفي</p>
+        <div className="flex-1 bg-admin-bg rounded-2xl p-3 text-center">
+          <p className="text-2xl font-bold text-admin-ink">{hiddenCount}</p>
+          <p className="text-xs text-admin-muted mt-0.5">مخفي</p>
         </div>
       </div>
 
@@ -79,23 +79,23 @@ export function CategoryManager() {
             key={cat.id}
             className={cn(
               "flex items-center gap-3 p-3 rounded-xl border-2 transition-all",
-              cat.isVisible ? "bg-white border-transparent" : "bg-amal-grey/50 border-transparent opacity-60"
+              cat.isVisible ? "bg-white border-transparent" : "bg-admin-bg/50 border-transparent opacity-60"
             )}
           >
-            <GripVertical className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <GripVertical className="h-4 w-4 text-admin-muted flex-shrink-0" />
 
             <div className="flex-1 text-right min-w-0">
-              <p className={cn("font-medium text-sm", !cat.isVisible && "text-muted-foreground")}>
+              <p className={cn("font-medium text-sm", !cat.isVisible && "text-admin-muted")}>
                 {cat.label}
               </p>
-              <p className="text-xs text-muted-foreground truncate">
+              <p className="text-xs text-admin-muted truncate">
                 {cat.dbCategories.join("، ")}
               </p>
             </div>
 
             {/* Custom badge */}
             {cat.isCustom && (
-              <span className="text-xs px-2 py-0.5 bg-amal-yellow-light rounded-full text-foreground flex-shrink-0">
+              <span className="text-xs px-2 py-0.5 bg-amal-yellow-light rounded-full text-admin-ink flex-shrink-0">
                 مخصص
               </span>
             )}
@@ -107,7 +107,7 @@ export function CategoryManager() {
                 "w-9 h-9 rounded-xl flex items-center justify-center transition-colors flex-shrink-0",
                 cat.isVisible
                   ? "bg-[#1e5631]/10 text-[#1e5631] hover:bg-[#1e5631]/20"
-                  : "bg-amal-grey text-muted-foreground hover:bg-amal-grey/80"
+                  : "bg-admin-bg text-admin-muted hover:bg-admin-bg/80"
               )}
               title={cat.isVisible ? "إخفاء" : "إظهار"}
             >
@@ -130,7 +130,7 @@ export function CategoryManager() {
 
       {/* Add new category */}
       {adding ? (
-        <div className="bg-amal-grey rounded-2xl p-4 space-y-3">
+        <div className="bg-admin-bg rounded-2xl p-4 space-y-3">
           <h3 className="font-bold text-right">تصنيف جديد</h3>
 
           <input
@@ -138,7 +138,7 @@ export function CategoryManager() {
             placeholder="اسم التصنيف (مثال: عروض العيد)"
             value={newLabel}
             onChange={(e) => setNewLabel(e.target.value)}
-            className="w-full py-3 px-4 rounded-xl bg-white text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 text-right"
+            className="w-full py-3 px-4 rounded-xl bg-white text-admin-ink placeholder:text-admin-muted focus:outline-none focus:ring-2 focus:ring-primary/20 text-right"
           />
 
           <input
@@ -146,17 +146,17 @@ export function CategoryManager() {
             placeholder="مفتاح قاعدة البيانات (مثال: eid_packages)"
             value={newDbKey}
             onChange={(e) => setNewDbKey(e.target.value)}
-            className="w-full py-3 px-4 rounded-xl bg-white text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 text-right"
+            className="w-full py-3 px-4 rounded-xl bg-white text-admin-ink placeholder:text-admin-muted focus:outline-none focus:ring-2 focus:ring-primary/20 text-right"
             dir="ltr"
           />
-          <p className="text-xs text-muted-foreground text-right">
+          <p className="text-xs text-admin-muted text-right">
             هذا هو نفس قيمة حقل "category" في جدول menu بـ Supabase
           </p>
 
           <div className="flex gap-2">
             <button
               onClick={() => { setAdding(false); setNewLabel(""); setNewDbKey("") }}
-              className="flex-1 py-3 rounded-xl bg-white text-muted-foreground font-medium hover:bg-white/80 transition-colors"
+              className="flex-1 py-3 rounded-xl bg-white text-admin-muted font-medium hover:bg-white/80 transition-colors"
             >
               إلغاء
             </button>
@@ -172,7 +172,7 @@ export function CategoryManager() {
       ) : (
         <button
           onClick={() => setAdding(true)}
-          className="w-full py-3 rounded-xl border-2 border-dashed border-amal-grey-dark text-muted-foreground flex items-center justify-center gap-2 hover:border-primary hover:text-primary transition-colors font-medium"
+          className="w-full py-3 rounded-xl border-2 border-dashed border-amal-grey-dark text-admin-muted flex items-center justify-center gap-2 hover:border-primary hover:text-primary transition-colors font-medium"
         >
           <Plus className="h-4 w-4" />
           إضافة تصنيف جديد

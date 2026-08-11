@@ -69,16 +69,16 @@ export function ClosedDatesManager() {
   }
 
   if (loading) {
-    return <div className="rounded-2xl border border-gray-200 bg-white p-4 text-sm text-gray-500">جاري التحميل...</div>
+    return <div className="rounded-2xl border border-admin-border-soft bg-white p-4 text-sm text-admin-muted">جاري التحميل...</div>
   }
 
   return (
-    <section className="rounded-2xl border border-gray-200 bg-white p-4 space-y-4" dir="rtl">
+    <section className="rounded-2xl border border-admin-border-soft bg-white p-4 space-y-4" dir="rtl">
       <div className="flex items-center gap-2">
-        <CalendarX2 className="h-5 w-5 text-gray-600" />
+        <CalendarX2 className="h-5 w-5 text-admin-muted" />
         <div className="text-right">
           <h3 className="font-bold text-base">إغلاق أيام محددة</h3>
-          <p className="text-sm text-gray-500">أضف أي يوم تريد إيقاف استقبال الطلبات فيه بالكامل.</p>
+          <p className="text-sm text-admin-muted">أضف أي يوم تريد إيقاف استقبال الطلبات فيه بالكامل.</p>
         </div>
       </div>
 
@@ -91,13 +91,13 @@ export function ClosedDatesManager() {
       </div>
 
       {draft.closedDates.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-4 text-sm text-gray-500">
+        <div className="rounded-xl border border-dashed border-admin-border-soft bg-admin-bg p-4 text-sm text-admin-muted">
           لا توجد أيام مغلقة حاليًا.
         </div>
       ) : (
         <div className="space-y-2">
           {draft.closedDates.map((date) => (
-            <div key={date} className="flex items-center justify-between rounded-xl border border-gray-200 px-3 py-3">
+            <div key={date} className="flex items-center justify-between rounded-xl border border-admin-border-soft px-3 py-3">
               <button
                 type="button"
                 onClick={() => removeClosedDate(date)}
@@ -107,8 +107,8 @@ export function ClosedDatesManager() {
                 <Trash2 className="h-4 w-4" />
               </button>
               <div className="text-right">
-                <p className="font-semibold text-gray-900">{formatClosedDate(date)}</p>
-                <p className="text-xs text-gray-500">{date}</p>
+                <p className="font-semibold text-admin-ink">{formatClosedDate(date)}</p>
+                <p className="text-xs text-admin-muted">{date}</p>
               </div>
             </div>
           ))}
@@ -119,7 +119,7 @@ export function ClosedDatesManager() {
         {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "حفظ الأيام المغلقة"}
       </Button>
 
-      {status ? <p className="text-xs text-gray-500">{status}</p> : null}
+      {status ? <p className="text-xs text-admin-muted">{status}</p> : null}
     </section>
   )
 }

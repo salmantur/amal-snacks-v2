@@ -754,7 +754,7 @@ export default function ItemsPage() {
                   </div>
                   <button
                     onClick={() => setModalItem(p => p ? { ...p, inStock: !(p.inStock !== false) } : p)}
-                    className={`w-14 h-8 rounded-full transition-colors relative flex-shrink-0 ml-3 ${modalItem.inStock !== false ? "bg-foreground" : "bg-gray-300"}`}
+                    className={`w-14 h-8 rounded-full transition-colors relative flex-shrink-0 ml-3 ${modalItem.inStock !== false ? "bg-admin-ink" : "bg-gray-300"}`}
                   >
                     <span className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow transition-all duration-200 ${modalItem.inStock !== false ? "left-7" : "left-1"}`} />
                   </button>

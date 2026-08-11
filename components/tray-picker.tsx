@@ -248,7 +248,7 @@ export function TrayPicker({ item, onBack, onAdded }: TrayPickerProps) {
                   onClick={() => togglePick(index)}
                   disabled={locked}
                   aria-pressed={isOn}
-                  className={cn("relative flex h-[54px] items-center rounded-2xl px-2.5 text-right transition-all", locked && "opacity-40")}
+                  className={cn("relative flex min-h-[54px] items-center rounded-2xl px-2.5 py-1.5 text-right transition-all", locked && "opacity-40")}
                   style={{
                     backgroundColor: "#ffffff",
                     border: `1.5px solid ${isOn ? ACCENT : "#ece3d3"}`,
@@ -263,7 +263,7 @@ export function TrayPicker({ item, onBack, onAdded }: TrayPickerProps) {
                       ✓
                     </span>
                   ) : null}
-                  <span className="w-full truncate text-[11px] font-extrabold" style={{ color: INK }}>
+                  <span className="line-clamp-2 w-full text-[11px] font-extrabold leading-tight" style={{ color: INK }}>
                     {snack.ar}
                   </span>
                 </button>

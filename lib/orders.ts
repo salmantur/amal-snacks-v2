@@ -58,12 +58,6 @@ export async function saveOrder(payload: NewOrderPayload): Promise<{ orderNumber
   return { orderNumber: data.order_number, id: data.id }
 }
 
-// Update order status
-export async function updateOrderStatus(id: string, status: Order["status"]): Promise<void> {
-  const supabase = createClient()
-  await supabase.from("orders").update({ status }).eq("id", id)
-}
-
 // Log a checkout attempt that failed to save, so staff can see it
 // in the dashboard and cross-check WhatsApp for that order.
 export async function logFailedOrder(entry: {

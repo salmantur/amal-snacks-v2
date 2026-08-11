@@ -12,6 +12,7 @@ const config: Config = {
     extend: {
       fontFamily: {
         sans: ['var(--font-thmanyah-sans)', 'var(--font-tajawal)', 'system-ui', 'sans-serif'],        'serif-text': ['var(--font-thmanyah-serif-text)', 'serif'],
+        'admin-mono': ['var(--font-ibm-plex-mono)', 'monospace'],
       },
       colors: {
         background: 'hsl(var(--background))',
@@ -55,15 +56,22 @@ const config: Config = {
           grey: 'hsl(var(--amal-grey))',
           'grey-dark': 'hsl(var(--amal-grey-dark))',
         },
-        sidebar: {
-          DEFAULT: 'hsl(var(--sidebar-background))',
-          foreground: 'hsl(var(--sidebar-foreground))',
-          primary: 'hsl(var(--sidebar-primary))',
-          'primary-foreground': 'hsl(var(--sidebar-primary-foreground))',
-          accent: 'hsl(var(--sidebar-accent))',
-          'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
-          border: 'hsl(var(--sidebar-border))',
-          ring: 'hsl(var(--sidebar-ring))',
+        admin: {
+          bg: 'var(--admin-bg)',
+          header: 'var(--admin-header)',
+          ink: 'var(--admin-ink)',
+          muted: 'var(--admin-muted)',
+          'muted-2': 'var(--admin-muted-2)',
+          'muted-3': 'var(--admin-muted-3)',
+          border: 'var(--admin-border)',
+          'border-soft': 'var(--admin-border-soft)',
+          delivery: 'var(--admin-delivery)',
+          'delivery-tint': 'var(--admin-delivery-tint)',
+          pickup: 'var(--admin-pickup)',
+          'pickup-tint': 'var(--admin-pickup-tint)',
+          urgent: 'var(--admin-urgent)',
+          window: 'var(--admin-window)',
+          'window-tint': 'var(--admin-window-tint)',
         },
       },
       borderRadius: {

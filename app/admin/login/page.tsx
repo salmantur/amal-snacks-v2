@@ -29,7 +29,7 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[hsl(222,47%,11%)] flex items-center justify-center p-4" dir="rtl">
+    <main className="min-h-screen bg-admin-bg flex items-center justify-center p-4" dir="rtl">
       <div className="w-full max-w-sm bg-background rounded-3xl shadow-xl p-8">
         {/* Brand mark */}
         <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center mx-auto mb-6 text-primary-foreground text-2xl font-bold">

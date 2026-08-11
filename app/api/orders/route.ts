@@ -138,9 +138,18 @@ function parseVariantOption(raw: string, fallbackPrice: number): { label: string
 }
 
 export async function POST(req: Request) {
+    // Declared outside the try block so the catch-all below can still log a
+    // failure that happens before/after the specific handled cases (Zod
+    // rejection, missing menu item, RPC failure, etc.) each already log via
+    // logFailedOrder - previously an error here vanished with no trace in
+    // either the response or the failed_orders table.
+    let supabaseRef: SupabaseClient | null = null
+    let rawBodyRef: unknown = null
+
     try {
           const { url, publishableKey } = getSupabaseConfig()
           const supabase = createClient(url, publishableKey)
+          supabaseRef = supabase
 
       const clientIp = extractClientIp(req)
           if (isRateLimited(clientIp)) {
@@ -149,6 +158,7 @@ export async function POST(req: Request) {
           }
 
       const rawBody = await req.json()
+          rawBodyRef = rawBody
           const parsed = orderPayloadSchema.safeParse(rawBody)
           if (!parsed.success) {
                   after(() =>
@@ -396,10 +406,37 @@ export async function POST(req: Request) {
       })
     } catch (error) {
           console.error("Unexpected /api/orders error", error)
+          const errorMessage = error instanceof Error ? error.message : String(error)
+
+          // Best-effort: use whatever client we managed to create, or build a
+          // throwaway one if the crash happened before that line ran, so this
+          // failure mode - previously invisible everywhere - shows up in the
+          // admin panel's failed-orders list like every other rejection path.
+          try {
+                  const loggingClient =
+                    supabaseRef ??
+                    (() => {
+                            const { url, publishableKey } = getSupabaseConfig()
+                            return createClient(url, publishableKey)
+                    })()
+                  const body = (rawBodyRef ?? {}) as Record<string, unknown>
+                  after(() =>
+                    logFailedOrder(loggingClient, {
+                              reason: `unexpected_error:${errorMessage}`,
+                              statusCode: 500,
+                              customerName: typeof body.customerName === "string" ? body.customerName : undefined,
+                              customerPhone: typeof body.customerPhone === "string" ? body.customerPhone : undefined,
+                              rawPayload: rawBodyRef,
+                    })
+                  )
+          } catch (loggingError) {
+                  console.error("Failed to log unexpected /api/orders error", loggingError)
+          }
+
           return NextResponse.json(
             {
                       error: "Unexpected server error",
-                      details: error instanceof Error ? error.message : null,
+                      details: errorMessage,
             },
             { status: 500 }
                 )

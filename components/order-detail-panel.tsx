@@ -3,7 +3,6 @@
 import { useState } from "react"
 import { Printer } from "lucide-react"
 import type { Order } from "@/lib/data"
-import { setPrinterIp, getPrinterIp } from "@/lib/thermal-printer"
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet"
 import { getTimeAgo } from "./order-card"
 
@@ -13,6 +12,8 @@ interface OrderDetailPanelProps {
   onPrint: (order: Order) => void
   printing: boolean
   printError: string | null
+  printerIp: string
+  onSavePrinterIp: (ip: string) => void
 }
 
 const TYPE_META: Record<Order["orderType"], { label: string; color: string; tint: string }> = {
@@ -20,13 +21,19 @@ const TYPE_META: Record<Order["orderType"], { label: string; color: string; tint
   pickup: { label: "استلام", color: "text-admin-pickup", tint: "bg-admin-pickup-tint" },
 }
 
-export function OrderDetailPanel({ order, onOpenChange, onPrint, printing, printError }: OrderDetailPanelProps) {
+export function OrderDetailPanel({
+  order,
+  onOpenChange,
+  onPrint,
+  printing,
+  printError,
+  printerIp,
+  onSavePrinterIp,
+}: OrderDetailPanelProps) {
   const [showIpEdit, setShowIpEdit] = useState(false)
-  const [printerIp, setPrinterIpState] = useState(() => getPrinterIp())
 
   const handleSaveIp = (ip: string) => {
-    setPrinterIpState(ip)
-    setPrinterIp(ip)
+    onSavePrinterIp(ip)
     setShowIpEdit(false)
   }
 

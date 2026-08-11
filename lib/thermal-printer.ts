@@ -356,6 +356,7 @@ async function buildXml(order: Order, mode: PrintMode, darkness: PrintDarkness):
 type PrintJobOptions = {
   mode?: PrintMode
   darkness?: PrintDarkness
+  ip?: string
 }
 
 export function getTicketPreviewDataUrl(
@@ -383,7 +384,7 @@ function createTimeoutSignal(ms: number): { signal: AbortSignal; cancel: () => v
 }
 
 export async function printOrder(order: Order, options: PrintJobOptions = {}): Promise<void> {
-  const ip  = getPrinterIp()
+  const ip  = options.ip || getPrinterIp()
   const url = `https://${ip}/cgi-bin/epos/service.cgi?devid=local_printer&timeout=10000`
   const mode = options.mode ?? getPrintMode()
   const darkness = options.darkness ?? getPrintDarkness()

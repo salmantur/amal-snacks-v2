@@ -5,6 +5,7 @@ import { AlertTriangle, ChevronDown, X } from "lucide-react"
 import { type Order } from "@/lib/data"
 import { fetchRecentOrders, subscribeToOrders, fetchFailedOrders, resolveFailedOrder, type FailedOrder } from "@/lib/orders"
 import { printOrder } from "@/lib/thermal-printer"
+import { usePrinterConfig } from "@/hooks/use-printer-config"
 import { OrderCard } from "@/components/order-card"
 import { OrderDetailPanel } from "@/components/order-detail-panel"
 import { AdminMenuButton } from "./admin-shell"
@@ -66,6 +67,7 @@ export default function AdminOrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [printingOrderId, setPrintingOrderId] = useState<string | null>(null)
   const [printError, setPrintError] = useState<string | null>(null)
+  const { config: printerConfig, saveConfig: savePrinterConfig } = usePrinterConfig()
 
   const [failedOrders, setFailedOrders] = useState<FailedOrder[]>([])
   const [failedOrdersPanelOpen, setFailedOrdersPanelOpen] = useState(false)
@@ -169,13 +171,13 @@ export default function AdminOrdersPage() {
     setPrintingOrderId(order.id)
     setPrintError(null)
     try {
-      await printOrder(order)
+      await printOrder(order, { ip: printerConfig.ip })
     } catch (err) {
       setPrintError(err instanceof Error ? err.message : "فشل الاتصال بالطابعة")
     } finally {
       setPrintingOrderId(null)
     }
-  }, [])
+  }, [printerConfig.ip])
 
   const filterTabs = useMemo(() => {
     const byKey = new Map<string, { key: string; label: string; date: Date; count: number }>()
@@ -326,6 +328,8 @@ export default function AdminOrdersPage() {
         onPrint={handlePrint}
         printing={selectedOrder !== null && printingOrderId === selectedOrder.id}
         printError={printError}
+        printerIp={printerConfig.ip}
+        onSavePrinterIp={(ip) => void savePrinterConfig({ ip })}
       />
     </>
   )

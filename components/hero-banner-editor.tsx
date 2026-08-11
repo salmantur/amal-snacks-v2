@@ -99,8 +99,8 @@ function PreviewFrame({
   const bannerHeight = isMobile ? "h-[170px]" : "h-[220px]"
 
   return (
-    <div className={cn("rounded-2xl border border-gray-200 bg-white p-3", isMobile ? "mx-auto" : "")}>
-      <div className={cn("rounded-2xl overflow-hidden border border-gray-100 bg-white", frameClass)}>
+    <div className={cn("rounded-2xl border border-admin-border-soft bg-white p-3", isMobile ? "mx-auto" : "")}>
+      <div className={cn("rounded-2xl overflow-hidden border border-admin-border-soft bg-white", frameClass)}>
         <div className={cn("relative", bannerHeight)} style={{ background: `linear-gradient(135deg, ${config.bg_from}, ${config.bg_to})` }}>
           {config.image_url ? (
             <div className="absolute inset-0">
@@ -126,11 +126,11 @@ function PreviewFrame({
 
           <div className="relative z-10 p-5 text-right" dir="rtl">
             {config.show_badge && config.badge ? (
-              <span className="inline-block text-xs px-3 py-1 rounded-full bg-white/70 text-gray-800 font-medium">{config.badge}</span>
+              <span className="inline-block text-xs px-3 py-1 rounded-full bg-white/70 text-admin-ink font-medium">{config.badge}</span>
             ) : null}
-            <h3 className="text-xl font-black text-gray-900 mt-2">{config.title || "عنوان البانر"}</h3>
+            <h3 className="text-xl font-black text-admin-ink mt-2">{config.title || "عنوان البانر"}</h3>
             {config.show_subtitle && config.subtitle ? (
-              <p className="text-sm text-gray-700 mt-1 line-clamp-2 whitespace-pre-line">{config.subtitle}</p>
+              <p className="text-sm text-admin-muted mt-1 line-clamp-2 whitespace-pre-line">{config.subtitle}</p>
             ) : null}
           </div>
         </div>
@@ -273,57 +273,57 @@ export function HeroBannerEditor() {
     setTimeout(() => setSavedNotice(null), 2000)
   }
 
-  if (loading) return <div className="h-40 bg-amal-grey rounded-2xl animate-pulse" />
+  if (loading) return <div className="h-40 bg-admin-bg rounded-2xl animate-pulse" />
 
   return (
     <div className="space-y-6" dir="rtl">
-      <section className="rounded-2xl border border-gray-200 bg-white p-4 space-y-3">
+      <section className="rounded-2xl border border-admin-border-soft bg-white p-4 space-y-3">
         <div className="flex items-center justify-between">
-          <p className="text-sm font-bold text-gray-800">حالة البانر</p>
+          <p className="text-sm font-bold text-admin-ink">حالة البانر</p>
           <span className={cn("text-xs px-2 py-1 rounded-full", dirty ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700")}>
             {dirty ? "تعديلات غير محفوظة" : "محفوظ"}
           </span>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
-          <p className="bg-gray-50 rounded-xl px-3 py-2">الحالي المنشور: <span className="font-semibold">{published.title}</span></p>
-          <p className="bg-gray-50 rounded-xl px-3 py-2">الجدولة: <span className="font-semibold">{scheduleStatus}</span></p>
+          <p className="bg-admin-bg rounded-xl px-3 py-2">الحالي المنشور: <span className="font-semibold">{published.title}</span></p>
+          <p className="bg-admin-bg rounded-xl px-3 py-2">الجدولة: <span className="font-semibold">{scheduleStatus}</span></p>
         </div>
         {savedNotice ? <p className="text-sm text-emerald-700 font-semibold">{savedNotice}</p> : null}
       </section>
 
       <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <p className="text-sm font-bold text-gray-800">معاينة البانر</p>
-          <div className="inline-flex rounded-xl bg-gray-100 p-1">
+          <p className="text-sm font-bold text-admin-ink">معاينة البانر</p>
+          <div className="inline-flex rounded-xl bg-admin-bg p-1">
             <button
               type="button"
               onClick={() => setPreviewMode("mobile")}
-              className={cn("px-3 py-1.5 text-xs rounded-lg", previewMode === "mobile" ? "bg-white shadow-sm font-bold" : "text-gray-500")}
+              className={cn("px-3 py-1.5 text-xs rounded-lg", previewMode === "mobile" ? "bg-white shadow-sm font-bold" : "text-admin-muted-2")}
             >
               موبايل
             </button>
             <button
               type="button"
               onClick={() => setPreviewMode("desktop")}
-              className={cn("px-3 py-1.5 text-xs rounded-lg", previewMode === "desktop" ? "bg-white shadow-sm font-bold" : "text-gray-500")}
+              className={cn("px-3 py-1.5 text-xs rounded-lg", previewMode === "desktop" ? "bg-white shadow-sm font-bold" : "text-admin-muted-2")}
             >
               كمبيوتر
             </button>
           </div>
         </div>
         <PreviewFrame mode={previewMode} config={current} />
-        <p className="text-xs text-gray-500">المربعات المتقطعة = منطقة الأمان للنصوص والصور.</p>
+        <p className="text-xs text-admin-muted-2">المربعات المتقطعة = منطقة الأمان للنصوص والصور.</p>
       </section>
 
-      <section className="rounded-2xl border border-gray-200 bg-white p-4 space-y-3">
-        <p className="text-sm font-bold text-gray-800">قوالب جاهزة</p>
+      <section className="rounded-2xl border border-admin-border-soft bg-white p-4 space-y-3">
+        <p className="text-sm font-bold text-admin-ink">قوالب جاهزة</p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           {BANNER_PRESETS.map((preset) => (
             <button
               key={preset.label}
               type="button"
               onClick={() => applyPreset(preset.config)}
-              className="rounded-xl border border-gray-200 px-3 py-2 text-sm font-medium hover:bg-gray-50"
+              className="rounded-xl border border-admin-border-soft px-3 py-2 text-sm font-medium hover:bg-admin-bg"
             >
               {preset.label}
             </button>
@@ -331,13 +331,13 @@ export function HeroBannerEditor() {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-gray-200 bg-white p-4 space-y-3">
-        <p className="text-sm font-bold text-gray-800">النصوص</p>
+      <section className="rounded-2xl border border-admin-border-soft bg-white p-4 space-y-3">
+        <p className="text-sm font-bold text-admin-ink">النصوص</p>
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => update({ show_badge: !current.show_badge })}
-            className={cn("w-9 h-9 rounded-xl flex items-center justify-center", current.show_badge ? "bg-emerald-600 text-white" : "bg-gray-100 text-gray-500")}
+            className={cn("w-9 h-9 rounded-xl flex items-center justify-center", current.show_badge ? "bg-emerald-600 text-white" : "bg-admin-bg text-admin-muted-2")}
           >
             {current.show_badge ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
           </button>
@@ -346,20 +346,20 @@ export function HeroBannerEditor() {
             onChange={(e) => update({ badge: e.target.value })}
             disabled={!current.show_badge}
             placeholder="نص الشارة"
-            className="flex-1 rounded-xl bg-amal-grey px-4 py-3 text-sm focus:outline-none"
+            className="flex-1 rounded-xl bg-admin-bg px-4 py-3 text-sm focus:outline-none"
           />
         </div>
         <input
           value={current.title}
           onChange={(e) => update({ title: e.target.value })}
           placeholder="العنوان الرئيسي"
-          className="w-full rounded-xl bg-amal-grey px-4 py-3 text-base font-bold focus:outline-none"
+          className="w-full rounded-xl bg-admin-bg px-4 py-3 text-base font-bold focus:outline-none"
         />
         <div className="flex items-start gap-2">
           <button
             type="button"
             onClick={() => update({ show_subtitle: !current.show_subtitle })}
-            className={cn("w-9 h-9 rounded-xl flex items-center justify-center mt-1", current.show_subtitle ? "bg-emerald-600 text-white" : "bg-gray-100 text-gray-500")}
+            className={cn("w-9 h-9 rounded-xl flex items-center justify-center mt-1", current.show_subtitle ? "bg-emerald-600 text-white" : "bg-admin-bg text-admin-muted-2")}
           >
             {current.show_subtitle ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
           </button>
@@ -369,13 +369,13 @@ export function HeroBannerEditor() {
             disabled={!current.show_subtitle}
             rows={2}
             placeholder="النص الفرعي"
-            className="flex-1 rounded-xl bg-amal-grey px-4 py-3 text-sm resize-none focus:outline-none"
+            className="flex-1 rounded-xl bg-admin-bg px-4 py-3 text-sm resize-none focus:outline-none"
           />
         </div>
       </section>
 
-      <section className="rounded-2xl border border-gray-200 bg-white p-4 space-y-3">
-        <p className="text-sm font-bold text-gray-800">خلفية البانر</p>
+      <section className="rounded-2xl border border-admin-border-soft bg-white p-4 space-y-3">
+        <p className="text-sm font-bold text-admin-ink">خلفية البانر</p>
         <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
           {PRESET_GRADIENTS.map((preset) => (
             <button
@@ -390,29 +390,29 @@ export function HeroBannerEditor() {
         </div>
         <div className="grid grid-cols-2 gap-3">
           <label className="text-sm">
-            <span className="block text-xs text-gray-500 mb-1">من</span>
+            <span className="block text-xs text-admin-muted-2 mb-1">من</span>
             <input type="color" value={current.bg_from} onChange={(e) => update({ bg_from: e.target.value })} className="w-full h-10 rounded-lg" />
           </label>
           <label className="text-sm">
-            <span className="block text-xs text-gray-500 mb-1">إلى</span>
+            <span className="block text-xs text-admin-muted-2 mb-1">إلى</span>
             <input type="color" value={current.bg_to} onChange={(e) => update({ bg_to: e.target.value })} className="w-full h-10 rounded-lg" />
           </label>
         </div>
       </section>
 
-      <section className="rounded-2xl border border-gray-200 bg-white p-4 space-y-3">
-        <p className="text-sm font-bold text-gray-800">صورة الخلفية</p>
+      <section className="rounded-2xl border border-admin-border-soft bg-white p-4 space-y-3">
+        <p className="text-sm font-bold text-admin-ink">صورة الخلفية</p>
         <button
           type="button"
           onClick={() => bgInputRef.current?.click()}
-          className="w-full rounded-xl border-2 border-dashed border-gray-200 p-4 text-sm font-medium hover:border-primary/40"
+          className="w-full rounded-xl border-2 border-dashed border-admin-border-soft p-4 text-sm font-medium hover:border-primary/40"
           disabled={uploadingBg}
         >
           {uploadingBg ? "جاري التحسين والرفع..." : "رفع صورة خلفية (يتم تحسينها تلقائيًا WebP)"}
         </button>
         {current.image_url ? (
           <div className="space-y-3">
-            <div className="relative w-full h-40 rounded-xl overflow-hidden border border-gray-100">
+            <div className="relative w-full h-40 rounded-xl overflow-hidden border border-admin-border-soft">
               <Image
                 src={current.image_url}
                 alt="banner image"
@@ -426,7 +426,7 @@ export function HeroBannerEditor() {
               />
             </div>
 
-            <label className="block text-xs text-gray-500">
+            <label className="block text-xs text-admin-muted-2">
               الشفافية: {current.image_opacity}%
               <input
                 type="range"
@@ -438,7 +438,7 @@ export function HeroBannerEditor() {
               />
             </label>
 
-            <label className="block text-xs text-gray-500">
+            <label className="block text-xs text-admin-muted-2">
               موضع أفقي: {current.image_position_x}%
               <input
                 type="range"
@@ -450,7 +450,7 @@ export function HeroBannerEditor() {
               />
             </label>
 
-            <label className="block text-xs text-gray-500">
+            <label className="block text-xs text-admin-muted-2">
               موضع عمودي: {current.image_position_y}%
               <input
                 type="range"
@@ -462,7 +462,7 @@ export function HeroBannerEditor() {
               />
             </label>
 
-            <label className="block text-xs text-gray-500">
+            <label className="block text-xs text-admin-muted-2">
               تكبير الصورة: {current.image_scale}%
               <input
                 type="range"
@@ -486,12 +486,12 @@ export function HeroBannerEditor() {
         <input ref={bgInputRef} type="file" accept="image/*" onChange={onUploadBackground} className="hidden" />
       </section>
 
-      <section className="rounded-2xl border border-gray-200 bg-white p-4 space-y-3">
-        <p className="text-sm font-bold text-gray-800">تصميم بانر كامل</p>
+      <section className="rounded-2xl border border-admin-border-soft bg-white p-4 space-y-3">
+        <p className="text-sm font-bold text-admin-ink">تصميم بانر كامل</p>
         <button
           type="button"
           onClick={() => designInputRef.current?.click()}
-          className="w-full rounded-xl border-2 border-dashed border-gray-200 p-4 text-sm font-medium hover:border-primary/40"
+          className="w-full rounded-xl border-2 border-dashed border-admin-border-soft p-4 text-sm font-medium hover:border-primary/40"
           disabled={uploadingDesign}
         >
           {uploadingDesign ? "جاري التحسين والرفع..." : "رفع تصميم كامل (1200×480) مع تحسين تلقائي"}
@@ -500,7 +500,7 @@ export function HeroBannerEditor() {
           <button
             type="button"
             onClick={() => update({ full_design_mode: !current.full_design_mode })}
-            className={cn("flex-1 rounded-xl py-2 text-sm font-medium", current.full_design_mode ? "bg-emerald-600 text-white" : "bg-gray-100 text-gray-600")}
+            className={cn("flex-1 rounded-xl py-2 text-sm font-medium", current.full_design_mode ? "bg-emerald-600 text-white" : "bg-admin-bg text-admin-muted")}
           >
             {current.full_design_mode ? "التصميم الكامل مفعّل" : "تفعيل التصميم الكامل"}
           </button>
@@ -517,12 +517,12 @@ export function HeroBannerEditor() {
         <input ref={designInputRef} type="file" accept="image/*" onChange={onUploadDesign} className="hidden" />
       </section>
 
-      <section className="rounded-2xl border border-gray-200 bg-white p-4 space-y-3">
-        <p className="text-sm font-bold text-gray-800">منتج مميز في البانر</p>
+      <section className="rounded-2xl border border-admin-border-soft bg-white p-4 space-y-3">
+        <p className="text-sm font-bold text-admin-ink">منتج مميز في البانر</p>
         <select
           value={current.featured_product_id || ""}
           onChange={(e) => update({ featured_product_id: e.target.value || null })}
-          className="w-full rounded-xl bg-amal-grey px-4 py-3 text-sm"
+          className="w-full rounded-xl bg-admin-bg px-4 py-3 text-sm"
         >
           <option value="">بدون منتج مميز</option>
           {menuItems.map((item) => (
@@ -536,33 +536,33 @@ export function HeroBannerEditor() {
             value={current.featured_product_label}
             onChange={(e) => update({ featured_product_label: e.target.value })}
             placeholder="نص الشارة للمنتج المميز"
-            className="w-full rounded-xl bg-amal-grey px-4 py-3 text-sm"
+            className="w-full rounded-xl bg-admin-bg px-4 py-3 text-sm"
           />
         ) : null}
       </section>
 
-      <section className="rounded-2xl border border-gray-200 bg-white p-4 space-y-3">
-        <div className="flex items-center gap-2 text-gray-800">
+      <section className="rounded-2xl border border-admin-border-soft bg-white p-4 space-y-3">
+        <div className="flex items-center gap-2 text-admin-ink">
           <CalendarClock className="h-4 w-4" />
           <p className="text-sm font-bold">جدولة بانر موسمي</p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <label className="text-xs text-gray-500">
+          <label className="text-xs text-admin-muted-2">
             بداية العرض
             <input
               type="datetime-local"
               value={scheduleStart || toInputDateTime(schedule.start_at)}
               onChange={(e) => setScheduleStart(e.target.value)}
-              className="w-full mt-1 rounded-xl bg-amal-grey px-3 py-2 text-sm"
+              className="w-full mt-1 rounded-xl bg-admin-bg px-3 py-2 text-sm"
             />
           </label>
-          <label className="text-xs text-gray-500">
+          <label className="text-xs text-admin-muted-2">
             نهاية العرض
             <input
               type="datetime-local"
               value={scheduleEnd || toInputDateTime(schedule.end_at)}
               onChange={(e) => setScheduleEnd(e.target.value)}
-              className="w-full mt-1 rounded-xl bg-amal-grey px-3 py-2 text-sm"
+              className="w-full mt-1 rounded-xl bg-admin-bg px-3 py-2 text-sm"
             />
           </label>
         </div>
@@ -578,25 +578,25 @@ export function HeroBannerEditor() {
           <button
             type="button"
             onClick={() => clearSchedule()}
-            className="rounded-xl bg-gray-100 text-gray-600 px-3 py-2.5 text-sm font-medium"
+            className="rounded-xl bg-admin-bg text-admin-muted px-3 py-2.5 text-sm font-medium"
           >
             إلغاء الجدولة
           </button>
         </div>
       </section>
 
-      <section className="rounded-2xl border border-gray-200 bg-white p-4 space-y-3">
-        <div className="flex items-center gap-2 text-gray-800">
+      <section className="rounded-2xl border border-admin-border-soft bg-white p-4 space-y-3">
+        <div className="flex items-center gap-2 text-admin-ink">
           <History className="h-4 w-4" />
           <p className="text-sm font-bold">آخر 3 نسخ</p>
         </div>
-        {history.length === 0 ? <p className="text-xs text-gray-500">لا توجد نسخ محفوظة بعد.</p> : null}
+        {history.length === 0 ? <p className="text-xs text-admin-muted-2">لا توجد نسخ محفوظة بعد.</p> : null}
         <div className="space-y-2">
           {history.map((item) => (
-            <div key={item.id} className="rounded-xl border border-gray-100 px-3 py-2 flex items-center justify-between gap-2">
+            <div key={item.id} className="rounded-xl border border-admin-border-soft px-3 py-2 flex items-center justify-between gap-2">
               <div className="min-w-0">
                 <p className="text-sm font-semibold truncate">{item.config.title || "بدون عنوان"}</p>
-                <p className="text-xs text-gray-500 inline-flex items-center gap-1">
+                <p className="text-xs text-admin-muted-2 inline-flex items-center gap-1">
                   <Clock3 className="h-3 w-3" />
                   {new Date(item.saved_at).toLocaleString("ar-SA")} · {item.kind}
                 </p>
@@ -604,7 +604,7 @@ export function HeroBannerEditor() {
               <button
                 type="button"
                 onClick={() => restoreVersionToDraft(item.id)}
-                className="text-xs rounded-lg bg-gray-100 px-2 py-1 font-medium"
+                className="text-xs rounded-lg bg-admin-bg px-2 py-1 font-medium"
               >
                 استرجاع للمسودة
               </button>
@@ -620,7 +620,7 @@ export function HeroBannerEditor() {
             setDraft(DEFAULT_BANNER)
             setSavedNotice(null)
           }}
-          className="rounded-xl bg-gray-100 text-gray-600 px-4 py-3 text-sm font-medium inline-flex items-center gap-1"
+          className="rounded-xl bg-admin-bg text-admin-muted px-4 py-3 text-sm font-medium inline-flex items-center gap-1"
         >
           <RotateCcw className="h-4 w-4" />
           إعادة تعيين
@@ -629,7 +629,7 @@ export function HeroBannerEditor() {
           type="button"
           onClick={onSaveDraft}
           disabled={savingDraft}
-          className="flex-1 rounded-xl bg-primary text-primary-foreground py-3 text-sm font-bold disabled:opacity-50 inline-flex items-center justify-center gap-2"
+          className="flex-1 rounded-xl border border-admin-border bg-white py-3 text-sm font-bold text-admin-ink disabled:opacity-50 inline-flex items-center justify-center gap-2"
         >
           {savingDraft ? <Upload className="h-4 w-4 animate-pulse" /> : <Check className="h-4 w-4" />}
           حفظ كمسودة
@@ -638,7 +638,7 @@ export function HeroBannerEditor() {
           type="button"
           onClick={onPublish}
           disabled={publishing}
-          className="flex-1 rounded-xl bg-emerald-600 text-white py-3 text-sm font-bold disabled:opacity-50 inline-flex items-center justify-center gap-2"
+          className="flex-1 rounded-xl bg-admin-ink text-white py-3 text-sm font-bold disabled:opacity-50 inline-flex items-center justify-center gap-2"
         >
           {publishing ? <Upload className="h-4 w-4 animate-pulse" /> : <ImageIcon className="h-4 w-4" />}
           نشر الآن

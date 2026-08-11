@@ -7,6 +7,7 @@ import {
   BadgePercent,
   Bell,
   Users,
+  Printer,
   type LucideIcon,
 } from "lucide-react"
 
@@ -25,4 +26,5 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { href: "/admin/delivery", label: "التوصيل", icon: Truck },
   { href: "/admin/discounts", label: "الخصومات", icon: BadgePercent },
   { href: "/admin/alerts", label: "التنبيهات", icon: Bell },
+  { href: "/admin/printer", label: "الطابعة", icon: Printer },
 ]

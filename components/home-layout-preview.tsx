@@ -132,6 +132,40 @@ function EditorialBagIcon() {
   )
 }
 
+// TEMPORARY test-only icons for the cart-bar comparison scaffold - strip before merging to main.
+function EditorialBagIconWhite() {
+  return (
+    <span className="relative inline-block h-[15px] w-[17px]">
+      <span className="absolute right-[3.5px] top-[-5px] h-[7px] w-[9px] rounded-t-[9px] box-border border-white" style={{ borderWidth: "1.6px", borderBottom: "none" }} />
+      <span className="absolute bottom-0 right-0 h-[12px] w-[17px] box-border border-white" style={{ borderWidth: "1.6px" }} />
+    </span>
+  )
+}
+function EditorialTabHomeIcon({ active }: { active: boolean }) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={active ? EDITORIAL_INK : EDITORIAL_MUTED_FAINTER} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="m3 11 9-8 9 8" />
+      <path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10" />
+    </svg>
+  )
+}
+function EditorialTabCartIcon({ active }: { active: boolean }) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={active ? EDITORIAL_INK : EDITORIAL_MUTED_FAINTER} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 2 4 6v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6l-2-4" />
+      <path d="M4 6h16" />
+      <path d="M9 10a3 3 0 0 0 6 0" />
+    </svg>
+  )
+}
+function EditorialTabCheckIcon({ active }: { active: boolean }) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={active ? EDITORIAL_INK : EDITORIAL_BORDER_STRONG} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20 6 9 17l-5-5" />
+    </svg>
+  )
+}
+
 function EditorialProductImage({ src, alt, className }: { src?: string; alt: string; className?: string }) {
   if (!src) {
     return <div className={cn("rounded-[inherit]", className)} style={{ background: EDITORIAL_IMG_BG }} />
@@ -256,6 +290,9 @@ function EditorialPreview() {
   const [flashId, setFlashId] = useState<string | null>(null)
   const [sizeDetailsOpen, setSizeDetailsOpen] = useState(false)
   const [drawerTrayPicks, setDrawerTrayPicks] = useState<string[]>([])
+  // TEMPORARY test-only scaffold for comparing cart-affordance designs on the real layout -
+  // not part of the approved design, strip before merging to main.
+  const [testCartBarVariant, setTestCartBarVariant] = useState<"current" | "a" | "b" | "c" | "d" | "e">("current")
 
   const uiCategories = useMemo<EditorialCategory[]>(
     () => [
@@ -419,24 +456,47 @@ function EditorialPreview() {
           <span className="font-serif-text text-[17px] font-black tracking-[0.2px]" style={{ color: EDITORIAL_INK }}>
             أمل سناك
           </span>
-          <button
-            type="button"
-            onClick={() => setCartOpen(true)}
-            aria-label="فتح السلة"
-            className="-m-[5px] flex h-11 w-11 items-center justify-center border-none bg-transparent p-0"
-          >
-            <span className="relative flex h-[34px] w-[34px] items-center justify-center">
-              <EditorialBagIcon />
-              {totalItems > 0 ? (
+          {testCartBarVariant === "e" && totalItems > 0 ? (
+            <button
+              type="button"
+              onClick={() => setCartOpen(true)}
+              aria-label="فتح السلة"
+              className="-m-[5px] flex items-center gap-2 rounded-full border-none py-[7px] pl-3.5 pr-[9px] transition-transform active:scale-95"
+              style={{ background: "oklch(94% 0.03 28)" }}
+            >
+              <span className="text-[12.5px] font-extrabold" style={{ color: EDITORIAL_ACCENT }}>
+                <PriceWithRiyalLogo value={totalPrice} />
+              </span>
+              <span className="relative flex h-[26px] w-[26px] items-center justify-center">
+                <EditorialBagIcon />
                 <span
-                  className="absolute -right-1 -top-1 flex h-[15px] min-w-[15px] items-center justify-center rounded-full px-[3px] text-[9px] font-extrabold text-white"
-                  style={{ background: EDITORIAL_ACCENT }}
+                  className="absolute -right-1.5 -top-1.5 flex h-[15px] min-w-[15px] items-center justify-center rounded-full px-[3px] text-[9px] font-extrabold text-white"
+                  style={{ background: EDITORIAL_ACCENT, border: `1.5px solid oklch(94% 0.03 28)` }}
                 >
                   {totalItems}
                 </span>
-              ) : null}
-            </span>
-          </button>
+              </span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setCartOpen(true)}
+              aria-label="فتح السلة"
+              className="-m-[5px] flex h-11 w-11 items-center justify-center border-none bg-transparent p-0"
+            >
+              <span className="relative flex h-[34px] w-[34px] items-center justify-center">
+                <EditorialBagIcon />
+                {totalItems > 0 ? (
+                  <span
+                    className="absolute -right-1 -top-1 flex h-[15px] min-w-[15px] items-center justify-center rounded-full px-[3px] text-[9px] font-extrabold text-white"
+                    style={{ background: EDITORIAL_ACCENT }}
+                  >
+                    {totalItems}
+                  </span>
+                ) : null}
+              </span>
+            </button>
+          )}
         </div>
 
         <div className="flex-1 overflow-y-auto overflow-x-hidden">
@@ -584,10 +644,34 @@ function EditorialPreview() {
             </div>
           )}
 
-          {totalItems > 0 ? <div className="h-[74px] flex-shrink-0" /> : null}
+          {(testCartBarVariant === "d" || (testCartBarVariant !== "e" && totalItems > 0)) ? (
+            <div className="flex-shrink-0" style={{ height: testCartBarVariant === "d" ? 64 : 74 }} />
+          ) : null}
         </div>
 
-        {totalItems > 0 ? (
+        {/* TEMPORARY test-only switcher - strip before merging to main */}
+        <div
+          className="fixed inset-x-0 top-0 z-30 flex justify-center gap-1.5 px-4 py-2.5"
+          style={{ background: "rgba(255,251,235,0.95)", borderBottom: "1px solid rgba(217,180,60,0.4)" }}
+        >
+          {(["current", "a", "b", "c", "d", "e"] as const).map((v) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => setTestCartBarVariant(v)}
+              className="rounded-full px-3 py-1 text-[11px] font-bold transition-colors"
+              style={{
+                background: testCartBarVariant === v ? "#78350f" : "#fff",
+                color: testCartBarVariant === v ? "#fff" : "#78350f",
+                border: "1px solid rgba(120,53,15,0.3)",
+              }}
+            >
+              {v === "current" ? "الحالي" : v.toUpperCase()}
+            </button>
+          ))}
+        </div>
+
+        {testCartBarVariant === "current" && totalItems > 0 ? (
           <div
             className="fixed inset-x-0 z-20 mx-auto max-w-[430px] px-4"
             style={{ bottom: "calc(18px + env(safe-area-inset-bottom))" }}
@@ -602,6 +686,117 @@ function EditorialPreview() {
                 <PriceWithRiyalLogo value={totalPrice} />
               </span>
               <span className="text-[13px] font-semibold text-white/75">عرض السلة ({totalItems}) ‹</span>
+            </button>
+          </div>
+        ) : null}
+
+        {testCartBarVariant === "a" && totalItems > 0 ? (
+          <div
+            className="fixed inset-x-0 z-20 mx-auto max-w-[430px] px-4"
+            style={{ bottom: "calc(18px + env(safe-area-inset-bottom))" }}
+          >
+            <button
+              type="button"
+              onClick={() => setCartOpen(true)}
+              className="flex w-full items-center justify-between rounded-2xl px-4 py-[13px] transition-transform active:scale-[0.97]"
+              style={{
+                background: "rgba(250,247,242,0.72)",
+                backdropFilter: "blur(14px) saturate(1.4)",
+                WebkitBackdropFilter: "blur(14px) saturate(1.4)",
+                boxShadow: "0 10px 26px -12px rgba(20,15,10,0.28), inset 0 0 0 1px rgba(255,255,255,0.6)",
+              }}
+            >
+              <span className="text-[13.5px] font-extrabold" style={{ color: EDITORIAL_ACCENT }}>
+                <PriceWithRiyalLogo value={totalPrice} />
+              </span>
+              <span className="text-[12.5px] font-bold opacity-80" style={{ color: EDITORIAL_INK }}>
+                عرض السلة ({totalItems}) ‹
+              </span>
+            </button>
+          </div>
+        ) : null}
+
+        {testCartBarVariant === "b" && totalItems > 0 ? (
+          <div className="fixed z-20" style={{ bottom: "calc(18px + env(safe-area-inset-bottom))", left: 16 }}>
+            <button
+              type="button"
+              onClick={() => setCartOpen(true)}
+              className="flex items-center gap-2 rounded-full py-[11px] pl-4 pr-[13px] transition-transform active:scale-95"
+              style={{ background: EDITORIAL_INK, boxShadow: "0 12px 24px -10px rgba(0,0,0,0.4)" }}
+            >
+              <span className="relative flex items-center justify-center">
+                <EditorialBagIconWhite />
+                <span
+                  className="absolute -right-2 -top-2.5 flex h-4 min-w-4 items-center justify-center rounded-full text-[9.5px] font-extrabold"
+                  style={{ background: EDITORIAL_ACCENT, color: "#fff", border: `1.5px solid ${EDITORIAL_INK}` }}
+                >
+                  {totalItems}
+                </span>
+              </span>
+              <span className="text-[12.5px] font-extrabold text-white">
+                <PriceWithRiyalLogo value={totalPrice} />
+              </span>
+            </button>
+          </div>
+        ) : null}
+
+        {testCartBarVariant === "c" && totalItems > 0 ? (
+          <div className="fixed z-20" style={{ bottom: "calc(16px + env(safe-area-inset-bottom))", left: 14 }}>
+            <button
+              type="button"
+              onClick={() => setCartOpen(true)}
+              className="flex items-center gap-2 rounded-full px-4 py-[10px] transition-transform active:scale-95"
+              style={{ background: EDITORIAL_INK, boxShadow: "0 10px 22px -10px rgba(0,0,0,0.35)" }}
+            >
+              <span className="text-[13px] font-extrabold text-white">
+                <PriceWithRiyalLogo value={totalPrice} />
+              </span>
+              <span className="h-3 w-px bg-white/25" />
+              <span className="text-[11.5px] font-bold text-white/80">عرض السلة ({totalItems})</span>
+            </button>
+          </div>
+        ) : null}
+
+        {testCartBarVariant === "d" ? (
+          <div
+            className="fixed inset-x-0 bottom-0 z-20 mx-auto flex max-w-[430px] items-stretch pb-1.5"
+            style={{ background: EDITORIAL_SURFACE, borderTop: `1px solid ${EDITORIAL_BORDER}` }}
+          >
+            <button
+              type="button"
+              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+              className="flex flex-1 flex-col items-center gap-1 px-1 pb-1 pt-[11px] text-[10.5px] font-bold"
+              style={{ color: EDITORIAL_INK }}
+            >
+              <EditorialTabHomeIcon active />
+              الرئيسية
+            </button>
+            <button
+              type="button"
+              onClick={() => setCartOpen(true)}
+              className="relative flex flex-1 flex-col items-center gap-1 px-1 pb-1 pt-[11px] text-[10.5px] font-bold"
+              style={{ color: totalItems > 0 ? EDITORIAL_INK : EDITORIAL_MUTED_FAINTER }}
+            >
+              <EditorialTabCartIcon active={totalItems > 0} />
+              الطلب
+              {totalItems > 0 ? (
+                <span
+                  className="absolute top-[6px] flex h-[15px] min-w-[15px] items-center justify-center rounded-full px-1 text-[9px] font-extrabold text-white"
+                  style={{ left: "calc(50% + 8px)", background: EDITORIAL_ACCENT }}
+                >
+                  {totalItems}
+                </span>
+              ) : null}
+            </button>
+            <button
+              type="button"
+              disabled={totalItems === 0}
+              onClick={() => router.push("/checkout")}
+              className="flex flex-1 flex-col items-center gap-1 px-1 pb-1 pt-[11px] text-[10.5px] font-bold disabled:cursor-not-allowed"
+              style={{ color: totalItems > 0 ? EDITORIAL_INK : EDITORIAL_BORDER_STRONG }}
+            >
+              <EditorialTabCheckIcon active={totalItems > 0} />
+              الدفع
             </button>
           </div>
         ) : null}

@@ -13,6 +13,7 @@ import { getBestSellerCandidates } from "@/lib/best-sellers"
 import { trapFocusOnTab } from "@/lib/dialog-focus"
 import { smartFilterMenuItems } from "@/lib/smart-search"
 import { cn } from "@/lib/utils"
+import { TrayPicker } from "@/components/tray-picker"
 
 /**
  * Scroll-locks the page, traps focus, closes on Escape, and restores focus to
@@ -68,15 +69,6 @@ function parseVariantOption(raw: string, fallbackPrice: number): { label: string
   }
 }
 
-// Splits a variant label like "صغير (84 قطعة - 12 من كل صنف)" into a short chip
-// label and the parenthetical detail text, so long size descriptions can move into
-// an expandable panel instead of bloating the selection chip itself.
-function splitSizeDetail(rawLabel: string): { short: string; detail: string | null } {
-  const match = rawLabel.match(/^(.*?)\s*\(([^)]+)\)\s*$/)
-  if (match) return { short: match[1].trim(), detail: match[2].trim() }
-  return { short: rawLabel.trim(), detail: null }
-}
-
 const EDITORIAL_INK = "oklch(16% 0.01 280)"
 const EDITORIAL_ACCENT = "oklch(56% 0.17 28)"
 const EDITORIAL_MUTED = "oklch(45% 0.015 270)"
@@ -87,33 +79,6 @@ const EDITORIAL_BORDER = "oklch(93% 0.008 270)"
 const EDITORIAL_BORDER_STRONG = "oklch(90% 0.01 270)"
 const EDITORIAL_IMG_BG = "oklch(93% 0.02 75)"
 const EDITORIAL_BEST_ID = "editorial_best"
-
-// صينية مشكل's build-your-own step: same fixed 20-item list and pick-7 requirement as the
-// classic drawer's tray builder (components/product-drawer.tsx), reused verbatim so the two
-// drawers stay in sync rather than drifting with separately-maintained copies.
-const MIXED_TRAY_ITEMS: { ar: string; en: string }[] = [
-  { ar: "كبة", en: "Kibbeh" },
-  { ar: "سبرنق رول", en: "Spring Roll" },
-  { ar: "سمبوسة بطاطس", en: "Potato Samosa" },
-  { ar: "معجنات جبن", en: "Cheese Pastry" },
-  { ar: "ميني ساندوتش حلومي", en: "Mini Halloumi Sandwich" },
-  { ar: "ميني شاورما", en: "Mini Shawarma" },
-  { ar: "ورق عنب", en: "Grape Leaves" },
-  { ar: "مطبق مغلف", en: "Wrapped Matazeez" },
-  { ar: "معجنات زعتر", en: "Zaatar Pastry" },
-  { ar: "ميني ساندوتش لبنه", en: "Mini Labneh Sandwich" },
-  { ar: "مسخن", en: "Musakhan" },
-  { ar: "ميني برجر", en: "Mini Burger" },
-  { ar: "ميني تورتيلا", en: "Mini Tortilla" },
-  { ar: "معجنات بيتزا", en: "Pizza Pastry" },
-  { ar: "ميني ساندوتش ديك رومي", en: "Mini Turkey Sandwich" },
-  { ar: "بف لحم", en: "Beef Puff" },
-  { ar: "بف دجاج", en: "Chicken Puff" },
-  { ar: "سمبوسة جبن", en: "Cheese Samosa" },
-  { ar: "معجنات لبنه", en: "Labneh Pastry" },
-  { ar: "ميني ساندوتش فلافل", en: "Mini Falafel Sandwich" },
-]
-const MIXED_TRAY_REQUIRED = 7
 
 type EditorialCategory = { id: string; label: string; dbCategories?: string[] }
 
@@ -254,8 +219,6 @@ function EditorialPreview() {
   const [drawerQty, setDrawerQty] = useState(1)
   const [drawerIngredients, setDrawerIngredients] = useState<string[]>([])
   const [flashId, setFlashId] = useState<string | null>(null)
-  const [sizeDetailsOpen, setSizeDetailsOpen] = useState(false)
-  const [drawerTrayPicks, setDrawerTrayPicks] = useState<string[]>([])
 
   const uiCategories = useMemo<EditorialCategory[]>(
     () => [
@@ -312,20 +275,15 @@ function EditorialPreview() {
     ? drawerVariantOptions.find((opt) => opt.raw === drawerIngredients[0])
     : undefined
   const drawerUnitPrice = selectedVariant?.price ?? selectedProduct?.price ?? 0
-  // Gives this specific product a richer drawer presentation (eyebrow label, larger hero,
-  // expandable per-size breakdown) - scoped by name rather than a generic flag since this
-  // treatment was requested for this one product, not tray products broadly.
-  const isMixedTrayDrawer = selectedProduct?.name === "صينية مشكل"
-  const sizeDetailOptions = isMixedTrayDrawer
-    ? drawerVariantOptions
-        .map((opt) => ({ raw: opt.raw, ...splitSizeDetail(opt.label) }))
-        .filter((opt): opt is typeof opt & { detail: string } => Boolean(opt.detail))
-    : []
-  // Once a size is chosen, swap the generic "اختر الحجم..." copy for that size's own piece
-  // breakdown, so the customer sees what they're getting without opening the details panel.
-  const selectedSizeDetail =
-    isMixedTrayDrawer && selectedVariant ? splitSizeDetail(selectedVariant.label).detail : null
-  const drawerDescription = selectedSizeDetail ?? selectedProduct?.description
+  // Tray products sized via ingredients ("label::price" options, exactly one pick) get the
+  // richer drawer: eyebrow label, larger hero, expandable per-size breakdown, and (below) the
+  // dedicated TrayPicker layout with its 7-of-N item grid.
+  const isMixedTrayDrawer =
+    selectedProduct?.category === "trays" &&
+    selectedProduct?.limit === 1 &&
+    (selectedProduct?.ingredients?.length ?? 0) > 0 &&
+    (selectedProduct?.ingredients || []).some((i) => i.includes("::"))
+  const drawerDescription = selectedProduct?.description
 
   const openProduct = useCallback((item: MenuItem) => {
     setSelectedProduct(item)
@@ -333,8 +291,6 @@ function EditorialPreview() {
     const hasSingleVariant =
       item.limit === 1 && (item.ingredients?.length ?? 0) > 0
     setDrawerIngredients(hasSingleVariant && item.ingredients ? [item.ingredients[0]] : [])
-    setSizeDetailsOpen(false)
-    setDrawerTrayPicks([])
     setDrawerOpen(true)
   }, [])
 
@@ -360,24 +316,9 @@ function EditorialPreview() {
     })
   }
 
-  const toggleTrayPick = (key: string) => {
-    setDrawerTrayPicks((prev) => {
-      if (prev.includes(key)) return prev.filter((v) => v !== key)
-      if (prev.length >= MIXED_TRAY_REQUIRED) return prev
-      return [...prev, key]
-    })
-  }
-  const trayPickComplete = !isMixedTrayDrawer || drawerTrayPicks.length === MIXED_TRAY_REQUIRED
-
   const addFromDrawer = () => {
     if (!selectedProduct) return
-    if (isMixedTrayDrawer && !trayPickComplete) return
-    const selectedLabels = isMixedTrayDrawer
-      ? [
-          ...drawerIngredients.map((raw) => splitSizeDetail(parseVariantOption(raw, selectedProduct.price).label).short),
-          ...drawerTrayPicks.map((key) => key.split("||")[0]),
-        ].filter(Boolean)
-      : drawerIngredients.map((raw) => parseVariantOption(raw, selectedProduct.price).label).filter(Boolean)
+    const selectedLabels = drawerIngredients.map((raw) => parseVariantOption(raw, selectedProduct.price).label).filter(Boolean)
     addItem(
       { ...selectedProduct, price: drawerUnitPrice },
       drawerQty,
@@ -601,7 +542,28 @@ function EditorialPreview() {
         </div>
       </div>
 
-      {drawerOpen && selectedProduct ? (
+      {drawerOpen && selectedProduct && isMixedTrayDrawer ? (
+        <div className="fixed inset-0 z-50" dir="rtl">
+          <div
+            onClick={() => setDrawerOpen(false)}
+            className="absolute inset-0 animate-fade-in"
+            style={{ background: "rgba(15,10,8,0.4)" }}
+          />
+          <div
+            ref={drawerDialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label={selectedProduct.name}
+            tabIndex={-1}
+            onKeyDown={(e) => trapFocusOnTab(e, drawerDialogRef.current)}
+            className="absolute inset-x-0 bottom-0 mx-auto flex h-[88%] max-w-[430px] flex-col overflow-hidden rounded-t-[24px] animate-slide-up outline-none"
+          >
+            <TrayPicker item={selectedProduct} onBack={() => setDrawerOpen(false)} onAdded={() => setDrawerOpen(false)} />
+          </div>
+        </div>
+      ) : null}
+
+      {drawerOpen && selectedProduct && !isMixedTrayDrawer ? (
         <div className="fixed inset-0 z-50" dir="rtl">
           <div
             onClick={() => setDrawerOpen(false)}
@@ -622,7 +584,7 @@ function EditorialPreview() {
               <div className="relative">
                 <div
                   className="relative w-full"
-                  style={{ aspectRatio: isMixedTrayDrawer ? "1.05" : "1.3", background: EDITORIAL_IMG_BG }}
+                  style={{ aspectRatio: "1.3", background: EDITORIAL_IMG_BG }}
                 >
                   <EditorialProductImage src={selectedProduct.image} alt={selectedProduct.name} className="absolute inset-0" />
                 </div>
@@ -637,14 +599,6 @@ function EditorialPreview() {
                 </button>
               </div>
               <div className="px-5 pb-1 pt-[22px] text-right">
-                {isMixedTrayDrawer ? (
-                  <span
-                    className="mb-2 block text-[11px] font-bold uppercase tracking-[1.5px]"
-                    style={{ color: EDITORIAL_ACCENT }}
-                  >
-                    من الأكثر طلبًا
-                  </span>
-                ) : null}
                 <h2 id="editorial-drawer-title" className="font-serif-text m-0 text-[22px] font-black" style={{ color: EDITORIAL_INK }}>
                   {selectedProduct.name}
                 </h2>
@@ -658,125 +612,22 @@ function EditorialPreview() {
 
               {drawerHasSingleVariant ? (
                 <div className="px-5 pt-4">
-                  {isMixedTrayDrawer ? (
-                    <span className="mb-2.5 block text-right text-[12px] font-bold" style={{ color: EDITORIAL_MUTED_FAINTER }}>
-                      حدد الحجم
-                    </span>
-                  ) : null}
-                  <div className={isMixedTrayDrawer ? "flex gap-2" : "flex flex-wrap justify-end gap-2"}>
+                  <div className="flex flex-wrap justify-end gap-2">
                     {drawerVariantOptions.map((opt) => {
                       const isSelected = drawerIngredients[0] === opt.raw
-                      const chipLabel = isMixedTrayDrawer ? splitSizeDetail(opt.label).short : opt.label
                       return (
                         <button
                           key={opt.raw}
                           type="button"
                           onClick={() => toggleDrawerIngredient(opt.raw)}
-                          className={
-                            isMixedTrayDrawer
-                              ? "flex-1 rounded-full py-2.5 text-center text-[13px] font-bold transition-colors"
-                              : "rounded-full px-4 py-2 text-[13px] font-bold transition-colors"
-                          }
+                          className="rounded-full px-4 py-2 text-[13px] font-bold transition-colors"
                           style={{
                             border: `1.5px solid ${isSelected ? EDITORIAL_INK : EDITORIAL_BORDER_STRONG}`,
                             background: isSelected ? EDITORIAL_INK : "transparent",
                             color: isSelected ? "#fff" : EDITORIAL_INK,
                           }}
                         >
-                          {isMixedTrayDrawer ? (
-                            chipLabel
-                          ) : (
-                            <>
-                              {chipLabel} · <PriceWithRiyalLogo value={opt.price} />
-                            </>
-                          )}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-              ) : null}
-
-              {sizeDetailOptions.length > 0 ? (
-                <div className="px-5 pt-5">
-                  <button
-                    type="button"
-                    onClick={() => setSizeDetailsOpen((v) => !v)}
-                    className="flex w-full items-center justify-between border-none bg-transparent px-0 pt-4"
-                    style={{ borderTop: `1px solid ${EDITORIAL_BORDER}` }}
-                  >
-                    <span
-                      className="text-[13px]"
-                      style={{
-                        color: EDITORIAL_MUTED_FAINTER,
-                        display: "inline-block",
-                        transition: "transform 0.2s ease",
-                        transform: sizeDetailsOpen ? "rotate(180deg)" : "none",
-                      }}
-                    >
-                      ﹀
-                    </span>
-                    <span className="text-[14px] font-extrabold" style={{ color: EDITORIAL_INK }}>
-                      تفاصيل الأحجام
-                    </span>
-                  </button>
-                  {sizeDetailsOpen ? (
-                    <div className="mt-3 flex flex-col gap-1.5">
-                      {sizeDetailOptions.map((opt) => (
-                        <p key={opt.raw} className="m-0 text-right text-[12.5px] leading-[1.7]" style={{ color: EDITORIAL_MUTED_SOFT }}>
-                          <span className="font-bold" style={{ color: EDITORIAL_INK }}>
-                            {opt.short}:
-                          </span>{" "}
-                          {opt.detail}
-                        </p>
-                      ))}
-                    </div>
-                  ) : null}
-                </div>
-              ) : null}
-
-              {isMixedTrayDrawer ? (
-                <div className="px-5 pt-5">
-                  <div className="mb-3 flex items-baseline justify-between">
-                    <span
-                      className="text-[12px] font-bold"
-                      style={{ color: trayPickComplete ? "oklch(48% 0.13 150)" : EDITORIAL_ACCENT }}
-                    >
-                      {trayPickComplete ? `${MIXED_TRAY_REQUIRED} عناصر — تم` : `اختر ${MIXED_TRAY_REQUIRED - drawerTrayPicks.length} من ${MIXED_TRAY_REQUIRED}`}
-                    </span>
-                    <h3 className="m-0 text-[15px] font-extrabold" style={{ color: EDITORIAL_INK }}>
-                      اختر الأصناف
-                    </h3>
-                  </div>
-                  <div className="grid grid-cols-4 gap-2.5">
-                    {MIXED_TRAY_ITEMS.map((item) => {
-                      const key = `${item.ar}||${item.en}`
-                      const isSelected = drawerTrayPicks.includes(key)
-                      const isDisabled = !isSelected && drawerTrayPicks.length >= MIXED_TRAY_REQUIRED
-                      return (
-                        <button
-                          key={key}
-                          type="button"
-                          onClick={() => toggleTrayPick(key)}
-                          disabled={isDisabled}
-                          aria-pressed={isSelected}
-                          className="relative flex h-16 flex-col items-center justify-center gap-1.5 rounded-2xl border-none text-center transition-transform active:scale-95"
-                          style={{
-                            background: "#fff",
-                            boxShadow: "0 6px 14px -10px rgba(20,15,10,0.2)",
-                            border: `1.5px solid ${isSelected ? EDITORIAL_ACCENT : "transparent"}`,
-                            opacity: isDisabled ? 0.4 : 1,
-                          }}
-                        >
-                          {isSelected ? (
-                            <span
-                              className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full"
-                              style={{ background: EDITORIAL_ACCENT }}
-                            />
-                          ) : null}
-                          <span className="px-1 text-[10.5px] font-bold leading-[1.2]" style={{ color: EDITORIAL_INK }}>
-                            {item.ar}
-                          </span>
+                          {opt.label} · <PriceWithRiyalLogo value={opt.price} />
                         </button>
                       )
                     })}
@@ -835,17 +686,10 @@ function EditorialPreview() {
               <button
                 type="button"
                 onClick={addFromDrawer}
-                disabled={!trayPickComplete}
-                className="flex h-[50px] flex-1 items-center justify-center gap-2 rounded-full border-none text-[15px] font-extrabold text-white disabled:cursor-not-allowed"
-                style={{ background: trayPickComplete ? EDITORIAL_INK : EDITORIAL_BORDER_STRONG, color: trayPickComplete ? "#fff" : EDITORIAL_MUTED_FAINTER }}
+                className="flex h-[50px] flex-1 items-center justify-center gap-2 rounded-full border-none text-[15px] font-extrabold text-white"
+                style={{ background: EDITORIAL_INK }}
               >
-                {trayPickComplete ? (
-                  <>
-                    أضف إلى السلة · <PriceWithRiyalLogo value={drawerTotal} />
-                  </>
-                ) : (
-                  `أضف ${MIXED_TRAY_REQUIRED - drawerTrayPicks.length} أصناف أخرى`
-                )}
+                أضف إلى السلة · <PriceWithRiyalLogo value={drawerTotal} />
               </button>
             </div>
           </div>

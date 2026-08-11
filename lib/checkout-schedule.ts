@@ -12,8 +12,8 @@ export const BOOKING_WINDOW_DAYS = 30
 
 const SAUDI_OFFSET_MS = 3 * 60 * 60 * 1000
 const SLOT_MINUTES = [0, 30] as const
-const DAY_NAMES = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"]
-const MONTH_NAMES = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"]
+export const DAY_NAMES = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"]
+export const MONTH_NAMES = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"]
 
 interface SaudiNowParts {
   year: number
@@ -35,7 +35,7 @@ function getSaudiClock(date = new Date()): Date {
   return new Date(date.getTime() + SAUDI_OFFSET_MS)
 }
 
-function getSaudiNowParts(date = new Date()): SaudiNowParts {
+export function getSaudiNowParts(date = new Date()): SaudiNowParts {
   const saudiClock = getSaudiClock(date)
   return {
     year: saudiClock.getUTCFullYear(),
@@ -49,17 +49,17 @@ function buildSaudiInstant(base: SaudiNowParts, dayOffset: number, hour: number,
   return new Date(Date.UTC(base.year, base.monthIndex, base.day + dayOffset, hour - 3, minute, 0, 0))
 }
 
-function getSaudiDayDate(base: SaudiNowParts, dayOffset: number): Date {
+export function getSaudiDayDate(base: SaudiNowParts, dayOffset: number): Date {
   return new Date(Date.UTC(base.year, base.monthIndex, base.day + dayOffset, 9, 0, 0, 0))
 }
 
-function getDayLabel(dayOffset: number, weekdayIndex: number): string {
+export function getDayLabel(dayOffset: number, weekdayIndex: number): string {
   if (dayOffset === 0) return "اليوم"
   if (dayOffset === 1) return "غدًا"
   return DAY_NAMES[weekdayIndex]
 }
 
-function getDateLabel(dayDate: Date): string {
+export function getDateLabel(dayDate: Date): string {
   return `${dayDate.getUTCDate()} ${MONTH_NAMES[dayDate.getUTCMonth()]}`
 }
 

@@ -1005,6 +1005,21 @@ function EditorialPreview() {
                 </button>
               ))}
             </div>
+            {cartItems.length > 0 ? (
+              <div className="flex-shrink-0 px-5 pb-5 pt-3.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuOpen(false)
+                    router.push("/checkout")
+                  }}
+                  className="h-[50px] w-full rounded-full border-none text-[15px] font-extrabold text-white"
+                  style={{ background: EDITORIAL_INK }}
+                >
+                  اتمام الطلب
+                </button>
+              </div>
+            ) : null}
           </div>
         </div>
       ) : null}

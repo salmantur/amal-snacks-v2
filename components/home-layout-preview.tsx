@@ -403,7 +403,7 @@ function EditorialPreview() {
           ) : null}
           <div className="px-5 pb-[22px] pt-5">
             <span
-              className="mb-2.5 block text-[11px] font-bold uppercase tracking-[1.5px]"
+              className="mb-2.5 block text-[11px] font-bold"
               style={{ color: EDITORIAL_ACCENT }}
             >
               مأكولات وضيافة

@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Printer, Check, X } from "lucide-react"
 import { usePrinterConfig } from "@/hooks/use-printer-config"
-import { printOrder } from "@/lib/thermal-printer"
+import { printOrder } from "@/lib/print-order-client"
 import type { Order } from "@/lib/data"
 import { AdminPageHeader } from "../page-header"
 

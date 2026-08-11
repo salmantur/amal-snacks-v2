@@ -1,22 +1,26 @@
--- Amal Snacks — create the create_order() RPC used by /api/orders (checkout)
+-- Amal Snacks — replace the create_order() RPC used by /api/orders (checkout)
 -- Run this in: Supabase Dashboard -> SQL Editor -> New query -> Run
 --
--- Why: app/api/orders/route.ts (the endpoint every real checkout hits) saves
--- orders via supabase.rpc("create_order", {...}) — a Postgres function, not a
--- plain table insert. That function's definition lives only in the database,
--- not in this repo. If it was never created here (or exists with a mismatched
--- signature, or without EXECUTE granted to the anon role checkout runs as),
--- every checkout submission 500s and the order is never saved — while
--- everything else (menu browsing, the admin's separate plain-insert path in
--- lib/orders.ts) keeps working fine, since neither of those touch this
--- function at all. That matches the reported symptom exactly.
---
--- Safe to run even if the function already exists correctly: CREATE OR
--- REPLACE + idempotent GRANT just reaffirm the same definition.
+-- The function already exists (confirmed: "cannot change return type of
+-- existing function" on the first attempt), so something inside its current
+-- body — not a missing function — is causing the checkout 500. This script
+-- first prints the current definition (so we can see what it was actually
+-- doing), then drops and recreates it to match exactly what
+-- app/api/orders/route.ts calls and what the working admin insert path
+-- (lib/orders.ts) does.
 
+-- ── Step 1: show the current definition (read this before it's replaced) ──
+select pg_get_functiondef(p.oid) as current_definition
+from pg_proc p
+join pg_namespace n on n.oid = p.pronamespace
+where n.nspname = 'public' and p.proname = 'create_order';
+
+-- ── Step 2: drop + recreate ─────────────────────────────────────────────
 begin;
 
-create or replace function public.create_order(
+drop function if exists public.create_order(text, text, text, text, jsonb, numeric, numeric, numeric, text, text);
+
+create function public.create_order(
   p_customer_name text,
   p_customer_phone text,
   p_customer_area text,
@@ -47,19 +51,13 @@ begin
 end;
 $$;
 
--- security definer runs as the function owner (the role that ran this
--- script, normally postgres) which already bypasses RLS on tables it owns —
--- this grant just makes sure the anon/authenticated roles are allowed to
--- call the function itself.
 grant execute on function public.create_order(
   text, text, text, text, jsonb, numeric, numeric, numeric, text, text
 ) to anon, authenticated;
 
 commit;
 
--- ── Verify ────────────────────────────────────────────────────────────
--- Confirm the function exists, is security definer, and anon/authenticated
--- have execute rights (look for "anon=X" / "authenticated=X" in acl).
+-- ── Step 3: verify ──────────────────────────────────────────────────────
 select
   p.proname,
   p.prosecdef as security_definer,

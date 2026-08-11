@@ -42,7 +42,7 @@ export const THEME_STORAGE_KEY = "amal_theme_colors"
 const TABLE = "app_settings"
 const KEY = "theme_colors"
 
-function hexToHsl(hex: string): string {
+export function hexToHsl(hex: string): string {
   const r = parseInt(hex.slice(1, 3), 16) / 255
   const g = parseInt(hex.slice(3, 5), 16) / 255
   const b = parseInt(hex.slice(5, 7), 16) / 255

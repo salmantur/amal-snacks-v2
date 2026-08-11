@@ -439,7 +439,7 @@ function EditorialPreview() {
     <div className="min-h-screen" dir="rtl" style={{ background: EDITORIAL_SURFACE }}>
       <div className="mx-auto flex min-h-screen max-w-[430px] flex-col" style={{ background: EDITORIAL_SURFACE }}>
         <div
-          className="sticky top-0 z-30 flex flex-shrink-0 items-center justify-between px-5 pb-2.5 pt-[18px]"
+          className="fixed inset-x-0 top-0 z-40 mx-auto flex max-w-[430px] items-center justify-between px-5 pb-2.5 pt-[18px]"
           style={{ background: EDITORIAL_SURFACE }}
         >
           <button
@@ -499,7 +499,7 @@ function EditorialPreview() {
           )}
         </div>
 
-        <div className="flex-1 overflow-y-auto overflow-x-hidden">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ paddingTop: 120 }}>
           {error ? (
             <div className="mx-5 mt-5 rounded-xl p-3.5 text-[13px] font-semibold text-white" style={{ background: EDITORIAL_ACCENT }}>
               {error}
@@ -651,8 +651,8 @@ function EditorialPreview() {
 
         {/* TEMPORARY test-only switcher - strip before merging to main */}
         <div
-          className="fixed inset-x-0 top-0 z-30 flex justify-center gap-1.5 px-4 py-2.5"
-          style={{ background: "rgba(255,251,235,0.95)", borderBottom: "1px solid rgba(217,180,60,0.4)" }}
+          className="fixed inset-x-0 z-30 flex justify-center gap-1.5 px-4 py-2.5"
+          style={{ top: 76, background: "rgba(255,251,235,0.95)", borderBottom: "1px solid rgba(217,180,60,0.4)" }}
         >
           {(["current", "a", "b", "c", "d", "e"] as const).map((v) => (
             <button

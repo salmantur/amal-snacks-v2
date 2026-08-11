@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import Image from "next/image"
 import { CalendarClock, Check, Clock3, Eye, EyeOff, History, ImageIcon, RotateCcw, Upload, X } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -87,7 +87,7 @@ async function optimizeImage(file: File, maxWidth: number, quality = 0.82): Prom
   })
 }
 
-function PreviewFrame({
+export function BannerPreview({
   mode,
   config,
 }: {
@@ -139,7 +139,7 @@ function PreviewFrame({
   )
 }
 
-export function HeroBannerEditor() {
+export function HeroBannerEditor({ onDraftChange }: { onDraftChange?: (config: BannerConfig) => void } = {}) {
   const { menuItems } = useMenu()
   const {
     loading,
@@ -159,7 +159,6 @@ export function HeroBannerEditor() {
   const [publishing, setPublishing] = useState(false)
   const [scheduling, setScheduling] = useState(false)
   const [savedNotice, setSavedNotice] = useState<string | null>(null)
-  const [previewMode, setPreviewMode] = useState<"mobile" | "desktop">("mobile")
   const [scheduleStart, setScheduleStart] = useState("")
   const [scheduleEnd, setScheduleEnd] = useState("")
   const [uploadingBg, setUploadingBg] = useState(false)
@@ -170,6 +169,10 @@ export function HeroBannerEditor() {
 
   const current = draft ?? storedDraft
   const dirty = Boolean(draft)
+
+  useEffect(() => {
+    onDraftChange?.(current)
+  }, [current, onDraftChange])
 
   const scheduleStatus = useMemo(() => {
     if (!schedule.enabled || !schedule.config) return "غير مفعّل"
@@ -289,30 +292,6 @@ export function HeroBannerEditor() {
           <p className="bg-admin-bg rounded-xl px-3 py-2">الجدولة: <span className="font-semibold">{scheduleStatus}</span></p>
         </div>
         {savedNotice ? <p className="text-sm text-emerald-700 font-semibold">{savedNotice}</p> : null}
-      </section>
-
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <p className="text-sm font-bold text-admin-ink">معاينة البانر</p>
-          <div className="inline-flex rounded-xl bg-admin-bg p-1">
-            <button
-              type="button"
-              onClick={() => setPreviewMode("mobile")}
-              className={cn("px-3 py-1.5 text-xs rounded-lg", previewMode === "mobile" ? "bg-white shadow-sm font-bold" : "text-admin-muted-2")}
-            >
-              موبايل
-            </button>
-            <button
-              type="button"
-              onClick={() => setPreviewMode("desktop")}
-              className={cn("px-3 py-1.5 text-xs rounded-lg", previewMode === "desktop" ? "bg-white shadow-sm font-bold" : "text-admin-muted-2")}
-            >
-              كمبيوتر
-            </button>
-          </div>
-        </div>
-        <PreviewFrame mode={previewMode} config={current} />
-        <p className="text-xs text-admin-muted-2">المربعات المتقطعة = منطقة الأمان للنصوص والصور.</p>
       </section>
 
       <section className="rounded-2xl border border-admin-border-soft bg-white p-4 space-y-3">

@@ -1,8 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Check, Copy, Loader2, RotateCcw, Sparkles } from "lucide-react"
-import { PriceWithRiyalLogo } from "@/components/ui/price-with-riyal-logo"
 import { DEFAULT_THEME, useThemeConfig, type ThemeConfig } from "@/hooks/use-theme-config"
 
 type ThemePreset = {
@@ -207,7 +206,7 @@ function ColorBlock({
   )
 }
 
-export function ThemeEditor() {
+export function ThemeEditor({ onDraftChange }: { onDraftChange?: (config: ThemeConfig) => void } = {}) {
   const { config, loading, saveConfig } = useThemeConfig()
   const [draft, setDraft] = useState<ThemeConfig | null>(null)
   const [tab, setTab] = useState<"main" | "background" | "cards">("main")
@@ -218,10 +217,13 @@ export function ThemeEditor() {
   const trayDesign = current.tray_variant_design === "floating_3" ? "floating_3" : "design_c"
   const dirty = Boolean(draft)
 
+  useEffect(() => {
+    onDraftChange?.(current)
+  }, [current, onDraftChange])
+
   function applyDraft(next: ThemeConfig) {
     setDraft(next)
     setSaved(false)
-    import("@/hooks/use-theme-config").then((m) => m.applyTheme(next))
   }
 
   function update(patch: Partial<ThemeConfig>) {
@@ -250,47 +252,11 @@ export function ThemeEditor() {
 
   return (
     <div className="space-y-5" dir="rtl">
-      <section className="rounded-2xl border border-admin-border-soft bg-white p-4 space-y-3">
-        <div className="flex items-center justify-between">
-          <p className="text-sm font-bold text-admin-ink">معاينة فورية</p>
-          {dirty ? <span className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded-full">تغييرات غير محفوظة</span> : null}
+      {dirty ? (
+        <div className="flex items-center justify-end">
+          <span className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded-full">تغييرات غير محفوظة</span>
         </div>
-
-        <div className="rounded-2xl border border-admin-border-soft overflow-hidden" style={{ backgroundColor: current.background }}>
-          <div className="h-10 px-3 flex items-center justify-between border-b border-black/5" style={{ backgroundColor: current.bar_background }}>
-            <span className="text-xs text-admin-muted-2">الشريط العلوي</span>
-            <span className="text-xs text-admin-muted-2">بحث + تصنيفات</span>
-          </div>
-          <div className="p-3 space-y-3">
-            <div className="rounded-full px-4 py-2 w-fit" style={{ backgroundColor: current.primary, color: current.primary_foreground }}>
-              <span className="text-sm font-bold inline-flex items-center gap-1">
-                السلة · <PriceWithRiyalLogo value={120} />
-              </span>
-            </div>
-            <div className="rounded-xl px-4 py-2 w-fit text-sm font-bold" style={{ backgroundColor: current.checkout_green, color: "#ffffff" }}>
-              تأكيد الطلب
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <div className="rounded-xl px-4 py-2 text-sm font-bold" style={{ backgroundColor: current.secondary, color: current.secondary_foreground }}>
-                زر ثانوي
-              </div>
-              <div className="rounded-xl px-4 py-2 text-sm font-bold" style={{ backgroundColor: current.destructive, color: current.destructive_foreground }}>
-                حذف
-              </div>
-            </div>
-            <div
-              className="rounded-2xl border border-admin-border-soft p-3"
-              style={{ backgroundColor: current.item_card_background }}
-            >
-              <p className="text-sm font-bold" style={{ color: current.item_card_title }}>اسم الصنف</p>
-              <p className="text-xs mt-1" style={{ color: current.item_card_description }}>وصف قصير للصنف يظهر هنا</p>
-              <p className="text-sm font-bold mt-2" style={{ color: current.item_card_price }}>
-                <PriceWithRiyalLogo value={75} />
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
+      ) : null}
 
       <section className="rounded-2xl border border-admin-border-soft bg-white p-4 space-y-3">
         <div className="flex items-center justify-between gap-2">

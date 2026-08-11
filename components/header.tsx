@@ -3,6 +3,7 @@
 import { ShoppingBag, Sparkles, Menu, ChevronLeft, ChevronRight } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 import dynamic from "next/dynamic"
+import Image from "next/image"
 import Link from "next/link"
 import { useCart } from "@/components/cart-provider"
 import { useRouter } from "next/navigation"
@@ -12,6 +13,18 @@ import type { MenuItem } from "@/components/cart-provider"
 import { PriceWithRiyalLogo } from "@/components/ui/price-with-riyal-logo"
 import { CartSheet } from "@/components/cart-sheet"
 import { trapFocusOnTab } from "@/lib/dialog-focus"
+import { useHeaderConfig } from "@/hooks/use-header-config"
+import { DEFAULT_HEADER_CONFIG, type HeaderConfig } from "@/lib/header-config"
+
+function hexToRgba(hex: string, alpha: number): string {
+  const clean = hex.replace("#", "")
+  const full = clean.length === 3 ? clean.split("").map((c) => c + c).join("") : clean
+  const r = Number.parseInt(full.slice(0, 2), 16)
+  const g = Number.parseInt(full.slice(2, 4), 16)
+  const b = Number.parseInt(full.slice(4, 6), 16)
+  if ([r, g, b].some((n) => Number.isNaN(n))) return `rgba(255,255,255,${alpha})`
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`
+}
 
 const OrderTypeModal = dynamic(
   () => import("@/components/order-type-modal").then((mod) => ({ default: mod.OrderTypeModal })),
@@ -58,7 +71,9 @@ function NewProductsTicker({ items }: { items: MenuItem[] }) {
   )
 }
 
-export function Header() {
+export function Header({ configOverride }: { configOverride?: HeaderConfig } = {}) {
+  const { config: storedConfig } = useHeaderConfig()
+  const config = configOverride ?? storedConfig ?? DEFAULT_HEADER_CONFIG
   const [cartOpen, setCartOpen] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [orderModalOpen, setOrderModalOpen] = useState(false)
@@ -145,7 +160,7 @@ export function Header() {
       <header
         className="sticky top-0 z-40 transition-all duration-200"
         style={{
-          background: scrolled ? "rgba(255,255,255,0.97)" : "rgba(255,255,255,1)",
+          background: scrolled ? hexToRgba(config.background_color, 0.97) : hexToRgba(config.background_color, 1),
           boxShadow: scrolled ? "0 2px 20px rgba(0,0,0,0.08)" : "none",
           backdropFilter: scrolled ? "blur(12px)" : "none",
         }}
@@ -163,11 +178,15 @@ export function Header() {
             aria-controls="header-menu-dialog"
             aria-label="فتح القائمة"
           >
-            <Menu className="h-5 w-5 text-foreground" />
+            <Menu className="h-5 w-5" style={{ color: config.icon_color }} />
           </button>
 
           <Link href="/" className="absolute left-1/2 -translate-x-1/2 active:opacity-70 transition-opacity">
-            <p className="text-xl font-black tracking-tight text-foreground" dir="rtl">أمل سناك</p>
+            {config.logo_image_url ? (
+              <Image src={config.logo_image_url} alt={config.logo_text} width={140} height={40} className="h-9 w-auto object-contain" priority />
+            ) : (
+              <p className="text-xl font-black tracking-tight text-foreground" dir="rtl">{config.logo_text}</p>
+            )}
           </Link>
 
           <button
@@ -186,7 +205,7 @@ export function Header() {
             <ShoppingBag
               className="h-5 w-5 transition-transform duration-300"
               style={{
-                color: totalItems > 0 ? "var(--background)" : "var(--foreground)",
+                color: totalItems > 0 ? "var(--background)" : config.icon_color,
                 transform: cartBounce ? "scale(1.3)" : "scale(1)",
               }}
             />

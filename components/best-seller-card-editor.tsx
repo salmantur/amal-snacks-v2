@@ -1,17 +1,13 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useState } from "react"
 import { Check, Loader2, RotateCcw, Save } from "lucide-react"
-import { ProductCard } from "@/components/product-card"
 import { useBestSellerCardConfig } from "@/hooks/use-best-seller-card-config"
-import { useBestSellersConfig } from "@/hooks/use-best-sellers-config"
-import { useMenu } from "@/hooks/use-menu"
 import {
   DEFAULT_BEST_SELLER_CARD_CONFIG,
   normalizeBestSellerCardConfig,
   type BestSellerCardConfig,
 } from "@/lib/best-seller-card-config"
-import { getBestSellerCandidates } from "@/lib/best-sellers"
 
 function SliderField({
   label,
@@ -115,20 +111,20 @@ function ToggleField({
   )
 }
 
-export function BestSellerCardEditor() {
+export function BestSellerCardEditor({
+  onDraftChange,
+}: { onDraftChange?: (config: BestSellerCardConfig) => void } = {}) {
   const { config, loading, error, saveConfig } = useBestSellerCardConfig()
-  const { orderIds } = useBestSellersConfig()
-  const { menuItems } = useMenu()
   const [draft, setDraft] = useState<BestSellerCardConfig | null>(null)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
 
   const current = draft ?? config
-  const previewItem = useMemo(
-    () => getBestSellerCandidates(menuItems, orderIds)[0] ?? menuItems[0] ?? null,
-    [menuItems, orderIds]
-  )
+
+  useEffect(() => {
+    onDraftChange?.(current)
+  }, [current, onDraftChange])
 
   function update<K extends keyof BestSellerCardConfig>(key: K, value: BestSellerCardConfig[K]) {
     setDraft((prev) => normalizeBestSellerCardConfig({ ...(prev ?? current), [key]: value }))
@@ -180,28 +176,6 @@ export function BestSellerCardEditor() {
                 تغييرات غير محفوظة
               </span>
             ) : null}
-          </div>
-
-          <div className="rounded-[28px] border border-dashed border-admin-border-soft bg-[#faf8f6] p-3">
-            {previewItem ? (
-              <div className="mx-auto max-w-xl">
-                <div className="mx-auto h-[275px] w-full overflow-hidden md:h-auto">
-                  <div className="origin-top scale-[0.64] sm:scale-[0.78] md:scale-100">
-                    <ProductCard
-                      item={previewItem}
-                      onSelect={() => {}}
-                      priority
-                      bestSellerStyle="s4"
-                      bestSellerCardConfig={current}
-                    />
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="rounded-2xl bg-admin-bg px-4 py-10 text-center text-sm text-admin-muted-2">
-                لا توجد أصناف كافية للمعاينة الآن.
-              </div>
-            )}
           </div>
 
           {saveError || error ? (

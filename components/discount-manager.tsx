@@ -79,23 +79,23 @@ export function DiscountManager() {
   }
 
   if (loading) {
-    return <div className="rounded-2xl border border-gray-200 bg-white p-4 text-sm text-gray-500">Loading discounts...</div>
+    return <div className="rounded-2xl border border-admin-border-soft bg-white p-4 text-sm text-admin-muted-2">Loading discounts...</div>
   }
 
   return (
     <div className="space-y-4">
-      <section className="rounded-2xl border border-gray-200 bg-white p-4">
+      <section className="rounded-2xl border border-admin-border-soft bg-white p-4">
         <div className="flex items-center justify-between gap-3">
           <div>
             <h3 className="font-bold text-base">الخصومات</h3>
-            <p className="text-sm text-gray-500">تفعيل وتعطيل نظام الخصم بالكامل</p>
+            <p className="text-sm text-admin-muted-2">تفعيل وتعطيل نظام الخصم بالكامل</p>
           </div>
           <button
             type="button"
             onClick={() => updateDraft({ enabled: !draft.enabled })}
             className={cn(
               "h-10 px-4 rounded-full text-sm font-semibold transition-colors",
-              draft.enabled ? "bg-green-600 text-white" : "bg-gray-100 text-gray-600"
+              draft.enabled ? "bg-green-600 text-white" : "bg-admin-bg text-admin-muted"
             )}
           >
             {draft.enabled ? "مفعل" : "متوقف"}
@@ -103,18 +103,18 @@ export function DiscountManager() {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-gray-200 bg-white p-4 space-y-3">
+      <section className="rounded-2xl border border-admin-border-soft bg-white p-4 space-y-3">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="font-bold text-base">خصم عام</h3>
-            <p className="text-sm text-gray-500">يطبق تلقائيا على جميع الطلبات</p>
+            <p className="text-sm text-admin-muted-2">يطبق تلقائيا على جميع الطلبات</p>
           </div>
           <button
             type="button"
             onClick={() => updateDraft({ autoDiscountEnabled: !draft.autoDiscountEnabled })}
             className={cn(
               "h-10 px-4 rounded-full text-sm font-semibold transition-colors",
-              draft.autoDiscountEnabled ? "bg-green-600 text-white" : "bg-gray-100 text-gray-600"
+              draft.autoDiscountEnabled ? "bg-green-600 text-white" : "bg-admin-bg text-admin-muted"
             )}
           >
             {draft.autoDiscountEnabled ? "مفعل" : "متوقف"}
@@ -123,18 +123,18 @@ export function DiscountManager() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <label className="space-y-1">
-            <span className="text-sm font-medium text-gray-700">نوع الخصم</span>
+            <span className="text-sm font-medium text-admin-muted">نوع الخصم</span>
             <select
               value={draft.autoDiscountType}
               onChange={(e) => updateDraft({ autoDiscountType: e.target.value as DiscountType })}
-              className="w-full h-11 rounded-xl border border-gray-200 px-3 bg-white"
+              className="w-full h-11 rounded-xl border border-admin-border-soft px-3 bg-white"
             >
               <option value="percent">نسبة مئوية %</option>
               <option value="fixed">قيمة ثابتة</option>
             </select>
           </label>
           <label className="space-y-1">
-            <span className="text-sm font-medium text-gray-700">قيمة الخصم</span>
+            <span className="text-sm font-medium text-admin-muted">قيمة الخصم</span>
             <Input
               type="number"
               min={0}
@@ -145,15 +145,15 @@ export function DiscountManager() {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-gray-200 bg-white p-4 space-y-3">
+      <section className="rounded-2xl border border-admin-border-soft bg-white p-4 space-y-3">
         <div className="flex items-center gap-2">
-          <TicketPercent className="h-5 w-5 text-gray-600" />
+          <TicketPercent className="h-5 w-5 text-admin-muted" />
           <h3 className="font-bold text-base">أكواد الخصم</h3>
         </div>
 
         <div className="space-y-2">
           {draft.codes.map((code, index) => (
-            <div key={`${code.code}-${index}`} className="rounded-xl border border-gray-200 p-3 space-y-2">
+            <div key={`${code.code}-${index}`} className="rounded-xl border border-admin-border-soft p-3 space-y-2">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <Input
                   value={code.code}
@@ -163,7 +163,7 @@ export function DiscountManager() {
                 <select
                   value={code.type}
                   onChange={(e) => updateCode(index, { type: e.target.value as DiscountType })}
-                  className="h-10 rounded-xl border border-gray-200 px-3 bg-white"
+                  className="h-10 rounded-xl border border-admin-border-soft px-3 bg-white"
                 >
                   <option value="percent">نسبة %</option>
                   <option value="fixed">قيمة ثابتة</option>
@@ -191,7 +191,7 @@ export function DiscountManager() {
                     onClick={() => updateCode(index, { active: !code.active })}
                     className={cn(
                       "h-10 px-4 rounded-xl text-sm font-semibold",
-                      code.active ? "bg-green-600 text-white" : "bg-gray-100 text-gray-600"
+                      code.active ? "bg-green-600 text-white" : "bg-admin-bg text-admin-muted"
                     )}
                   >
                     {code.active ? "مفعل" : "متوقف"}
@@ -210,8 +210,8 @@ export function DiscountManager() {
           ))}
         </div>
 
-        <div className="rounded-xl border border-dashed border-gray-300 p-3 space-y-2">
-          <p className="text-sm font-medium text-gray-700">إضافة كود جديد</p>
+        <div className="rounded-xl border border-dashed border-admin-border p-3 space-y-2">
+          <p className="text-sm font-medium text-admin-muted">إضافة كود جديد</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <Input
               value={newCode.code}
@@ -221,7 +221,7 @@ export function DiscountManager() {
             <select
               value={newCode.type}
               onChange={(e) => setNewCode((prev) => ({ ...prev, type: e.target.value as DiscountType }))}
-              className="h-10 rounded-xl border border-gray-200 px-3 bg-white"
+              className="h-10 rounded-xl border border-admin-border-soft px-3 bg-white"
             >
               <option value="percent">نسبة %</option>
               <option value="fixed">قيمة ثابتة</option>

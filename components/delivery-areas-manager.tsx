@@ -181,7 +181,7 @@ export function DeliveryAreasManager() {
   if (loading) {
     return (
       <div className="flex justify-center py-10">
-        <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+        <Loader2 className="h-6 w-6 animate-spin text-admin-muted-2" />
       </div>
     )
   }
@@ -223,7 +223,7 @@ export function DeliveryAreasManager() {
           <div
             key={area.id}
             className={`rounded-2xl border p-3 transition-all ${
-              area.is_active ? "border-gray-100 bg-white" : "border-gray-100 bg-gray-50 opacity-60"
+              area.is_active ? "border-admin-border-soft bg-white" : "border-admin-border-soft bg-admin-bg opacity-60"
             }`}
           >
             {editingId === area.id ? (
@@ -239,7 +239,7 @@ export function DeliveryAreasManager() {
                   </button>
                   <button
                     onClick={() => setEditingId(null)}
-                    className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-500"
+                    className="flex h-8 w-8 items-center justify-center rounded-full bg-admin-bg text-admin-muted"
                     aria-label="إلغاء التعديل"
                   >
                     <X className="h-4 w-4" />
@@ -249,11 +249,11 @@ export function DeliveryAreasManager() {
                 <input
                   value={editName}
                   onChange={(event) => setEditName(event.target.value)}
-                  className="min-w-0 rounded-xl bg-[#f5f5f5] px-3 py-2 text-right text-sm focus:outline-none"
+                  className="min-w-0 rounded-xl bg-admin-bg px-3 py-2 text-right text-sm focus:outline-none"
                   dir="rtl"
                 />
 
-                <label className="flex items-center gap-2 rounded-xl bg-[#f5f5f5] px-3 py-2 text-sm text-gray-500">
+                <label className="flex items-center gap-2 rounded-xl bg-admin-bg px-3 py-2 text-sm text-admin-muted">
                   <span className="text-xs">
                     <PriceWithRiyalLogo value="" />
                   </span>
@@ -278,7 +278,7 @@ export function DeliveryAreasManager() {
                   </button>
                   <button
                     onClick={() => handleEdit(area)}
-                    className="flex h-8 w-8 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 active:scale-95"
+                    className="flex h-8 w-8 items-center justify-center rounded-full text-admin-muted-2 transition-colors hover:bg-admin-bg active:scale-95"
                     aria-label={`تعديل ${area.name}`}
                   >
                     <Pencil className="h-3.5 w-3.5" />
@@ -294,7 +294,7 @@ export function DeliveryAreasManager() {
                 <button
                   onClick={() => handleToggle(area)}
                   className={`relative h-5 w-9 flex-shrink-0 rounded-full transition-colors ${
-                    area.is_active ? "bg-green-400" : "bg-gray-200"
+                    area.is_active ? "bg-green-400" : "bg-gray-300"
                   }`}
                   aria-label={area.is_active ? `إيقاف ${area.name}` : `تفعيل ${area.name}`}
                 >
@@ -310,7 +310,7 @@ export function DeliveryAreasManager() {
         ))}
 
         {areas.length === 0 ? (
-          <p className="py-4 text-center text-sm text-gray-400">
+          <p className="py-4 text-center text-sm text-admin-muted-2">
             لا توجد مناطق محفوظة بعد. اضغط &quot;تحميل الأسعار الافتراضية&quot; لإضافة القائمة الأساسية.
           </p>
         ) : null}
@@ -333,7 +333,7 @@ export function DeliveryAreasManager() {
                   resetAddState()
                   setError(null)
                 }}
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-gray-500"
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-admin-muted"
                 aria-label="إلغاء الإضافة"
               >
                 <X className="h-4 w-4" />
@@ -350,7 +350,7 @@ export function DeliveryAreasManager() {
               onKeyDown={(event) => event.key === "Enter" && handleAdd()}
             />
 
-            <label className="flex items-center gap-2 rounded-xl border border-blue-200 bg-white px-3 py-2 text-sm text-gray-500">
+            <label className="flex items-center gap-2 rounded-xl border border-blue-200 bg-white px-3 py-2 text-sm text-admin-muted">
               <span className="text-xs">
                 <PriceWithRiyalLogo value="" />
               </span>
@@ -370,7 +370,7 @@ export function DeliveryAreasManager() {
             setError(null)
             setAdding(true)
           }}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-gray-200 py-3 text-sm font-medium text-gray-500 transition-all hover:border-primary hover:text-primary active:scale-95"
+          className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-admin-border-soft py-3 text-sm font-medium text-admin-muted transition-all hover:border-primary hover:text-primary active:scale-95"
         >
           <Plus className="h-4 w-4" />
           إضافة منطقة جديدة

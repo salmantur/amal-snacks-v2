@@ -112,7 +112,7 @@ export function SalesDashboard() {
             key={r}
             onClick={() => setRange(r)}
             className={`flex-1 py-2 rounded-xl text-sm font-medium transition-colors ${
-              range === r ? "bg-white shadow-sm text-foreground" : "text-muted-foreground"
+              range === r ? "bg-white shadow-sm text-admin-ink" : "text-admin-muted"
             }`}
           >
             {RANGE_LABELS[r]}
@@ -125,7 +125,7 @@ export function SalesDashboard() {
           {[1,2,3,4].map(i => <div key={i} className="h-20 bg-amal-grey rounded-2xl animate-pulse" />)}
         </div>
       ) : !data || data.totalOrders === 0 ? (
-        <div className="text-center py-12 text-muted-foreground">
+        <div className="text-center py-12 text-admin-muted">
           <ShoppingBag className="h-10 w-10 mx-auto mb-3 opacity-30" />
           <p>لا توجد طلبات في هذه الفترة</p>
         </div>
@@ -139,34 +139,34 @@ export function SalesDashboard() {
                 value={data.totalRevenue.toLocaleString()}
                 className="text-2xl font-bold text-[#1e5631]"
               />
-              <p className="text-xs text-muted-foreground mt-0.5">إجمالي المبيعات</p>
+              <p className="text-xs text-admin-muted mt-0.5">إجمالي المبيعات</p>
             </div>
             <div className="bg-amal-yellow/20 rounded-2xl p-4">
-              <ShoppingBag className="h-5 w-5 text-foreground mb-2" />
-              <p className="text-2xl font-bold text-foreground">{data.totalOrders}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">عدد الطلبات</p>
+              <ShoppingBag className="h-5 w-5 text-admin-ink mb-2" />
+              <p className="text-2xl font-bold text-admin-ink">{data.totalOrders}</p>
+              <p className="text-xs text-admin-muted mt-0.5">عدد الطلبات</p>
             </div>
             <div className="bg-amal-pink-light rounded-2xl p-4">
               <Truck className="h-5 w-5 text-primary mb-2" />
-              <p className="text-2xl font-bold text-foreground">{data.deliveryOrders}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">توصيل</p>
+              <p className="text-2xl font-bold text-admin-ink">{data.deliveryOrders}</p>
+              <p className="text-xs text-admin-muted mt-0.5">توصيل</p>
             </div>
             <div className="bg-amal-grey rounded-2xl p-4">
-              <Package className="h-5 w-5 text-foreground mb-2" />
-              <p className="text-2xl font-bold text-foreground">{data.pickupOrders}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">استلام من المحل</p>
+              <Package className="h-5 w-5 text-admin-ink mb-2" />
+              <p className="text-2xl font-bold text-admin-ink">{data.pickupOrders}</p>
+              <p className="text-xs text-admin-muted mt-0.5">استلام من المحل</p>
             </div>
           </div>
 
           {/* Avg order */}
-          <div className="bg-white rounded-2xl p-4 flex items-center justify-between border border-border/50">
+          <div className="bg-white rounded-2xl p-4 flex items-center justify-between border border-admin-border-soft">
             <PriceWithRiyalLogo value={data.avgOrderValue} className="text-2xl font-bold" />
-            <span className="text-sm text-muted-foreground">متوسط قيمة الطلب</span>
+            <span className="text-sm text-admin-muted">متوسط قيمة الطلب</span>
           </div>
 
           {/* Daily breakdown — only show for week/month */}
           {range !== "today" && data.dailyTotals.length > 1 && (
-            <div className="bg-white rounded-2xl p-4 border border-border/50">
+            <div className="bg-white rounded-2xl p-4 border border-admin-border-soft">
               <h3 className="font-bold text-right mb-3">المبيعات اليومية</h3>
               <div className="space-y-2">
                 {data.dailyTotals.map((day) => {
@@ -184,7 +184,7 @@ export function SalesDashboard() {
                         value={day.revenue}
                         className="text-xs font-medium w-16 justify-end"
                       />
-                      <span className="text-xs text-muted-foreground w-16 text-right">{day.date}</span>
+                      <span className="text-xs text-admin-muted w-16 text-right">{day.date}</span>
                     </div>
                   )
                 })}
@@ -194,20 +194,20 @@ export function SalesDashboard() {
 
           {/* Top items */}
           {data.topItems.length > 0 && (
-            <div className="bg-white rounded-2xl p-4 border border-border/50">
+            <div className="bg-white rounded-2xl p-4 border border-admin-border-soft">
               <h3 className="font-bold text-right mb-3">الأكثر طلباً</h3>
               <div className="space-y-3">
                 {data.topItems.map((item, i) => (
                   <div key={item.name} className="flex items-center gap-3">
                     <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
                       i === 0 ? "bg-[#1e5631] text-white" :
-                      i === 1 ? "bg-amal-yellow text-foreground" :
-                      "bg-amal-grey text-muted-foreground"
+                      i === 1 ? "bg-amal-yellow text-admin-ink" :
+                      "bg-amal-grey text-admin-muted"
                     }`}>
                       {i + 1}
                     </span>
                     <span className="flex-1 text-sm font-medium text-right truncate">{item.name}</span>
-                    <span className="text-xs text-muted-foreground flex-shrink-0">{item.quantity} قطعة</span>
+                    <span className="text-xs text-admin-muted flex-shrink-0">{item.quantity} قطعة</span>
                     <PriceWithRiyalLogo
                       value={item.revenue}
                       className="text-xs font-bold text-[#1e5631] flex-shrink-0 w-16 justify-end"

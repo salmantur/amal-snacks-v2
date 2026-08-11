@@ -63,15 +63,15 @@ export function TelegramSettingsManager() {
   }
 
   if (loading) {
-    return <div className="rounded-2xl border border-gray-200 bg-white p-4 text-sm text-gray-500">Loading...</div>
+    return <div className="rounded-2xl border border-admin-border-soft bg-white p-4 text-sm text-admin-muted-2">Loading...</div>
   }
 
   return (
     <div className="space-y-4">
-      <section className="rounded-2xl border border-gray-200 bg-white p-4 space-y-3">
+      <section className="rounded-2xl border border-admin-border-soft bg-white p-4 space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <BellRing className="h-5 w-5 text-gray-600" />
+            <BellRing className="h-5 w-5 text-admin-muted" />
             <h3 className="font-bold text-base">Telegram Alerts</h3>
           </div>
           <button
@@ -79,7 +79,7 @@ export function TelegramSettingsManager() {
             onClick={() => update({ enabled: !draft.enabled })}
             className={cn(
               "h-10 px-4 rounded-full text-sm font-semibold transition-colors",
-              draft.enabled ? "bg-green-600 text-white" : "bg-gray-100 text-gray-600"
+              draft.enabled ? "bg-green-600 text-white" : "bg-admin-bg text-admin-muted"
             )}
           >
             {draft.enabled ? "Enabled" : "Disabled"}
@@ -87,7 +87,7 @@ export function TelegramSettingsManager() {
         </div>
 
         <label className="block space-y-1">
-          <span className="text-sm font-medium text-gray-700">Bot Token</span>
+          <span className="text-sm font-medium text-admin-muted">Bot Token</span>
           <Input
             type="password"
             value={draft.botToken}
@@ -98,7 +98,7 @@ export function TelegramSettingsManager() {
         </label>
 
         <label className="block space-y-1">
-          <span className="text-sm font-medium text-gray-700">Chat ID</span>
+          <span className="text-sm font-medium text-admin-muted">Chat ID</span>
           <Input
             value={draft.chatId}
             onChange={(e) => update({ chatId: e.target.value })}
@@ -107,14 +107,14 @@ export function TelegramSettingsManager() {
           />
         </label>
 
-        <div className="flex items-center justify-between rounded-xl border border-gray-200 px-3 py-2">
-          <span className="text-sm font-medium text-gray-700">Auto notify on new order</span>
+        <div className="flex items-center justify-between rounded-xl border border-admin-border-soft px-3 py-2">
+          <span className="text-sm font-medium text-admin-muted">Auto notify on new order</span>
           <button
             type="button"
             onClick={() => update({ notifyOnNewOrder: !draft.notifyOnNewOrder })}
             className={cn(
               "h-9 px-3 rounded-full text-xs font-semibold",
-              draft.notifyOnNewOrder ? "bg-primary text-primary-foreground" : "bg-gray-100 text-gray-600"
+              draft.notifyOnNewOrder ? "bg-primary text-primary-foreground" : "bg-admin-bg text-admin-muted"
             )}
           >
             {draft.notifyOnNewOrder ? "ON" : "OFF"}
@@ -137,7 +137,7 @@ export function TelegramSettingsManager() {
           </Button>
         </div>
 
-        {status ? <p className="text-xs text-gray-500">{status}</p> : null}
+        {status ? <p className="text-xs text-admin-muted-2">{status}</p> : null}
       </section>
     </div>
   )

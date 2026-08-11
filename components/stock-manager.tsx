@@ -79,7 +79,7 @@ export function StockManager() {
   const outOfStockCount = items.filter((i) => !i.in_stock).length
 
   if (loading) {
-    return <div className="h-40 bg-amal-grey rounded-2xl animate-pulse" />
+    return <div className="h-40 bg-admin-bg rounded-2xl animate-pulse" />
   }
 
   return (
@@ -88,23 +88,23 @@ export function StockManager() {
       <div className="flex gap-3">
         <div className="flex-1 bg-[#1e5631]/10 rounded-2xl p-3 text-center">
           <p className="text-2xl font-bold text-[#1e5631]">{items.length - outOfStockCount}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">متاح</p>
+          <p className="text-xs text-admin-muted mt-0.5">متاح</p>
         </div>
         <div className="flex-1 bg-red-50 rounded-2xl p-3 text-center">
           <p className="text-2xl font-bold text-red-500">{outOfStockCount}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">نفد المخزون</p>
+          <p className="text-xs text-admin-muted mt-0.5">نفد المخزون</p>
         </div>
       </div>
 
       {/* Search */}
       <div className="relative">
-        <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-admin-muted" />
         <input
           type="text"
           placeholder="ابحث عن منتج..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full py-3 pr-10 pl-4 rounded-xl bg-amal-grey text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 text-right"
+          className="w-full py-3 pr-10 pl-4 rounded-xl bg-admin-bg text-admin-ink placeholder:text-admin-muted focus:outline-none focus:ring-2 focus:ring-primary/20 text-right"
         />
       </div>
 
@@ -112,7 +112,7 @@ export function StockManager() {
       <div className="space-y-5">
         {Object.entries(grouped).map(([category, catItems]) => (
           <div key={category}>
-            <h3 className="text-sm font-bold text-muted-foreground mb-2 px-1">
+            <h3 className="text-sm font-bold text-admin-muted mb-2 px-1">
               {CATEGORY_LABELS[category] ?? category}
             </h3>
             <div className="space-y-2">
@@ -149,7 +149,7 @@ export function StockManager() {
                     <div className="text-right">
                       <p className={cn(
                         "font-medium text-sm",
-                        !item.in_stock && "line-through text-muted-foreground"
+                        !item.in_stock && "line-through text-admin-muted"
                       )}>
                         {item.name}
                       </p>
@@ -161,7 +161,7 @@ export function StockManager() {
 
                   <PriceWithRiyalLogo
                     value={item.price}
-                    className="text-sm text-muted-foreground font-medium flex-shrink-0"
+                    className="text-sm text-admin-muted font-medium flex-shrink-0"
                   />
                 </div>
               ))}

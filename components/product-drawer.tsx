@@ -9,7 +9,6 @@ import { cn } from "@/lib/utils"
 import { getEidRequiredHeaters } from "@/lib/eid-packages"
 import { PriceWithRiyalLogo } from "@/components/ui/price-with-riyal-logo"
 import { trackStorefrontEvent } from "@/lib/storefront-events"
-import { TrayPicker } from "@/components/tray-picker"
 import { parseVariantOption, getMenuStorageBase, normalizeMenuImageSrc, TRAY_ITEMS, TRAY_REQUIRED } from "@/lib/tray-configurator"
 
 interface ProductDrawerProps {
@@ -51,7 +50,6 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
   const isEidPackage = product?.category === "eid"
   const hasIngredients = (product?.ingredients?.length || 0) > 0
   const maxSelections = product?.limit || 0
-  const isTraySizeVariant = isTray && maxSelections === 1 && hasIngredients && (product?.ingredients || []).some((i) => i.includes("::"))
 
   useEffect(() => {
     if (!open) return
@@ -64,10 +62,10 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
 
   useEffect(() => {
     if (!open || !product) return
-    if ((isTray && !isTraySizeVariant) || isEidPackage) return
+    if (isTray || isEidPackage) return
     if (!hasIngredients || maxSelections !== 1 || !product.ingredients?.length) return
     setSelectedIngredients([product.ingredients[0]])
-  }, [open, product, isTray, isTraySizeVariant, isEidPackage, hasIngredients, maxSelections])
+  }, [open, product, isTray, isEidPackage, hasIngredients, maxSelections])
 
   useEffect(() => {
     if (!open || !product) return
@@ -81,18 +79,6 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
   }, [open, product])
 
   if (!product) return null
-
-  if (isTraySizeVariant) {
-    return (
-      <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-        <DialogContent className="flex h-[85vh] max-w-md flex-col gap-0 overflow-hidden rounded-3xl border-0 p-0">
-          <DialogTitle className="sr-only">{product.name}</DialogTitle>
-          <DialogDescription className="sr-only">{product.description}</DialogDescription>
-          <TrayPicker item={product} onBack={onClose} onAdded={onClose} />
-        </DialogContent>
-      </Dialog>
-    )
-  }
 
   const toggleIngredient = (ingredient: string) => {
     setSelectedIngredients((prev) => {

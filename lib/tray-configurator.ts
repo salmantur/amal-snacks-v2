@@ -29,6 +29,15 @@ export const TRAY_ITEMS: { ar: string; en: string }[] = [
 
 export const TRAY_REQUIRED = 7
 
+export function isTraySizeVariantItem(item: { category: string; limit?: number; ingredients?: string[] }): boolean {
+  return (
+    item.category === "trays" &&
+    item.limit === 1 &&
+    (item.ingredients?.length ?? 0) > 0 &&
+    (item.ingredients || []).some((ingredient) => ingredient.includes("::"))
+  )
+}
+
 export function parseVariantOption(raw: string, fallbackPrice: number): { label: string; price: number } {
   const value = (raw || "").trim()
   if (!value) return { label: "", price: fallbackPrice }

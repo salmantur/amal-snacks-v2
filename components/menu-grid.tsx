@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react"
 import dynamic from "next/dynamic"
-import { useSearchParams } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { ProductCard, type TrayCardDesign } from "@/components/product-card"
 import { PackageCard } from "@/components/package-card"
 import { CategoryFilter } from "@/components/category-filter"
@@ -14,6 +14,7 @@ import type { MenuItem } from "@/components/cart-provider"
 import { getBestSellerCandidates } from "@/lib/best-sellers"
 import { smartFilterMenuItems } from "@/lib/smart-search"
 import { trackStorefrontEvent } from "@/lib/storefront-events"
+import { isTraySizeVariantItem } from "@/lib/tray-configurator"
 import { cn } from "@/lib/utils"
 
 const ProductDrawer = dynamic(
@@ -40,6 +41,7 @@ interface MenuGridProps {
 }
 
 export function MenuGrid({ searchQuery, onSearchQueryChange }: MenuGridProps) {
+  const router = useRouter()
   const searchParams = useSearchParams()
   const { categories: allCategories } = useCategories()
   const categories = allCategories.filter((c) => c.isVisible)
@@ -59,6 +61,19 @@ export function MenuGrid({ searchQuery, onSearchQueryChange }: MenuGridProps) {
   const [debouncedSearch, setDebouncedSearch] = useState("")
   const [selectedProduct, setSelectedProduct] = useState<MenuItem | null>(null)
   const [showAllItems, setShowAllItems] = useState(false)
+
+  // Tray products sized via ingredients ("label::price" options, exactly one pick) get their
+  // own full page (the TrayPicker layout with its 7-of-N item grid) instead of the drawer.
+  const openProduct = useCallback(
+    (item: MenuItem) => {
+      if (isTraySizeVariantItem(item)) {
+        router.push(`/product/${item.id}`)
+        return
+      }
+      setSelectedProduct(item)
+    },
+    [router]
+  )
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(searchQuery), 300)
@@ -211,7 +226,7 @@ export function MenuGrid({ searchQuery, onSearchQueryChange }: MenuGridProps) {
                   <ProductCard
                     key={item.id}
                     item={item}
-                    onSelect={setSelectedProduct}
+                    onSelect={openProduct}
                     priority={idx < 2}
                     trayDesign={trayCardDesign}
                     forceUnifiedStyle={isBestSellersCategory}
@@ -233,9 +248,9 @@ export function MenuGrid({ searchQuery, onSearchQueryChange }: MenuGridProps) {
                   <div className={catalogGridClass}>
                     {visibleSectionItems.map((item, idx) =>
                       item.category === "eid" ? (
-                        <PackageCard key={item.id} item={item} onSelect={setSelectedProduct} priority={idx < 4 && section.dbCategory === sections[0]?.dbCategory} />
+                        <PackageCard key={item.id} item={item} onSelect={openProduct} priority={idx < 4 && section.dbCategory === sections[0]?.dbCategory} />
                       ) : (
-                        <ProductCard key={item.id} item={item} onSelect={setSelectedProduct} priority={idx < 4 && section.dbCategory === sections[0]?.dbCategory} trayDesign={trayCardDesign} />
+                        <ProductCard key={item.id} item={item} onSelect={openProduct} priority={idx < 4 && section.dbCategory === sections[0]?.dbCategory} trayDesign={trayCardDesign} />
                       )
                     )}
                   </div>
@@ -249,12 +264,12 @@ export function MenuGrid({ searchQuery, onSearchQueryChange }: MenuGridProps) {
             <div className={bestSellerGridClass}>
               {visibleFilteredItems.map((item, idx) =>
                 item.category === "eid" && !isBestSellersCategory ? (
-                  <PackageCard key={item.id} item={item} onSelect={setSelectedProduct} priority={idx < 2} />
+                  <PackageCard key={item.id} item={item} onSelect={openProduct} priority={idx < 2} />
                 ) : (
                   <ProductCard
                     key={item.id}
                     item={item}
-                    onSelect={setSelectedProduct}
+                    onSelect={openProduct}
                     priority={idx < 2}
                     trayDesign={trayCardDesign}
                     bestSellerStyle={isBestSellersCategory ? "s4" : undefined}

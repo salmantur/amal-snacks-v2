@@ -13,7 +13,7 @@ import { getBestSellerCandidates } from "@/lib/best-sellers"
 import { trapFocusOnTab } from "@/lib/dialog-focus"
 import { smartFilterMenuItems } from "@/lib/smart-search"
 import { cn } from "@/lib/utils"
-import { TrayPicker } from "@/components/tray-picker"
+import { isTraySizeVariantItem } from "@/lib/tray-configurator"
 
 /**
  * Scroll-locks the page, traps focus, closes on Escape, and restores focus to
@@ -275,24 +275,26 @@ function EditorialPreview() {
     ? drawerVariantOptions.find((opt) => opt.raw === drawerIngredients[0])
     : undefined
   const drawerUnitPrice = selectedVariant?.price ?? selectedProduct?.price ?? 0
-  // Tray products sized via ingredients ("label::price" options, exactly one pick) get the
-  // richer drawer: eyebrow label, larger hero, expandable per-size breakdown, and (below) the
-  // dedicated TrayPicker layout with its 7-of-N item grid.
-  const isMixedTrayDrawer =
-    selectedProduct?.category === "trays" &&
-    selectedProduct?.limit === 1 &&
-    (selectedProduct?.ingredients?.length ?? 0) > 0 &&
-    (selectedProduct?.ingredients || []).some((i) => i.includes("::"))
   const drawerDescription = selectedProduct?.description
 
-  const openProduct = useCallback((item: MenuItem) => {
-    setSelectedProduct(item)
-    setDrawerQty(1)
-    const hasSingleVariant =
-      item.limit === 1 && (item.ingredients?.length ?? 0) > 0
-    setDrawerIngredients(hasSingleVariant && item.ingredients ? [item.ingredients[0]] : [])
-    setDrawerOpen(true)
-  }, [])
+  const openProduct = useCallback(
+    (item: MenuItem) => {
+      // Tray products sized via ingredients ("label::price" options, exactly one pick) get
+      // their own full page (the TrayPicker layout with its 7-of-N item grid) instead of the
+      // bottom-sheet drawer used for everything else.
+      if (isTraySizeVariantItem(item)) {
+        router.push(`/product/${item.id}`)
+        return
+      }
+      setSelectedProduct(item)
+      setDrawerQty(1)
+      const hasSingleVariant =
+        item.limit === 1 && (item.ingredients?.length ?? 0) > 0
+      setDrawerIngredients(hasSingleVariant && item.ingredients ? [item.ingredients[0]] : [])
+      setDrawerOpen(true)
+    },
+    [router]
+  )
 
   const quickAdd = useCallback(
     (item: MenuItem, e: MouseEvent) => {
@@ -542,28 +544,7 @@ function EditorialPreview() {
         </div>
       </div>
 
-      {drawerOpen && selectedProduct && isMixedTrayDrawer ? (
-        <div className="fixed inset-0 z-50" dir="rtl">
-          <div
-            onClick={() => setDrawerOpen(false)}
-            className="absolute inset-0 animate-fade-in"
-            style={{ background: "rgba(15,10,8,0.4)" }}
-          />
-          <div
-            ref={drawerDialogRef}
-            role="dialog"
-            aria-modal="true"
-            aria-label={selectedProduct.name}
-            tabIndex={-1}
-            onKeyDown={(e) => trapFocusOnTab(e, drawerDialogRef.current)}
-            className="absolute inset-x-0 bottom-0 mx-auto flex h-[88%] max-w-[430px] flex-col overflow-hidden rounded-t-[24px] animate-slide-up outline-none"
-          >
-            <TrayPicker item={selectedProduct} onBack={() => setDrawerOpen(false)} onAdded={() => setDrawerOpen(false)} />
-          </div>
-        </div>
-      ) : null}
-
-      {drawerOpen && selectedProduct && !isMixedTrayDrawer ? (
+      {drawerOpen && selectedProduct ? (
         <div className="fixed inset-0 z-50" dir="rtl">
           <div
             onClick={() => setDrawerOpen(false)}

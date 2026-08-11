@@ -3,12 +3,14 @@
 import Image from "next/image"
 import { useState } from "react"
 import dynamic from "next/dynamic"
+import { useRouter } from "next/navigation"
 import { ShoppingBag, Sparkles } from "lucide-react"
 import { useBannerConfig } from "@/hooks/use-banner-config"
 import { useMenu } from "@/hooks/use-menu"
 import { useCart } from "@/components/cart-provider"
 import { PriceWithRiyalLogo } from "@/components/ui/price-with-riyal-logo"
 import { trackStorefrontEvent } from "@/lib/storefront-events"
+import { isTraySizeVariantItem } from "@/lib/tray-configurator"
 
 const ProductDrawer = dynamic(
   () => import("@/components/product-drawer").then((mod) => ({ default: mod.ProductDrawer })),
@@ -16,6 +18,7 @@ const ProductDrawer = dynamic(
 )
 
 export function HeroBanner() {
+  const router = useRouter()
   const { config, loading } = useBannerConfig()
   const { menuItems } = useMenu()
   const { addItem } = useCart()
@@ -25,6 +28,16 @@ export function HeroBanner() {
   const featuredProduct = config.featured_product_id
     ? menuItems.find((m) => m.id === config.featured_product_id) || null
     : null
+
+  // Tray products sized via ingredients get their own full page (the TrayPicker layout)
+  // instead of the drawer.
+  const openFeaturedProduct = () => {
+    if (featuredProduct && isTraySizeVariantItem(featuredProduct)) {
+      router.push(`/product/${featuredProduct.id}`)
+      return
+    }
+    setDrawerOpen(true)
+  }
 
   const featuredNeedsConfiguration = Boolean(
     featuredProduct &&
@@ -101,7 +114,7 @@ export function HeroBanner() {
                       category: featuredProduct.category,
                       mode: "configured",
                     })
-                    setDrawerOpen(true)
+                    openFeaturedProduct()
                     return
                   }
 
@@ -135,7 +148,7 @@ export function HeroBanner() {
                   category: featuredProduct.category,
                   mode: "details",
                 })
-                setDrawerOpen(true)
+                openFeaturedProduct()
               }}
               className="relative w-[38%] min-w-[8.75rem] flex-shrink-0 transition-opacity active:opacity-90 sm:w-40"
               aria-label={`عرض تفاصيل ${featuredProduct.name}`}

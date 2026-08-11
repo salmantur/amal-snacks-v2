@@ -402,7 +402,7 @@ function EditorialPreview() {
     <div className="min-h-screen" dir="rtl" style={{ background: EDITORIAL_SURFACE }}>
       <div className="mx-auto flex min-h-screen max-w-[430px] flex-col" style={{ background: EDITORIAL_SURFACE }}>
         <div
-          className="sticky top-0 z-30 flex flex-shrink-0 items-center justify-between px-5 pb-2.5 pt-[18px]"
+          className="fixed inset-x-0 top-0 z-40 mx-auto flex max-w-[430px] items-center justify-between px-5 pb-2.5 pt-[18px]"
           style={{ background: EDITORIAL_SURFACE }}
         >
           <button
@@ -419,27 +419,42 @@ function EditorialPreview() {
           <span className="font-serif-text text-[17px] font-black tracking-[0.2px]" style={{ color: EDITORIAL_INK }}>
             أمل سناك
           </span>
-          <button
-            type="button"
-            onClick={() => setCartOpen(true)}
-            aria-label="فتح السلة"
-            className="-m-[5px] flex h-11 w-11 items-center justify-center border-none bg-transparent p-0"
-          >
-            <span className="relative flex h-[34px] w-[34px] items-center justify-center">
-              <EditorialBagIcon />
-              {totalItems > 0 ? (
+          {totalItems > 0 ? (
+            <button
+              type="button"
+              onClick={() => setCartOpen(true)}
+              aria-label="فتح السلة"
+              className="-m-[5px] flex items-center gap-2 rounded-full border-none py-[7px] pl-3.5 pr-[9px] transition-transform active:scale-95"
+              style={{ background: "oklch(94% 0.03 28)" }}
+            >
+              <span className="text-[12.5px] font-extrabold" style={{ color: EDITORIAL_ACCENT }}>
+                <PriceWithRiyalLogo value={totalPrice} />
+              </span>
+              <span className="relative flex h-[26px] w-[26px] items-center justify-center">
+                <EditorialBagIcon />
                 <span
-                  className="absolute -right-1 -top-1 flex h-[15px] min-w-[15px] items-center justify-center rounded-full px-[3px] text-[9px] font-extrabold text-white"
-                  style={{ background: EDITORIAL_ACCENT }}
+                  className="absolute -right-1.5 -top-1.5 flex h-[15px] min-w-[15px] items-center justify-center rounded-full px-[3px] text-[9px] font-extrabold text-white"
+                  style={{ background: EDITORIAL_ACCENT, border: "1.5px solid oklch(94% 0.03 28)" }}
                 >
                   {totalItems}
                 </span>
-              ) : null}
-            </span>
-          </button>
+              </span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setCartOpen(true)}
+              aria-label="فتح السلة"
+              className="-m-[5px] flex h-11 w-11 items-center justify-center border-none bg-transparent p-0"
+            >
+              <span className="relative flex h-[34px] w-[34px] items-center justify-center">
+                <EditorialBagIcon />
+              </span>
+            </button>
+          )}
         </div>
 
-        <div className="flex-1 overflow-y-auto overflow-x-hidden">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ paddingTop: 76 }}>
           {error ? (
             <div className="mx-5 mt-5 rounded-xl p-3.5 text-[13px] font-semibold text-white" style={{ background: EDITORIAL_ACCENT }}>
               {error}
@@ -583,28 +598,7 @@ function EditorialPreview() {
               </div>
             </div>
           )}
-
-          {totalItems > 0 ? <div className="h-[74px] flex-shrink-0" /> : null}
         </div>
-
-        {totalItems > 0 ? (
-          <div
-            className="fixed inset-x-0 z-20 mx-auto max-w-[430px] px-4"
-            style={{ bottom: "calc(18px + env(safe-area-inset-bottom))" }}
-          >
-            <button
-              type="button"
-              onClick={() => setCartOpen(true)}
-              className="flex w-full items-center justify-between rounded-[14px] border-none px-5 py-4 transition-transform active:scale-[0.97]"
-              style={{ background: EDITORIAL_INK, boxShadow: "0 16px 30px -10px rgba(0,0,0,0.4)" }}
-            >
-              <span className="text-[14px] font-extrabold text-white">
-                <PriceWithRiyalLogo value={totalPrice} />
-              </span>
-              <span className="text-[13px] font-semibold text-white/75">عرض السلة ({totalItems}) ‹</span>
-            </button>
-          </div>
-        ) : null}
       </div>
 
       {drawerOpen && selectedProduct ? (

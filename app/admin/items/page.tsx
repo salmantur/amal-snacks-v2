@@ -2,9 +2,8 @@
 
 import React, { useState, useEffect, useMemo, useRef } from "react"
 import Image from "next/image"
-import Link from "next/link"
 import {
-  ArrowRight, Plus, Pencil, Trash2, Search, X, Check,
+  Plus, Pencil, Trash2, Search, X, Check,
   Upload, Loader2, ChevronDown, ImageIcon, Star, ArrowUp, ArrowDown
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
@@ -343,25 +342,16 @@ export default function ItemsPage() {
   const modalMainImage = getDisplayImage(modalItem?.image || "")
 
   return (
-    <main className="min-h-screen bg-[#f5f5f5] overflow-x-hidden">
+    <main className="min-h-screen bg-muted/30 overflow-x-hidden">
 
-      {/* Header */}
-      <header className="sticky top-0 z-40 bg-white border-b border-gray-100">
-        <div className="flex items-center justify-between px-4 py-3">
-          <Link
-            href="/admin"
-            className="w-11 h-11 rounded-full bg-[#f5f5f5] flex items-center justify-center active:scale-95 transition-transform flex-shrink-0"
-          >
-            <ArrowRight className="h-5 w-5" />
-          </Link>
-          <div className="text-center">
-            <h1 className="text-lg font-bold" dir="rtl">{"\u0625\u062f\u0627\u0631\u0629 \u0627\u0644\u0623\u0635\u0646\u0627\u0641"}</h1>
-            <p className="text-xs text-gray-400">{items.length} {"\u0635\u0646\u0641"}</p>
-          </div>
+      {/* Toolbar */}
+      <div className="sticky top-0 z-40 bg-background border-b border-border">
+        <div className="flex items-center justify-between gap-3 px-4 py-3 md:px-6">
+          <p className="text-sm text-muted-foreground">{items.length} {"\u0635\u0646\u0641"}</p>
           <button
             type="button"
             onClick={() => openModal({ ...EMPTY_ITEM }, true)}
-            className="flex items-center gap-1.5 px-4 py-2.5 bg-black text-white rounded-full font-medium text-sm active:scale-95 transition-transform flex-shrink-0"
+            className="flex items-center gap-1.5 px-4 py-2.5 bg-foreground text-background rounded-full font-medium text-sm active:scale-95 transition-transform flex-shrink-0"
           >
             <Plus className="h-4 w-4" />
             <span dir="rtl">{"\u0625\u0636\u0627\u0641\u0629"}</span>
@@ -369,15 +359,15 @@ export default function ItemsPage() {
         </div>
 
         {/* Search + filter */}
-        <div className="flex gap-2 px-4 pb-3">
+        <div className="flex gap-2 px-4 pb-3 md:px-6">
           <div className="relative flex-1">
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder={"\u0628\u062d\u062b..."}
               dir="rtl"
-              className="w-full pr-9 pl-3 py-2.5 rounded-xl bg-[#f5f5f5] text-sm focus:outline-none"
+              className="w-full pr-9 pl-3 py-2.5 rounded-xl bg-muted text-sm focus:outline-none"
             />
           </div>
           <div className="relative flex-shrink-0">
@@ -385,17 +375,17 @@ export default function ItemsPage() {
               value={filterCategory}
               onChange={e => setFilterCategory(e.target.value)}
               dir="rtl"
-              className="appearance-none pr-3 pl-7 py-2.5 rounded-xl bg-[#f5f5f5] text-sm focus:outline-none cursor-pointer max-w-[120px]"
+              className="appearance-none pr-3 pl-7 py-2.5 rounded-xl bg-muted text-sm focus:outline-none cursor-pointer max-w-[160px]"
             >
               <option value="all">{"\u0627\u0644\u0643\u0644"}</option>
               {ALL_CATEGORIES.map(c => (
                 <option key={c.value} value={c.value}>{c.label}</option>
               ))}
             </select>
-            <ChevronDown className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 pointer-events-none" />
+            <ChevronDown className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
           </div>
         </div>
-      </header>
+      </div>
 
       {/* Toast */}
       {successMsg && (
@@ -406,11 +396,11 @@ export default function ItemsPage() {
       )}
 
       <div className="w-full max-w-full p-4 pb-32 overflow-x-hidden space-y-4">
-        <section className="bg-white rounded-2xl p-4 shadow-sm" dir="rtl">
+        <section className="bg-card rounded-2xl p-4 shadow-sm" dir="rtl">
           <div className="flex items-start justify-between gap-3 mb-3">
             <div className="text-right">
               <h2 className="font-bold text-base">ترتيب صفحة الأكثر طلبًا</h2>
-              <p className="text-xs text-gray-400 mt-1">غيّر مكان الأصناف في صفحة الأكثر طلبًا باستخدام الأسهم</p>
+              <p className="text-xs text-muted-foreground mt-1">غيّر مكان الأصناف في صفحة الأكثر طلبًا باستخدام الأسهم</p>
             </div>
             <div className="w-10 h-10 rounded-2xl bg-yellow-100 text-yellow-700 flex items-center justify-center flex-shrink-0">
               <Star className="h-4 w-4 fill-yellow-500" />
@@ -418,12 +408,12 @@ export default function ItemsPage() {
           </div>
 
           {bestSellerOrderLoading ? (
-            <div className="flex items-center justify-center py-6 text-sm text-gray-400">
+            <div className="flex items-center justify-center py-6 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin ml-2" />
               جاري تحميل الترتيب...
             </div>
           ) : bestSellerItems.length === 0 ? (
-            <div className="rounded-2xl bg-[#f5f5f5] px-4 py-5 text-sm text-gray-500 text-center">
+            <div className="rounded-2xl bg-muted px-4 py-5 text-sm text-muted-foreground text-center">
               لا توجد أصناف مفعلة في صفحة الأكثر طلبًا
             </div>
           ) : (
@@ -431,13 +421,13 @@ export default function ItemsPage() {
               {bestSellerItems.map((item, index) => {
                 const imageSrc = getDisplayImage(item.image)
                 return (
-                  <div key={`featured-order-${item.id}`} className="flex items-center gap-3 rounded-2xl bg-[#f5f5f5] p-3">
+                  <div key={`featured-order-${item.id}`} className="flex items-center gap-3 rounded-2xl bg-muted p-3">
                     <div className="flex items-center gap-1 flex-shrink-0">
                       <button
                         type="button"
                         onClick={() => moveBestSeller(item.id, "up")}
                         disabled={index === 0}
-                        className="w-9 h-9 rounded-xl bg-white flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 transition-transform"
+                        className="w-9 h-9 rounded-xl bg-card flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 transition-transform"
                         aria-label="نقل للأعلى"
                       >
                         <ArrowUp className="h-4 w-4" />
@@ -446,7 +436,7 @@ export default function ItemsPage() {
                         type="button"
                         onClick={() => moveBestSeller(item.id, "down")}
                         disabled={index === bestSellerItems.length - 1}
-                        className="w-9 h-9 rounded-xl bg-white flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 transition-transform"
+                        className="w-9 h-9 rounded-xl bg-card flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 transition-transform"
                         aria-label="نقل للأسفل"
                       >
                         <ArrowDown className="h-4 w-4" />
@@ -455,15 +445,15 @@ export default function ItemsPage() {
 
                     <div className="flex-1 min-w-0 text-right">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs font-bold text-gray-400">#{index + 1}</span>
+                        <span className="text-xs font-bold text-muted-foreground">#{index + 1}</span>
                         <p className="font-semibold text-sm truncate">{item.name}</p>
                       </div>
-                      <p className="text-xs text-gray-400 truncate mt-1">
+                      <p className="text-xs text-muted-foreground truncate mt-1">
                         {ALL_CATEGORIES.find((category) => category.value === item.category)?.label || item.category}
                       </p>
                     </div>
 
-                    <div className="relative w-12 h-12 rounded-xl bg-white overflow-hidden flex-shrink-0">
+                    <div className="relative w-12 h-12 rounded-xl bg-card overflow-hidden flex-shrink-0">
                       {imageSrc ? (
                         <Image
                           src={imageSrc}
@@ -490,17 +480,17 @@ export default function ItemsPage() {
         {loading ? (
           <div className="grid w-full gap-3">
             {[1,2,3,4].map(i => (
-              <div key={i} className="bg-white rounded-2xl p-4 flex gap-3 animate-pulse">
-                <div className="w-16 h-16 rounded-xl bg-gray-100 flex-shrink-0" />
+              <div key={i} className="bg-card rounded-2xl p-4 flex gap-3 animate-pulse">
+                <div className="w-16 h-16 rounded-xl bg-muted flex-shrink-0" />
                 <div className="flex-1 space-y-2 py-1">
-                  <div className="h-4 bg-gray-100 rounded w-1/2" />
-                  <div className="h-3 bg-gray-100 rounded w-3/4" />
+                  <div className="h-4 bg-muted rounded w-1/2" />
+                  <div className="h-3 bg-muted rounded w-3/4" />
                 </div>
               </div>
             ))}
           </div>
         ) : filtered.length === 0 ? (
-          <div className="text-center py-20 text-gray-400">
+          <div className="text-center py-20 text-muted-foreground">
             <ImageIcon className="h-12 w-12 mx-auto mb-3 opacity-30" />
             <p dir="rtl">لا توجد أصناف</p>
           </div>
@@ -509,10 +499,10 @@ export default function ItemsPage() {
             {filtered.map((item, idx) => {
               const imgSrc = getDisplayImage(item.image)
               return (
-                <div key={`${item.id}-${idx}`} className="w-full max-w-full bg-white rounded-2xl p-3 flex items-center gap-3 shadow-sm overflow-hidden">
+                <div key={`${item.id}-${idx}`} className="w-full max-w-full bg-card rounded-2xl p-3 flex items-center gap-3 shadow-sm overflow-hidden">
 
                   {/* Image */}
-                  <div className="relative w-20 h-20 rounded-2xl bg-[#f5f5f5] overflow-hidden flex-shrink-0">
+                  <div className="relative w-20 h-20 rounded-2xl bg-muted overflow-hidden flex-shrink-0">
                     {imgSrc
                       ? <Image
                           src={imgSrc}
@@ -543,11 +533,11 @@ export default function ItemsPage() {
                     dir="rtl"
                   >
                     <p className="font-bold text-sm truncate">{item.name}</p>
-                    {item.nameEn && <p className="text-xs text-gray-400 truncate">{item.nameEn}</p>}
+                    {item.nameEn && <p className="text-xs text-muted-foreground truncate">{item.nameEn}</p>}
                     <p className="text-sm font-bold mt-0.5">
                       <PriceWithRiyalLogo value={item.price} />
                     </p>
-                    <p className="text-xs text-gray-400 truncate">{ALL_CATEGORIES.find(c => c.value === item.category)?.label || item.category}</p>
+                    <p className="text-xs text-muted-foreground truncate">{ALL_CATEGORIES.find(c => c.value === item.category)?.label || item.category}</p>
                   </button>
 
                   {/* Actions */}
@@ -558,9 +548,9 @@ export default function ItemsPage() {
                         e.stopPropagation()
                         openModal({ ...item }, false)
                       }}
-                      className="w-10 h-10 rounded-xl bg-[#f5f5f5] flex items-center justify-center active:scale-95 transition-transform"
+                      className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center active:scale-95 transition-transform"
                     >
-                      <Pencil className="h-4 w-4 text-gray-600" />
+                      <Pencil className="h-4 w-4 text-muted-foreground" />
                     </button>
                     <button
                       type="button"
@@ -568,7 +558,7 @@ export default function ItemsPage() {
                         e.stopPropagation()
                         setDeleteConfirm(item.id)
                       }}
-                      className="w-10 h-10 rounded-xl bg-[#f5f5f5] flex items-center justify-center active:scale-95 transition-transform"
+                      className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center active:scale-95 transition-transform"
                     >
                       {deleting === item.id
                         ? <Loader2 className="h-4 w-4 animate-spin text-red-500" />
@@ -588,11 +578,11 @@ export default function ItemsPage() {
       {/* Delete confirmation */}
       {deleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4">
-          <div className="w-full max-w-sm bg-white rounded-3xl p-6" dir="rtl">
+          <div className="w-full max-w-sm bg-card rounded-3xl p-6" dir="rtl">
             <h3 className="text-lg font-bold text-center mb-2">تأكيد الحذف</h3>
-            <p className="text-sm text-gray-500 text-center mb-6">هل أنت متأكد من حذف هذا الصنف؟</p>
+            <p className="text-sm text-muted-foreground text-center mb-6">هل أنت متأكد من حذف هذا الصنف؟</p>
             <div className="flex gap-3">
-              <button onClick={() => setDeleteConfirm(null)} className="flex-1 py-3.5 rounded-2xl bg-[#f5f5f5] font-medium active:scale-95 transition-transform">إلغاء</button>
+              <button onClick={() => setDeleteConfirm(null)} className="flex-1 py-3.5 rounded-2xl bg-muted font-medium active:scale-95 transition-transform">إلغاء</button>
               <button onClick={() => handleDelete(deleteConfirm)} className="flex-1 py-3.5 rounded-2xl bg-red-500 text-white font-medium active:scale-95 transition-transform">حذف</button>
             </div>
           </div>
@@ -603,19 +593,19 @@ export default function ItemsPage() {
       {modalItem && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-end" onClick={(e) => e.target === e.currentTarget && closeModal()}>
           <div
-            className="w-full bg-white rounded-t-3xl flex flex-col"
+            className="w-full bg-card rounded-t-3xl flex flex-col"
             style={{ maxHeight: "92dvh", height: "92dvh" }}
           >
             {/* Modal header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 flex-shrink-0">
-              <button onClick={closeModal} className="w-11 h-11 rounded-full bg-[#f5f5f5] flex items-center justify-center active:scale-95 transition-transform">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border flex-shrink-0">
+              <button onClick={closeModal} className="w-11 h-11 rounded-full bg-muted flex items-center justify-center active:scale-95 transition-transform">
                 <X className="h-5 w-5" />
               </button>
               <h2 className="text-base font-bold" dir="rtl">{isNew ? "إضافة صنف" : "تعديل الصنف"}</h2>
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="flex items-center gap-2 px-5 py-3 bg-black text-white rounded-full text-sm font-medium disabled:opacity-50 active:scale-95 transition-transform"
+                className="flex items-center gap-2 px-5 py-3 bg-foreground text-background rounded-full text-sm font-medium disabled:opacity-50 active:scale-95 transition-transform"
               >
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                 <span dir="rtl">حفظ</span>
@@ -635,7 +625,7 @@ export default function ItemsPage() {
               <div>
                 <label className="block text-sm font-semibold mb-2 text-right" dir="rtl">الصورة الرئيسية</label>
                 <div className="flex items-center gap-3">
-                  <div className="relative w-24 h-24 rounded-2xl bg-[#f5f5f5] flex items-center justify-center overflow-hidden flex-shrink-0">
+                  <div className="relative w-24 h-24 rounded-2xl bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
                     {modalMainImage
                       ? <Image
                           src={modalMainImage}
@@ -651,7 +641,7 @@ export default function ItemsPage() {
                     <button
                       onClick={() => fileInputRef.current?.click()}
                       disabled={imageUploading}
-                      className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-dashed border-gray-200 text-sm active:scale-95 transition-transform"
+                      className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-dashed border-border text-sm active:scale-95 transition-transform"
                     >
                       {imageUploading
                         ? <><Loader2 className="h-4 w-4 animate-spin" /> جاري الرفع...</>
@@ -663,7 +653,7 @@ export default function ItemsPage() {
                       onChange={e => setModalItem(p => p ? { ...p, image: e.target.value } : p)}
                       placeholder="أو الصق رابط الصورة"
                       dir="ltr"
-                      className="w-full px-3 py-2.5 rounded-xl bg-[#f5f5f5] text-sm focus:outline-none text-left"
+                      className="w-full px-3 py-2.5 rounded-xl bg-muted text-sm focus:outline-none text-left"
                     />
                   </div>
                 </div>
@@ -678,7 +668,7 @@ export default function ItemsPage() {
                   onChange={e => setModalItem(p => p ? { ...p, name: e.target.value } : p)}
                   placeholder="مثال: سمبوسة جبن"
                   dir="rtl"
-                  className="w-full px-4 py-3.5 rounded-2xl bg-[#f5f5f5] focus:outline-none text-right text-base" style={{fontSize: "16px"}}
+                  className="w-full px-4 py-3.5 rounded-2xl bg-muted focus:outline-none text-right text-base" style={{fontSize: "16px"}}
                 />
               </div>
 
@@ -690,7 +680,7 @@ export default function ItemsPage() {
                   onChange={e => setModalItem(p => p ? { ...p, nameEn: e.target.value } : p)}
                   placeholder="e.g. Cheese Samboosa"
                   dir="ltr"
-                  className="w-full px-4 py-3.5 rounded-2xl bg-[#f5f5f5] focus:outline-none text-left text-base" style={{fontSize: "16px"}}
+                  className="w-full px-4 py-3.5 rounded-2xl bg-muted focus:outline-none text-left text-base" style={{fontSize: "16px"}}
                 />
               </div>
 
@@ -703,7 +693,7 @@ export default function ItemsPage() {
                   placeholder="وصف الصنف"
                   rows={2}
                   dir="rtl"
-                  className="w-full px-4 py-3.5 rounded-2xl bg-[#f5f5f5] focus:outline-none text-right resize-none text-base" style={{fontSize: "16px"}}
+                  className="w-full px-4 py-3.5 rounded-2xl bg-muted focus:outline-none text-right resize-none text-base" style={{fontSize: "16px"}}
                 />
               </div>
 
@@ -718,7 +708,7 @@ export default function ItemsPage() {
                     value={modalItem.price || ""}
                     onChange={e => setModalItem(p => p ? { ...p, price: Number(e.target.value) } : p)}
                     placeholder="0"
-                    className="w-full px-4 py-3.5 rounded-2xl bg-[#f5f5f5] focus:outline-none text-center text-base" style={{fontSize: "16px"}}
+                    className="w-full px-4 py-3.5 rounded-2xl bg-muted focus:outline-none text-center text-base" style={{fontSize: "16px"}}
                   />
                 </div>
                 <div>
@@ -730,7 +720,7 @@ export default function ItemsPage() {
                     value={modalItem.limit || ""}
                     onChange={e => setModalItem(p => p ? { ...p, limit: Number(e.target.value) } : p)}
                     placeholder="0"
-                    className="w-full px-4 py-3.5 rounded-2xl bg-[#f5f5f5] focus:outline-none text-center text-base" style={{fontSize: "16px"}}
+                    className="w-full px-4 py-3.5 rounded-2xl bg-muted focus:outline-none text-center text-base" style={{fontSize: "16px"}}
                   />
                 </div>
               </div>
@@ -743,44 +733,44 @@ export default function ItemsPage() {
                     value={modalItem.category || ""}
                     onChange={e => setModalItem(p => p ? { ...p, category: e.target.value } : p)}
                     dir="rtl"
-                    className="w-full appearance-none px-4 py-3.5 rounded-2xl bg-[#f5f5f5] focus:outline-none text-right cursor-pointer text-base" style={{fontSize: "16px"}}
+                    className="w-full appearance-none px-4 py-3.5 rounded-2xl bg-muted focus:outline-none text-right cursor-pointer text-base" style={{fontSize: "16px"}}
                   >
                     <option value="">اختر الفئة</option>
                     {ALL_CATEGORIES.map(c => (
                       <option key={c.value} value={c.value}>{c.label}</option>
                     ))}
                   </select>
-                  <ChevronDown className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                  <ChevronDown className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                 </div>
               </div>
 
               {/* Toggles row: In Stock + Best Seller */}
               <div className="space-y-3">
                 {/* In Stock */}
-                <div className="flex items-center justify-between p-4 bg-[#f5f5f5] rounded-2xl">
+                <div className="flex items-center justify-between p-4 bg-muted rounded-2xl">
                   <div dir="rtl">
                     <p className="font-semibold text-sm">متوفر في المخزون</p>
-                    <p className="text-xs text-gray-400 mt-0.5">إيقاف يخفي الصنف من القائمة</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">إيقاف يخفي الصنف من القائمة</p>
                   </div>
                   <button
                     onClick={() => setModalItem(p => p ? { ...p, inStock: !(p.inStock !== false) } : p)}
-                    className={`w-14 h-8 rounded-full transition-colors relative flex-shrink-0 ml-3 ${modalItem.inStock !== false ? "bg-black" : "bg-gray-300"}`}
+                    className={`w-14 h-8 rounded-full transition-colors relative flex-shrink-0 ml-3 ${modalItem.inStock !== false ? "bg-foreground" : "bg-gray-300"}`}
                   >
-                    <span className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow transition-all duration-200 ${modalItem.inStock !== false ? "left-7" : "left-1"}`} />
+                    <span className={`absolute top-1 w-6 h-6 bg-card rounded-full shadow transition-all duration-200 ${modalItem.inStock !== false ? "left-7" : "left-1"}`} />
                   </button>
                 </div>
 
                 {/* Best Sellers Page */}
-                <div className="flex items-center justify-between p-4 bg-[#f5f5f5] rounded-2xl">
+                <div className="flex items-center justify-between p-4 bg-muted rounded-2xl">
                   <div dir="rtl">
                     <p className="font-semibold text-sm">⭐ صفحة الأكثر طلبًا</p>
-                    <p className="text-xs text-gray-400 mt-0.5">فعّل هذا الخيار ليظهر الصنف في صفحة الأكثر طلبًا</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">فعّل هذا الخيار ليظهر الصنف في صفحة الأكثر طلبًا</p>
                   </div>
                   <button
                     onClick={() => setModalItem(p => p ? { ...p, isFeatured: !p.isFeatured } : p)}
                     className={`w-14 h-8 rounded-full transition-colors relative flex-shrink-0 ml-3 ${modalItem.isFeatured ? "bg-yellow-400" : "bg-gray-300"}`}
                   >
-                    <span className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow transition-all duration-200 ${modalItem.isFeatured ? "left-7" : "left-1"}`} />
+                    <span className={`absolute top-1 w-6 h-6 bg-card rounded-full shadow transition-all duration-200 ${modalItem.isFeatured ? "left-7" : "left-1"}`} />
                   </button>
                 </div>
               </div>
@@ -792,7 +782,7 @@ export default function ItemsPage() {
                   <select
                     value={modalItem.makingTime || 0}
                     onChange={(e) => setModalItem((p) => p ? { ...p, makingTime: Number(e.target.value) } : p)}
-                    className="w-full appearance-none px-4 py-3.5 rounded-2xl bg-[#f5f5f5] focus:outline-none text-right text-base cursor-pointer" style={{fontSize: "16px"}}
+                    className="w-full appearance-none px-4 py-3.5 rounded-2xl bg-muted focus:outline-none text-right text-base cursor-pointer" style={{fontSize: "16px"}}
                     dir="rtl"
                   >
                     <option value={0}>بدون وقت تحضير (فوري)</option>
@@ -806,9 +796,9 @@ export default function ItemsPage() {
                     <option value={720}>12 ساعة</option>
                     <option value={1440}>24 ساعة (يوم كامل)</option>
                   </select>
-                  <ChevronDown className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                  <ChevronDown className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                 </div>
-                <p className="text-xs text-gray-400 mt-1 text-right" dir="rtl">يحدد أقرب موعد توصيل متاح للعميل</p>
+                <p className="text-xs text-muted-foreground mt-1 text-right" dir="rtl">يحدد أقرب موعد توصيل متاح للعميل</p>
               </div>
 
               {/* Gallery Images */}
@@ -819,7 +809,7 @@ export default function ItemsPage() {
                     const gallerySrc = getDisplayImage(String(url || ""))
                     if (!gallerySrc) return null
                     return (
-                      <div key={idx} className="relative w-16 h-16 rounded-xl overflow-hidden bg-[#f5f5f5] flex-shrink-0">
+                      <div key={idx} className="relative w-16 h-16 rounded-xl overflow-hidden bg-muted flex-shrink-0">
                         <Image
                           src={gallerySrc}
                           alt=""
@@ -836,33 +826,33 @@ export default function ItemsPage() {
                       </div>
                     )
                   })}
-                  <label className="w-16 h-16 rounded-xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:border-gray-400 transition-colors flex-shrink-0">
+                  <label className="w-16 h-16 rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center cursor-pointer hover:border-gray-400 transition-colors flex-shrink-0">
                     {galleryUploading
-                      ? <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
-                      : <><Upload className="h-4 w-4 text-gray-400" /><span className="text-[10px] text-gray-400 mt-0.5">إضافة</span></>
+                      ? <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                      : <><Upload className="h-4 w-4 text-muted-foreground" /><span className="text-[10px] text-muted-foreground mt-0.5">إضافة</span></>
                     }
                     <input type="file" accept="image/*" multiple onChange={handleGalleryUpload} className="hidden" />
                   </label>
                 </div>
-                <p className="text-xs text-gray-400">يمكنك إضافة أكثر من صورة — ستظهر في معرض المنتج</p>
+                <p className="text-xs text-muted-foreground">يمكنك إضافة أكثر من صورة — ستظهر في معرض المنتج</p>
               </div>
 
               {/* Options / Ingredients */}
               <div>
                 <label className="block text-sm font-semibold mb-1.5 text-right" dir="rtl">الخيارات / المكونات</label>
                 {tags.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mb-3 p-3 bg-[#f5f5f5] rounded-2xl">
+                  <div className="flex flex-wrap gap-2 mb-3 p-3 bg-muted rounded-2xl">
                     {tags.map((tag, i) => (
-                      <span key={i} className="flex items-center gap-1.5 px-3 py-1.5 bg-white rounded-full text-sm border border-gray-100 shadow-sm" dir="rtl">
+                      <span key={i} className="flex items-center gap-1.5 px-3 py-1.5 bg-card rounded-full text-sm border border-border shadow-sm" dir="rtl">
                         {tag}
                         <button
                           onClick={() => {
                             const newTags = tags.filter((_, idx) => idx !== i)
                             setModalItem(p => p ? { ...p, ingredients: newTags.join(", ") } : p)
                           }}
-                          className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center active:bg-red-100 flex-shrink-0"
+                          className="w-5 h-5 rounded-full bg-muted flex items-center justify-center active:bg-red-100 flex-shrink-0"
                         >
-                          <X className="h-3 w-3 text-gray-500" />
+                          <X className="h-3 w-3 text-muted-foreground" />
                         </button>
                       </span>
                     ))}
@@ -875,17 +865,17 @@ export default function ItemsPage() {
                     onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addIngredient(ingredientInput) } }}
                     placeholder="Example: Small (84 pcs)::300"
                     dir="rtl"
-                    className="flex-1 px-4 py-3.5 rounded-2xl bg-[#f5f5f5] focus:outline-none text-right text-base" style={{fontSize: "16px"}}
+                    className="flex-1 px-4 py-3.5 rounded-2xl bg-muted focus:outline-none text-right text-base" style={{fontSize: "16px"}}
                   />
                   <button
                     onClick={() => addIngredient(ingredientInput)}
-                    className="w-12 h-12 rounded-2xl bg-black text-white flex items-center justify-center flex-shrink-0 active:scale-95 transition-transform"
+                    className="w-12 h-12 rounded-2xl bg-foreground text-background flex items-center justify-center flex-shrink-0 active:scale-95 transition-transform"
                   >
                     <Plus className="h-5 w-5" />
                   </button>
                 </div>
-                <p className="text-xs text-gray-400 mt-1.5 text-right" dir="rtl">Type option then press Enter or +</p>
-                <p className="text-[11px] text-gray-500 mt-1 text-right" dir="rtl">
+                <p className="text-xs text-muted-foreground mt-1.5 text-right" dir="rtl">Type option then press Enter or +</p>
+                <p className="text-[11px] text-muted-foreground mt-1 text-right" dir="rtl">
                   For size pricing use: <span dir="ltr">Option Name::Price</span> e.g.
                   <span className="mx-1" dir="ltr">L (200 pcs)::500</span>
                 </p>
@@ -902,7 +892,7 @@ export default function ItemsPage() {
                   </div>
 
                   {/* Hint */}
-                  <div className="bg-white rounded-xl p-3 text-xs text-gray-500 space-y-1">
+                  <div className="bg-card rounded-xl p-3 text-xs text-muted-foreground space-y-1">
                     <p>• <strong>حد الاختيار</strong> أعلاه = عدد السخانات (4 أو 6)</p>
                     <p>• أضف بلاتر الاجبان كـ "مشمول" أدناه</p>
                   </div>
@@ -910,9 +900,9 @@ export default function ItemsPage() {
                   {/* Current package items */}
                   {(modalItem.packageItems || []).length > 0 && (
                     <div className="space-y-2">
-                      <p className="text-xs font-semibold text-gray-500">محتويات الباقة الحالية:</p>
+                      <p className="text-xs font-semibold text-muted-foreground">محتويات الباقة الحالية:</p>
                       {(modalItem.packageItems || []).map((pkg, i) => (
-                        <div key={i} className="flex items-center gap-2 p-3 bg-white rounded-xl border border-gray-100">
+                        <div key={i} className="flex items-center gap-2 p-3 bg-card rounded-xl border border-border">
                           <button
                             onClick={() => setModalItem(p => p ? { ...p, packageItems: (p.packageItems || []).filter((_, idx) => idx !== i) } : p)}
                             className="w-6 h-6 rounded-full bg-red-100 text-red-500 flex items-center justify-center text-sm flex-shrink-0 active:scale-95"
@@ -920,7 +910,7 @@ export default function ItemsPage() {
                           <div className="flex-1 text-right">
                             <p className="font-semibold text-sm">{pkg.label}</p>
                           </div>
-                          <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${pkg.included ? "bg-yellow-100 text-yellow-700" : "bg-gray-100 text-gray-600"}`}>
+                          <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${pkg.included ? "bg-yellow-100 text-yellow-700" : "bg-muted text-muted-foreground"}`}>
                             {pkg.included ? "مشمول" : `${pkg.quantity} قطعة`}
                           </span>
                         </div>
@@ -930,13 +920,13 @@ export default function ItemsPage() {
 
                   {/* Add item */}
                   <div className="space-y-2">
-                    <p className="text-xs font-semibold text-gray-500">إضافة عنصر:</p>
+                    <p className="text-xs font-semibold text-muted-foreground">إضافة عنصر:</p>
                     <input
                       value={pkgLabelInput}
                       onChange={e => setPkgLabelInput(e.target.value)}
                       placeholder="مثال: بلاتر الاجبان"
                       dir="rtl"
-                      className="w-full px-3 py-2.5 rounded-xl bg-white border border-gray-200 text-sm focus:outline-none text-right"
+                      className="w-full px-3 py-2.5 rounded-xl bg-card border border-border text-sm focus:outline-none text-right"
                     />
                     <div className="flex gap-2">
                       <input
@@ -944,7 +934,7 @@ export default function ItemsPage() {
                         min={1}
                         value={pkgQtyInput}
                         onChange={e => setPkgQtyInput(Number(e.target.value))}
-                        className="w-20 px-3 py-2.5 rounded-xl bg-white border border-gray-200 text-sm focus:outline-none text-center"
+                        className="w-20 px-3 py-2.5 rounded-xl bg-card border border-border text-sm focus:outline-none text-center"
                       />
                       <button
                         onClick={() => {

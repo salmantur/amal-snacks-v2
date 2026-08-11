@@ -190,8 +190,11 @@ export default function AdminOrdersPage() {
         byKey.set(key, { key, label: dayLabel(order.createdAt), date: startOfDay(order.createdAt), count: 1 })
       }
     }
-    const days = Array.from(byKey.values()).sort((a, b) => a.date.getTime() - b.date.getTime())
-    return [{ key: "all", label: "الكل", date: new Date(0), count: orders.length }, ...days]
+    const recentDays = Array.from(byKey.values())
+      .sort((a, b) => b.date.getTime() - a.date.getTime())
+      .slice(0, 3)
+      .sort((a, b) => a.date.getTime() - b.date.getTime())
+    return [{ key: "all", label: "الكل", date: new Date(0), count: orders.length }, ...recentDays]
   }, [orders])
 
   const filteredOrders = useMemo(() => {
@@ -213,8 +216,8 @@ export default function AdminOrdersPage() {
         </div>
       ) : null}
 
-      <div className="sticky top-0 z-20 flex items-center justify-between gap-6 border-b border-admin-border-soft bg-admin-header px-4 py-3 sm:px-8">
-        <div className="flex flex-none gap-0.5 overflow-x-auto">
+      <div className="sticky top-0 z-20 flex items-center justify-between gap-3 border-b border-admin-border-soft bg-admin-header px-4 py-3 sm:px-8">
+        <div className="flex min-w-0 flex-1 gap-0.5 overflow-x-auto">
           {filterTabs.map((tab) => (
             <button
               key={tab.key}

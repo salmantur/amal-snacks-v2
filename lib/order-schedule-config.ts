@@ -1,5 +1,3 @@
-"use client"
-
 export interface OrderScheduleConfig {
   closedDates: string[]
 }

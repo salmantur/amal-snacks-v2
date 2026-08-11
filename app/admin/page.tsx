@@ -1,33 +1,33 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
-import { ArrowRight, Bell, Volume2, VolumeX, RefreshCw, LogOut, ChefHat, Menu, X, AlertTriangle, ChevronDown } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
+import { Bell, Volume2, VolumeX, RefreshCw, AlertTriangle, ChevronDown, Search, X } from "lucide-react"
 import { type Order } from "@/lib/data"
 import { fetchRecentOrders, subscribeToOrders, updateOrderStatus, fetchFailedOrders, resolveFailedOrder, type FailedOrder } from "@/lib/orders"
-import dynamic from "next/dynamic"
 import { KitchenTicket } from "@/components/kitchen-ticket"
-const StockManager = dynamic(() => import("@/components/stock-manager").then((m) => ({ default: m.StockManager })), { loading: () => TAB_LOADING })
-const CategoryManager = dynamic(() => import("@/components/category-manager").then((m) => ({ default: m.CategoryManager })), { loading: () => TAB_LOADING })
-const SalesDashboard = dynamic(() => import("@/components/sales-dashboard").then((m) => ({ default: m.SalesDashboard })), { loading: () => TAB_LOADING })
-const HeroBannerEditor = dynamic(() => import("@/components/hero-banner-editor").then((m) => ({ default: m.HeroBannerEditor })), { loading: () => TAB_LOADING })
-const ThemeEditor = dynamic(() => import("@/components/theme-editor").then((m) => ({ default: m.ThemeEditor })), { loading: () => TAB_LOADING })
-const BestSellerCardEditor = dynamic(() => import("@/components/best-seller-card-editor").then((m) => ({ default: m.BestSellerCardEditor })), { loading: () => TAB_LOADING })
-const DeliveryAreasManager = dynamic(() => import("@/components/delivery-areas-manager").then((m) => ({ default: m.DeliveryAreasManager })), { loading: () => TAB_LOADING })
-const ClosedDatesManager = dynamic(() => import("@/components/closed-dates-manager").then((m) => ({ default: m.ClosedDatesManager })), { loading: () => TAB_LOADING })
-const DiscountManager = dynamic(() => import("@/components/discount-manager").then((m) => ({ default: m.DiscountManager })), { loading: () => TAB_LOADING })
-const TelegramSettingsManager = dynamic(() => import("@/components/telegram-settings-manager").then((m) => ({ default: m.TelegramSettingsManager })), { loading: () => TAB_LOADING })
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 
-// Each admin tab's editor is only ever rendered when that tab is active, so
-// code-split them out of the initial bundle (SalesDashboard alone pulls in
-// recharts) instead of paying for all nine up front.
-const TAB_LOADING = <div className="py-16 text-center text-sm text-gray-400">جارِ التحميل...</div>
-
-type AdminTab = "orders" | "banner" | "stock" | "categories" | "sales" | "colors" | "delivery" | "discounts" | "alerts"
 type OrderFilter = Order["status"] | "all"
+type TypeFilter = "all" | "delivery" | "pickup"
+type SortBy = "newest" | "oldest" | "highest" | "status"
+
+const statusPriority: Record<Order["status"], number> = {
+  pending: 0,
+  preparing: 1,
+  ready: 2,
+  delivered: 3,
+}
+
+const STATUS_FILTERS: { value: OrderFilter; label: string }[] = [
+  { value: "all", label: "الكل" },
+  { value: "pending", label: "جديد" },
+  { value: "preparing", label: "قيد التحضير" },
+  { value: "ready", label: "جاهز" },
+  { value: "delivered", label: "مكتمل" },
+]
 
 // Realtime subscription is the primary sync path (subscribeToOrders below).
 // This interval is a fallback only, in case the realtime channel silently
@@ -52,16 +52,26 @@ function mergeOrders(existing: Order[], incoming: Order[]): Order[] {
   return Array.from(merged.values()).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
 }
 
-export default function AdminPage() {
-  const router = useRouter()
+function failedOrderReasonLabel(reason: string): string {
+  if (reason === "rate_limited") return "تم رفض الطلب مؤقتًا (عدد كبير من الطلبات في وقت قصير)"
+  if (reason === "invalid_payload") return "بيانات الطلب غير مكتملة أو غير صحيحة"
+  if (reason.startsWith("unknown_menu_item")) return "أحد الأصناف لم يعد متوفرًا في القائمة"
+  if (reason === "invalid_delivery_area") return "منطقة التوصيل لم تعد صالحة"
+  if (reason === "menu_load_failed") return "تعذر تحميل أسعار القائمة"
+  if (reason.startsWith("db_insert_failed")) return "خطأ في حفظ الطلب في قاعدة البيانات"
+  return reason
+}
+
+export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [soundEnabled, setSoundEnabled] = useState(true)
 
   const [filter, setFilter] = useState<OrderFilter>("all")
-  const [activeTab, setActiveTab] = useState<AdminTab>("orders")
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>("all")
+  const [sortBy, setSortBy] = useState<SortBy>("newest")
+  const [searchQuery, setSearchQuery] = useState("")
   const [newOrderAlert, setNewOrderAlert] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
@@ -89,41 +99,8 @@ export default function AdminPage() {
 
   const handleResolveFailedOrder = async (id: string) => {
     setFailedOrders((prev) => prev.map((f) => (f.id === id ? { ...f, resolved: true } : f)))
-    const { error } = await resolveFailedOrder(id)
-    if (error) {
-      setFailedOrders((prev) => prev.map((f) => (f.id === id ? { ...f, resolved: false } : f)))
-      window.alert(`تعذر تعليم الطلب كمُعالَج، حاول مرة أخرى (${error})`)
-    }
+    await resolveFailedOrder(id)
   }
-
-  const failedOrderReasonLabel = (reason: string): string => {
-    if (reason === "rate_limited") return "تم رفض الطلب مؤقتًا (عدد كبير من الطلبات في وقت قصير)"
-    if (reason === "invalid_payload") return "بيانات الطلب غير مكتملة أو غير صحيحة"
-    if (reason.startsWith("unknown_menu_item")) return "أحد الأصناف لم يعد متوفرًا في القائمة"
-    if (reason === "invalid_delivery_area") return "منطقة التوصيل لم تعد صالحة"
-    if (reason === "menu_load_failed") return "تعذر تحميل أسعار القائمة"
-    if (reason.startsWith("db_insert_failed")) return "خطأ في حفظ الطلب في قاعدة البيانات"
-    return reason
-  }
-
-  useEffect(() => {
-    const root = document.documentElement
-    const body = document.body
-
-    root.classList.remove("modal-open")
-    body.classList.remove("modal-open")
-    root.style.overflow = ""
-    body.style.overflow = ""
-    body.style.touchAction = ""
-
-    return () => {
-      root.classList.remove("modal-open")
-      body.classList.remove("modal-open")
-      root.style.overflow = ""
-      body.style.overflow = ""
-      body.style.touchAction = ""
-    }
-  }, [])
 
   const playNotificationSound = useCallback(() => {
     if (!soundEnabled || !audioRef.current) return
@@ -147,12 +124,6 @@ export default function AdminPage() {
       setLoading(false)
     }
   }, [])
-
-  const handleLogout = async () => {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    router.push("/admin/login")
-  }
 
   useEffect(() => {
     void refreshOrders("initial")
@@ -207,103 +178,48 @@ export default function AdminPage() {
   const preparingCount = useMemo(() => orders.filter((o) => o.status === "preparing").length, [orders])
 
   const filteredOrders = useMemo(() => {
-    const out = filter === "all" ? orders.slice() : orders.filter((order) => order.status === filter)
-    out.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+    const q = searchQuery.trim().toLowerCase()
+    const byQuery = (order: Order) => {
+      if (!q) return true
+      const fields = [
+        order.customerName,
+        order.customerPhone,
+        order.customerAddress,
+        `#${order.orderNumber}`,
+        ...order.items.map((i) => i.name),
+      ]
+      return fields.some((f) => f?.toLowerCase().includes(q))
+    }
+
+    const out = orders.filter((order) => {
+      if (filter !== "all" && order.status !== filter) return false
+      if (typeFilter !== "all" && order.orderType !== typeFilter) return false
+      return byQuery(order)
+    })
+
+    out.sort((a, b) => {
+      if (sortBy === "oldest") return a.createdAt.getTime() - b.createdAt.getTime()
+      if (sortBy === "highest") return b.total - a.total
+      if (sortBy === "status") {
+        const diff = statusPriority[a.status] - statusPriority[b.status]
+        if (diff !== 0) return diff
+      }
+      return b.createdAt.getTime() - a.createdAt.getTime()
+    })
+
     return out
-  }, [orders, filter])
-
-  const tabItems: { id: AdminTab; label: string }[] = [
-    { id: "orders", label: "الطلبات" },
-    { id: "banner", label: "البانر" },
-    { id: "stock", label: "المخزون" },
-    { id: "categories", label: "التصنيفات" },
-    { id: "sales", label: "المبيعات" },
-    { id: "colors", label: "المظهر" },
-    { id: "delivery", label: "التوصيل" },
-    { id: "discounts", label: "الخصومات" },
-    { id: "alerts", label: "التنبيهات" },
-  ]
-
-  const tabEmojiMap: Record<AdminTab, string> = {
-    orders: "🧾",
-    banner: "🖼️",
-    stock: "📦",
-    categories: "🗂️",
-    sales: "📈",
-    colors: "🎨",
-    delivery: "🚚",
-    discounts: "🏷️",
-    alerts: "🔔",
-  }
-
-  const designStyles = {
-    main: "min-h-screen bg-[#f5f5f5]",
-    header: "sticky top-0 z-50 bg-white border-b border-gray-100",
-    content: "p-4",
-  }
+  }, [orders, filter, typeFilter, sortBy, searchQuery])
 
   return (
-    <main
-      className={cn(
-        designStyles.main,
-        "h-[100dvh] max-h-[100dvh] overflow-x-hidden overflow-y-scroll overscroll-y-contain touch-pan-y [&_button]:touch-pan-y [&_a]:touch-pan-y"
-      )}
-    >
+    <div dir="rtl" className="min-h-[calc(100dvh-3.5rem)] bg-muted/30">
       <audio ref={audioRef} preload="auto">
-        <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2teleGZwzOrl0LFwRD9iq+Xx8duSQAYvh9vw+/zhok4bG33Q6Pn/+eapV0M+cLzg8P/+9u64cTg5eMDg8f7+9O++fUMvZ7be9P/96fLMj0MjV6rc8v7+5u3SlGFDM2Cp4fH++OTt2aFzTSlbqNvx/vjh7d+rfFwyU57W7v/64+zisYRkNUSRzun//eDq5buPc0Y+hMPl/v3c5ufAmoJXOHi72/v92uLnyqKPZTtqr9P4/trg5tGtm3REXaLK8v7Z3eTYuKh/ST5rr9Ly/tjb4tzDtJNfPmau0PD+1tnf4M3AoHhEP2iv0PD91dbd5NXJq4JMPWWt0PD91NTb5trQtI1UPWSuzfD909Pa5+DXv5xiP2Ss0O/809HX5+Te0MJzQl2ny+/9z87U6Ojl2s2CRlihxu390c3S6Ovq4NiXTFCXvOz8z8vQ5+3v6eTglVdLkbbm+szIzePv8+7s6apkR4OqrOrIxcne8fb07u+7dUx3l6bjxcPF2fP6+PT11od0Wmahz8XBwdXy/v338N2dg29SYJLCwb+/0fP///nz5q+Wf2xXYo64v7+/y+/////579+7pI53ZmV3qLm9vsPQ7P7///zz6se4rJaEeHNxlam2ur7E0On6///68+nXyrq0ppqMg3t3fZamsbW6wMnX6vr//fXp3NPJwbuwpZuQh4F+gI6cpq+2vcTM1eLy/v3x5NvTzca/ubKroZiPiIWDhouXoqq0vMPKz9bh7vj89uvf19HOyMS+t7GsppyTi4eFhomSmqSvuMDIzdLZ4+v2+/Pn3dXPy8bBvLazrKiflo+KhoaIjZainrG7w8rQ1t3l7vf78ePZ0szIw7+6trKuqaOdlo+LiYmMkJmjrri/xs3T2eHo8Pn67+TZ0s7Jxb+7t7OvrqqmoJqUj4uKi42SnKewtb3EytHX3+bt9vnu49nSzMnFwLy4tK+sqKSfm5aPjYuLjZGYoKmyusDGzNLZ4Ofs9frw5dzVz8vGwr66trKuqqainJeRjo2MjpGXn6iwuL/Gys/W3eTo8Pf67OLa1M/Lxr+8uLSwr6ynop2YlJCOjY6RlZyjq7O6wcfN0djf5u3z+PHn39nTz8rFwLy4tLCsqaWgnZiUkI6Oj5KYn6ess7q/xs3P1dri5+3y9O7m4NjSzcnFv7u3sq6rp6OgnZmVkpCPkJOXnaOqsLe9xMrP1Nrf5u3y9O/n4dvVz8rFwLq3s6+rp6OgnJiVkpCQkZSZnqSqsLe+w8nO09je5Ors8/Tu5+Hb1c/KxL65tLCsqKSgnZmVko+QkZSYnqSqs7e+w8jO0tfe5Ors8vPu5+Hb1c/KxL65tLCsqKSgnZmVkpCQkZSYnqSqsLe9w8jO0tfe5Onr8vPu5+Dc1tDKxL65tLCsqKSgnJmVkpCQkZSYnqSqsLe9w8jN0tfe5Onr8fLu5+Dc1tDKxL65tLCsp6SgnJmVkpCQkZSYnqOqsLa9w8jN0tbd5Onr8fLu5uDc1tDKxL65tK+sp6SgnJmVkpCQkZSYnqOpsLa9wsjN0tXd5Onr8fHu5uDb1tDKxL64tK+sp6OgnJmVko+PkZSYnqOpsLa8wsjN0tXc5Ojr8fHu5uDb1c/JxL64s6+sp6OgnJiVko+PkZSYnaOpsLa8wsfM0dXc5Ojr8PHt5uDb1c/JxL64s6+rp6OgnJiVko+PkZOYnaOpsLW8wsfM0dXc4+jr8PHt5d/a1c/JxL64s6+rpqKfnJiVko+PkJOXnaOosbW8wsfM0dXc4+jr8PHt5d/a1c/Jw764s6+rpqKfnJiUkY+OkJOXnaOosLW7wsfL0NXc4+jr7/Ht5d/a1c/Jw724sq6rpqKenJiUkY+OkJOXnKOosLW7wsbL0NTc4ujq7/Ds5d/a1M/Jw724sq6rpqKenJiUkY6OkJOXnKKnsLW7wsbL0NTb4ujq7/Ds5N/Z1M7Iw724sq6qpqGenJeUkY6NkJOWnKKnr7W7wsbK0NTb4ujq7+/s5N/Z1M7Iwr24sq6qpqGenJeUkY6NkJOWnKKnr7S7wMbKz9Pb4efp7+/s5N7Z1M7Iwr24sa6qpaGenJeUkI6NkJOWm6Knr7S6wMbKz9Pa4efp7+/r5N7Y087Hwr24sa6qpaGenJeUkI6NkJOWm6GnrrS6wMXKz9Pa4Ofp7u7r5N7Y087Hwr24sa6qpaGenJeUkI6NkJOWm6GnrrS6wMXJztPa4Ofp7u7r49/YD87Hwr24sa6qpaGenJeUkI6NkJOWm6GnrrS5wMXJztLZ4Obp7u3r493Xz8zGwby3sa6ppaCdm5eUkI6NkJOWm6CmrrO5wMXJztLZ3+bo7e3r493Xz8zGwLy3sa6ppaCdm5eUkI2NkJKVm6CmrrO5v8XJzdLZ3+bo7e3q493X0MzGwLy3sa2ppaCdm5aUkI2Nj5KVm6CmrbO5v8TJzdLY3+bo7ezq493X0MvGwLy3sK2po5+dm5aUkI2Nj5KVmqClrbO4v8TIzNHY3uXn7ezq4t3X0MvFwLy2sK2po5+dmpaTkI2Nj5KVmqClrbK4v8TIzNHY3uXn7ezq4t3W0MvFv7u2sK2oo5+dmpaTkI2Mj5KVmqClrLK4vsPI" type="audio/wav" />
+        <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2teleGZwzOrl0LFwRD9iq+Xx8duSQAYvh9vw+/zhok4bG33Q6Pn/+eapV0M+cLzg8P/+9u64cTg5eMDg8f7+9O++fUMvZ7be9P/96fLMj0MjV6rc8v7+5u3SlGFDM2Cp4fH++OTt2aFzTSlbqNvx/vjh7d+rfFwyU57W7v/64+zisYRkNUSRzun//eDq5buPc0Y+hMPl/v3c5ufAmoJXOHi72/v92uLnyqKPZTtqr9P4/trg5tGtm3REXaLK8v7Z3eTYuKh/ST5rr9Ly/tjb4tzDtJNfPmau0PD+1tnf4M3AoHhEP2iv0PD91dbd5NXJq4JMPWWt0PD91NTb5trQtI1UPWSuzfD909Pa5+DXv5xiP2Ss0O/809HX5+Te0MJzQl2ny+/9z87U6Ojl2s2CRlihxu390c3S6Ovq4NiXTFCXvOz8z8vQ5+3v6eTglVdLkbbm+szIzePv8+7s6apkR4OqrOrIxcne8fb07u+7dUx3l6bjxcPF2fP6+PT11od0Wmahz8XBwdXy/v338N2dg29SYJLCwb+/0fP///nz5q+Wf2xXYo64v7+/y+/////579+7pI53ZmV3qLm9vsPQ7P7///zz6se4rJaEeHNxlam2ur7E0On6///68+nXyrq0ppqMg3t3fZamsbW6wMnX6vr//fXp3NPJwbuwpZuQh4F+gI6cpq+2vcTM1eLy/v3x5NvTzca/ubKroZiPiIWDhouXoqq0vMPKz9bh7vj89uvf19HOyMS+t7GsppyTi4eFhomSmqSvuMDIzdLZ4+v2+/Pn3dXPy8bBvLazrKiflo+KhoaIjZainrG7w8rQ1t3l7vf78ePZ0szIw7+6trKuqaOdlo+LiYmMkJmjrri/xs3T2eHo8Pn67+TZ0s7Jxb+7t7OvrqqmoJqUj4uKi42SnKewtb3EytHX3+bt9vnu49nSzMnFwLy4tK+sqKSfm5aPjYuLjZGYoKmyusDGzNLZ4Ofs9frw5dzVz8vGwr66trKuqqainJeRjo2MjpGXn6iwuL/Gys/W3eTo8Pf67OLa1M/Lxr+8uLSwr6ynop2YlJCOjY6RlZyjq7O6wcfN0djf5u3z+PHn39nTz8rFwLy4tLCsqaWgnZiUkI6Oj5KYn6ess7q/xs3P1dri5+3y9O7m4NjSzcnFv7u3sq6rp6OgnZmVkpCPkJOXnaOqsLe9xMrP1Nrf5u3y9O/n4dvVz8rFwLq3s6+rp6OgnJiVkpCQkZSZnqSqsLe+w8nO09je5Ors8/Tu5+Hb1c/KxL65tLCsqKSgnZmVko+QkZSYnqSqs7e+w8jO0tfe5Ors8vPu5+Hb1c/KxL65tLCsqKSgnZmVkpCQkZSYnqSqsLe9w8jO0tfe5Onr8vPu5+Dc1tDKxL65tLCsqKSgnJmVkpCQkZSYnqSqsLe9w8jN0tfe5Onr8fLu5+Dc1tDKxL65tLCsp6SgnJmVkpCQkZSYnqOqsLa9w8jN0tbd5Onr8fLu5uDc1tDKxL65tK+sp6SgnJmVkpCQkZSYnqOpsLa9wsjN0tXd5Onr8fHu5uDb1tDKxL64tK+sp6OgnJmVko+PkZSYnqOpsLa8wsjN0tXc5Ojr8fHu5uDb1c/JxL64s6+sp6OgnJiVko+PkZSYnaOpsLa8wsfM0dXc5Ojr8PHt5uDb1c/JxL64s6+rp6OgnJiVko+PkZOYnaOpsLW8wsfM0dXc4+jr8PHt5d/a1c/JxL64s6+rpqKfnJiVko+PkJOXnaOosbW8wsfM0dXc4+jr8PHt5d/a1c/Jw764s6+rpqKfnJiUkY+OkJOXnaOosLW7wsfL0NXc4+jr7/Ht5d/a1M/Jw724sq6rpqKenJiUkY+OkJOXnKOosLW7wsbL0NTc4ujq7/Ds5d/a1M/Jw724sq6rpqKenJiUkY6OkJOXnKKnsLW7wsbL0NTb4ujq7/Ds5N/Z1M7Iw724sq6qpqGenJeUkY6NkJOWnKKnr7W7wsbK0NTb4ujq7+/s5N/Z1M7Iwr24sq6qpqGenJeUkY6NkJOWnKKnr7S7wMbKz9Pb4efp7+/s5N7Z1M7Iwr24sa6qpaGenJeUkI6NkJOWm6Knr7S6wMbKz9Pa4efp7+/r5N7Y087Hwr24sa6qpaGenJeUkI6NkJOWm6GnrrS6wMXKz9Pa4Ofp7u7r5N7Y087Hwr24sa6qpaGenJeUkI6NkJOWm6GnrrS6wMXJztPa4Ofp7u7r49/YD87Hwr24sa6qpaGenJeUkI6NkJOWm6GnrrS5wMXJztLZ4Obp7u3r493Xz8zGwby3sa6ppaCdm5eUkI6NkJOWm6CmrrO5wMXJztLZ3+bo7e3r493Xz8zGwLy3sa6ppaCdm5eUkI2NkJKVm6CmrrO5v8XJzdLZ3+bo7e3q493X0MzGwLy3sa2ppaCdm5aUkI2Nj5KVm6CmrbO5v8TJzdLY3+bo7ezq493X0MvGwLy3sK2po5+dm5aUkI2Nj5KVmqClrbO4v8TIzNHY3uXn7ezq4t3X0MvFwLy2sK2po5+dmpaTkI2Nj5KVmqClrbK4v8TIzNHY3uXn7ezq4t3W0MvFv7u2sK2oo5+dmpaTkI2Mj5KVmqClrLK4vsPI" type="audio/wav" />
       </audio>
 
-      <header className={cn(designStyles.header)} style={{ transform: "translateZ(0)" }}>
-        <div className="flex items-center justify-between px-4 py-3">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="w-10 h-10 rounded-full bg-[#f5f5f5] flex items-center justify-center active:scale-95 transition-transform"
-            aria-label="Open menu"
-          >
-            <Menu className="h-5 w-5 text-gray-700" />
-          </button>
-
-          <div className="text-center">
-            <h1 className="text-base font-bold leading-tight">لوحة التحكم</h1>
-            <div className="flex items-center justify-center gap-2 mt-0.5">
-              {pendingCount > 0 ? <span className="text-xs font-medium text-primary">{pendingCount} جديد</span> : null}
-              {preparingCount > 0 ? <span className="text-xs font-medium text-yellow-600">{preparingCount} قيد التحضير</span> : null}
-            </div>
-          </div>
-
-          <div className="w-10 h-10" />
-        </div>
-
-        {activeTab === "orders" ? (
-          <div className="px-4 pb-3 border-t border-gray-100 pt-2 space-y-2">
-            <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-              {([
-                { value: "all", label: "الكل" },
-                { value: "pending", label: "جديد" },
-                { value: "preparing", label: "قيد التحضير" },
-                { value: "ready", label: "جاهز" },
-                { value: "delivered", label: "مكتمل" },
-              ] as const).map((f) => (
-                <button
-                  key={f.value}
-                  onClick={() => setFilter(f.value)}
-                  className={cn(
-                    "px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors flex-shrink-0 active:scale-95",
-                    filter === f.value ? "bg-gray-900 text-white" : "bg-[#f5f5f5] text-gray-600"
-                  )}
-                >
-                  {f.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : null}
-      </header>
-
       {newOrderAlert ? (
-        <div className="fixed top-4 left-4 right-4 z-50 p-4 bg-primary text-primary-foreground rounded-2xl shadow-xl">
+        <div className="fixed left-4 right-4 top-4 z-50 rounded-2xl bg-primary p-4 text-primary-foreground shadow-xl md:left-auto md:w-96">
           <div className="flex items-center gap-3">
-            <Bell className="h-6 w-6 animate-bounce flex-shrink-0" />
+            <Bell className="h-6 w-6 flex-shrink-0 animate-bounce" />
             <div>
               <p className="font-bold">طلب جديد</p>
               <p className="text-sm opacity-90">تم استقبال طلب جديد في لوحة الطلبات</p>
@@ -312,251 +228,200 @@ export default function AdminPage() {
         </div>
       ) : null}
 
-      {sidebarOpen ? (
-        <div className="fixed inset-0 z-[70]">
-          <button
-            className="absolute inset-0 bg-black/40"
-            onClick={() => setSidebarOpen(false)}
-            aria-label="Close sidebar overlay"
-          />
-          <aside className="absolute right-0 top-0 h-full w-[85%] max-w-[360px] bg-white shadow-2xl border-l border-gray-200 p-4 overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <p className="font-bold text-gray-900">القائمة</p>
+      <div className="border-b border-border bg-background px-4 py-4 md:px-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 className="text-xl font-bold text-foreground">الطلبات</h1>
+            <div className="mt-1 flex items-center gap-2">
+              {pendingCount > 0 ? (
+                <Badge className="bg-primary text-primary-foreground">{pendingCount} جديد</Badge>
+              ) : null}
+              {preparingCount > 0 ? (
+                <Badge className="bg-amal-yellow text-foreground">{preparingCount} قيد التحضير</Badge>
+              ) : null}
+              {pendingCount === 0 && preparingCount === 0 ? (
+                <span className="text-sm text-muted-foreground">لا توجد طلبات نشطة حالياً</span>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => void refreshOrders("poll")}
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:bg-muted/70"
+              aria-label="تحديث"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setSoundEnabled((v) => !v)}
+              className={cn(
+                "flex h-9 w-9 items-center justify-center rounded-full transition-colors",
+                soundEnabled ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+              )}
+              aria-label="الصوت"
+            >
+              {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="ابحث بالاسم، الجوال، أو رقم الطلب..."
+              className="pr-9 text-right"
+            />
+            {searchQuery ? (
               <button
-                onClick={() => setSidebarOpen(false)}
-                className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center"
-                aria-label="Close menu"
+                onClick={() => setSearchQuery("")}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                aria-label="مسح البحث"
               >
                 <X className="h-4 w-4" />
               </button>
-            </div>
+            ) : null}
+          </div>
 
-            <div className="space-y-2">
-              <p className="text-xs font-semibold text-gray-500">الأقسام</p>
-              {tabItems.map((tab) => (
-                <button
-                  key={`drawer-tab-${tab.id}`}
-                  onClick={() => {
-                    setActiveTab(tab.id)
-                    setSidebarOpen(false)
-                  }}
-                  className={cn(
-                    "w-full text-right px-3 py-2.5 rounded-xl text-sm font-medium",
-                    activeTab === tab.id ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-700"
-                  )}
-                >
-                  <span className="inline-flex items-center gap-2">
-                    <span>{tabEmojiMap[tab.id]}</span>
-                    <span>{tab.label}</span>
-                  </span>
-                </button>
-              ))}
-            </div>
+          <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as TypeFilter)}>
+            <SelectTrigger className="w-36" dir="rtl">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent dir="rtl">
+              <SelectItem value="all">كل الأنواع</SelectItem>
+              <SelectItem value="delivery">توصيل</SelectItem>
+              <SelectItem value="pickup">استلام</SelectItem>
+            </SelectContent>
+          </Select>
 
-            <div className="mt-6 pt-4 border-t border-gray-200 space-y-2">
-              <p className="text-xs font-semibold text-gray-500">اختصارات</p>
-              <div className="grid grid-cols-2 gap-2">
-                <Link
-                  href="/"
-                  onClick={() => setSidebarOpen(false)}
-                  className="rounded-xl bg-gray-100 text-gray-700 px-3 py-2.5 text-sm font-medium inline-flex items-center justify-center gap-2"
-                >
-                  <ArrowRight className="h-4 w-4" />
-                  الرئيسية
-                </Link>
-                <Link
-                  href="/admin/items"
-                  onClick={() => setSidebarOpen(false)}
-                  className="rounded-xl bg-gray-100 text-gray-700 px-3 py-2.5 text-sm font-medium inline-flex items-center justify-center gap-2"
-                >
-                  <ChefHat className="h-4 w-4" />
-                  الأصناف
-                </Link>
-                <button
-                  onClick={() => void refreshOrders("poll")}
-                  className="rounded-xl bg-gray-100 text-gray-700 px-3 py-2.5 text-sm font-medium inline-flex items-center justify-center gap-2"
-                >
-                  <Bell className={cn("h-4 w-4", newOrderAlert && "text-primary animate-bounce")} />
-                  تحديث
-                </button>
-                <button
-                  onClick={() => setSoundEnabled((v) => !v)}
-                  className={cn(
-                    "rounded-xl px-3 py-2.5 text-sm font-medium inline-flex items-center justify-center gap-2",
-                    soundEnabled ? "bg-primary text-primary-foreground" : "bg-gray-100 text-gray-700"
-                  )}
-                >
-                  {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-                  الصوت
-                </button>
+          <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortBy)}>
+            <SelectTrigger className="w-36" dir="rtl">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent dir="rtl">
+              <SelectItem value="newest">الأحدث</SelectItem>
+              <SelectItem value="oldest">الأقدم</SelectItem>
+              <SelectItem value="highest">الأعلى سعراً</SelectItem>
+              <SelectItem value="status">حسب الحالة</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="mt-3 flex gap-2 overflow-x-auto">
+          {STATUS_FILTERS.map((f) => (
+            <button
+              key={f.value}
+              onClick={() => setFilter(f.value)}
+              className={cn(
+                "flex-shrink-0 whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
+                filter === f.value ? "bg-foreground text-background" : "bg-muted text-muted-foreground hover:bg-muted/70"
+              )}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="p-4 md:p-6">
+        {unresolvedFailedOrders.length > 0 ? (
+          <div className="mb-4 overflow-hidden rounded-2xl border border-red-200 bg-red-50">
+            <button
+              type="button"
+              onClick={() => setFailedOrdersPanelOpen((v) => !v)}
+              className="flex w-full items-center justify-between gap-2 px-4 py-3 text-right"
+            >
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 shrink-0 text-red-500" />
+                <span className="text-sm font-bold text-red-700">
+                  {unresolvedFailedOrders.length} طلب لم يتم حفظه — راجع واتساب للتأكد منه
+                </span>
               </div>
-              <button
-                onClick={handleLogout}
-                className="w-full rounded-xl bg-red-50 text-red-600 px-3 py-2.5 text-sm font-semibold inline-flex items-center justify-center gap-2"
-              >
-                <LogOut className="h-4 w-4" />
-                تسجيل الخروج
-              </button>
-            </div>
-          </aside>
-        </div>
-      ) : null}
-
-      {activeTab === "banner" ? (
-        <div className={cn(designStyles.content, "max-w-lg mx-auto")}>
-          <h2 className="text-lg font-bold mb-4">تخصيص البانر الرئيسي</h2>
-          <HeroBannerEditor />
-        </div>
-      ) : null}
-
-      {activeTab === "stock" ? (
-        <div className={cn(designStyles.content, "max-w-lg mx-auto")}>
-          <h2 className="text-lg font-bold mb-4">إدارة المخزون</h2>
-          <StockManager />
-        </div>
-      ) : null}
-
-      {activeTab === "categories" ? (
-        <div className={cn(designStyles.content, "max-w-lg mx-auto")}>
-          <h2 className="text-lg font-bold mb-4">إدارة التصنيفات</h2>
-          <CategoryManager />
-        </div>
-      ) : null}
-
-      {activeTab === "delivery" ? (
-        <div className={cn(designStyles.content, "max-w-lg mx-auto space-y-4")}>
-          <DeliveryAreasManager />
-          <ClosedDatesManager />
-        </div>
-      ) : null}
-
-      {activeTab === "colors" ? (
-        <div className={cn(designStyles.content, "max-w-lg mx-auto")}>
-          <h2 className="text-lg font-bold mb-4">تخصيص المظهر</h2>
-          <ThemeEditor />
-          <BestSellerCardEditor />
-        </div>
-      ) : null}
-
-      {activeTab === "discounts" ? (
-        <div className={cn(designStyles.content, "max-w-lg mx-auto")}>
-          <h2 className="text-lg font-bold mb-4">إدارة الخصومات</h2>
-          <DiscountManager />
-        </div>
-      ) : null}
-
-      {activeTab === "alerts" ? (
-        <div className={cn(designStyles.content, "max-w-lg mx-auto")}>
-          <h2 className="text-lg font-bold mb-4">تنبيهات تيليجرام</h2>
-          <TelegramSettingsManager />
-        </div>
-      ) : null}
-
-      {activeTab === "sales" ? (
-        <div className={cn(designStyles.content, "max-w-lg mx-auto")}>
-          <h2 className="text-lg font-bold mb-4">تقرير المبيعات</h2>
-          <SalesDashboard />
-        </div>
-      ) : null}
-
-      {activeTab === "orders" ? (
-        <div className={cn(designStyles.content)}>
-          {unresolvedFailedOrders.length > 0 ? (
-            <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 overflow-hidden">
-              <button
-                type="button"
-                onClick={() => setFailedOrdersPanelOpen((v) => !v)}
-                className="flex w-full items-center justify-between gap-2 px-4 py-3 text-right"
-              >
-                <div className="flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5 text-red-500 shrink-0" />
-                  <span className="text-sm font-bold text-red-700">
-                    {unresolvedFailedOrders.length} طلب لم يتم حفظه — راجع واتساب للتأكد منه
-                  </span>
-                </div>
-                <ChevronDown
-                  className={cn("h-4 w-4 text-red-500 transition-transform", failedOrdersPanelOpen && "rotate-180")}
-                />
-              </button>
-              {failedOrdersPanelOpen ? (
-                <div className="border-t border-red-200 divide-y divide-red-100">
-                  {unresolvedFailedOrders.map((f) => (
-                    <div key={f.id} className="flex items-start justify-between gap-3 px-4 py-3 text-right text-sm">
-                      <div className="min-w-0 flex-1">
-                        <p className="font-semibold text-gray-900">
-                          {f.customerName || "بدون اسم"}
-                          {f.customerPhone ? ` · ${f.customerPhone}` : ""}
-                        </p>
-                        <p className="text-gray-500 mt-0.5">{failedOrderReasonLabel(f.reason)}</p>
-                        <p className="text-gray-400 text-xs mt-0.5">
-                          {f.createdAt.toLocaleString("ar-SA", { dateStyle: "medium", timeStyle: "short" })}
-                        </p>
-                        {f.rawPayload ? (
-                          <pre
-                            dir="ltr"
-                            className="mt-2 max-h-40 overflow-auto rounded-lg bg-gray-900 p-2 text-left text-[11px] leading-relaxed text-gray-100"
-                          >
-                            {JSON.stringify(f.rawPayload, null, 2)}
-                          </pre>
-                        ) : null}
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => void handleResolveFailedOrder(f.id)}
-                        className="shrink-0 rounded-full border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-100"
-                      >
-                        تم الحل
-                      </button>
+              <ChevronDown
+                className={cn("h-4 w-4 text-red-500 transition-transform", failedOrdersPanelOpen && "rotate-180")}
+              />
+            </button>
+            {failedOrdersPanelOpen ? (
+              <div className="divide-y divide-red-100 border-t border-red-200">
+                {unresolvedFailedOrders.map((f) => (
+                  <div key={f.id} className="flex items-start justify-between gap-3 px-4 py-3 text-right text-sm">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold text-gray-900">
+                        {f.customerName || "بدون اسم"}
+                        {f.customerPhone ? ` · ${f.customerPhone}` : ""}
+                      </p>
+                      <p className="mt-0.5 text-gray-500">{failedOrderReasonLabel(f.reason)}</p>
+                      <p className="mt-0.5 text-xs text-gray-400">
+                        {f.createdAt.toLocaleString("ar-SA", { dateStyle: "medium", timeStyle: "short" })}
+                      </p>
+                      {f.rawPayload ? (
+                        <pre
+                          dir="ltr"
+                          className="mt-2 max-h-40 overflow-auto rounded-lg bg-gray-900 p-2 text-left text-[11px] leading-relaxed text-gray-100"
+                        >
+                          {JSON.stringify(f.rawPayload, null, 2)}
+                        </pre>
+                      ) : null}
                     </div>
-                  ))}
-                </div>
-              ) : null}
-            </div>
-          ) : null}
-
-          {loading ? (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 rounded-full bg-gray-100 mx-auto mb-4 flex items-center justify-center animate-pulse">
-                <RefreshCw className="h-8 w-8 text-gray-400" />
-              </div>
-              <p className="text-gray-400">جاري تحميل الطلبات...</p>
-            </div>
-          ) : loadError && orders.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 rounded-full bg-red-50 mx-auto mb-4 flex items-center justify-center">
-                <X className="h-8 w-8 text-red-400" />
-              </div>
-              <p className="mx-auto max-w-md text-sm font-medium text-red-600">{loadError}</p>
-              <button
-                onClick={() => void refreshOrders()}
-                className="mt-4 rounded-xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white"
-              >
-                إعادة المحاولة
-              </button>
-            </div>
-          ) : filteredOrders.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 rounded-full bg-gray-100 mx-auto mb-4 flex items-center justify-center">
-                <RefreshCw className="h-8 w-8 text-gray-400" />
-              </div>
-              <p className="text-gray-500">لا توجد نتائج مطابقة</p>
-            </div>
-          ) : (
-            <>
-              {loadError ? (
-                <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-right text-sm text-amber-700">
-                  {loadError}
-                </div>
-              ) : null}
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {filteredOrders.map((order) => (
-                  <KitchenTicket key={order.id} order={order} onStatusChange={handleStatusChange} />
+                    <button
+                      type="button"
+                      onClick={() => void handleResolveFailedOrder(f.id)}
+                      className="shrink-0 rounded-full border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-100"
+                    >
+                      تم الحل
+                    </button>
+                  </div>
                 ))}
               </div>
-            </>
-          )}
-        </div>
-      ) : null}
-    </main>
+            ) : null}
+          </div>
+        ) : null}
+
+        {loading ? (
+          <div className="py-16 text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 animate-pulse items-center justify-center rounded-full bg-muted">
+              <RefreshCw className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <p className="text-muted-foreground">جاري تحميل الطلبات...</p>
+          </div>
+        ) : loadError && orders.length === 0 ? (
+          <div className="py-16 text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-50">
+              <X className="h-8 w-8 text-red-400" />
+            </div>
+            <p className="mx-auto max-w-md text-sm font-medium text-red-600">{loadError}</p>
+            <button
+              onClick={() => void refreshOrders()}
+              className="mt-4 rounded-xl bg-foreground px-4 py-2 text-sm font-semibold text-background"
+            >
+              إعادة المحاولة
+            </button>
+          </div>
+        ) : filteredOrders.length === 0 ? (
+          <div className="py-16 text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+              <RefreshCw className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <p className="text-muted-foreground">لا توجد نتائج مطابقة</p>
+          </div>
+        ) : (
+          <>
+            {loadError ? (
+              <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-right text-sm text-amber-700">
+                {loadError}
+              </div>
+            ) : null}
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {filteredOrders.map((order) => (
+                <KitchenTicket key={order.id} order={order} onStatusChange={handleStatusChange} />
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
   )
 }

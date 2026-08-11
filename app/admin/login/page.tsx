@@ -3,7 +3,6 @@
 import React, { useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
-import { Lock } from "lucide-react"
 
 export default function AdminLoginPage() {
   const router = useRouter()
@@ -30,11 +29,11 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <main className="min-h-screen bg-amal-grey flex items-center justify-center p-4" dir="rtl">
+    <main className="min-h-screen bg-[hsl(222,47%,11%)] flex items-center justify-center p-4" dir="rtl">
       <div className="w-full max-w-sm bg-background rounded-3xl shadow-xl p-8">
-        {/* Icon */}
-        <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-6">
-          <Lock className="h-8 w-8 text-primary" />
+        {/* Brand mark */}
+        <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center mx-auto mb-6 text-primary-foreground text-2xl font-bold">
+          أ
         </div>
 
         <h1 className="text-2xl font-bold text-center text-foreground mb-1">لوحة التحكم</h1>

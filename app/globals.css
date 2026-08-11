@@ -46,15 +46,22 @@
     --item-card-desc: #6b7280;
     --item-card-price: #1e293b;
 
-    /* Admin sidebar — dark "backstage" surface, distinct from the storefront */
-    --sidebar-background: 222 47% 11%;
-    --sidebar-foreground: 210 20% 90%;
-    --sidebar-primary: 350 89% 60%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 222 39% 18%;
-    --sidebar-accent-foreground: 210 20% 96%;
-    --sidebar-border: 222 30% 20%;
-    --sidebar-ring: 350 89% 60%;
+    /* Admin editorial theme — warm/minimal surface, distinct from the storefront */
+    --admin-bg: #f7f6f4;
+    --admin-header: #eeeeea;
+    --admin-ink: #111827;
+    --admin-muted: #6b7280;
+    --admin-muted-2: #9ca3af;
+    --admin-muted-3: #c1c5cb;
+    --admin-border: rgba(17, 24, 39, 0.1);
+    --admin-border-soft: rgba(17, 24, 39, 0.06);
+    --admin-delivery: #0d9488;
+    --admin-delivery-tint: #e6f7f5;
+    --admin-pickup: #4f46e5;
+    --admin-pickup-tint: #eef0fd;
+    --admin-urgent: #e11d48;
+    --admin-window: #7c5e10;
+    --admin-window-tint: #fdf6e3;
   }
 }
 

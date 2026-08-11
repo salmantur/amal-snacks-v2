@@ -28,16 +28,6 @@ const TAB_LOADING = <div className="py-16 text-center text-sm text-gray-400">ج�
 
 type AdminTab = "orders" | "banner" | "stock" | "categories" | "sales" | "colors" | "delivery" | "discounts" | "alerts"
 type OrderFilter = Order["status"] | "all"
-type TypeFilter = "all" | "delivery" | "pickup"
-type SortBy = "newest" | "oldest" | "highest" | "status"
-type AdminDesign = "design1" | "design2" | "design3" | "design4" | "design5"
-
-const statusPriority: Record<Order["status"], number> = {
-  pending: 0,
-  preparing: 1,
-  ready: 2,
-  delivered: 3,
-}
 
 // Realtime subscription is the primary sync path (subscribeToOrders below).
 // This interval is a fallback only, in case the realtime channel silently
@@ -70,10 +60,6 @@ export default function AdminPage() {
   const [soundEnabled, setSoundEnabled] = useState(true)
 
   const [filter, setFilter] = useState<OrderFilter>("all")
-  const [typeFilter] = useState<TypeFilter>("all")
-  const [sortBy] = useState<SortBy>("newest")
-  const [adminDesign] = useState<AdminDesign>("design1")
-  const [searchQuery] = useState("")
   const [activeTab, setActiveTab] = useState<AdminTab>("orders")
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [newOrderAlert, setNewOrderAlert] = useState(false)
@@ -221,44 +207,10 @@ export default function AdminPage() {
   const preparingCount = useMemo(() => orders.filter((o) => o.status === "preparing").length, [orders])
 
   const filteredOrders = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase()
-    const byQuery = (order: Order) => {
-      if (!q) return true
-      const fields = [
-        order.customerName,
-        order.customerPhone,
-        order.customerAddress,
-        `#${order.orderNumber}`,
-        ...order.items.map((i) => i.name),
-      ]
-      return fields.some((f) => f?.toLowerCase().includes(q))
-    }
-
-    const out = orders.filter((order) => {
-      if (filter !== "all" && order.status !== filter) return false
-      if (typeFilter !== "all" && order.orderType !== typeFilter) return false
-      return byQuery(order)
-    })
-
-    out.sort((a, b) => {
-      if (sortBy === "oldest") return a.createdAt.getTime() - b.createdAt.getTime()
-      if (sortBy === "highest") return b.total - a.total
-      if (sortBy === "status") {
-        const diff = statusPriority[a.status] - statusPriority[b.status]
-        if (diff !== 0) return diff
-      }
-      return b.createdAt.getTime() - a.createdAt.getTime()
-    })
-
+    const out = filter === "all" ? orders.slice() : orders.filter((order) => order.status === filter)
+    out.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
     return out
-  }, [orders, filter, typeFilter, sortBy, searchQuery])
-
-  const statusLabelMap: Record<Order["status"], string> = {
-    pending: "جديد",
-    preparing: "قيد التحضير",
-    ready: "جاهز",
-    delivered: "مكتمل",
-  }
+  }, [orders, filter])
 
   const tabItems: { id: AdminTab; label: string }[] = [
     { id: "orders", label: "الطلبات" },
@@ -285,47 +237,10 @@ export default function AdminPage() {
   }
 
   const designStyles = {
-    design1: {
-      main: "min-h-screen bg-[#f5f5f5]",
-      header: "sticky top-0 z-50 bg-white border-b border-gray-100",
-      tabsWrap: "flex gap-2 px-4 pb-3 overflow-x-auto scrollbar-hide",
-      tabActive: "bg-gray-900 text-white",
-      tabIdle: "bg-[#f5f5f5] text-gray-600",
-      content: "p-4",
-    },
-    design2: {
-      main: "min-h-screen bg-[radial-gradient(circle_at_top,#ffffff,#eef2f7)]",
-      header: "sticky top-0 z-50 bg-white/70 backdrop-blur-xl border-b border-white/70 shadow-sm",
-      tabsWrap: "flex gap-2 px-4 pb-3 overflow-x-auto scrollbar-hide",
-      tabActive: "bg-[#1e5631] text-white",
-      tabIdle: "bg-white text-gray-600 border border-gray-200",
-      content: "p-4",
-    },
-    design3: {
-      main: "min-h-screen bg-[#0f172a] text-white",
-      header: "sticky top-0 z-50 bg-[#111827] border-b border-white/10",
-      tabsWrap: "flex gap-2 px-4 pb-3 overflow-x-auto scrollbar-hide",
-      tabActive: "bg-white text-[#111827]",
-      tabIdle: "bg-white/10 text-white",
-      content: "p-4",
-    },
-    design4: {
-      main: "min-h-screen bg-[#f8fafc] pb-20",
-      header: "sticky top-0 z-50 bg-white border-b border-gray-100",
-      tabsWrap: "hidden",
-      tabActive: "bg-gray-900 text-white",
-      tabIdle: "bg-white text-gray-600",
-      content: "p-4",
-    },
-    design5: {
-      main: "min-h-screen bg-[#f9fafb]",
-      header: "sticky top-0 z-50 bg-white border-b border-gray-100",
-      tabsWrap: "grid grid-cols-4 gap-2 px-4 pb-3",
-      tabActive: "bg-primary text-primary-foreground",
-      tabIdle: "bg-[#f3f4f6] text-gray-600",
-      content: "p-4",
-    },
-  }[adminDesign]
+    main: "min-h-screen bg-[#f5f5f5]",
+    header: "sticky top-0 z-50 bg-white border-b border-gray-100",
+    content: "p-4",
+  }
 
   return (
     <main
@@ -488,35 +403,35 @@ export default function AdminPage() {
       ) : null}
 
       {activeTab === "banner" ? (
-        <div className={cn(designStyles.content, "max-w-lg mx-auto", adminDesign === "design3" && "text-white")}>
+        <div className={cn(designStyles.content, "max-w-lg mx-auto")}>
           <h2 className="text-lg font-bold mb-4">تخصيص البانر الرئيسي</h2>
           <HeroBannerEditor />
         </div>
       ) : null}
 
       {activeTab === "stock" ? (
-        <div className={cn(designStyles.content, "max-w-lg mx-auto", adminDesign === "design3" && "text-white")}>
+        <div className={cn(designStyles.content, "max-w-lg mx-auto")}>
           <h2 className="text-lg font-bold mb-4">إدارة المخزون</h2>
           <StockManager />
         </div>
       ) : null}
 
       {activeTab === "categories" ? (
-        <div className={cn(designStyles.content, "max-w-lg mx-auto", adminDesign === "design3" && "text-white")}>
+        <div className={cn(designStyles.content, "max-w-lg mx-auto")}>
           <h2 className="text-lg font-bold mb-4">إدارة التصنيفات</h2>
           <CategoryManager />
         </div>
       ) : null}
 
       {activeTab === "delivery" ? (
-        <div className={cn(designStyles.content, "max-w-lg mx-auto space-y-4", adminDesign === "design3" && "text-white")}>
+        <div className={cn(designStyles.content, "max-w-lg mx-auto space-y-4")}>
           <DeliveryAreasManager />
           <ClosedDatesManager />
         </div>
       ) : null}
 
       {activeTab === "colors" ? (
-        <div className={cn(designStyles.content, "max-w-lg mx-auto", adminDesign === "design3" && "text-white")}>
+        <div className={cn(designStyles.content, "max-w-lg mx-auto")}>
           <h2 className="text-lg font-bold mb-4">تخصيص المظهر</h2>
           <ThemeEditor />
           <BestSellerCardEditor />
@@ -524,21 +439,21 @@ export default function AdminPage() {
       ) : null}
 
       {activeTab === "discounts" ? (
-        <div className={cn(designStyles.content, "max-w-lg mx-auto", adminDesign === "design3" && "text-white")}>
+        <div className={cn(designStyles.content, "max-w-lg mx-auto")}>
           <h2 className="text-lg font-bold mb-4">إدارة الخصومات</h2>
           <DiscountManager />
         </div>
       ) : null}
 
       {activeTab === "alerts" ? (
-        <div className={cn(designStyles.content, "max-w-lg mx-auto", adminDesign === "design3" && "text-white")}>
+        <div className={cn(designStyles.content, "max-w-lg mx-auto")}>
           <h2 className="text-lg font-bold mb-4">تنبيهات تيليجرام</h2>
           <TelegramSettingsManager />
         </div>
       ) : null}
 
       {activeTab === "sales" ? (
-        <div className={cn(designStyles.content, "max-w-lg mx-auto", adminDesign === "design3" && "text-white")}>
+        <div className={cn(designStyles.content, "max-w-lg mx-auto")}>
           <h2 className="text-lg font-bold mb-4">تقرير المبيعات</h2>
           <SalesDashboard />
         </div>
@@ -633,44 +548,13 @@ export default function AdminPage() {
                   {loadError}
                 </div>
               ) : null}
-              <div className="space-y-3">
-                <div className="flex gap-2 overflow-x-auto">
-                  {(["pending", "preparing", "ready", "delivered"] as const).map((s) => (
-                    <button
-                      key={s}
-                      onClick={() => setFilter(s)}
-                      className={cn("px-4 py-2 rounded-full text-sm font-medium", filter === s ? "bg-gray-900 text-white" : "bg-white text-gray-600 border border-gray-200")}
-                    >
-                      {statusLabelMap[s]}
-                    </button>
-                  ))}
-                </div>
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {filteredOrders.map((order) => (
-                    <KitchenTicket key={order.id} order={order} onStatusChange={handleStatusChange} />
-                  ))}
-                </div>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {filteredOrders.map((order) => (
+                  <KitchenTicket key={order.id} order={order} onStatusChange={handleStatusChange} />
+                ))}
               </div>
             </>
           )}
-        </div>
-      ) : null}
-
-
-      {adminDesign === "design4" ? (
-        <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 px-2 py-2 grid grid-cols-4 gap-1">
-          {tabItems.map((tab) => (
-            <button
-              key={`bottom-${tab.id}`}
-              onClick={() => setActiveTab(tab.id)}
-              className={cn(
-                "rounded-xl px-2 py-2 text-[11px] font-semibold",
-                activeTab === tab.id ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600"
-              )}
-            >
-              {tab.label}
-            </button>
-          ))}
         </div>
       ) : null}
     </main>

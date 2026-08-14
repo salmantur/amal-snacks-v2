@@ -18,19 +18,12 @@ import {
   extractPieceCount,
 } from "@/lib/tray-configurator"
 
-// Previously a standalone warm/cream palette (#181a22/#c15b3f/#f7f2ea/...),
-// independent of the site theme. Now driven by the same theme tokens as
-// the rest of the storefront, so an admin's color choices in
-// /admin/appearance actually reach this flow too.
-const INK = "hsl(var(--foreground))"
-const INK_CONTRAST = "hsl(var(--background))"
-const ACCENT = "hsl(var(--accent))"
-const ACCENT_TINT = "hsl(var(--accent) / 0.1)"
-const CREAM = "hsl(var(--background))"
-const CREAM_DEEP = "hsl(var(--muted))"
-const MUTED = "hsl(var(--muted-foreground))"
-const BORDER = "hsl(var(--border))"
-const SURFACE = "hsl(var(--card))"
+const INK = "#181a22"
+const ACCENT = "#c15b3f"
+const ACCENT_TINT = "rgba(193,91,63,0.1)"
+const CREAM = "#f7f2ea"
+const CREAM_DEEP = "#efe4d5"
+const MUTED = "#7c7a86"
 
 interface TrayPickerProps {
   item: MenuItem
@@ -118,11 +111,11 @@ export function TrayPicker({ item, onBack, onAdded }: TrayPickerProps) {
   return (
     <div dir="rtl" className="flex h-full min-h-0 flex-col font-sans" style={{ backgroundColor: CREAM }}>
       <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
-        <div className="relative h-[240px] w-full" style={{ background: `linear-gradient(150deg, ${CREAM_DEEP}, ${BORDER})` }}>
+        <div className="relative h-[240px] w-full" style={{ background: `linear-gradient(150deg, ${CREAM_DEEP}, #dcc9ae)` }}>
           {currentImage ? (
             <Image src={currentImage} alt={item.name} fill sizes="480px" quality={78} className="object-cover" priority />
           ) : (
-            <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
+            <div className="absolute inset-0 flex items-center justify-center text-[#a89a80]">
               <ShoppingBag className="h-10 w-10" />
             </div>
           )}
@@ -131,7 +124,7 @@ export function TrayPicker({ item, onBack, onAdded }: TrayPickerProps) {
             <button
               type="button"
               onClick={onBack}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-card/85 text-foreground shadow-sm backdrop-blur-sm"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-white/85 text-[#181a22] shadow-sm backdrop-blur-sm"
               aria-label="رجوع"
             >
               <ChevronRight className="h-5 w-5" />
@@ -161,7 +154,7 @@ export function TrayPicker({ item, onBack, onAdded }: TrayPickerProps) {
                   <span
                     key={img || i}
                     className="rounded-full transition-all"
-                    style={{ width: i === imgIndex ? 18 : 5, height: 5, background: i === imgIndex ? "hsl(var(--foreground) / 0.7)" : "hsl(var(--foreground) / 0.28)" }}
+                    style={{ width: i === imgIndex ? 18 : 5, height: 5, background: i === imgIndex ? "rgba(24,26,34,0.7)" : "rgba(24,26,34,0.28)" }}
                   />
                 ))}
               </div>
@@ -182,7 +175,7 @@ export function TrayPicker({ item, onBack, onAdded }: TrayPickerProps) {
               <span />
             )}
             {item.inStock === false ? (
-              <span className="text-[11px] font-bold text-destructive">نفذت الكمية</span>
+              <span className="text-[11px] font-bold text-[#8a2f2f]">نفذت الكمية</span>
             ) : null}
           </div>
 
@@ -198,7 +191,7 @@ export function TrayPicker({ item, onBack, onAdded }: TrayPickerProps) {
 
         {sizeOptions.length > 0 ? (
           <div className="px-5 pt-5">
-            <span className="text-xs font-extrabold" style={{ color: INK }}>
+            <span className="text-xs font-extrabold" style={{ color: "#2f2c26" }}>
               حدد الحجم
             </span>
             <div className="mt-2.5 flex gap-2">
@@ -214,9 +207,9 @@ export function TrayPicker({ item, onBack, onAdded }: TrayPickerProps) {
                       "flex flex-1 flex-col items-center gap-0.5 rounded-2xl py-2.5 transition-colors"
                     )}
                     style={{
-                      border: `1.5px solid ${on ? INK : BORDER}`,
-                      backgroundColor: on ? INK : SURFACE,
-                      color: on ? INK_CONTRAST : INK,
+                      border: `1.5px solid ${on ? INK : "#e4d9c6"}`,
+                      backgroundColor: on ? INK : "#ffffff",
+                      color: on ? "#ffffff" : "#42403c",
                     }}
                   >
                     <span className="text-[13px] font-extrabold">{getTraySizeChipLabel(option.parsed.label)}</span>
@@ -237,7 +230,7 @@ export function TrayPicker({ item, onBack, onAdded }: TrayPickerProps) {
               اختر الأصناف
             </h2>
           </div>
-          <div className="mt-2.5 h-1 overflow-hidden rounded-full" style={{ backgroundColor: CREAM_DEEP }}>
+          <div className="mt-2.5 h-1 overflow-hidden rounded-full" style={{ backgroundColor: "#e7ddca" }}>
             <div
               className="h-full rounded-full transition-all duration-200"
               style={{ width: `${(pickedCount / TRAY_REQUIRED) * 100}%`, backgroundColor: ACCENT }}
@@ -257,9 +250,9 @@ export function TrayPicker({ item, onBack, onAdded }: TrayPickerProps) {
                   aria-pressed={isOn}
                   className={cn("relative flex min-h-[54px] items-center rounded-2xl px-2.5 py-1.5 text-right transition-all", locked && "opacity-40")}
                   style={{
-                    backgroundColor: SURFACE,
-                    border: `1.5px solid ${isOn ? ACCENT : BORDER}`,
-                    boxShadow: isOn ? "0 6px 14px -10px hsl(var(--accent) / 0.55)" : "0 4px 10px -10px hsl(var(--foreground) / 0.3)",
+                    backgroundColor: "#ffffff",
+                    border: `1.5px solid ${isOn ? ACCENT : "#ece3d3"}`,
+                    boxShadow: isOn ? "0 6px 14px -10px rgba(193,91,63,0.55)" : "0 4px 10px -10px rgba(24,26,34,0.3)",
                   }}
                 >
                   {isOn ? (
@@ -327,10 +320,10 @@ export function TrayPicker({ item, onBack, onAdded }: TrayPickerProps) {
 
       <div
         className="flex-shrink-0 px-5 pb-4 pt-3"
-        style={{ backgroundColor: CREAM, borderTop: "1px solid hsl(var(--foreground) / 0.08)", boxShadow: "0 -10px 22px -18px hsl(var(--foreground) / 0.35)" }}
+        style={{ backgroundColor: CREAM, borderTop: "1px solid rgba(24,26,34,0.08)", boxShadow: "0 -10px 22px -18px rgba(24,26,34,0.35)" }}
       >
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-3 rounded-full border px-2 py-1.5" style={{ borderColor: BORDER }}>
+          <div className="flex items-center gap-3 rounded-full border px-2 py-1.5" style={{ borderColor: "#e4d9c6" }}>
             <button
               type="button"
               onClick={() => setQuantity((q) => q + 1)}
@@ -369,12 +362,8 @@ export function TrayPicker({ item, onBack, onAdded }: TrayPickerProps) {
             disabled={addDisabled || addedFeedback}
             className="h-[54px] flex-shrink-0 rounded-full px-6 text-[14px] font-black transition-all"
             style={{
-              // The success green on "added to cart" is a fixed semantic
-              // color (same reasoning as the WhatsApp-green/discount-green
-              // elsewhere in the storefront) - it signals success, not brand
-              // identity, so it doesn't follow the theme.
-              backgroundColor: item.inStock === false || addDisabled ? BORDER : addedFeedback ? "#2e6b46" : INK,
-              color: item.inStock === false || addDisabled ? MUTED : INK_CONTRAST,
+              backgroundColor: item.inStock === false || addDisabled ? "#e4d9c6" : addedFeedback ? "#2e6b46" : INK,
+              color: item.inStock === false || addDisabled ? "#9a8f78" : "#ffffff",
               cursor: item.inStock === false || addDisabled ? "not-allowed" : "pointer",
             }}
           >

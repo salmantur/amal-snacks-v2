@@ -106,24 +106,32 @@ function normalizeMenuImageSrc(src: string, base: string): string | null {
   return base ? `${base}${value}` : null
 }
 
+// title/desc/price color always comes from the inline var(--item-card-*)
+// styles applied alongside these classes (titleColorStyle/descColorStyle/
+// priceColorStyle below) - no color utility needed here, it'd just be dead.
 const cardStyle = {
   container: "rounded-2xl p-0",
   image: "rounded-2xl",
   content: "px-0 pb-0",
-  title: "text-[#1e293b]",
-  desc: "text-gray-500",
-  price: "text-[#1e293b]",
+  title: "",
+  desc: "",
+  price: "",
 }
 
+// Same reasoning as cardStyle above: title/desc/price never carry a color
+// utility here because titleColorStyle/descColorStyle/floatingPriceStyle
+// always override color (and, for price, background/border too) inline -
+// a hardcoded hex class on these would just be dead weight. The shell/
+// circle/chip classes are genuinely decorative per-design and stay as-is.
 function getTrayCardStyles(design: TrayCardDesign) {
   if (design === "d2") {
     return {
       shell: "relative rounded-[24px] border border-[#d6dde8] bg-[#f7fbff] p-2.5 shadow-sm",
       circleShell: "absolute inset-0 rounded-full bg-[linear-gradient(145deg,#deefff_0%,#f7fbff_100%)] shadow-[0_6px_14px_rgba(59,130,246,0.12)]",
       circleInset: "absolute inset-[5px] rounded-full overflow-hidden bg-white",
-      price: "inline-flex items-center rounded-full border border-[#c8d7ec] bg-[#eef4ff] px-3 py-1 text-sm font-bold text-[#1f3558]",
-      title: "text-[#1f3558]",
-      desc: "text-[#4f6588]",
+      price: "inline-flex items-center rounded-full border px-3 py-1 text-sm font-bold",
+      title: "",
+      desc: "",
       chipActive: "ring-[#5b8bd7]",
     }
   }
@@ -133,9 +141,9 @@ function getTrayCardStyles(design: TrayCardDesign) {
       shell: "relative rounded-[28px] border border-white/70 bg-white/45 backdrop-blur-md p-2.5 shadow-[0_14px_30px_rgba(0,0,0,0.12)]",
       circleShell: "absolute inset-0 rounded-full bg-[linear-gradient(140deg,#f2ecff_0%,#f7f6ff_100%)] shadow-[0_8px_16px_rgba(100,72,180,0.15)]",
       circleInset: "absolute inset-[5px] rounded-full overflow-hidden bg-white/70",
-      price: "inline-flex items-center rounded-full border border-white/80 bg-white/70 px-3 py-1 text-sm font-bold text-[#2f2b52] shadow-sm",
-      title: "text-[#2f2b52]",
-      desc: "text-[#6a6791]",
+      price: "inline-flex items-center rounded-full border px-3 py-1 text-sm font-bold shadow-sm",
+      title: "",
+      desc: "",
       chipActive: "ring-[#9a7be3]",
     }
   }
@@ -144,9 +152,9 @@ function getTrayCardStyles(design: TrayCardDesign) {
     shell: "relative rounded-[26px] border border-[#efced7] bg-[linear-gradient(130deg,#f6dfe5_0%,#f7f4e8_100%)] p-2.5 shadow-[0_8px_18px_rgba(155,117,133,0.12)]",
     circleShell: "absolute inset-0 rounded-full bg-[linear-gradient(140deg,#f6e0e7_0%,#f8f3ea_100%)] shadow-[0_6px_14px_rgba(0,0,0,0.08)]",
     circleInset: "absolute inset-[5px] rounded-full overflow-hidden bg-white/80",
-    price: "inline-flex items-center rounded-full border border-[#e7d9dd] bg-white/80 px-3 py-1 text-sm font-bold text-[#2a2a35]",
-    title: "text-[#2a2a35]",
-    desc: "text-[#727385]",
+    price: "inline-flex items-center rounded-full border px-3 py-1 text-sm font-bold",
+    title: "",
+    desc: "",
     chipActive: "ring-[#d16f89]",
   }
 }

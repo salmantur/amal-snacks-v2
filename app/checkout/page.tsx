@@ -319,14 +319,14 @@ function CheckoutContent() {
   const orderType = (orderTypeParam as OrderMode) || "delivery";
   const isPickup = orderType === "pickup";
   const theme = {
-    main: "min-h-screen bg-[#fdfaf9] pb-24 text-slate-900",
+    main: "min-h-screen bg-background pb-24 text-foreground",
     header:
-      "sticky top-0 z-50 border-b border-slate-200/80 bg-[#fdfaf9]/90 backdrop-blur-md",
+      "sticky top-0 z-50 border-b border-border/80 bg-background/90 backdrop-blur-md",
     section:
-      "rounded-[20px] border border-slate-200 bg-white p-4 shadow-[0_4px_20px_rgba(15,23,42,0.05)]",
+      "rounded-[20px] border border-border bg-card p-4 shadow-[0_4px_20px_rgba(15,23,42,0.05)]",
     summary:
-      "rounded-[24px] border border-[#f7e8bf] bg-[#fffbe8] p-5 shadow-[0_4px_20px_rgba(236,91,19,0.05)]",
-    input: "bg-slate-50",
+      "rounded-[24px] border border-accent/40 bg-accent/15 p-5 shadow-[0_4px_20px_rgba(236,91,19,0.05)]",
+    input: "bg-muted",
     ctaWrap: "mx-auto w-full max-w-md px-4 pb-8 pt-2",
   };
 

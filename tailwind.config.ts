@@ -11,7 +11,11 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['var(--font-thmanyah-sans)', 'var(--font-tajawal)', 'system-ui', 'sans-serif'],        'serif-text': ['var(--font-thmanyah-serif-text)', 'serif'],
+        // --font-theme is set at runtime by applyTheme() (hooks/use-theme-config.ts)
+        // when an admin picks a non-default font family; falls through to the
+        // existing default chain otherwise, so this is a no-op until then.
+        sans: ['var(--font-theme, var(--font-thmanyah-sans))', 'var(--font-tajawal)', 'system-ui', 'sans-serif'],
+        'serif-text': ['var(--font-thmanyah-serif-text)', 'serif'],
         'admin-mono': ['var(--font-ibm-plex-mono)', 'monospace'],
       },
       colors: {

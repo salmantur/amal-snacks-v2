@@ -3,6 +3,7 @@ export interface HeaderConfig {
   logo_image_url: string | null
   background_color: string
   icon_color: string
+  menu_icon_style: "lines" | "dots" | "hidden"
 }
 
 export const DEFAULT_HEADER_CONFIG: HeaderConfig = {
@@ -10,6 +11,7 @@ export const DEFAULT_HEADER_CONFIG: HeaderConfig = {
   logo_image_url: null,
   background_color: "#ffffff",
   icon_color: "#0f172a",
+  menu_icon_style: "lines",
 }
 
 export function normalizeHeaderConfig(raw: unknown): HeaderConfig {
@@ -23,5 +25,7 @@ export function normalizeHeaderConfig(raw: unknown): HeaderConfig {
         ? data.background_color
         : DEFAULT_HEADER_CONFIG.background_color,
     icon_color: typeof data.icon_color === "string" && data.icon_color.trim() ? data.icon_color : DEFAULT_HEADER_CONFIG.icon_color,
+    menu_icon_style:
+      data.menu_icon_style === "dots" || data.menu_icon_style === "hidden" ? data.menu_icon_style : DEFAULT_HEADER_CONFIG.menu_icon_style,
   }
 }

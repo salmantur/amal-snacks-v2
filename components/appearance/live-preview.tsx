@@ -35,13 +35,19 @@ export function LivePreview({
     [menuItems, bestSellerItem]
   )
 
+  const FONT_VAR_BY_FAMILY: Record<Exclude<ThemeConfig["font_family"], "system">, string> = {
+    tajawal: "var(--font-tajawal)",
+    "thmanyah-sans": "var(--font-thmanyah-sans)",
+    "thmanyah-serif-text": "var(--font-thmanyah-serif-text)",
+  }
+
   const scopedVars: CSSProperties = {
     "--primary": hexToHsl(theme.primary),
     "--primary-foreground": hexToHsl(theme.primary_foreground),
     "--secondary": hexToHsl(theme.secondary),
     "--secondary-foreground": hexToHsl(theme.secondary_foreground),
-    "--accent": hexToHsl(theme.secondary),
-    "--accent-foreground": hexToHsl(theme.secondary_foreground),
+    "--accent": hexToHsl(theme.accent || theme.secondary),
+    "--accent-foreground": hexToHsl(theme.accent_foreground || theme.secondary_foreground),
     "--destructive": hexToHsl(theme.destructive),
     "--destructive-foreground": hexToHsl(theme.destructive_foreground),
     "--ring": hexToHsl(theme.primary),
@@ -55,6 +61,8 @@ export function LivePreview({
     "--item-card-title": theme.item_card_title,
     "--item-card-desc": theme.item_card_description,
     "--item-card-price": theme.item_card_price,
+    "--radius": `${theme.corner_radius}px`,
+    ...(theme.font_family !== "system" ? { "--font-theme": FONT_VAR_BY_FAMILY[theme.font_family] } : {}),
   } as CSSProperties
 
   return (

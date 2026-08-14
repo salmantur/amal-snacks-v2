@@ -2,10 +2,17 @@
 
 import { useEffect, useRef, useState } from "react"
 import Image from "next/image"
-import { Check, Loader2, RotateCcw, Upload, X } from "lucide-react"
+import { Check, Clock3, History, Loader2, RotateCcw, Upload, X } from "lucide-react"
+import { cn } from "@/lib/utils"
 import { createClient } from "@/lib/supabase/client"
 import { useHeaderConfig } from "@/hooks/use-header-config"
 import { DEFAULT_HEADER_CONFIG, type HeaderConfig } from "@/lib/header-config"
+
+const MENU_ICON_OPTIONS: { value: HeaderConfig["menu_icon_style"]; label: string }[] = [
+  { value: "lines", label: "خطوط" },
+  { value: "dots", label: "نقاط" },
+  { value: "hidden", label: "مخفي" },
+]
 
 async function optimizeLogo(file: File, maxWidth = 480, quality = 0.9): Promise<File> {
   const bitmap = await createImageBitmap(file)
@@ -53,14 +60,15 @@ function ColorField({ label, value, onChange }: { label: string; value: string; 
 }
 
 export function HeaderEditor({ onDraftChange }: { onDraftChange?: (config: HeaderConfig) => void } = {}) {
-  const { config, loading, saveConfig } = useHeaderConfig()
+  const { loading, draft: storedDraft, published, history, saveDraft, publishDraft, restoreVersionToDraft } = useHeaderConfig()
   const [draft, setDraft] = useState<HeaderConfig | null>(null)
-  const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
+  const [savingDraft, setSavingDraft] = useState(false)
+  const [publishing, setPublishing] = useState(false)
+  const [savedNotice, setSavedNotice] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const logoInputRef = useRef<HTMLInputElement>(null)
 
-  const current = draft ?? config
+  const current = draft ?? storedDraft
   const dirty = Boolean(draft)
 
   useEffect(() => {
@@ -69,7 +77,7 @@ export function HeaderEditor({ onDraftChange }: { onDraftChange?: (config: Heade
 
   function update(patch: Partial<HeaderConfig>) {
     setDraft({ ...current, ...patch })
-    setSaved(false)
+    setSavedNotice(null)
   }
 
   async function onUploadLogo(e: React.ChangeEvent<HTMLInputElement>) {
@@ -105,13 +113,22 @@ export function HeaderEditor({ onDraftChange }: { onDraftChange?: (config: Heade
     e.target.value = ""
   }
 
-  async function handleSave() {
-    setSaving(true)
-    await saveConfig(current)
+  async function onSaveDraft() {
+    setSavingDraft(true)
+    await saveDraft(current)
     setDraft(null)
-    setSaving(false)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 1800)
+    setSavingDraft(false)
+    setSavedNotice("تم حفظ المسودة")
+    setTimeout(() => setSavedNotice(null), 2000)
+  }
+
+  async function onPublish() {
+    setPublishing(true)
+    await publishDraft(current)
+    setDraft(null)
+    setPublishing(false)
+    setSavedNotice("تم النشر")
+    setTimeout(() => setSavedNotice(null), 2000)
   }
 
   function handleReset() {
@@ -122,6 +139,20 @@ export function HeaderEditor({ onDraftChange }: { onDraftChange?: (config: Heade
 
   return (
     <div className="space-y-5" dir="rtl">
+      <section className="rounded-2xl border border-admin-border-soft bg-white p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-bold text-admin-ink">حالة الرأس</p>
+          <span className={cn("text-xs px-2 py-1 rounded-full", dirty ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700")}>
+            {dirty ? "تعديلات غير محفوظة" : "محفوظ"}
+          </span>
+        </div>
+        <p className="text-xs text-admin-muted-2">
+          الحفظ كمسودة لا يغيّر الموقع المباشر — فقط النشر ينشر التغييرات لزوار المتجر.
+        </p>
+        <p className="bg-admin-bg rounded-xl px-3 py-2 text-sm">المنشور حاليًا: <span className="font-semibold">{published.logo_text}</span></p>
+        {savedNotice ? <p className="text-sm text-emerald-700 font-semibold">{savedNotice}</p> : null}
+      </section>
+
       <section className="rounded-2xl border border-admin-border-soft bg-white p-4 space-y-3">
         <p className="text-sm font-bold text-admin-ink">الشعار</p>
         <input value={current.logo_text} onChange={(e) => update({ logo_text: e.target.value })} placeholder="نص الشعار" className="w-full rounded-xl bg-admin-bg px-4 py-3 text-sm focus:outline-none" />
@@ -155,6 +186,60 @@ export function HeaderEditor({ onDraftChange }: { onDraftChange?: (config: Heade
         <ColorField label="لون الأيقونات" value={current.icon_color} onChange={(value) => update({ icon_color: value })} />
       </section>
 
+      <section className="rounded-2xl border border-admin-border-soft bg-white p-4 space-y-3">
+        <p className="text-sm font-bold text-admin-ink">شكل أيقونة القائمة</p>
+        <div className="grid grid-cols-3 gap-2">
+          {MENU_ICON_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => update({ menu_icon_style: opt.value })}
+              className={cn(
+                "rounded-xl border px-3 py-2.5 text-sm font-semibold transition-colors",
+                current.menu_icon_style === opt.value
+                  ? "border-admin-ink bg-admin-ink text-white"
+                  : "border-admin-border-soft bg-white text-admin-muted hover:bg-admin-bg"
+              )}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+        {current.menu_icon_style === "hidden" ? (
+          <p className="text-xs text-amber-600 bg-amber-50 rounded-lg px-3 py-2">
+            تنبيه: إخفاء الأيقونة يخفي زر فتح قائمة التصنيفات بالكامل من الرأس.
+          </p>
+        ) : null}
+      </section>
+
+      <section className="rounded-2xl border border-admin-border-soft bg-white p-4 space-y-3">
+        <div className="flex items-center gap-2 text-admin-ink">
+          <History className="h-4 w-4" />
+          <p className="text-sm font-bold">آخر 3 نسخ</p>
+        </div>
+        {history.length === 0 ? <p className="text-xs text-admin-muted-2">لا توجد نسخ محفوظة بعد.</p> : null}
+        <div className="space-y-2">
+          {history.map((item) => (
+            <div key={item.id} className="rounded-xl border border-admin-border-soft px-3 py-2 flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold truncate">{item.config.logo_text}</p>
+                <p className="text-xs text-admin-muted-2 inline-flex items-center gap-1">
+                  <Clock3 className="h-3 w-3" />
+                  {new Date(item.saved_at).toLocaleString("ar-SA")} · {item.kind === "published" ? "منشور" : "مسودة"}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => restoreVersionToDraft(item.id)}
+                className="text-xs rounded-lg bg-admin-bg px-2 py-1 font-medium shrink-0"
+              >
+                استرجاع للمسودة
+              </button>
+            </div>
+          ))}
+        </div>
+      </section>
+
       <div className="flex gap-3">
         <button
           type="button"
@@ -162,16 +247,25 @@ export function HeaderEditor({ onDraftChange }: { onDraftChange?: (config: Heade
           className="inline-flex items-center gap-2 rounded-xl bg-admin-bg px-4 py-3 text-sm font-medium text-admin-muted active:scale-95 transition-transform"
         >
           <RotateCcw className="h-4 w-4" />
-          استرجاع الافتراضي
+          إعادة تعيين
         </button>
         <button
           type="button"
-          onClick={handleSave}
-          disabled={!dirty || saving}
-          className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-admin-ink py-3 text-sm font-bold text-white active:scale-95 transition-all disabled:opacity-50"
+          onClick={onSaveDraft}
+          disabled={savingDraft}
+          className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl border border-admin-border bg-white py-3 text-sm font-bold text-admin-ink disabled:opacity-50"
         >
-          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : saved ? <Check className="h-4 w-4" /> : <Upload className="h-4 w-4" />}
-          {saved ? "تم الحفظ" : "حفظ"}
+          {savingDraft ? <Upload className="h-4 w-4 animate-pulse" /> : <Check className="h-4 w-4" />}
+          حفظ كمسودة
+        </button>
+        <button
+          type="button"
+          onClick={onPublish}
+          disabled={publishing}
+          className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-admin-ink py-3 text-sm font-bold text-white disabled:opacity-50"
+        >
+          {publishing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+          نشر الآن
         </button>
       </div>
     </div>

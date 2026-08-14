@@ -1,8 +1,16 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Check, Copy, Loader2, RotateCcw, Sparkles } from "lucide-react"
+import { Check, Clock3, Copy, History, Loader2, RotateCcw, Sparkles, Upload } from "lucide-react"
+import { cn } from "@/lib/utils"
 import { DEFAULT_THEME, useThemeConfig, type ThemeConfig } from "@/hooks/use-theme-config"
+
+const FONT_OPTIONS: { value: ThemeConfig["font_family"]; label: string }[] = [
+  { value: "system", label: "الافتراضي" },
+  { value: "tajawal", label: "Tajawal" },
+  { value: "thmanyah-sans", label: "Thmanyah Sans" },
+  { value: "thmanyah-serif-text", label: "Thmanyah Serif" },
+]
 
 type ThemePreset = {
   id: string
@@ -207,13 +215,14 @@ function ColorBlock({
 }
 
 export function ThemeEditor({ onDraftChange }: { onDraftChange?: (config: ThemeConfig) => void } = {}) {
-  const { config, loading, saveConfig } = useThemeConfig()
+  const { loading, draft: storedDraft, published, history, saveDraft, publishDraft, restoreVersionToDraft } = useThemeConfig()
   const [draft, setDraft] = useState<ThemeConfig | null>(null)
-  const [tab, setTab] = useState<"main" | "background" | "cards">("main")
-  const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
+  const [tab, setTab] = useState<"main" | "background" | "cards" | "typography">("main")
+  const [savingDraft, setSavingDraft] = useState(false)
+  const [publishing, setPublishing] = useState(false)
+  const [savedNotice, setSavedNotice] = useState<string | null>(null)
 
-  const current = draft ?? config
+  const current = draft ?? storedDraft
   const trayDesign = current.tray_variant_design === "floating_3" ? "floating_3" : "design_c"
   const dirty = Boolean(draft)
 
@@ -223,7 +232,7 @@ export function ThemeEditor({ onDraftChange }: { onDraftChange?: (config: ThemeC
 
   function applyDraft(next: ThemeConfig) {
     setDraft(next)
-    setSaved(false)
+    setSavedNotice(null)
   }
 
   function update(patch: Partial<ThemeConfig>) {
@@ -234,14 +243,22 @@ export function ThemeEditor({ onDraftChange }: { onDraftChange?: (config: ThemeC
     applyDraft({ ...current, ...preset.config })
   }
 
-  async function handleSave() {
-    if (!draft) return
-    setSaving(true)
-    await saveConfig(draft)
-    setSaving(false)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 1800)
+  async function onSaveDraft() {
+    setSavingDraft(true)
+    await saveDraft(current)
     setDraft(null)
+    setSavingDraft(false)
+    setSavedNotice("تم حفظ المسودة")
+    setTimeout(() => setSavedNotice(null), 2000)
+  }
+
+  async function onPublish() {
+    setPublishing(true)
+    await publishDraft(current)
+    setDraft(null)
+    setPublishing(false)
+    setSavedNotice("تم النشر")
+    setTimeout(() => setSavedNotice(null), 2000)
   }
 
   function handleReset() {
@@ -252,11 +269,23 @@ export function ThemeEditor({ onDraftChange }: { onDraftChange?: (config: ThemeC
 
   return (
     <div className="space-y-5" dir="rtl">
-      {dirty ? (
-        <div className="flex items-center justify-end">
-          <span className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded-full">تغييرات غير محفوظة</span>
+      <section className="rounded-2xl border border-admin-border-soft bg-white p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-bold text-admin-ink">حالة الألوان</p>
+          <span className={cn("text-xs px-2 py-1 rounded-full", dirty ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700")}>
+            {dirty ? "تعديلات غير محفوظة" : "محفوظ"}
+          </span>
         </div>
-      ) : null}
+        <p className="text-xs text-admin-muted-2">
+          الحفظ كمسودة لا يغيّر الموقع المباشر — فقط النشر ينشر التغييرات لزوار المتجر.
+        </p>
+        <div className="flex items-center gap-2 bg-admin-bg rounded-xl px-3 py-2">
+          <span className="text-xs text-admin-muted-2">المنشور حاليًا:</span>
+          <span className="w-4 h-4 rounded-full border border-black/10" style={{ backgroundColor: published.primary }} />
+          <span className="text-xs font-mono text-admin-muted-2">{published.primary}</span>
+        </div>
+        {savedNotice ? <p className="text-sm text-emerald-700 font-semibold">{savedNotice}</p> : null}
+      </section>
 
       <section className="rounded-2xl border border-admin-border-soft bg-white p-4 space-y-3">
         <div className="flex items-center justify-between gap-2">
@@ -332,6 +361,13 @@ export function ThemeEditor({ onDraftChange }: { onDraftChange?: (config: ThemeC
           >
             بطاقات المنتجات
           </button>
+          <button
+            type="button"
+            onClick={() => setTab("typography")}
+            className={`flex-1 rounded-lg py-2 text-sm font-medium transition-colors ${tab === "typography" ? "bg-white text-admin-ink shadow-sm" : "text-admin-muted-2"}`}
+          >
+            الخط والزوايا
+          </button>
         </div>
 
         {tab === "main" ? (
@@ -392,7 +428,7 @@ export function ThemeEditor({ onDraftChange }: { onDraftChange?: (config: ThemeC
               مطابقة لون الشريط مع الخلفية
             </button>
           </div>
-        ) : (
+        ) : tab === "cards" ? (
           <div className="space-y-5">
             <ColorBlock
               title="لون خلفية بطاقات المنتجات"
@@ -419,7 +455,84 @@ export function ThemeEditor({ onDraftChange }: { onDraftChange?: (config: ThemeC
               onChange={(color) => update({ item_card_price: color })}
             />
           </div>
+        ) : (
+          <div className="space-y-5">
+            <ColorBlock title="لون التمييز (Accent)" value={current.accent} palette={BUTTON_COLORS} onChange={(color) => update({ accent: color })} />
+            <ColorBlock
+              title="لون نص التمييز"
+              value={current.accent_foreground}
+              palette={TEXT_COLORS}
+              onChange={(color) => update({ accent_foreground: color })}
+            />
+
+            <section className="space-y-2">
+              <p className="text-sm font-bold text-admin-ink">الخط</p>
+              <div className="grid grid-cols-2 gap-2">
+                {FONT_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => update({ font_family: opt.value })}
+                    className={cn(
+                      "rounded-xl border px-3 py-2.5 text-sm font-semibold transition-colors",
+                      current.font_family === opt.value
+                        ? "border-admin-ink bg-admin-ink text-white"
+                        : "border-admin-border-soft bg-white text-admin-muted hover:bg-admin-bg"
+                    )}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            <section className="space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-bold text-admin-ink">استدارة الزوايا</p>
+                <span className="text-xs font-mono text-admin-muted-2">{current.corner_radius}px</span>
+              </div>
+              <input
+                type="range"
+                min={0}
+                max={24}
+                value={current.corner_radius}
+                onChange={(e) => update({ corner_radius: Number(e.target.value) })}
+                className="w-full"
+              />
+              <p className="text-xs text-admin-muted-2">
+                يؤثر على الأزرار والنوافذ والحقول التي تستخدم الاستدارة الافتراضية للموقع، وليس كل العناصر (بعض البطاقات لها استدارة ثابتة).
+              </p>
+            </section>
+          </div>
         )}
+      </section>
+
+      <section className="rounded-2xl border border-admin-border-soft bg-white p-4 space-y-3">
+        <div className="flex items-center gap-2 text-admin-ink">
+          <History className="h-4 w-4" />
+          <p className="text-sm font-bold">آخر 3 نسخ</p>
+        </div>
+        {history.length === 0 ? <p className="text-xs text-admin-muted-2">لا توجد نسخ محفوظة بعد.</p> : null}
+        <div className="space-y-2">
+          {history.map((item) => (
+            <div key={item.id} className="rounded-xl border border-admin-border-soft px-3 py-2 flex items-center justify-between gap-2">
+              <div className="min-w-0 flex items-center gap-2">
+                <span className="w-4 h-4 shrink-0 rounded-full border border-black/10" style={{ backgroundColor: item.config.primary }} />
+                <p className="text-xs text-admin-muted-2 inline-flex items-center gap-1">
+                  <Clock3 className="h-3 w-3" />
+                  {new Date(item.saved_at).toLocaleString("ar-SA")} · {item.kind === "published" ? "منشور" : "مسودة"}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => restoreVersionToDraft(item.id)}
+                className="text-xs rounded-lg bg-admin-bg px-2 py-1 font-medium shrink-0"
+              >
+                استرجاع للمسودة
+              </button>
+            </div>
+          ))}
+        </div>
       </section>
 
       <div className="flex gap-3">
@@ -429,17 +542,25 @@ export function ThemeEditor({ onDraftChange }: { onDraftChange?: (config: ThemeC
           className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-admin-bg text-admin-muted text-sm font-medium active:scale-95 transition-transform"
         >
           <RotateCcw className="h-4 w-4" />
-          استرجاع الافتراضي
+          إعادة تعيين
         </button>
         <button
           type="button"
-          onClick={handleSave}
-          disabled={!dirty || saving}
-          className="flex-1 inline-flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold active:scale-95 transition-all disabled:opacity-50"
-          style={{ backgroundColor: saved ? "#166534" : current.primary, color: current.primary_foreground }}
+          onClick={onSaveDraft}
+          disabled={savingDraft}
+          className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl border border-admin-border bg-white py-3 text-sm font-bold text-admin-ink disabled:opacity-50"
         >
-          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-          {saved ? "تم الحفظ" : "حفظ الألوان"}
+          {savingDraft ? <Upload className="h-4 w-4 animate-pulse" /> : <Check className="h-4 w-4" />}
+          حفظ كمسودة
+        </button>
+        <button
+          type="button"
+          onClick={onPublish}
+          disabled={publishing}
+          className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-admin-ink py-3 text-sm font-bold text-white disabled:opacity-50"
+        >
+          {publishing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+          نشر الآن
         </button>
       </div>
     </div>

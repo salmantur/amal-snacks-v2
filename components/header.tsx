@@ -1,6 +1,6 @@
 "use client"
 
-import { ShoppingBag, Sparkles, Menu, ChevronLeft, ChevronRight } from "lucide-react"
+import { ShoppingBag, Sparkles, Menu, MoreVertical, ChevronLeft, ChevronRight } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 import dynamic from "next/dynamic"
 import Image from "next/image"
@@ -169,17 +169,25 @@ export function Header({ configOverride }: { configOverride?: HeaderConfig } = {
           className="relative flex min-h-[4.5rem] items-center justify-between px-4 pb-3 pt-3 md:px-6"
           style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top))" }}
         >
-          <button
-            ref={menuTriggerRef}
-            onClick={() => setMenuOpen(true)}
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-[#f8fafc] active:opacity-60 transition-opacity"
-            aria-haspopup="dialog"
-            aria-expanded={menuOpen}
-            aria-controls="header-menu-dialog"
-            aria-label="فتح القائمة"
-          >
-            <Menu className="h-5 w-5" style={{ color: config.icon_color }} />
-          </button>
+          {config.menu_icon_style === "hidden" ? (
+            <div className="h-11 w-11" aria-hidden="true" />
+          ) : (
+            <button
+              ref={menuTriggerRef}
+              onClick={() => setMenuOpen(true)}
+              className="flex h-11 w-11 items-center justify-center rounded-full bg-[#f8fafc] active:opacity-60 transition-opacity"
+              aria-haspopup="dialog"
+              aria-expanded={menuOpen}
+              aria-controls="header-menu-dialog"
+              aria-label="فتح القائمة"
+            >
+              {config.menu_icon_style === "dots" ? (
+                <MoreVertical className="h-5 w-5" style={{ color: config.icon_color }} />
+              ) : (
+                <Menu className="h-5 w-5" style={{ color: config.icon_color }} />
+              )}
+            </button>
+          )}
 
           <Link href="/" className="absolute left-1/2 -translate-x-1/2 active:opacity-70 transition-opacity">
             {config.logo_image_url ? (

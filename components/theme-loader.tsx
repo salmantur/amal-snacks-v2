@@ -2,7 +2,7 @@
 
 import { useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
-import { applyTheme, DEFAULT_THEME, loadCachedTheme, saveCachedTheme, type ThemeConfig } from "@/hooks/use-theme-config"
+import { applyTheme, loadCachedTheme, normalizeThemeStore, saveCachedTheme } from "@/hooks/use-theme-config"
 
 export function ThemeLoader() {
   useEffect(() => {
@@ -18,9 +18,9 @@ export function ThemeLoader() {
       .eq("key", "theme_colors")
       .single()
       .then(({ data }) => {
-        const cfg: ThemeConfig = data?.value ? { ...DEFAULT_THEME, ...data.value } : DEFAULT_THEME
-        applyTheme(cfg)
-        saveCachedTheme(cfg)
+        const published = normalizeThemeStore(data?.value).published
+        applyTheme(published)
+        saveCachedTheme(published)
       })
   }, [])
 

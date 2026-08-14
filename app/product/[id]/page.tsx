@@ -16,7 +16,7 @@ export default function ProductPage() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#efe4d5] text-sm text-[#7c7a86]" dir="rtl">
+      <div className="flex min-h-screen items-center justify-center bg-background text-sm text-muted-foreground" dir="rtl">
         جارِ التحميل...
       </div>
     )
@@ -24,12 +24,12 @@ export default function ProductPage() {
 
   if (!item || !isTraySizeVariant) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#efe4d5] p-6 text-center" dir="rtl">
-        <p className="text-sm text-[#7c7a86]">{!item ? "لم يتم العثور على هذا المنتج." : "هذا المنتج لا يدعم صفحة العرض هذه حاليًا."}</p>
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background p-6 text-center" dir="rtl">
+        <p className="text-sm text-muted-foreground">{!item ? "لم يتم العثور على هذا المنتج." : "هذا المنتج لا يدعم صفحة العرض هذه حاليًا."}</p>
         <button
           type="button"
           onClick={() => router.push("/")}
-          className="rounded-full bg-[#181a22] px-5 py-2.5 text-sm font-bold text-white"
+          className="rounded-full bg-foreground px-5 py-2.5 text-sm font-bold text-background"
         >
           العودة للرئيسية
         </button>
@@ -38,7 +38,7 @@ export default function ProductPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#efe4d5] p-0 md:flex md:items-center md:justify-center md:p-9">
+    <div className="min-h-screen bg-background p-0 md:flex md:items-center md:justify-center md:p-9">
       <div className="mx-auto h-screen w-full overflow-hidden bg-[#f7f2ea] shadow-none md:h-[860px] md:max-w-[420px] md:rounded-[38px] md:shadow-[0_40px_80px_-30px_rgba(20,15,10,0.42)]">
         <TrayPicker item={item} onBack={() => router.back()} onAdded={() => router.push("/")} />
       </div>

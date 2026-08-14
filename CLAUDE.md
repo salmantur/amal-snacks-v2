@@ -30,8 +30,10 @@ There is no test suite in this repo (no test runner configured, no `*.test.*`/`*
   - `api/menu` — public GET, cached (`revalidate = 30`).
   - `api/menu/chat` — rate-limited (20 req/min/IP) proxy to Google Gemini (`gemini-1.5-flash-latest`) for a menu chat assistant. Requires `GEMINI_API_KEY` (not in `.env.example`).
   - `api/orders` — POST: validates with Zod and **re-prices every item server-side from the `menu` table**; never trusts client-submitted prices. Fires a best-effort Telegram notification after insert.
-  - `api/webhook/print` — Supabase DB-webhook receiver on `orders` INSERT; validates `x-webhook-secret` (timing-safe compare, `WEBHOOK_SECRET`) and pushes an ePOS-Print XML ticket directly to a network thermal printer (`PRINTER_IP`).
+  - `api/print-order` — POST, requires an authenticated admin session: manual reprint from `/admin`, builds a ticket via `lib/print-ticket-server.ts` and pushes it to a network thermal printer (`PRINTER_IP`, or `app_settings.printer_config`). Routed through the server (rather than the browser calling the printer directly) because the admin dashboard is served over HTTPS and browsers block a mixed-content `fetch` to a plain-`http://` LAN device.
   - `api/vitals` — Web Vitals beacon receiver (just logs, no external sink).
+
+  There used to be an `api/webhook/print` route here too: a Supabase DB-webhook receiver that auto-printed on every `orders` INSERT by pushing directly from Vercel to the printer's IP over the internet, which required forwarding a router port to the printer via a No-IP dynamic DNS hostname — with no authentication on the printer's own HTTP endpoint. That route has been removed. Auto-print on new orders is now handled by `scripts/print-daemon/` (see its README), a standalone script meant to run on a device physically on the printer's LAN, subscribing to Supabase Realtime instead of being pushed to over the internet. The printer no longer needs to be reachable from outside its LAN. Note `api/print-order` above still has the old direct-from-Vercel dependency for the *manual* reprint button — that migration is a known follow-up, not yet done.
 
 ### Auth
 
@@ -90,9 +92,11 @@ Many `hooks/use-*-config.ts` files (`use-banner-config`, `use-best-sellers-confi
 
 ### Environment variables
 
-`.env.example` only lists `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `WEBHOOK_SECRET`, `PRINTER_IP`. Also required by code but absent from `.env.example`:
+`.env.example` only lists `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `PRINTER_IP`. Also required by code but absent from `.env.example`:
 - `GEMINI_API_KEY` — required for `/api/menu/chat` to function at all.
 - `CHAT_API_SECRET` — optional; if unset, that endpoint's auth check is a no-op.
+
+`scripts/print-daemon/` (the kitchen auto-print daemon, not part of the Vercel deploy) has its own separate `.env.example` — see its README.
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY` — alternate fallback key name accepted by `lib/supabase/config.ts`.
 
 `next.config.mjs` also hardcodes a specific Supabase project ref in `images.remotePatterns` (`eejlqdydoilbjpegxvbq.supabase.co`) — update this if the Supabase project ever changes.

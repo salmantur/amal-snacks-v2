@@ -9,6 +9,7 @@ import { HomeContent } from "@/components/home-content"
 import { HomeLayoutPreview } from "@/components/home-layout-preview"
 import { HomeSkeleton } from "@/components/home-skeleton"
 import { fetchMenuItems } from "@/lib/fetch-menu"
+import { fetchHomeLayoutConfig } from "@/lib/fetch-home-layout-config"
 import { decodeMenuItems } from "@/lib/text"
 
 type HomePageProps = {
@@ -28,19 +29,32 @@ const getCachedMenu = unstable_cache(async () => fetchMenuItems(), ["home-page-m
   tags: ["menu"],
 })
 
+// Same reasoning as getCachedMenu above: the admin-selected default layout
+// (set from /admin/appearance) is read on every visit, so it's cached too
+// rather than hitting Supabase per request.
+const getCachedHomeLayoutConfig = unstable_cache(async () => fetchHomeLayoutConfig(), ["home-layout-config"], {
+  revalidate: 30,
+  tags: ["home_layout_config"],
+})
+
 async function HomeData({ homeui }: { homeui?: string }) {
   const { data, error } = await getCachedMenu()
   const menuFallback = { data: decodeMenuItems(data), error }
 
-  if (homeui === "studio" || homeui === "soft" || homeui === "market") {
+  // ?homeui= always wins, so staff can preview any variant regardless of
+  // the saved default. Otherwise fall back to whatever's been picked in
+  // the admin Appearance > "تخطيط الرئيسية" section.
+  const effectiveVariant = homeui ?? (await getCachedHomeLayoutConfig()).variant
+
+  if (effectiveVariant === "studio" || effectiveVariant === "soft" || effectiveVariant === "market") {
     return (
       <SWRConfig value={{ fallback: { "/api/menu": menuFallback } }}>
-        <HomeLayoutPreview variant={homeui} />
+        <HomeLayoutPreview variant={effectiveVariant} />
       </SWRConfig>
     )
   }
 
-  if (homeui === "classic") {
+  if (effectiveVariant === "classic") {
     return (
       <SWRConfig value={{ fallback: { "/api/menu": menuFallback } }}>
         <main className="min-h-screen bg-[linear-gradient(180deg,#fffdf9_0%,#ffffff_18rem)] pb-[calc(9rem+env(safe-area-inset-bottom))] md:bg-background md:pb-24">

@@ -28,14 +28,19 @@ const BestSellerCardEditor = dynamic(
   () => import("@/components/best-seller-card-editor").then((m) => ({ default: m.BestSellerCardEditor })),
   { loading: () => LOADING }
 )
+const HomeLayoutEditor = dynamic(
+  () => import("@/components/home-layout-editor").then((m) => ({ default: m.HomeLayoutEditor })),
+  { loading: () => LOADING }
+)
 
-type Section = "banner" | "colors" | "header" | "bestSeller"
+type Section = "banner" | "colors" | "header" | "bestSeller" | "layout"
 
 const SECTIONS: { key: Section; label: string }[] = [
   { key: "banner", label: "البانر" },
   { key: "colors", label: "الألوان" },
   { key: "header", label: "الرأس والشعار" },
   { key: "bestSeller", label: "الأكثر طلبًا" },
+  { key: "layout", label: "تخطيط الرئيسية" },
 ]
 
 export default function AppearancePage() {
@@ -90,6 +95,9 @@ export default function AppearancePage() {
             </div>
             <div className={section === "bestSeller" ? "" : "hidden"}>
               <BestSellerCardEditor onDraftChange={setBestSellerCard} />
+            </div>
+            <div className={section === "layout" ? "" : "hidden"}>
+              <HomeLayoutEditor />
             </div>
           </div>
 

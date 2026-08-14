@@ -82,15 +82,15 @@ export function CategoryFilter({
                 aria-pressed={isActive}
                 className={cn(
                   "flex w-[82px] shrink-0 snap-start flex-col items-center gap-2 rounded-[1.1rem] px-1 py-1.5 text-center text-sm font-medium whitespace-normal transition-all duration-200 md:w-[90px] md:text-[15px]",
-                  isActive ? "text-[#0f172a]" : "text-[#64748b] hover:text-[#334155]"
+                  isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground/80"
                 )}
               >
                 <span
                   className={cn(
                     "flex h-[56px] w-[56px] items-center justify-center rounded-[1rem] border transition-all duration-200 md:h-[60px] md:w-[60px]",
                     isActive
-                      ? "border-[#dbe4ee] bg-white text-[#0f172a] shadow-[0_10px_24px_-20px_rgba(15,23,42,0.22)]"
-                      : "border-transparent bg-[#f8fafc] text-[#94a3b8]"
+                      ? "border-border bg-card text-foreground shadow-[0_10px_24px_-20px_rgba(15,23,42,0.22)]"
+                      : "border-transparent bg-muted text-muted-foreground"
                   )}
                 >
                   <Icon className="h-5 w-5 md:h-5.5 md:w-5.5" strokeWidth={2} />
@@ -124,8 +124,8 @@ export function CategoryFilter({
           className={cn(
               "relative min-h-11 snap-start shrink-0 rounded-full border px-4 py-2 text-sm font-medium whitespace-nowrap transition-all duration-200 active:scale-[0.98] md:px-4.5 md:text-[15px]",
             selectedCategory === category.id
-                ? "border-[#dbe4ee] bg-white text-[#0f172a] shadow-[0_10px_24px_-20px_rgba(15,23,42,0.22)]"
-                : "border-transparent bg-transparent text-[#64748b] hover:bg-white/80 hover:text-[#334155]"
+                ? "border-border bg-card text-foreground shadow-[0_10px_24px_-20px_rgba(15,23,42,0.22)]"
+                : "border-transparent bg-transparent text-muted-foreground hover:bg-card/80 hover:text-foreground/80"
           )}
         >
             <span>{category.label}</span>

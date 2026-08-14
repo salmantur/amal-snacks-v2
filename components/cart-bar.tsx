@@ -39,7 +39,7 @@ export function CartBar() {
 
           <button
             onClick={() => setModalOpen(true)}
-            className="relative z-10 grid h-11 w-[104px] min-[390px]:w-[118px] shrink-0 grid-cols-[16px_1fr_16px] items-center rounded-full border border-white/60 bg-white/80 px-3 font-semibold text-foreground shadow-sm transition-colors active:scale-95 hover:bg-white/90"
+            className="relative z-10 grid h-11 w-auto min-w-[104px] shrink-0 grid-cols-[16px_1fr_16px] items-center rounded-full border border-white/60 bg-white/80 px-3 font-semibold text-foreground shadow-sm transition-colors active:scale-95 hover:bg-white/90"
             dir="rtl"
           >
             <span aria-hidden="true" className="h-4 w-4" />

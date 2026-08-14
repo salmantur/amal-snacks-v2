@@ -221,7 +221,7 @@ export function subscribeToOrders(
   return () => { supabase.removeChannel(channel) }
 }
 
-function dbRowToOrder(row: any): Order | null {
+export function dbRowToOrder(row: any): Order | null {
   if (!row || typeof row !== "object") return null
 
   const rawItems: unknown[] = Array.isArray(row.items) ? row.items : []

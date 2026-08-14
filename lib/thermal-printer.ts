@@ -189,3 +189,84 @@ export function getTicketPreviewDataUrl(
   const canvas = renderCanvas(buildLines(order, mode))
   return canvas.toDataURL("image/png")
 }
+
+// ── Direct-to-printer sending (browser → printer over the LAN) ────────────
+//
+// Mirrors lib/print-ticket-server.ts's Node/@napi-rs/canvas renderer, but
+// runs entirely in the browser so the ticket can be sent straight to the
+// printer's local ePOS-Print endpoint - no server hop, so the printer never
+// needs to be reachable from the internet. Requires the printer to serve
+// its ePOS-Print endpoint over HTTPS with a certificate this browser
+// trusts (see /admin/printer) - otherwise the browser blocks the request
+// as mixed content, since this app itself is loaded over HTTPS.
+
+function uint8ArrayToBase64(bytes: Uint8Array): string {
+  let binary = ""
+  const chunkSize = 0x8000
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize))
+  }
+  return btoa(binary)
+}
+
+function canvasToMono(canvas: HTMLCanvasElement, darkness: PrintDarkness): { w: number; h: number; b64: string } {
+  const ctx = canvas.getContext("2d")!
+  const { data, width: w, height: h } = ctx.getImageData(0, 0, canvas.width, canvas.height)
+
+  const rowBytes = Math.ceil(w / 8)
+  const mono = new Uint8Array(rowBytes * h)
+  const threshold = darkness === "light" ? 112 : darkness === "dark" ? 152 : 128
+
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 4
+      const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]
+      if (gray < threshold) mono[y * rowBytes + Math.floor(x / 8)] |= (1 << (7 - (x % 8)))
+    }
+  }
+
+  return { w, h, b64: uint8ArrayToBase64(mono) }
+}
+
+export function buildTicketXml(order: Order, mode: PrintMode = getPrintMode(), darkness: PrintDarkness = getPrintDarkness()): string {
+  const canvas = renderCanvas(buildLines(order, mode))
+  const { w, h, b64 } = canvasToMono(canvas, darkness)
+
+  return `<?xml version="1.0" encoding="utf-8"?>
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
+  <s:Body>
+    <epos-print xmlns="http://www.epson-pos.com/schemas/2011/03/epos-print">
+      <image width="${w}" height="${h}" color="color_1" mode="mono" hri="false">${b64}</image>
+      <feed line="5"/>
+      <cut type="feed"/>
+    </epos-print>
+  </s:Body>
+</s:Envelope>`
+}
+
+export async function sendTicketToPrinter(xml: string, ip: string): Promise<void> {
+  const url = `https://${ip}/cgi-bin/epos/service.cgi?devid=local_printer&timeout=10000`
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), 15000)
+
+  let response: Response
+  try {
+    response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "text/xml; charset=utf-8", "SOAPAction": '""' },
+      body: xml,
+      signal: controller.signal,
+    })
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    throw new Error(`تعذر الوصول إلى الطابعة (${ip}). تأكد من تفعيل HTTPS على الطابعة وأن هذا الجهاز يثق بشهادتها: ${msg}`)
+  } finally {
+    clearTimeout(timer)
+  }
+
+  if (!response.ok) throw new Error(`الطابعة رفضت الطلب (${response.status})`)
+  const body = await response.text()
+  if (body.includes("SchemaError") || body.includes("DeviceNotFound")) {
+    throw new Error("تأكد من تفعيل ePOS-Print على الطابعة")
+  }
+}

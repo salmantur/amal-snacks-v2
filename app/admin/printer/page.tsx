@@ -60,10 +60,21 @@ export default function PrinterPage() {
       <AdminPageHeader title="الطابعة" description="عنوان الطابعة الحراري (IP) المستخدم لطباعة الطلبات" />
 
       <div className="mx-auto max-w-lg space-y-4 p-4 sm:p-8">
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-xs leading-relaxed text-amber-800">
+          <p className="font-semibold">قبل أول استخدام:</p>
+          <p className="mt-1">
+            الطباعة الآن تتم مباشرة من متصفحك إلى الطابعة عبر الشبكة المحلية (بدون خادم وسيط)، لذا يجب تفعيل
+            HTTPS على الطابعة أولاً: من إعدادات الطابعة (webconfig) اذهب إلى Configuration ← Security ←
+            SSL/TLS ← Certificate List وأنشئ شهادة (Create)، ثم فعّل HTTPS. بعدها افتح عنوان الطابعة بصيغة
+            https من كل جهاز سيُستخدم للطباعة (جهازك وأجهزة الموظفين) ووافق على الوثوق بالشهادة مرة واحدة —
+            وإلا سيرفض المتصفح الاتصال بالطابعة.
+          </p>
+        </div>
+
         <div className="rounded-lg border border-admin-border-soft bg-white p-4">
           <p className="mb-1 text-xs text-admin-muted-2">
-            هذا الإعداد مشترك بين جميع الأجهزة — تعديله هنا يحدّثه فورًا لكل من يفتح لوحة التحكم،
-            بما في ذلك الطباعة التلقائية عند استلام طلب جديد.
+            هذا الإعداد مشترك بين جميع الأجهزة — تعديله هنا يحدّثه فورًا لكل من يفتح لوحة التحكم.
+            كل جهاز يضغط زر الطباعة يجب أن يكون على نفس شبكة الواي فاي الخاصة بالطابعة.
           </p>
 
           <label className="mt-3 block text-xs font-semibold text-admin-muted">عنوان IP</label>

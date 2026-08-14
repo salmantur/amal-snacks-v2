@@ -31,17 +31,6 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: ['lucide-react', '@supabase/supabase-js'],
   },
-
-  // @napi-rs/canvas ships a native .node binary - it must run as-is on the
-  // server, not get bundled/rewritten by webpack/Turbopack.
-  serverExternalPackages: ['@napi-rs/canvas'],
-
-  // The print route reads a font file off disk at runtime (for the printer
-  // ticket renderer) via a plain fs path, which Next's file tracer can miss -
-  // force it into the deployed function bundle explicitly.
-  outputFileTracingIncludes: {
-    '/api/print-order': ['./app/fonts/thmanyah-sans/thmanyahsans-Regular.woff2'],
-  },
 }
 
 export default withBundleAnalyzer(nextConfig)

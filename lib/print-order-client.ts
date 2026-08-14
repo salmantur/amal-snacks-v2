@@ -1,22 +1,17 @@
 import type { Order } from "@/lib/data"
+import { buildTicketXml, sendTicketToPrinter } from "@/lib/thermal-printer"
 
 type PrintOrderOptions = {
   ip?: string
 }
 
-// Sends the order to /api/print-order instead of talking to the printer
-// directly from the browser - the server renders the ticket and reaches the
-// printer over plain HTTP, so no device ever needs to trust its self-signed
-// certificate.
+// Renders the ticket and sends it straight from the browser to the
+// printer's local ePOS-Print endpoint over HTTPS - no server hop, so the
+// printer never needs to be reachable from the internet. Only works when
+// this device is on the same network as the printer and trusts its
+// certificate (one-time setup, see /admin/printer).
 export async function printOrder(order: Order, options: PrintOrderOptions = {}): Promise<void> {
-  const response = await fetch("/api/print-order", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ order, ip: options.ip }),
-  })
-
-  if (!response.ok) {
-    const data = await response.json().catch(() => null)
-    throw new Error(data?.error || `فشل الاتصال بالطابعة (${response.status})`)
-  }
+  if (!options.ip) throw new Error("عنوان IP للطابعة غير مضبوط")
+  const xml = buildTicketXml(order)
+  await sendTicketToPrinter(xml, options.ip)
 }

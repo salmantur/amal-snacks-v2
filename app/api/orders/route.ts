@@ -7,6 +7,8 @@ import { getSupabaseConfig } from "@/lib/supabase/config"
 import { formatNewOrderTelegramMessage, normalizeTelegramConfig, sendTelegramMessage } from "@/lib/telegram"
 import { generateDeliveryDaySlots } from "@/lib/checkout-schedule"
 import { normalizeOrderScheduleConfig } from "@/lib/order-schedule-config"
+import { formatNewOrderPushPayload, normalizePushSubscriptions } from "@/lib/push"
+import { sendPushToSubscriptions } from "@/lib/push-server"
 
 const RATE_LIMIT_WINDOW_MS = 60_000
 const RATE_LIMIT_MAX_REQUESTS = 5
@@ -186,7 +188,7 @@ export async function POST(req: Request) {
           const settingsPromise = supabase
             .from("app_settings")
             .select("key,value")
-            .in("key", ["discount_config", "telegram_alerts", "order_schedule"])
+            .in("key", ["discount_config", "telegram_alerts", "order_schedule", "push_subscriptions"])
           // Doesn't depend on menu/settings data - fetch it alongside them instead of as its
           // own awaited step afterward, so a delivery order isn't paying for a fourth
           // sequential round trip.
@@ -394,6 +396,31 @@ export async function POST(req: Request) {
               console.error("Telegram notification failed", telegramError)
               // Ignore notification errors.
       }
+
+      // Best-effort push notification: runs after the response is sent via
+      // after() so the serverless function isn't frozen before the fetch to
+      // the push service completes.
+      after(async () => {
+              try {
+                        const pushSubscriptions = normalizePushSubscriptions(settingsMap.get("push_subscriptions"))
+                        if (pushSubscriptions.length === 0) return
+
+                        const pushPayload = formatNewOrderPushPayload({
+                                    orderNumber: insertedOrder.order_number,
+                                    customerName: payload.customerName,
+                                    orderType: payload.orderType,
+                                    total,
+                        })
+                        const { staleEndpoints } = await sendPushToSubscriptions(pushSubscriptions, pushPayload)
+
+                        if (staleEndpoints.length > 0) {
+                                    const remaining = pushSubscriptions.filter((sub) => !staleEndpoints.includes(sub.endpoint))
+                                    await supabase.from("app_settings").upsert({ key: "push_subscriptions", value: remaining }, { onConflict: "key" })
+                        }
+              } catch (pushError) {
+                        console.error("Push notification failed", pushError)
+              }
+      })
 
       return NextResponse.json({
               id: insertedOrder.id,

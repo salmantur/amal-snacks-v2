@@ -8,11 +8,17 @@ const TelegramSettingsManager = dynamic(
   { loading: () => <div className="py-16 text-center text-sm text-muted-foreground">جارِ التحميل...</div> }
 )
 
+const PushNotificationsManager = dynamic(
+  () => import("@/components/push-notifications-manager").then((m) => ({ default: m.PushNotificationsManager })),
+  { loading: () => <div className="py-16 text-center text-sm text-muted-foreground">جارِ التحميل...</div> }
+)
+
 export default function AlertsPage() {
   return (
     <div dir="rtl">
-      <AdminPageHeader title="تنبيهات تيليجرام" />
-      <div className="mx-auto max-w-lg p-4 md:p-6">
+      <AdminPageHeader title="تنبيهات الطلبات" />
+      <div className="mx-auto max-w-lg space-y-4 p-4 md:p-6">
+        <PushNotificationsManager />
         <TelegramSettingsManager />
       </div>
     </div>

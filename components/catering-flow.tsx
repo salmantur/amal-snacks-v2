@@ -309,19 +309,19 @@ export function CateringFlow() {
           </div>
 
           <div className="mt-12">
-            <h2 className="mb-6 text-center text-2xl font-black text-foreground">اختر باقتك</h2>
-            <div className="grid gap-6 sm:grid-cols-3">
-              {CATERING_TIERS.map((t) => (
-                <TierCard key={t.id} tier={t} onSelect={() => selectTier(t)} />
+            <h2 className="mb-4 text-center text-lg font-bold text-foreground">من مناسباتنا</h2>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {[1, 2, 3, 4].map((i) => (
+                <GalleryPlaceholder key={i} caption="صورة حقيقية من إحدى مناسباتنا" />
               ))}
             </div>
           </div>
 
           <div className="mt-14">
-            <h2 className="mb-4 text-center text-lg font-bold text-foreground">من مناسباتنا</h2>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {[1, 2, 3, 4].map((i) => (
-                <GalleryPlaceholder key={i} caption="صورة حقيقية من إحدى مناسباتنا" />
+            <h2 className="mb-6 text-center text-2xl font-black text-foreground">اختر باقتك</h2>
+            <div className="grid gap-6 sm:grid-cols-3">
+              {CATERING_TIERS.map((t) => (
+                <TierCard key={t.id} tier={t} onSelect={() => selectTier(t)} />
               ))}
             </div>
           </div>

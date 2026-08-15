@@ -121,7 +121,7 @@ function OpenSidePicker({
       <h3 className="mb-1 text-sm font-bold text-foreground">
         اختر من {sideRule.min} إلى {sideRule.max} مقبلات وسلطات ({selectedItems.length})
       </h3>
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
         {sideRule.pool.map((dish) => (
           <DishChip
             key={dish.name}
@@ -154,18 +154,22 @@ function DishChip({
       type="button"
       onClick={onToggle}
       disabled={disabled && !selected}
-      className={`flex items-center gap-3 rounded-xl border p-2 text-right text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
-        selected ? "border-primary bg-primary/10 text-foreground" : "border-border bg-card text-foreground hover:bg-muted/60"
+      className={`overflow-hidden rounded-2xl border text-center transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+        selected ? "border-primary ring-2 ring-primary" : "border-border hover:border-foreground/20"
       }`}
     >
-      <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-muted">
-        <Image src={getCateringDishImageUrl(dish)} alt={dish.name} fill sizes="56px" className="object-cover" />
+      <span className="relative block aspect-[4/3] w-full bg-muted">
+        <Image src={getCateringDishImageUrl(dish)} alt={dish.name} fill sizes="(min-width: 640px) 220px, 45vw" className="object-cover" />
+        {selected && (
+          <span className="absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground shadow">
+            <Check className="h-3.5 w-3.5" />
+          </span>
+        )}
       </span>
-      <span className="min-w-0 flex-1">
-        <span className="block truncate">{dish.name}</span>
+      <span className="block bg-card px-2 py-2.5">
+        <span className="block truncate text-sm font-bold text-foreground">{dish.name}</span>
         {sublabel && <span className="block text-xs text-muted-foreground">{sublabel}</span>}
       </span>
-      {selected && <Check className="h-4 w-4 shrink-0 text-primary" />}
     </button>
   )
 }
@@ -344,7 +348,7 @@ export function CateringFlow() {
             <h3 className="mb-1 text-sm font-bold text-foreground">
               اختر {tier.mainDishCount} أطباق رئيسية ({form.mainDishes.length} من {tier.mainDishCount})
             </h3>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               {tier.mainDishPool.map((dish) => (
                 <DishChip
                   key={dish.name}
@@ -361,7 +365,7 @@ export function CateringFlow() {
             <>
               <section className="mb-6">
                 <h3 className="mb-1 text-sm font-bold text-foreground">اختر مقبلًا واحدًا</h3>
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                   {tier.sideRule.appetizerPool.map((dish) => (
                     <DishChip
                       key={dish.name}
@@ -376,7 +380,7 @@ export function CateringFlow() {
               </section>
               <section className="mb-6">
                 <h3 className="mb-1 text-sm font-bold text-foreground">اختر سلطة واحدة</h3>
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                   {tier.sideRule.saladPool.map((dish) => (
                     <DishChip
                       key={dish.name}
@@ -400,7 +404,7 @@ export function CateringFlow() {
             <h3 className="mb-1 text-sm font-bold text-foreground">
               {tier.sweetsMode === "included" ? "اختر صنف حلا (ضمن الباقة، مجانًا)" : "إضافة حلا (اختياري)"}
             </h3>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               {CATERING_SWEETS.map((dish) => {
                 const selected = form.sweet === dish.name
                 const priceLabel = tier.sweetsMode === "included" ? "مجانًا" : `+${dish.price} ريال`

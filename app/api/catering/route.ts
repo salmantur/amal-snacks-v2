@@ -37,7 +37,7 @@ function extractClientIp(req: Request): string {
 }
 
 const payloadSchema = z.object({
-  tierId: z.enum(["tier0", "tier1", "tier2", "tier3"]),
+  tierId: z.enum(["tier0", "tier1", "tier2"]),
   customerName: z.string().trim().max(120).optional().default(""),
   customerPhone: z.string().trim().max(30).optional().default(""),
   guestCount: z.number().int().min(1).max(2000),

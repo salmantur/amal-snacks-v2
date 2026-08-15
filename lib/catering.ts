@@ -9,7 +9,7 @@ export function getCateringDishImageUrl(dish: CateringDish): string {
   return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/Menu/${dish.image}`
 }
 
-export type CateringTierId = "tier0" | "tier1" | "tier2" | "tier3"
+export type CateringTierId = "tier0" | "tier1" | "tier2"
 
 export interface CateringSideRule {
   pool: CateringDish[]
@@ -130,18 +130,6 @@ export const CATERING_TIERS: CateringTier[] = [
     mainDishPool: CATERING_MAIN_DISHES,
     sideRule: { pool: CATERING_SIDES_POOL, min: 2, max: 3 },
     features: ["5 أطباق رئيسية تختارها", "2–3 مقبلات وسلطات حسب اختيارك", "تكفي 30–40 ضيف"],
-    highlighted: false,
-  },
-  {
-    id: "tier3",
-    label: "الباقة الثالثة",
-    guestMin: 50,
-    guestMax: 60,
-    price: 4830,
-    mainDishCount: 6,
-    mainDishPool: CATERING_MAIN_DISHES,
-    sideRule: { pool: CATERING_SIDES_POOL, min: 2, max: 3 },
-    features: ["6 أطباق رئيسية تختارها", "2–3 مقبلات وسلطات حسب اختيارك", "تكفي 50–60 ضيف"],
     highlighted: true,
   },
 ]

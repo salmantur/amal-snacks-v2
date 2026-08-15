@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { Check, ChevronLeft, ImageIcon, Loader2 } from "lucide-react"
@@ -112,14 +112,16 @@ function OpenSidePicker({
   selectedItems,
   onToggle,
 }: {
-  sideRule: Extract<CateringTier["sideRule"], { type: "open" }>
+  sideRule: CateringTier["sideRule"]
   selectedItems: string[]
   onToggle: (name: string) => void
 }) {
   return (
     <section className="mb-6">
       <h3 className="mb-1 text-sm font-bold text-foreground">
-        اختر من {sideRule.min} إلى {sideRule.max} مقبلات وسلطات ({selectedItems.length})
+        {sideRule.min === sideRule.max
+          ? `اختر ${sideRule.min} مقبلات وسلطات (${selectedItems.length} من ${sideRule.max})`
+          : `اختر من ${sideRule.min} إلى ${sideRule.max} مقبلات وسلطات (${selectedItems.length})`}
       </h3>
       <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
         {sideRule.pool.map((dish) => (
@@ -188,7 +190,7 @@ interface CateringFormState {
 
 const EMPTY_FORM: CateringFormState = {
   mainDishes: [],
-  sideSelection: {},
+  sideSelection: { items: [] },
   sweet: null,
   guestCount: "",
   eventDate: "",
@@ -225,7 +227,7 @@ export function CateringFlow() {
   }
 
   function toggleSideItem(name: string) {
-    if (!tier || tier.sideRule.type !== "open") return
+    if (!tier) return
     const { max } = tier.sideRule
     setForm((prev) => {
       const items = prev.sideSelection.items ?? []
@@ -238,21 +240,15 @@ export function CateringFlow() {
 
   const mainDishError = tier ? validateMainDishes(tier, form.mainDishes) : null
   const sidesError = tier ? validateSides(tier, form.sideSelection) : null
-  const sweetError = tier ? validateSweet(tier, form.sweet) : null
+  const sweetError = validateSweet(form.sweet)
   const step1Valid = !mainDishError && !sidesError && !sweetError
 
   const step2Valid = Boolean(form.guestCount) && Number(form.guestCount) > 0 && Boolean(form.eventDate) && Boolean(form.deliveryArea)
 
-  const sweetAddonPrice = tier ? getSweetAddonPrice(tier, form.sweet) : 0
+  const sweetAddonPrice = getSweetAddonPrice(form.sweet)
   const total = tier ? tier.price + sweetAddonPrice : 0
 
-  const sideSummaryNames = useMemo(() => {
-    if (!tier) return []
-    if (tier.sideRule.type === "guided") {
-      return [form.sideSelection.appetizer, form.sideSelection.salad].filter((v): v is string => Boolean(v))
-    }
-    return form.sideSelection.items ?? []
-  }, [tier, form.sideSelection])
+  const sideSummaryNames = form.sideSelection.items ?? []
 
   async function handleSubmit() {
     if (!tier) return
@@ -361,60 +357,24 @@ export function CateringFlow() {
             </div>
           </section>
 
-          {tier.sideRule.type === "guided" ? (
-            <>
-              <section className="mb-6">
-                <h3 className="mb-1 text-sm font-bold text-foreground">اختر مقبلًا واحدًا</h3>
-                <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
-                  {tier.sideRule.appetizerPool.map((dish) => (
-                    <DishChip
-                      key={dish.name}
-                      dish={dish}
-                      selected={form.sideSelection.appetizer === dish.name}
-                      onToggle={() =>
-                        setForm((prev) => ({ ...prev, sideSelection: { ...prev.sideSelection, appetizer: dish.name } }))
-                      }
-                    />
-                  ))}
-                </div>
-              </section>
-              <section className="mb-6">
-                <h3 className="mb-1 text-sm font-bold text-foreground">اختر سلطة واحدة</h3>
-                <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
-                  {tier.sideRule.saladPool.map((dish) => (
-                    <DishChip
-                      key={dish.name}
-                      dish={dish}
-                      selected={form.sideSelection.salad === dish.name}
-                      onToggle={() => setForm((prev) => ({ ...prev, sideSelection: { ...prev.sideSelection, salad: dish.name } }))}
-                    />
-                  ))}
-                </div>
-              </section>
-            </>
-          ) : (
-            <OpenSidePicker
-              sideRule={tier.sideRule}
-              selectedItems={form.sideSelection.items ?? []}
-              onToggle={toggleSideItem}
-            />
-          )}
+          <OpenSidePicker
+            sideRule={tier.sideRule}
+            selectedItems={form.sideSelection.items ?? []}
+            onToggle={toggleSideItem}
+          />
 
           <section className="mb-8">
-            <h3 className="mb-1 text-sm font-bold text-foreground">
-              {tier.sweetsMode === "included" ? "اختر صنف حلا (ضمن الباقة، مجانًا)" : "إضافة حلا (اختياري)"}
-            </h3>
+            <h3 className="mb-1 text-sm font-bold text-foreground">إضافة حلا (اختياري)</h3>
             <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
               {CATERING_SWEETS.map((dish) => {
                 const selected = form.sweet === dish.name
-                const priceLabel = tier.sweetsMode === "included" ? "مجانًا" : `+${dish.price} ريال`
                 return (
                   <DishChip
                     key={dish.name}
                     dish={dish}
-                    sublabel={priceLabel}
+                    sublabel={`+${dish.price} ريال`}
                     selected={selected}
-                    onToggle={() => setForm((prev) => ({ ...prev, sweet: selected && tier.sweetsMode !== "included" ? null : dish.name }))}
+                    onToggle={() => setForm((prev) => ({ ...prev, sweet: selected ? null : dish.name }))}
                   />
                 )
               })}
@@ -584,7 +544,7 @@ export function CateringFlow() {
             </dl>
 
             <p className="mt-4 rounded-xl bg-muted/60 p-3 text-xs text-muted-foreground">
-              السعر النهائي والإضافات تؤكد عبر واتساب حسب تفاصيل مناسبتك
+              الأدوات والتغليف غير مشمولة ضمن السعر — يمكن إضافتها عند التأكيد عبر واتساب. السعر النهائي والإضافات تؤكد عبر واتساب حسب تفاصيل مناسبتك
             </p>
           </div>
 

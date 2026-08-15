@@ -11,9 +11,11 @@ export function getCateringDishImageUrl(dish: CateringDish): string {
 
 export type CateringTierId = "tier0" | "tier1" | "tier2" | "tier3"
 
-export type CateringSideRule =
-  | { type: "guided"; appetizerPool: CateringDish[]; saladPool: CateringDish[] }
-  | { type: "open"; pool: CateringDish[]; min: number; max: number }
+export interface CateringSideRule {
+  pool: CateringDish[]
+  min: number
+  max: number
+}
 
 export interface CateringTier {
   id: CateringTierId
@@ -26,8 +28,6 @@ export interface CateringTier {
   mainDishCount: number
   mainDishPool: CateringDish[]
   sideRule: CateringSideRule
-  sweetsMode: "addon" | "included"
-  disposablesIncluded: boolean
   features: string[]
   highlighted: boolean
 }
@@ -91,6 +91,9 @@ export const CATERING_SWEETS: CateringDish[] = [
   { name: "ليمون بوبز كيك", nameEn: "Lemon Pops Cake", price: 100, image: "item-55-0.jpg" },
 ]
 
+// Final v2 pricing: مقبلات/سلطات are now one combined free-pick list on every tier
+// (no more guided 1+1 split), and sweets/disposables are optional add-ons everywhere -
+// no tier bundles a free sweet anymore.
 export const CATERING_TIERS: CateringTier[] = [
   {
     id: "tier0",
@@ -101,10 +104,8 @@ export const CATERING_TIERS: CateringTier[] = [
     price: 1500,
     mainDishCount: 3,
     mainDishPool: CATERING_MAIN_DISHES,
-    sideRule: { type: "guided", appetizerPool: CATERING_APPETIZERS, saladPool: CATERING_SALADS },
-    sweetsMode: "addon",
-    disposablesIncluded: true,
-    features: ["3 أطباق رئيسية تختارها", "مقبل واحد وسلطة واحدة", "تكفي 10+ ضيوف"],
+    sideRule: { pool: CATERING_SIDES_POOL, min: 2, max: 2 },
+    features: ["3 أطباق رئيسية تختارها", "أي مقبلين حسب اختيارك", "تكفي 10+ ضيوف"],
     highlighted: false,
   },
   {
@@ -112,13 +113,11 @@ export const CATERING_TIERS: CateringTier[] = [
     label: "الباقة الأولى",
     guestMin: 15,
     guestMax: 20,
-    price: 2850,
+    price: 2240,
     mainDishCount: 4,
     mainDishPool: CATERING_MAIN_DISHES,
-    sideRule: { type: "guided", appetizerPool: CATERING_APPETIZERS, saladPool: CATERING_SALADS },
-    sweetsMode: "addon",
-    disposablesIncluded: true,
-    features: ["4 أطباق رئيسية تختارها", "مقبل واحد وسلطة واحدة", "تكفي 15–20 ضيف"],
+    sideRule: { pool: CATERING_SIDES_POOL, min: 2, max: 2 },
+    features: ["4 أطباق رئيسية تختارها", "أي مقبلين حسب اختيارك", "تكفي 15–20 ضيف"],
     highlighted: false,
   },
   {
@@ -126,28 +125,24 @@ export const CATERING_TIERS: CateringTier[] = [
     label: "الباقة الثانية",
     guestMin: 30,
     guestMax: 40,
-    price: 4260,
+    price: 3190,
     mainDishCount: 5,
     mainDishPool: CATERING_MAIN_DISHES,
-    sideRule: { type: "open", pool: CATERING_SIDES_POOL, min: 2, max: 3 },
-    sweetsMode: "addon",
-    disposablesIncluded: true,
+    sideRule: { pool: CATERING_SIDES_POOL, min: 2, max: 3 },
     features: ["5 أطباق رئيسية تختارها", "2–3 مقبلات وسلطات حسب اختيارك", "تكفي 30–40 ضيف"],
-    highlighted: true,
+    highlighted: false,
   },
   {
     id: "tier3",
     label: "الباقة الثالثة",
     guestMin: 50,
     guestMax: 60,
-    price: 6640,
+    price: 4830,
     mainDishCount: 6,
     mainDishPool: CATERING_MAIN_DISHES,
-    sideRule: { type: "open", pool: CATERING_SIDES_POOL, min: 2, max: 3 },
-    sweetsMode: "included",
-    disposablesIncluded: true,
-    features: ["6 أطباق رئيسية تختارها", "2–3 مقبلات وسلطات حسب اختيارك", "صنف حلا مجاني — تكفي 50–60 ضيف"],
-    highlighted: false,
+    sideRule: { pool: CATERING_SIDES_POOL, min: 2, max: 3 },
+    features: ["6 أطباق رئيسية تختارها", "2–3 مقبلات وسلطات حسب اختيارك", "تكفي 50–60 ضيف"],
+    highlighted: true,
   },
 ]
 
@@ -156,9 +151,7 @@ export function getCateringTier(id: string): CateringTier | undefined {
 }
 
 export interface CateringSideSelection {
-  appetizer?: string
-  salad?: string
-  items?: string[]
+  items: string[]
 }
 
 function findDish(pool: CateringDish[], name: string): CateringDish | undefined {
@@ -174,35 +167,24 @@ export function validateMainDishes(tier: CateringTier, selected: string[]): stri
 }
 
 export function validateSides(tier: CateringTier, selection: CateringSideSelection): string | null {
-  if (tier.sideRule.type === "guided") {
-    if (!selection.appetizer || !findDish(tier.sideRule.appetizerPool, selection.appetizer)) return "اختر مقبلًا واحدًا"
-    if (!selection.salad || !findDish(tier.sideRule.saladPool, selection.salad)) return "اختر سلطة واحدة"
-    return null
-  }
-
   const { pool, min, max } = tier.sideRule
   const items = selection.items ?? []
   const unique = new Set(items)
   if (unique.size !== items.length) return "لا يمكن اختيار نفس الصنف أكثر من مرة"
   if (items.length < min || items.length > max) {
-    return `اختر من ${min} إلى ${max} أصناف`
+    return min === max ? `اختر ${min} أصناف بالضبط` : `اختر من ${min} إلى ${max} أصناف`
   }
   if (!items.every((name) => findDish(pool, name))) return "أحد الأصناف المختارة غير متاح"
   return null
 }
 
-export function validateSweet(tier: CateringTier, sweet: string | null): string | null {
-  if (tier.sweetsMode === "included") {
-    if (!sweet || !findDish(CATERING_SWEETS, sweet)) return "اختر صنف حلا واحدًا (مجاني ضمن الباقة)"
-    return null
-  }
+export function validateSweet(sweet: string | null): string | null {
   if (sweet && !findDish(CATERING_SWEETS, sweet)) return "صنف الحلا غير متاح"
   return null
 }
 
-export function getSweetAddonPrice(tier: CateringTier, sweet: string | null): number {
+export function getSweetAddonPrice(sweet: string | null): number {
   if (!sweet) return 0
-  if (tier.sweetsMode === "included") return 0
   const dish = findDish(CATERING_SWEETS, sweet)
   return dish?.price ?? 0
 }

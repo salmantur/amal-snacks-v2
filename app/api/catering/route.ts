@@ -45,9 +45,7 @@ const payloadSchema = z.object({
   deliveryArea: z.string().trim().min(1).max(120),
   mainDishes: z.array(z.string().trim().max(120)).max(10),
   sideSelection: z.object({
-    appetizer: z.string().trim().max(120).optional(),
-    salad: z.string().trim().max(120).optional(),
-    items: z.array(z.string().trim().max(120)).max(10).optional(),
+    items: z.array(z.string().trim().max(120)).max(10),
   }),
   sweet: z.string().trim().max(120).nullable(),
   notes: z.string().trim().max(1000).optional().default(""),
@@ -78,20 +76,16 @@ export async function POST(req: Request) {
     const sideSelection: CateringSideSelection = payload.sideSelection
     const mainDishError = validateMainDishes(tier, payload.mainDishes)
     const sidesError = validateSides(tier, sideSelection)
-    const sweetError = validateSweet(tier, payload.sweet)
+    const sweetError = validateSweet(payload.sweet)
     const validationError = mainDishError || sidesError || sweetError
     if (validationError) {
       return NextResponse.json({ error: validationError }, { status: 400 })
     }
 
-    const sweetAddonPrice = getSweetAddonPrice(tier, payload.sweet)
+    const sweetAddonPrice = getSweetAddonPrice(payload.sweet)
     const subtotal = tier.price + sweetAddonPrice
     const deliveryFee = 0
     const total = subtotal + deliveryFee
-
-    const sideNames = tier.sideRule.type === "guided"
-      ? [sideSelection.appetizer, sideSelection.salad].filter((v): v is string => Boolean(v))
-      : sideSelection.items ?? []
 
     const items = [
       {
@@ -100,13 +94,13 @@ export async function POST(req: Request) {
         nameEn: "",
         quantity: 1,
         price: tier.price,
-        selectedIngredients: [...payload.mainDishes, ...sideNames],
+        selectedIngredients: [...payload.mainDishes, ...sideSelection.items],
       },
       ...(payload.sweet
         ? [
             {
               id: "catering-sweet",
-              name: tier.sweetsMode === "included" ? `حلا (ضمن الباقة) — ${payload.sweet}` : `إضافة حلا — ${payload.sweet}`,
+              name: `إضافة حلا — ${payload.sweet}`,
               nameEn: "",
               quantity: 1,
               price: sweetAddonPrice,
@@ -120,8 +114,8 @@ export async function POST(req: Request) {
       "🎉 طلب كاتيرينج",
       `عدد الضيوف: ${payload.guestCount}`,
       `تاريخ المناسبة: ${payload.eventDate}`,
+      "⚠️ بدون أدوات/تغليف — غير مشمولة في السعر، تُحدد كإضافة عبر واتساب",
     ]
-    if (!tier.disposablesIncluded) notesLines.push("⚠️ بدون أدوات/تغليف — غير مشمولة في هذه الباقة")
     if (payload.notes) notesLines.push(`ملاحظات: ${payload.notes}`)
     const notes = notesLines.join("\n")
 

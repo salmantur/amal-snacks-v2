@@ -29,21 +29,41 @@ export interface CateringTier {
   highlighted: boolean
 }
 
+// Full in-stock menu lists per category (not just the top-priced few) - safe to expose
+// in full because every tier's flat price was already calculated from worst-case
+// (top-priced) picks, so cheaper alternatives only improve margin, never hurt it.
 export const CATERING_MAIN_DISHES: CateringDish[] = [
   { name: "برياني", nameEn: "Biryani", price: 300, image: "item-21-0.jpg" },
-  { name: "رز صيني مع ايدام", nameEn: "Chinese rice with stew", price: 280, image: "item-11-0.jpg" },
   { name: "محشي مشكل", nameEn: "Stuffed assorted", price: 280, image: "item-25-0.jpg" },
+  { name: "رز صيني مع ايدام", nameEn: "Chinese rice with stew", price: 280, image: "item-11-0.jpg" },
   { name: "هريس", nameEn: "Harys", price: 280, image: "item-23-0.jpg" },
   { name: "كشري", nameEn: "Koshari", price: 260, image: "item-12-0.jpg" },
   { name: "لازانيا", nameEn: "Lasagna", price: 260, image: "item-20-0.jpg" },
+  { name: "مكرونة البيتزا", nameEn: "pizza pasta", price: 250, image: "item-18-0.jpg" },
+  { name: "مسقعه بالجبن", nameEn: "Moussaka with cheese", price: 250, image: "item-14-0.jpg" },
+  { name: "رولات الباذنجان بالصوص", nameEn: "Eggplant rolls with sauce", price: 240, image: "item-24-0.jpg" },
+  { name: "مسقعه", nameEn: "moussaka", price: 240, image: "item-13-0.jpg" },
+  { name: "فوتتشيني", nameEn: "Fettuccine", price: 240, image: "item-16-0.jpg" },
+  { name: "باستا بالدجاج", nameEn: "Chicken pasta", price: 240, image: "item-17-0.jpg" },
+  { name: "مكرونة الباشميل", nameEn: "Bechamel pasta", price: 240, image: "item-19-0.jpg" },
+  { name: "كرات البطاطس", nameEn: "potato balls", price: 240, image: "item-15-0.jpg" },
+  { name: "جريش", nameEn: "Jyrish", price: 200, image: "item-22-0.jpg" },
 ]
 
 export const CATERING_SALADS: CateringDish[] = [
   { name: "سلطة كريسبي", nameEn: "Crispy Salad", price: 170, image: "item-36-0.jpg" },
   { name: "سلطة المنجا", nameEn: "Mango salad", price: 160, image: "item-69-0.jpg" },
-  { name: "تبولة كينوا", nameEn: "quinoa tabbouleh", price: 150, image: "item-27-0.jpg" },
   { name: "سلطة كينوا", nameEn: "Quinoa salad", price: 150, image: "item-35-0.jpg" },
   { name: "فتة باذنجان", nameEn: "Eggplant Fatteh", price: 150, image: "item-34-0.jpg" },
+  { name: "تبولة كينوا", nameEn: "quinoa tabbouleh", price: 150, image: "item-27-0.jpg" },
+  { name: "سلطة الزعتر", nameEn: "thyme salad", price: 140, image: "item-68-0.jpg" },
+  { name: "سلطة يونانية بالجبن", nameEn: "Greek salad with cheese", price: 140, image: "item-31-0.jpg" },
+  { name: "سلطة سيزر", nameEn: "Caesar salad", price: 140, image: "item-29-0.jpg" },
+  { name: "تبولة", nameEn: "Tabbouleh", price: 140, image: "item-26-0.jpg" },
+  { name: "تبولة شمندر", nameEn: "Beetroot tabbouleh", price: 140, image: "item-28-0.jpg" },
+  { name: "سلطة البافلو بالدجاج الحار", nameEn: "Buffalo salad with spicy chicken", price: 140, image: "item-33-0.jpg" },
+  { name: "سلطة مكرونة", nameEn: "Pasta salad", price: 140, image: "item-32-0.jpg" },
+  { name: "سلطة جرجير ورمان", nameEn: "Arugula and pomegranate salad", price: 120, image: "item-30-0.jpg" },
 ]
 
 export const CATERING_APPETIZERS: CateringDish[] = [
@@ -51,6 +71,12 @@ export const CATERING_APPETIZERS: CateringDish[] = [
   { name: "متبل", nameEn: "Mutabal", price: 130, image: "item-37-0.jpg" },
   { name: "حمص", nameEn: "hummus", price: 120, image: "item-38-0.jpg" },
   { name: "مسخن", nameEn: "Musakhan", price: 95, image: "item-42-0.jpg" },
+  { name: "ملفوف", nameEn: "Malfuf", price: 90, image: "item-40-0.jpg" },
+  { name: "ورق عنب", nameEn: "Waraq einab", price: 90, image: "item-41-0.jpg" },
+  { name: "سمبوسه بف", nameEn: "Beef samosa", price: 3.5, image: "item-45-0.jpg" },
+  { name: "سمبوسه شرائح", nameEn: "Sliced samosas", price: 3.5, image: "item-46-0.jpg" },
+  { name: "كبه", nameEn: "kibbeh", price: 3.5, image: "item-44-0.jpg" },
+  { name: "سبرنق رولز", nameEn: "Spring Rolls", price: 3, image: "item-43-0.jpg" },
 ]
 
 export const CATERING_SIDES_POOL: CateringDish[] = [...CATERING_APPETIZERS, ...CATERING_SALADS]
@@ -58,6 +84,8 @@ export const CATERING_SIDES_POOL: CateringDish[] = [...CATERING_APPETIZERS, ...C
 export const CATERING_SWEETS: CateringDish[] = [
   { name: "ميني تارت بيكان", nameEn: "Mini Bacon Tart", price: 150, image: "item-56-0.jpg" },
   { name: "لقيمات", nameEn: "Luqaimat", price: 120, image: "item-67-0.jpg" },
+  { name: "مكعبات قرص عقيل", nameEn: "Aqeel Disc Cubes", price: 120, image: "item-57-0.jpg" },
+  { name: "ليمون بوبز كيك", nameEn: "Lemon Pops Cake", price: 100, image: "item-55-0.jpg" },
 ]
 
 export const CATERING_TIERS: CateringTier[] = [
@@ -97,7 +125,7 @@ export const CATERING_TIERS: CateringTier[] = [
     mainDishPool: CATERING_MAIN_DISHES,
     sideRule: { type: "open", pool: CATERING_SIDES_POOL, min: 2, max: 3 },
     sweetsMode: "included",
-    features: ["6 أطباق رئيسية — كل التشكيلة", "2–3 مقبلات وسلطات حسب اختيارك", "تشكيلة حلا مجانية — تكفي 50–60 ضيف"],
+    features: ["6 أطباق رئيسية تختارها", "2–3 مقبلات وسلطات حسب اختيارك", "صنف حلا مجاني — تكفي 50–60 ضيف"],
     highlighted: false,
   },
 ]

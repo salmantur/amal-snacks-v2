@@ -121,7 +121,7 @@ function OpenSidePicker({
       <h3 className="mb-1 text-sm font-bold text-foreground">
         اختر من {sideRule.min} إلى {sideRule.max} مقبلات وسلطات ({selectedItems.length})
       </h3>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+      <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
         {sideRule.pool.map((dish) => (
           <DishChip
             key={dish.name}
@@ -154,21 +154,21 @@ function DishChip({
       type="button"
       onClick={onToggle}
       disabled={disabled && !selected}
-      className={`overflow-hidden rounded-2xl border text-center transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+      className={`overflow-hidden rounded-xl border text-center transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
         selected ? "border-primary ring-2 ring-primary" : "border-border hover:border-foreground/20"
       }`}
     >
-      <span className="relative block aspect-[4/3] w-full bg-muted">
-        <Image src={getCateringDishImageUrl(dish)} alt={dish.name} fill sizes="(min-width: 640px) 220px, 45vw" className="object-cover" />
+      <span className="relative block aspect-square w-full bg-muted">
+        <Image src={getCateringDishImageUrl(dish)} alt={dish.name} fill sizes="(min-width: 640px) 150px, 30vw" className="object-cover" />
         {selected && (
-          <span className="absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground shadow">
-            <Check className="h-3.5 w-3.5" />
+          <span className="absolute left-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground shadow">
+            <Check className="h-3 w-3" />
           </span>
         )}
       </span>
-      <span className="block bg-card px-2 py-2.5">
-        <span className="block truncate text-sm font-bold text-foreground">{dish.name}</span>
-        {sublabel && <span className="block text-xs text-muted-foreground">{sublabel}</span>}
+      <span className="block bg-card px-1 py-1.5">
+        <span className="block truncate text-[11px] font-bold leading-tight text-foreground sm:text-xs">{dish.name}</span>
+        {sublabel && <span className="block truncate text-[10px] leading-tight text-muted-foreground">{sublabel}</span>}
       </span>
     </button>
   )
@@ -348,7 +348,7 @@ export function CateringFlow() {
             <h3 className="mb-1 text-sm font-bold text-foreground">
               اختر {tier.mainDishCount} أطباق رئيسية ({form.mainDishes.length} من {tier.mainDishCount})
             </h3>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
               {tier.mainDishPool.map((dish) => (
                 <DishChip
                   key={dish.name}
@@ -365,7 +365,7 @@ export function CateringFlow() {
             <>
               <section className="mb-6">
                 <h3 className="mb-1 text-sm font-bold text-foreground">اختر مقبلًا واحدًا</h3>
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
                   {tier.sideRule.appetizerPool.map((dish) => (
                     <DishChip
                       key={dish.name}
@@ -380,7 +380,7 @@ export function CateringFlow() {
               </section>
               <section className="mb-6">
                 <h3 className="mb-1 text-sm font-bold text-foreground">اختر سلطة واحدة</h3>
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
                   {tier.sideRule.saladPool.map((dish) => (
                     <DishChip
                       key={dish.name}
@@ -404,7 +404,7 @@ export function CateringFlow() {
             <h3 className="mb-1 text-sm font-bold text-foreground">
               {tier.sweetsMode === "included" ? "اختر صنف حلا (ضمن الباقة، مجانًا)" : "إضافة حلا (اختياري)"}
             </h3>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
               {CATERING_SWEETS.map((dish) => {
                 const selected = form.sweet === dish.name
                 const priceLabel = tier.sweetsMode === "included" ? "مجانًا" : `+${dish.price} ريال`

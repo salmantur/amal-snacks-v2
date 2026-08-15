@@ -21,7 +21,7 @@ import {
   type CateringTier,
 } from "@/lib/catering"
 
-type View = "landing" | "tiers" | "step1" | "step2" | "step3" | "success"
+type View = "landing" | "step1" | "step2" | "step3" | "success"
 
 const STEP_LABELS = ["الباقة والأطباق", "تفاصيل المناسبة", "إتمام الطلب"]
 
@@ -285,13 +285,15 @@ export function CateringFlow() {
             <p className="max-w-md text-muted-foreground">
               باقات كاترينج جاهزة لأي مناسبة — اختر باقتك، خصص أطباقك، وسنتولى الباقي حتى تسليم الطلب.
             </p>
-            <Button
-              type="button"
-              onClick={() => setView("tiers")}
-              className="h-12 rounded-full bg-primary px-8 text-base font-bold text-primary-foreground hover:bg-primary/90"
-            >
-              ابدأ بتصميم باقتك
-            </Button>
+          </div>
+
+          <div className="mt-12">
+            <h2 className="mb-6 text-center text-2xl font-black text-foreground">اختر باقتك</h2>
+            <div className="grid gap-6 sm:grid-cols-3">
+              {CATERING_TIERS.map((t) => (
+                <TierCard key={t.id} tier={t} onSelect={() => selectTier(t)} />
+              ))}
+            </div>
           </div>
 
           <div className="mt-14">
@@ -305,28 +307,9 @@ export function CateringFlow() {
         </div>
       )}
 
-      {view === "tiers" && (
-        <div className="mx-auto max-w-5xl px-4 py-10">
-          <button
-            type="button"
-            onClick={() => setView("landing")}
-            className="mb-6 flex items-center gap-1 text-sm font-semibold text-muted-foreground"
-          >
-            <ChevronLeft className="h-4 w-4 rotate-180" />
-            رجوع
-          </button>
-          <h2 className="mb-8 text-center text-2xl font-black text-foreground">اختر باقتك</h2>
-          <div className="grid gap-6 sm:grid-cols-3">
-            {CATERING_TIERS.map((t) => (
-              <TierCard key={t.id} tier={t} onSelect={() => selectTier(t)} />
-            ))}
-          </div>
-        </div>
-      )}
-
       {tier && view === "step1" && (
         <div className="mx-auto max-w-2xl px-4 py-8">
-          <button type="button" onClick={() => setView("tiers")} className="mb-4 flex items-center gap-1 text-sm font-semibold text-muted-foreground">
+          <button type="button" onClick={() => setView("landing")} className="mb-4 flex items-center gap-1 text-sm font-semibold text-muted-foreground">
             <ChevronLeft className="h-4 w-4 rotate-180" />
             رجوع
           </button>

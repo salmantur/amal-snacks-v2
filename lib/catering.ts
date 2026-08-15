@@ -2,6 +2,11 @@ export interface CateringDish {
   name: string
   nameEn: string
   price: number
+  image: string
+}
+
+export function getCateringDishImageUrl(dish: CateringDish): string {
+  return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/Menu/${dish.image}`
 }
 
 export type CateringTierId = "tier1" | "tier2" | "tier3"
@@ -25,34 +30,34 @@ export interface CateringTier {
 }
 
 export const CATERING_MAIN_DISHES: CateringDish[] = [
-  { name: "برياني", nameEn: "Biryani", price: 300 },
-  { name: "رز صيني مع ايدام", nameEn: "Chinese rice with stew", price: 280 },
-  { name: "محشي مشكل", nameEn: "Stuffed assorted", price: 280 },
-  { name: "هريس", nameEn: "Harys", price: 280 },
-  { name: "كشري", nameEn: "Koshari", price: 260 },
-  { name: "لازانيا", nameEn: "Lasagna", price: 260 },
+  { name: "برياني", nameEn: "Biryani", price: 300, image: "item-21-0.jpg" },
+  { name: "رز صيني مع ايدام", nameEn: "Chinese rice with stew", price: 280, image: "item-11-0.jpg" },
+  { name: "محشي مشكل", nameEn: "Stuffed assorted", price: 280, image: "item-25-0.jpg" },
+  { name: "هريس", nameEn: "Harys", price: 280, image: "item-23-0.jpg" },
+  { name: "كشري", nameEn: "Koshari", price: 260, image: "item-12-0.jpg" },
+  { name: "لازانيا", nameEn: "Lasagna", price: 260, image: "item-20-0.jpg" },
 ]
 
 export const CATERING_SALADS: CateringDish[] = [
-  { name: "سلطة كريسبي", nameEn: "Crispy Salad", price: 170 },
-  { name: "سلطة المنجا", nameEn: "Mango salad", price: 160 },
-  { name: "تبولة كينوا", nameEn: "quinoa tabbouleh", price: 150 },
-  { name: "سلطة كينوا", nameEn: "Quinoa salad", price: 150 },
-  { name: "فتة باذنجان", nameEn: "Eggplant Fatteh", price: 150 },
+  { name: "سلطة كريسبي", nameEn: "Crispy Salad", price: 170, image: "item-36-0.jpg" },
+  { name: "سلطة المنجا", nameEn: "Mango salad", price: 160, image: "item-69-0.jpg" },
+  { name: "تبولة كينوا", nameEn: "quinoa tabbouleh", price: 150, image: "item-27-0.jpg" },
+  { name: "سلطة كينوا", nameEn: "Quinoa salad", price: 150, image: "item-35-0.jpg" },
+  { name: "فتة باذنجان", nameEn: "Eggplant Fatteh", price: 150, image: "item-34-0.jpg" },
 ]
 
 export const CATERING_APPETIZERS: CateringDish[] = [
-  { name: "فتوش", nameEn: "Fattoush", price: 140 },
-  { name: "متبل", nameEn: "Mutabal", price: 130 },
-  { name: "حمص", nameEn: "hummus", price: 120 },
-  { name: "مسخن", nameEn: "Musakhan", price: 95 },
+  { name: "فتوش", nameEn: "Fattoush", price: 140, image: "item-39-0.jpg" },
+  { name: "متبل", nameEn: "Mutabal", price: 130, image: "item-37-0.jpg" },
+  { name: "حمص", nameEn: "hummus", price: 120, image: "item-38-0.jpg" },
+  { name: "مسخن", nameEn: "Musakhan", price: 95, image: "item-42-0.jpg" },
 ]
 
 export const CATERING_SIDES_POOL: CateringDish[] = [...CATERING_APPETIZERS, ...CATERING_SALADS]
 
 export const CATERING_SWEETS: CateringDish[] = [
-  { name: "ميني تارت بيكان", nameEn: "Mini Bacon Tart", price: 150 },
-  { name: "لقيمات", nameEn: "Luqaimat", price: 120 },
+  { name: "ميني تارت بيكان", nameEn: "Mini Bacon Tart", price: 150, image: "item-56-0.jpg" },
+  { name: "لقيمات", nameEn: "Luqaimat", price: 120, image: "item-67-0.jpg" },
 ]
 
 export const CATERING_TIERS: CateringTier[] = [

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
+import Image from "next/image"
 import { Check, ChevronLeft, ImageIcon, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -13,10 +14,12 @@ import { useDeliveryAreas } from "@/hooks/use-delivery-areas"
 import {
   CATERING_SWEETS,
   CATERING_TIERS,
+  getCateringDishImageUrl,
   getSweetAddonPrice,
   validateMainDishes,
   validateSides,
   validateSweet,
+  type CateringDish,
   type CateringSideSelection,
   type CateringTier,
 } from "@/lib/catering"
@@ -122,7 +125,7 @@ function OpenSidePicker({
         {sideRule.pool.map((dish) => (
           <DishChip
             key={dish.name}
-            label={dish.name}
+            dish={dish}
             selected={selectedItems.includes(dish.name)}
             disabled={selectedItems.length >= sideRule.max}
             onToggle={() => onToggle(dish.name)}
@@ -133,17 +136,35 @@ function OpenSidePicker({
   )
 }
 
-function DishChip({ label, selected, disabled, onToggle }: { label: string; selected: boolean; disabled?: boolean; onToggle: () => void }) {
+function DishChip({
+  dish,
+  sublabel,
+  selected,
+  disabled,
+  onToggle,
+}: {
+  dish: CateringDish
+  sublabel?: string
+  selected: boolean
+  disabled?: boolean
+  onToggle: () => void
+}) {
   return (
     <button
       type="button"
       onClick={onToggle}
       disabled={disabled && !selected}
-      className={`flex items-center justify-between gap-2 rounded-xl border px-4 py-3 text-right text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+      className={`flex items-center gap-3 rounded-xl border p-2 text-right text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
         selected ? "border-primary bg-primary/10 text-foreground" : "border-border bg-card text-foreground hover:bg-muted/60"
       }`}
     >
-      <span>{label}</span>
+      <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-muted">
+        <Image src={getCateringDishImageUrl(dish)} alt={dish.name} fill sizes="56px" className="object-cover" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate">{dish.name}</span>
+        {sublabel && <span className="block text-xs text-muted-foreground">{sublabel}</span>}
+      </span>
       {selected && <Check className="h-4 w-4 shrink-0 text-primary" />}
     </button>
   )
@@ -327,7 +348,7 @@ export function CateringFlow() {
               {tier.mainDishPool.map((dish) => (
                 <DishChip
                   key={dish.name}
-                  label={dish.name}
+                  dish={dish}
                   selected={form.mainDishes.includes(dish.name)}
                   disabled={form.mainDishes.length >= tier.mainDishCount}
                   onToggle={() => toggleMainDish(dish.name)}
@@ -344,7 +365,7 @@ export function CateringFlow() {
                   {tier.sideRule.appetizerPool.map((dish) => (
                     <DishChip
                       key={dish.name}
-                      label={dish.name}
+                      dish={dish}
                       selected={form.sideSelection.appetizer === dish.name}
                       onToggle={() =>
                         setForm((prev) => ({ ...prev, sideSelection: { ...prev.sideSelection, appetizer: dish.name } }))
@@ -359,7 +380,7 @@ export function CateringFlow() {
                   {tier.sideRule.saladPool.map((dish) => (
                     <DishChip
                       key={dish.name}
-                      label={dish.name}
+                      dish={dish}
                       selected={form.sideSelection.salad === dish.name}
                       onToggle={() => setForm((prev) => ({ ...prev, sideSelection: { ...prev.sideSelection, salad: dish.name } }))}
                     />
@@ -386,7 +407,8 @@ export function CateringFlow() {
                 return (
                   <DishChip
                     key={dish.name}
-                    label={`${dish.name} (${priceLabel})`}
+                    dish={dish}
+                    sublabel={priceLabel}
                     selected={selected}
                     onToggle={() => setForm((prev) => ({ ...prev, sweet: selected && tier.sweetsMode !== "included" ? null : dish.name }))}
                   />

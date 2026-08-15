@@ -40,8 +40,8 @@ const payloadSchema = z.object({
   tierId: z.enum(["tier0", "tier1", "tier2"]),
   customerName: z.string().trim().max(120).optional().default(""),
   customerPhone: z.string().trim().max(30).optional().default(""),
-  guestCount: z.number().int().min(1).max(2000),
   eventDate: z.string().trim().max(20),
+  deliveryTime: z.string().trim().max(10),
   deliveryArea: z.string().trim().min(1).max(120),
   mainDishes: z.array(z.string().trim().max(120)).max(10),
   sideSelection: z.object({
@@ -112,8 +112,8 @@ export async function POST(req: Request) {
 
     const notesLines = [
       "🎉 طلب كاتيرينج",
-      `عدد الضيوف: ${payload.guestCount}`,
       `تاريخ المناسبة: ${payload.eventDate}`,
+      `وقت التوصيل: ${payload.deliveryTime}`,
       "⚠️ بدون أدوات/تغليف — غير مشمولة في السعر، تُحدد كإضافة عبر واتساب",
     ]
     if (payload.notes) notesLines.push(`ملاحظات: ${payload.notes}`)

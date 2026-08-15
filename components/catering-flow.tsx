@@ -180,8 +180,8 @@ interface CateringFormState {
   mainDishes: string[]
   sideSelection: CateringSideSelection
   sweet: string | null
-  guestCount: string
   eventDate: string
+  deliveryTime: string
   deliveryArea: string
   customerName: string
   customerPhone: string
@@ -192,8 +192,8 @@ const EMPTY_FORM: CateringFormState = {
   mainDishes: [],
   sideSelection: { items: [] },
   sweet: null,
-  guestCount: "",
   eventDate: "",
+  deliveryTime: "",
   deliveryArea: "",
   customerName: "",
   customerPhone: "",
@@ -243,7 +243,7 @@ export function CateringFlow() {
   const sweetError = validateSweet(form.sweet)
   const step1Valid = !mainDishError && !sidesError && !sweetError
 
-  const step2Valid = Boolean(form.guestCount) && Number(form.guestCount) > 0 && Boolean(form.eventDate) && Boolean(form.deliveryArea)
+  const step2Valid = Boolean(form.eventDate) && Boolean(form.deliveryTime) && Boolean(form.deliveryArea)
 
   const sweetAddonPrice = getSweetAddonPrice(form.sweet)
   const total = tier ? tier.price + sweetAddonPrice : 0
@@ -262,8 +262,8 @@ export function CateringFlow() {
           tierId: tier.id,
           customerName: form.customerName,
           customerPhone: form.customerPhone,
-          guestCount: Number(form.guestCount),
           eventDate: form.eventDate,
+          deliveryTime: form.deliveryTime,
           deliveryArea: form.deliveryArea,
           mainDishes: form.mainDishes,
           sideSelection: form.sideSelection,
@@ -404,30 +404,27 @@ export function CateringFlow() {
           <h2 className="mb-6 text-xl font-black text-foreground">تفاصيل المناسبة — خطوة 2 من 3</h2>
 
           <div className="space-y-5">
-            <div>
-              <Label htmlFor="guest-count">عدد الضيوف</Label>
-              <Input
-                id="guest-count"
-                type="number"
-                min={1}
-                value={form.guestCount}
-                onChange={(e) => setForm((prev) => ({ ...prev, guestCount: e.target.value }))}
-                className="mt-1"
-              />
-              <p className="mt-1 text-xs text-muted-foreground">
-                النطاق المقترح لهذه الباقة: {tier.guestLabel ?? `${tier.guestMin}–${tier.guestMax} ضيف`}
-              </p>
-            </div>
-
-            <div>
-              <Label htmlFor="event-date">تاريخ المناسبة</Label>
-              <Input
-                id="event-date"
-                type="date"
-                value={form.eventDate}
-                onChange={(e) => setForm((prev) => ({ ...prev, eventDate: e.target.value }))}
-                className="mt-1"
-              />
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <Label htmlFor="event-date">تاريخ المناسبة</Label>
+                <Input
+                  id="event-date"
+                  type="date"
+                  value={form.eventDate}
+                  onChange={(e) => setForm((prev) => ({ ...prev, eventDate: e.target.value }))}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="delivery-time">وقت التوصيل</Label>
+                <Input
+                  id="delivery-time"
+                  type="time"
+                  value={form.deliveryTime}
+                  onChange={(e) => setForm((prev) => ({ ...prev, deliveryTime: e.target.value }))}
+                  className="mt-1"
+                />
+              </div>
             </div>
 
             <div>
@@ -530,12 +527,12 @@ export function CateringFlow() {
                 </div>
               )}
               <div className="flex justify-between gap-4">
-                <dt className="text-muted-foreground">عدد الضيوف</dt>
-                <dd className="font-medium text-foreground">{form.guestCount}</dd>
-              </div>
-              <div className="flex justify-between gap-4">
                 <dt className="text-muted-foreground">تاريخ المناسبة</dt>
                 <dd className="font-medium text-foreground">{form.eventDate}</dd>
+              </div>
+              <div className="flex justify-between gap-4">
+                <dt className="text-muted-foreground">وقت التوصيل</dt>
+                <dd className="font-medium text-foreground">{form.deliveryTime}</dd>
               </div>
               <div className="flex justify-between gap-4">
                 <dt className="text-muted-foreground">منطقة التوصيل</dt>

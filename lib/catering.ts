@@ -103,8 +103,8 @@ export const CATERING_TIERS: CateringTier[] = [
     mainDishPool: CATERING_MAIN_DISHES,
     sideRule: { type: "guided", appetizerPool: CATERING_APPETIZERS, saladPool: CATERING_SALADS },
     sweetsMode: "addon",
-    disposablesIncluded: false,
-    features: ["3 أطباق رئيسية تختارها", "مقبل واحد وسلطة واحدة", "الأدوات والتغليف غير مشمولة", "تكفي 10+ ضيوف"],
+    disposablesIncluded: true,
+    features: ["3 أطباق رئيسية تختارها", "مقبل واحد وسلطة واحدة", "تكفي 10+ ضيوف"],
     highlighted: false,
   },
   {

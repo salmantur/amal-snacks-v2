@@ -9,7 +9,7 @@ export function getCateringDishImageUrl(dish: CateringDish): string {
   return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/Menu/${dish.image}`
 }
 
-export type CateringTierId = "tier1" | "tier2" | "tier3"
+export type CateringTierId = "tier0" | "tier1" | "tier2" | "tier3"
 
 export type CateringSideRule =
   | { type: "guided"; appetizerPool: CateringDish[]; saladPool: CateringDish[] }
@@ -25,6 +25,7 @@ export interface CateringTier {
   mainDishPool: CateringDish[]
   sideRule: CateringSideRule
   sweetsMode: "addon" | "included"
+  disposablesIncluded: boolean
   features: string[]
   highlighted: boolean
 }
@@ -90,6 +91,20 @@ export const CATERING_SWEETS: CateringDish[] = [
 
 export const CATERING_TIERS: CateringTier[] = [
   {
+    id: "tier0",
+    label: "الباقة المصغّرة",
+    guestMin: 8,
+    guestMax: 10,
+    price: 1500,
+    mainDishCount: 3,
+    mainDishPool: CATERING_MAIN_DISHES,
+    sideRule: { type: "guided", appetizerPool: CATERING_APPETIZERS, saladPool: CATERING_SALADS },
+    sweetsMode: "addon",
+    disposablesIncluded: false,
+    features: ["3 أطباق رئيسية تختارها", "مقبل واحد وسلطة واحدة", "الأدوات والتغليف غير مشمولة", "تكفي ~10 ضيوف"],
+    highlighted: false,
+  },
+  {
     id: "tier1",
     label: "الباقة الأولى",
     guestMin: 15,
@@ -99,6 +114,7 @@ export const CATERING_TIERS: CateringTier[] = [
     mainDishPool: CATERING_MAIN_DISHES,
     sideRule: { type: "guided", appetizerPool: CATERING_APPETIZERS, saladPool: CATERING_SALADS },
     sweetsMode: "addon",
+    disposablesIncluded: true,
     features: ["4 أطباق رئيسية تختارها", "مقبل واحد وسلطة واحدة", "تكفي 15–20 ضيف"],
     highlighted: false,
   },
@@ -112,6 +128,7 @@ export const CATERING_TIERS: CateringTier[] = [
     mainDishPool: CATERING_MAIN_DISHES,
     sideRule: { type: "open", pool: CATERING_SIDES_POOL, min: 2, max: 3 },
     sweetsMode: "addon",
+    disposablesIncluded: true,
     features: ["5 أطباق رئيسية تختارها", "2–3 مقبلات وسلطات حسب اختيارك", "تكفي 30–40 ضيف"],
     highlighted: true,
   },
@@ -125,6 +142,7 @@ export const CATERING_TIERS: CateringTier[] = [
     mainDishPool: CATERING_MAIN_DISHES,
     sideRule: { type: "open", pool: CATERING_SIDES_POOL, min: 2, max: 3 },
     sweetsMode: "included",
+    disposablesIncluded: true,
     features: ["6 أطباق رئيسية تختارها", "2–3 مقبلات وسلطات حسب اختيارك", "صنف حلا مجاني — تكفي 50–60 ضيف"],
     highlighted: false,
   },

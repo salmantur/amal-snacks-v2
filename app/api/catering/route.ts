@@ -37,7 +37,7 @@ function extractClientIp(req: Request): string {
 }
 
 const payloadSchema = z.object({
-  tierId: z.enum(["tier1", "tier2", "tier3"]),
+  tierId: z.enum(["tier0", "tier1", "tier2", "tier3"]),
   customerName: z.string().trim().max(120).optional().default(""),
   customerPhone: z.string().trim().max(30).optional().default(""),
   guestCount: z.number().int().min(1).max(2000),
@@ -121,6 +121,7 @@ export async function POST(req: Request) {
       `عدد الضيوف: ${payload.guestCount}`,
       `تاريخ المناسبة: ${payload.eventDate}`,
     ]
+    if (!tier.disposablesIncluded) notesLines.push("⚠️ بدون أدوات/تغليف — غير مشمولة في هذه الباقة")
     if (payload.notes) notesLines.push(`ملاحظات: ${payload.notes}`)
     const notes = notesLines.join("\n")
 

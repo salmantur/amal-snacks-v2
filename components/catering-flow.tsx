@@ -81,7 +81,7 @@ function TierCard({ tier, onSelect }: { tier: CateringTier; onSelect: () => void
       <div>
         <h3 className="text-lg font-black">{tier.label}</h3>
         <p className={`text-sm ${highlighted ? "text-background/70" : "text-muted-foreground"}`}>
-          تكفي {tier.guestMin}–{tier.guestMax} ضيف
+          تكفي {tier.guestLabel ?? `${tier.guestMin}–${tier.guestMax} ضيف`}
         </p>
       </div>
       <p className="text-3xl font-black">
@@ -455,7 +455,7 @@ export function CateringFlow() {
                 className="mt-1"
               />
               <p className="mt-1 text-xs text-muted-foreground">
-                النطاق المقترح لهذه الباقة: {tier.guestMin}–{tier.guestMax} ضيف
+                النطاق المقترح لهذه الباقة: {tier.guestLabel ?? `${tier.guestMin}–${tier.guestMax} ضيف`}
               </p>
             </div>
 

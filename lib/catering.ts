@@ -20,6 +20,8 @@ export interface CateringTier {
   label: string
   guestMin: number
   guestMax: number
+  /** Overrides the default "{guestMin}–{guestMax}" display, for open-ended ranges like "10+". */
+  guestLabel?: string
   price: number
   mainDishCount: number
   mainDishPool: CateringDish[]
@@ -92,16 +94,17 @@ export const CATERING_SWEETS: CateringDish[] = [
 export const CATERING_TIERS: CateringTier[] = [
   {
     id: "tier0",
-    label: "الباقة المصغّرة",
-    guestMin: 8,
+    label: "الباقة العائلية",
+    guestMin: 10,
     guestMax: 10,
+    guestLabel: "10+ ضيف",
     price: 1500,
     mainDishCount: 3,
     mainDishPool: CATERING_MAIN_DISHES,
     sideRule: { type: "guided", appetizerPool: CATERING_APPETIZERS, saladPool: CATERING_SALADS },
     sweetsMode: "addon",
     disposablesIncluded: false,
-    features: ["3 أطباق رئيسية تختارها", "مقبل واحد وسلطة واحدة", "الأدوات والتغليف غير مشمولة", "تكفي ~10 ضيوف"],
+    features: ["3 أطباق رئيسية تختارها", "مقبل واحد وسلطة واحدة", "الأدوات والتغليف غير مشمولة", "تكفي 10+ ضيوف"],
     highlighted: false,
   },
   {

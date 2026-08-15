@@ -1,10 +1,8 @@
-import { NextResponse, after } from "next/server"
+import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { z } from "zod"
 import { getSupabaseConfig } from "@/lib/supabase/config"
 import { formatNewOrderTelegramMessage, normalizeTelegramConfig, sendTelegramMessage } from "@/lib/telegram"
-import { formatNewOrderPushPayload, normalizePushSubscriptions } from "@/lib/push"
-import { sendPushToSubscriptions } from "@/lib/push-server"
 import {
   getCateringTier,
   getSweetAddonPrice,
@@ -151,7 +149,7 @@ export async function POST(req: Request) {
     const { data: settingsRows } = await supabase
       .from("app_settings")
       .select("key,value")
-      .in("key", ["telegram_alerts", "push_subscriptions"])
+      .in("key", ["telegram_alerts"])
 
     const settingsMap = new Map<string, unknown>()
     for (const row of (settingsRows ?? []) as { key?: string; value: unknown }[]) {
@@ -179,26 +177,6 @@ export async function POST(req: Request) {
     } catch (telegramError) {
       console.error("Catering Telegram notification failed", telegramError)
     }
-
-    after(async () => {
-      try {
-        const pushSubscriptions = normalizePushSubscriptions(settingsMap.get("push_subscriptions"))
-        if (pushSubscriptions.length === 0) return
-        const pushPayload = formatNewOrderPushPayload({
-          orderNumber: insertedOrder.order_number,
-          customerName: payload.customerName,
-          orderType: "delivery",
-          total,
-        })
-        const { staleEndpoints } = await sendPushToSubscriptions(pushSubscriptions, pushPayload)
-        if (staleEndpoints.length > 0) {
-          const remaining = pushSubscriptions.filter((sub) => !staleEndpoints.includes(sub.endpoint))
-          await supabase.from("app_settings").upsert({ key: "push_subscriptions", value: remaining }, { onConflict: "key" })
-        }
-      } catch (pushError) {
-        console.error("Catering push notification failed", pushError)
-      }
-    })
 
     return NextResponse.json({ id: insertedOrder.id, orderNumber: insertedOrder.order_number, total })
   } catch (error) {

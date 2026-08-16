@@ -110,7 +110,7 @@ export const CATERING_TIERS: CateringTier[] = [
   },
   {
     id: "tier1",
-    label: "الباقة الأولى",
+    label: "باقة الاجتماعات",
     guestMin: 15,
     guestMax: 20,
     price: 2240,
@@ -122,7 +122,7 @@ export const CATERING_TIERS: CateringTier[] = [
   },
   {
     id: "tier2",
-    label: "الباقة الثانية",
+    label: "باقة المناسبات",
     guestMin: 30,
     guestMax: 40,
     price: 3190,

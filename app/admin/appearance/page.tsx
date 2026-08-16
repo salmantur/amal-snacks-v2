@@ -66,7 +66,7 @@ export default function AppearancePage() {
       />
       <div className="mx-auto max-w-6xl p-4 md:p-6">
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
-          <div className="order-2 space-y-4 lg:order-1">
+          <div className="order-2 min-w-0 space-y-4 lg:order-1">
             <div className="flex gap-1.5 overflow-x-auto rounded-2xl bg-admin-bg p-1.5">
               {SECTIONS.map((s) => (
                 <button

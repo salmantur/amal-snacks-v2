@@ -74,7 +74,7 @@ export default function AppearancePage() {
                   type="button"
                   onClick={() => setSection(s.key)}
                   className={cn(
-                    "flex-1 whitespace-nowrap rounded-xl px-3 py-2.5 text-sm font-bold transition-colors",
+                    "flex-shrink-0 whitespace-nowrap rounded-xl px-3 py-2.5 text-sm font-bold transition-colors",
                     section === s.key ? "bg-white text-admin-ink shadow-sm" : "text-admin-muted-2"
                   )}
                 >

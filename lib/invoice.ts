@@ -133,11 +133,19 @@ export async function downloadInvoice(order: Order, details: InvoiceDetails): Pr
   const html2pdf = (await import("html2pdf.js")).default
   const element = buildInvoiceElement(order, details)
 
-  // Render off-screen (not display:none — html2canvas needs real layout to measure).
-  element.style.position = "fixed"
-  element.style.top = "0"
-  element.style.left = "-99999px"
-  document.body.appendChild(element)
+  // html2canvas measures the target element's own layout box, and that
+  // measurement collapses to zero height when `position` is `absolute` or
+  // `fixed` directly on the element itself (a long-standing html2canvas
+  // quirk) — producing a blank PDF. So the element stays `position: static`
+  // (its default) and normal in-flow; it's only pushed off-screen via an
+  // ancestor wrapper, which html2canvas doesn't measure.
+  const offscreenWrap = document.createElement("div")
+  offscreenWrap.style.position = "absolute"
+  offscreenWrap.style.top = "0"
+  offscreenWrap.style.left = "-99999px"
+  offscreenWrap.style.overflow = "hidden"
+  offscreenWrap.appendChild(element)
+  document.body.appendChild(offscreenWrap)
 
   try {
     await html2pdf()
@@ -151,6 +159,6 @@ export async function downloadInvoice(order: Order, details: InvoiceDetails): Pr
       .from(element)
       .save()
   } finally {
-    document.body.removeChild(element)
+    document.body.removeChild(offscreenWrap)
   }
 }

@@ -105,7 +105,7 @@ export const CATERING_TIERS: CateringTier[] = [
     mainDishCount: 3,
     mainDishPool: CATERING_MAIN_DISHES,
     sideRule: { pool: CATERING_SIDES_POOL, min: 2, max: 2 },
-    features: ["3 سخانات تختارها", "أي مقبلين حسب اختيارك", "تكفي 10+ ضيوف"],
+    features: ["3 سخانات تختارها", "2 مقبلات او سلطات", "تكفي 10+ ضيوف"],
     highlighted: false,
   },
   {
@@ -117,7 +117,7 @@ export const CATERING_TIERS: CateringTier[] = [
     mainDishCount: 4,
     mainDishPool: CATERING_MAIN_DISHES,
     sideRule: { pool: CATERING_SIDES_POOL, min: 2, max: 2 },
-    features: ["4 سخانات تختارها", "أي مقبلين حسب اختيارك", "تكفي 15–20 ضيف"],
+    features: ["4 سخانات تختارها", "2 مقبلات او سلطات", "تكفي 15–20 ضيف"],
     highlighted: false,
   },
   {

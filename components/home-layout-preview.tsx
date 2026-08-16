@@ -190,28 +190,20 @@ function CateringPhotoScroller({ photos }: { photos: (string | null)[] }) {
   )
 }
 
-// The catering landing content (trust photo carousel + package tier cards) rendered
-// in place of the regular product grid when the "كاترينج المناسبات" pill is
-// active - shares the editorial home's header/search/category-bar chrome above
-// it (see EditorialPreview), matching the same editorial ink/accent tokens.
+// The catering landing content (package tier cards) rendered in place of the
+// regular product grid when the "كاترينج المناسبات" pill is active - shares the
+// editorial home's header/search/category-bar chrome above it, and the trust
+// photo carousel now rendered as the hero itself (see EditorialPreview),
+// matching the same editorial ink/accent tokens.
 function EditorialCateringLanding({
   onSelectTier,
   cardColors,
-  photos,
 }: {
   onSelectTier: (tierId: string) => void
   cardColors: CateringCardColors
-  photos: (string | null)[]
 }) {
   return (
     <div className="mt-2.5 px-5 pb-10">
-      <h2 className="mb-3.5 text-right text-[13px] font-bold tracking-[0.4px]" style={{ color: EDITORIAL_MUTED }}>
-        من مناسباتنا
-      </h2>
-      <div className="-mx-5 mb-8">
-        <CateringPhotoScroller photos={photos} />
-      </div>
-
       <h2 className="mb-1 text-[17px] font-extrabold" style={{ color: EDITORIAL_INK }}>
         اختر باقتك
       </h2>
@@ -636,33 +628,25 @@ function EditorialPreview() {
               {error}
             </div>
           ) : null}
-          <div className="px-5 pb-[22px] pt-5">
-            {isCateringMode ? (
-              <span
-                className="mb-2.5 inline-block rounded-full px-3.5 py-1.5 text-[11px] font-extrabold text-white"
-                style={{ background: EDITORIAL_ACCENT }}
-              >
-                كاترينج المناسبات
-              </span>
-            ) : (
+          {isCateringMode ? (
+            <div className="pb-[18px] pt-5">
+              <CateringPhotoScroller photos={cateringPhotosConfig.photos} />
+            </div>
+          ) : (
+            <div className="px-5 pb-[22px] pt-5">
               <span
                 className="mb-2.5 block text-[11px] font-bold"
                 style={{ color: EDITORIAL_ACCENT }}
               >
                 مأكولات وضيافة
               </span>
-            )}
-            <h1 className="font-serif-text m-0 text-[40px] font-black leading-[1.05]" style={{ color: EDITORIAL_INK }}>
-              تُحضّر بحب
-              <br />
-              لمناسباتك
-            </h1>
-            {isCateringMode && (
-              <p className="mt-2.5 text-[13.5px] leading-[1.65]" style={{ color: EDITORIAL_MUTED_SOFT }}>
-                باقات كاترينج جاهزة لأي مناسبة — اختر باقتك، خصص أطباقك، وسنتولى الباقي حتى تسليم الطلب.
-              </p>
-            )}
-          </div>
+              <h1 className="font-serif-text m-0 text-[40px] font-black leading-[1.05]" style={{ color: EDITORIAL_INK }}>
+                تُحضّر بحب
+                <br />
+                لمناسباتك
+              </h1>
+            </div>
+          )}
 
           {!isCateringMode && (
             <div
@@ -763,7 +747,6 @@ function EditorialPreview() {
                   <EditorialCateringLanding
                     onSelectTier={(tierId) => router.push(`/catering/build?tier=${tierId}`)}
                     cardColors={cateringCardColors}
-                    photos={cateringPhotosConfig.photos}
                   />
                 </div>
               ) : (

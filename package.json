@@ -8,7 +8,11 @@
     "start": "next start",
     "lint": "eslint .",
     "analyze": "ANALYZE=true next build",
-    "print-daemon": "tsx scripts/print-daemon/index.ts"
+    "print-daemon": "tsx scripts/print-daemon/index.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
@@ -69,17 +73,25 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.4",
     "@next/bundle-analyzer": "^16.3.0",
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/postcss": "^4.1.13",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.4",
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/web-bluetooth": "^0.0.21",
+    "@vitejs/plugin-react": "^6.0.5",
+    "@vitest/coverage-v8": "^4.1.10",
     "dotenv": "^16.4.7",
     "eslint": "^9.19.0",
     "eslint-config-next": "^16.2.6",
+    "jsdom": "^30.0.1",
     "postcss": "^8.5",
     "tailwindcss": "^3.4.17",
     "tsx": "^4.19.2",
-    "typescript": "5.7.3"
+    "typescript": "5.7.3",
+    "vitest": "^4.1.10"
   }
 }

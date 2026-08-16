@@ -10,6 +10,7 @@ import { PriceWithRiyalLogo } from "@/components/ui/price-with-riyal-logo"
 import { useBestSellersConfig } from "@/hooks/use-best-sellers-config"
 import { useCategories, type Category } from "@/hooks/use-categories"
 import { useCateringCardConfig } from "@/hooks/use-catering-card-config"
+import { useCateringPhotosConfig } from "@/hooks/use-catering-photos-config"
 import { useMenu } from "@/hooks/use-menu"
 import { getBestSellerCandidates } from "@/lib/best-sellers"
 import { CATERING_TIERS } from "@/lib/catering"
@@ -120,9 +121,11 @@ function EditorialProductImage({ src, alt, className }: { src?: string; alt: str
 function EditorialCateringLanding({
   onSelectTier,
   cardColors,
+  photos,
 }: {
   onSelectTier: (tierId: string) => void
   cardColors: CateringCardColors
+  photos: (string | null)[]
 }) {
   return (
     <div className="mt-2.5 px-5 pb-10">
@@ -130,18 +133,24 @@ function EditorialCateringLanding({
         من مناسباتنا
       </h2>
       <div className="mb-8 grid grid-cols-2 gap-2.5">
-        {[1, 2, 3, 4].map((i) => (
-          <div
-            key={i}
-            className="flex aspect-square flex-col items-center justify-center gap-1.5 rounded-2xl border border-dashed p-3 text-center"
-            style={{ borderColor: EDITORIAL_BORDER_STRONG }}
-          >
-            <ImageIcon className="h-6 w-6" style={{ color: EDITORIAL_MUTED_FAINTER }} />
-            <span className="text-[10.5px]" style={{ color: EDITORIAL_MUTED_FAINTER }}>
-              صورة حقيقية من إحدى مناسباتنا
-            </span>
-          </div>
-        ))}
+        {[0, 1, 2, 3].map((i) =>
+          photos[i] ? (
+            <div key={i} className="relative aspect-square overflow-hidden rounded-2xl" style={{ background: EDITORIAL_IMG_BG }}>
+              <Image src={photos[i] as string} alt="صورة حقيقية من إحدى مناسباتنا" fill sizes="240px" className="object-cover" />
+            </div>
+          ) : (
+            <div
+              key={i}
+              className="flex aspect-square flex-col items-center justify-center gap-1.5 rounded-2xl border border-dashed p-3 text-center"
+              style={{ borderColor: EDITORIAL_BORDER_STRONG }}
+            >
+              <ImageIcon className="h-6 w-6" style={{ color: EDITORIAL_MUTED_FAINTER }} />
+              <span className="text-[10.5px]" style={{ color: EDITORIAL_MUTED_FAINTER }}>
+                صورة حقيقية من إحدى مناسباتنا
+              </span>
+            </div>
+          )
+        )}
       </div>
 
       <h2 className="mb-1 text-[17px] font-extrabold" style={{ color: EDITORIAL_INK }}>
@@ -327,6 +336,7 @@ function EditorialPreview() {
   const { categories } = useCategories()
   const { orderIds: bestSellerOrder } = useBestSellersConfig()
   const { config: cateringCardColors } = useCateringCardConfig()
+  const { config: cateringPhotosConfig } = useCateringPhotosConfig()
   const { items: cartItems, addItem, updateQuantity, removeItem, totalItems, totalPrice } = useCart()
 
   const [selectedCategory, setSelectedCategory] = useState<string>(
@@ -694,6 +704,7 @@ function EditorialPreview() {
                   <EditorialCateringLanding
                     onSelectTier={(tierId) => router.push(`/catering/build?tier=${tierId}`)}
                     cardColors={cateringCardColors}
+                    photos={cateringPhotosConfig.photos}
                   />
                 </div>
               ) : (

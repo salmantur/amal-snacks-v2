@@ -114,7 +114,83 @@ function EditorialProductImage({ src, alt, className }: { src?: string; alt: str
   )
 }
 
-// The catering landing content (trust photo grid + package tier cards) rendered
+// Horizontal snap-scroll carousel of trust photos, with dot pagination tracking
+// the centered card via IntersectionObserver (sidesteps RTL scrollLeft-direction
+// inconsistencies across browsers that plague scrollLeft-based index math).
+function CateringPhotoScroller({ photos }: { photos: (string | null)[] }) {
+  const scrollerRef = useRef<HTMLDivElement>(null)
+  const cardRefs = useRef<(HTMLDivElement | null)[]>([])
+  const [activeIndex, setActiveIndex] = useState(0)
+
+  useEffect(() => {
+    const root = scrollerRef.current
+    if (!root) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const mostVisible = entries.reduce<IntersectionObserverEntry | null>(
+          (best, entry) => (entry.intersectionRatio > (best?.intersectionRatio ?? 0) ? entry : best),
+          null
+        )
+        if (!mostVisible || mostVisible.intersectionRatio <= 0) return
+        const index = cardRefs.current.findIndex((el) => el === mostVisible.target)
+        if (index !== -1) setActiveIndex(index)
+      },
+      { root, threshold: [0.5, 0.75, 1] }
+    )
+
+    cardRefs.current.forEach((el) => el && observer.observe(el))
+    return () => observer.disconnect()
+  }, [photos.length])
+
+  return (
+    <div>
+      <div
+        ref={scrollerRef}
+        className="flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-1.5 touch-pan-x [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+      >
+        {photos.map((url, i) => (
+          <div
+            key={i}
+            ref={(el) => {
+              cardRefs.current[i] = el
+            }}
+            className="relative h-[248px] w-[192px] flex-shrink-0 snap-start overflow-hidden rounded-[20px]"
+            style={{ background: EDITORIAL_IMG_BG }}
+          >
+            {url ? (
+              <Image src={url} alt="صورة حقيقية من إحدى مناسباتنا" fill sizes="192px" className="object-cover" />
+            ) : (
+              <div
+                className="flex h-full w-full flex-col items-center justify-center gap-1.5 rounded-[20px] border border-dashed p-3 text-center"
+                style={{ borderColor: EDITORIAL_BORDER_STRONG }}
+              >
+                <ImageIcon className="h-6 w-6" style={{ color: EDITORIAL_MUTED_FAINTER }} />
+                <span className="text-[10.5px]" style={{ color: EDITORIAL_MUTED_FAINTER }}>
+                  صورة حقيقية من إحدى مناسباتنا
+                </span>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+      <div className="mt-3 flex items-center justify-center gap-1.5">
+        {photos.map((_, i) => (
+          <span
+            key={i}
+            className="h-[5px] rounded-full transition-all"
+            style={{
+              width: i === activeIndex ? 16 : 5,
+              background: i === activeIndex ? EDITORIAL_ACCENT : EDITORIAL_BORDER_STRONG,
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// The catering landing content (trust photo carousel + package tier cards) rendered
 // in place of the regular product grid when the "كاترينج المناسبات" pill is
 // active - shares the editorial home's header/search/category-bar chrome above
 // it (see EditorialPreview), matching the same editorial ink/accent tokens.
@@ -132,25 +208,8 @@ function EditorialCateringLanding({
       <h2 className="mb-3.5 text-right text-[13px] font-bold tracking-[0.4px]" style={{ color: EDITORIAL_MUTED }}>
         من مناسباتنا
       </h2>
-      <div className="mb-8 grid grid-cols-2 gap-2.5">
-        {[0, 1, 2, 3].map((i) =>
-          photos[i] ? (
-            <div key={i} className="relative aspect-square overflow-hidden rounded-2xl" style={{ background: EDITORIAL_IMG_BG }}>
-              <Image src={photos[i] as string} alt="صورة حقيقية من إحدى مناسباتنا" fill sizes="240px" className="object-cover" />
-            </div>
-          ) : (
-            <div
-              key={i}
-              className="flex aspect-square flex-col items-center justify-center gap-1.5 rounded-2xl border border-dashed p-3 text-center"
-              style={{ borderColor: EDITORIAL_BORDER_STRONG }}
-            >
-              <ImageIcon className="h-6 w-6" style={{ color: EDITORIAL_MUTED_FAINTER }} />
-              <span className="text-[10.5px]" style={{ color: EDITORIAL_MUTED_FAINTER }}>
-                صورة حقيقية من إحدى مناسباتنا
-              </span>
-            </div>
-          )
-        )}
+      <div className="-mx-5 mb-8">
+        <CateringPhotoScroller photos={photos} />
       </div>
 
       <h2 className="mb-1 text-[17px] font-extrabold" style={{ color: EDITORIAL_INK }}>

@@ -2,7 +2,8 @@
 
 import Image from "next/image"
 import dynamic from "next/dynamic"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname, useSearchParams } from "next/navigation"
+import { Check, ImageIcon } from "lucide-react"
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from "react"
 import { useCart, type MenuItem } from "@/components/cart-provider"
 import { PriceWithRiyalLogo } from "@/components/ui/price-with-riyal-logo"
@@ -10,6 +11,7 @@ import { useBestSellersConfig } from "@/hooks/use-best-sellers-config"
 import { useCategories, type Category } from "@/hooks/use-categories"
 import { useMenu } from "@/hooks/use-menu"
 import { getBestSellerCandidates } from "@/lib/best-sellers"
+import { CATERING_TIERS } from "@/lib/catering"
 import { trapFocusOnTab } from "@/lib/dialog-focus"
 import { smartFilterMenuItems } from "@/lib/smart-search"
 import { cn } from "@/lib/utils"
@@ -79,6 +81,7 @@ const EDITORIAL_BORDER = "oklch(93% 0.008 270)"
 const EDITORIAL_BORDER_STRONG = "oklch(90% 0.01 270)"
 const EDITORIAL_IMG_BG = "oklch(93% 0.02 75)"
 const EDITORIAL_BEST_ID = "editorial_best"
+const EDITORIAL_CATERING_ID = "editorial_catering"
 
 type EditorialCategory = { id: string; label: string; dbCategories?: string[] }
 
@@ -104,6 +107,98 @@ function EditorialProductImage({ src, alt, className }: { src?: string; alt: str
   return (
     <div className={cn("relative overflow-hidden rounded-[inherit]", className)} style={{ background: EDITORIAL_IMG_BG }}>
       <Image src={src} alt={alt} fill sizes="240px" className="object-cover" />
+    </div>
+  )
+}
+
+// The catering landing content (trust photo grid + package tier cards) rendered
+// in place of the regular product grid when the "كاترينج المناسبات" pill is
+// active - shares the editorial home's header/search/category-bar chrome above
+// it (see EditorialPreview), matching the same editorial ink/accent tokens.
+function EditorialCateringLanding({ onSelectTier }: { onSelectTier: (tierId: string) => void }) {
+  return (
+    <div className="mt-2.5 px-5 pb-10">
+      <h2 className="mb-3.5 text-right text-[13px] font-bold tracking-[0.4px]" style={{ color: EDITORIAL_MUTED }}>
+        من مناسباتنا
+      </h2>
+      <div className="mb-8 grid grid-cols-2 gap-2.5">
+        {[1, 2, 3, 4].map((i) => (
+          <div
+            key={i}
+            className="flex aspect-square flex-col items-center justify-center gap-1.5 rounded-2xl border border-dashed p-3 text-center"
+            style={{ borderColor: EDITORIAL_BORDER_STRONG }}
+          >
+            <ImageIcon className="h-6 w-6" style={{ color: EDITORIAL_MUTED_FAINTER }} />
+            <span className="text-[10.5px]" style={{ color: EDITORIAL_MUTED_FAINTER }}>
+              صورة حقيقية من إحدى مناسباتنا
+            </span>
+          </div>
+        ))}
+      </div>
+
+      <h2 className="mb-1 text-[17px] font-extrabold" style={{ color: EDITORIAL_INK }}>
+        اختر باقتك
+      </h2>
+      <p className="mb-4 text-[12.5px]" style={{ color: EDITORIAL_MUTED_SOFT }}>
+        باقات بأحجام مختلفة تناسب مناسبتك
+      </p>
+      <div className="flex flex-col gap-3.5">
+        {CATERING_TIERS.map((tier) => {
+          const popular = tier.highlighted
+          return (
+            <div
+              key={tier.id}
+              className="relative rounded-[20px] p-5"
+              style={{
+                background: popular ? EDITORIAL_INK : "#fff",
+                border: popular ? "none" : `1px solid ${EDITORIAL_BORDER_STRONG}`,
+                boxShadow: popular ? "0 16px 32px -20px rgba(20,15,10,0.35)" : "none",
+              }}
+            >
+              {popular && (
+                <span
+                  className="absolute -top-2.5 right-5 rounded-full px-2.5 py-1 text-[10.5px] font-extrabold text-white"
+                  style={{ background: EDITORIAL_ACCENT }}
+                >
+                  الأكثر طلبًا
+                </span>
+              )}
+              <h3 className="text-[16px] font-extrabold" style={{ color: popular ? "#fff" : EDITORIAL_INK }}>
+                {tier.label}
+              </h3>
+              <p className="mt-0.5 text-[12px]" style={{ color: popular ? "rgba(255,255,255,.6)" : EDITORIAL_MUTED_SOFT }}>
+                تكفي {tier.guestLabel ?? `${tier.guestMin}–${tier.guestMax} ضيف`}
+              </p>
+              <div className="mt-2.5 flex items-baseline gap-1.5">
+                <span className="text-[24px] font-black" style={{ color: popular ? "#fff" : EDITORIAL_INK }}>
+                  <PriceWithRiyalLogo value={tier.price.toLocaleString("ar-SA")} />
+                </span>
+              </div>
+              <div className="my-3.5 h-px" style={{ background: popular ? "rgba(255,255,255,.15)" : EDITORIAL_BORDER }} />
+              <div className="flex flex-col gap-2">
+                {tier.features.map((feature) => (
+                  <div
+                    key={feature}
+                    className="flex items-center gap-2 text-[12.5px]"
+                    style={{ color: popular ? "rgba(255,255,255,.8)" : EDITORIAL_MUTED_SOFT }}
+                  >
+                    <Check className="h-3.5 w-3.5 flex-shrink-0" style={{ color: EDITORIAL_ACCENT }} />
+                    <span>{feature}</span>
+                  </div>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={() => onSelectTier(tier.id)}
+                className="mt-4 block h-[46px] w-full rounded-full border-none text-center text-[13.5px] font-extrabold"
+                style={{ background: popular ? EDITORIAL_ACCENT : EDITORIAL_INK, color: "#fff" }}
+              >
+                اختر هذه الباقة
+              </button>
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }
@@ -205,12 +300,17 @@ const EditorialBestSellerCardP1 = memo(function EditorialBestSellerCardP1({
 
 function EditorialPreview() {
   const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const isCateringMode = pathname === "/catering"
   const { menuItems, isLoading, error } = useMenu()
   const { categories } = useCategories()
   const { orderIds: bestSellerOrder } = useBestSellersConfig()
   const { items: cartItems, addItem, updateQuantity, removeItem, totalItems, totalPrice } = useCart()
 
-  const [selectedCategory, setSelectedCategory] = useState<string>(EDITORIAL_BEST_ID)
+  const [selectedCategory, setSelectedCategory] = useState<string>(
+    () => searchParams.get("category") || EDITORIAL_BEST_ID
+  )
   const [searchQuery, setSearchQuery] = useState("")
   const [menuOpen, setMenuOpen] = useState(false)
   const [cartOpen, setCartOpen] = useState(false)
@@ -224,6 +324,7 @@ function EditorialPreview() {
     () => [
       { id: EDITORIAL_BEST_ID, label: "الأكثر طلبًا" },
       ...categories.filter((c: Category) => c.isVisible).map((c) => ({ id: c.id, label: c.label, dbCategories: c.dbCategories })),
+      { id: EDITORIAL_CATERING_ID, label: "كاترينج المناسبات" },
     ],
     [categories]
   )
@@ -232,7 +333,28 @@ function EditorialPreview() {
     if (!uiCategories.some((c) => c.id === selectedCategory)) setSelectedCategory(EDITORIAL_BEST_ID)
   }, [uiCategories, selectedCategory])
 
-  const isSearching = searchQuery.trim().length > 0
+  // Category pills double as navigation once catering is involved: tapping the
+  // catering pill leaves this page entirely (it's a real route so it can be
+  // linked to directly), and tapping a normal pill while already on /catering
+  // returns to the homepage with that category preselected via ?category=.
+  const selectCategory = useCallback(
+    (id: string) => {
+      if (id === EDITORIAL_CATERING_ID) {
+        router.push("/catering")
+        return
+      }
+      if (isCateringMode) {
+        router.push(`/?category=${id}`)
+        return
+      }
+      setSelectedCategory(id)
+      setSearchQuery("")
+      setMenuOpen(false)
+    },
+    [isCateringMode, router]
+  )
+
+  const isSearching = !isCateringMode && searchQuery.trim().length > 0
   const searchResults = useMemo(
     () => (isSearching ? smartFilterMenuItems(menuItems, searchQuery) : []),
     [isSearching, menuItems, searchQuery]
@@ -329,12 +451,6 @@ function EditorialPreview() {
     setDrawerOpen(false)
   }
 
-  const jumpToCategory = (id: string) => {
-    setSelectedCategory(id)
-    setSearchQuery("")
-    setMenuOpen(false)
-  }
-
   const drawerTotal = selectedProduct ? drawerUnitPrice * drawerQty : 0
 
   const drawerDialogRef = useDialogA11y(drawerOpen, setDrawerOpen)
@@ -404,43 +520,59 @@ function EditorialPreview() {
             </div>
           ) : null}
           <div className="px-5 pb-[22px] pt-5">
-            <span
-              className="mb-2.5 block text-[11px] font-bold"
-              style={{ color: EDITORIAL_ACCENT }}
-            >
-              مأكولات وضيافة
-            </span>
+            {isCateringMode ? (
+              <span
+                className="mb-2.5 inline-block rounded-full px-3.5 py-1.5 text-[11px] font-extrabold text-white"
+                style={{ background: EDITORIAL_ACCENT }}
+              >
+                كاترينج المناسبات
+              </span>
+            ) : (
+              <span
+                className="mb-2.5 block text-[11px] font-bold"
+                style={{ color: EDITORIAL_ACCENT }}
+              >
+                مأكولات وضيافة
+              </span>
+            )}
             <h1 className="font-serif-text m-0 text-[40px] font-black leading-[1.05]" style={{ color: EDITORIAL_INK }}>
               تُحضّر بحب
               <br />
               لمناسباتك
             </h1>
+            {isCateringMode && (
+              <p className="mt-2.5 text-[13.5px] leading-[1.65]" style={{ color: EDITORIAL_MUTED_SOFT }}>
+                باقات كاترينج جاهزة لأي مناسبة — اختر باقتك، خصص أطباقك، وسنتولى الباقي حتى تسليم الطلب.
+              </p>
+            )}
           </div>
 
-          <div
-            className="relative mx-5 mb-5 flex items-center pb-2.5"
-            style={{ borderBottom: `1.5px solid ${EDITORIAL_INK}` }}
-          >
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="ابحث عن وجبتك المفضلة"
-              className="flex-1 border-none bg-transparent p-0 text-[15px] outline-none"
-              style={{ color: EDITORIAL_INK }}
-            />
-            {isSearching ? (
-              <button
-                type="button"
-                onClick={() => setSearchQuery("")}
-                aria-label="مسح البحث"
-                className="border-none bg-transparent p-0 text-[16px] font-bold leading-none"
-                style={{ color: EDITORIAL_MUTED_FAINTER }}
-              >
-                ×
-              </button>
-            ) : null}
-          </div>
+          {!isCateringMode && (
+            <div
+              className="relative mx-5 mb-5 flex items-center pb-2.5"
+              style={{ borderBottom: `1.5px solid ${EDITORIAL_INK}` }}
+            >
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="ابحث عن وجبتك المفضلة"
+                className="flex-1 border-none bg-transparent p-0 text-[15px] outline-none"
+                style={{ color: EDITORIAL_INK }}
+              />
+              {isSearching ? (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  aria-label="مسح البحث"
+                  className="border-none bg-transparent p-0 text-[16px] font-bold leading-none"
+                  style={{ color: EDITORIAL_MUTED_FAINTER }}
+                >
+                  ×
+                </button>
+              ) : null}
+            </div>
+          )}
 
           {isSearching ? (
             <div>
@@ -475,17 +607,28 @@ function EditorialPreview() {
               >
                 <div className="flex gap-2 overflow-x-auto px-5 pb-0.5">
                   {uiCategories.map((cat) => {
-                    const isActive = cat.id === selectedCategory
+                    const isCateringPill = cat.id === EDITORIAL_CATERING_ID
+                    const isActive = isCateringMode ? isCateringPill : !isCateringPill && cat.id === selectedCategory
                     return (
                       <button
                         key={cat.id}
                         type="button"
-                        onClick={() => setSelectedCategory(cat.id)}
-                        className="flex-shrink-0 whitespace-nowrap rounded-full border-none px-4 py-2.5 text-[12.5px] font-bold transition-colors"
-                        style={{
-                          background: isActive ? EDITORIAL_INK : "transparent",
-                          color: isActive ? "#fff" : EDITORIAL_MUTED,
-                        }}
+                        onClick={() => selectCategory(cat.id)}
+                        aria-pressed={isActive}
+                        className="flex-shrink-0 whitespace-nowrap rounded-full px-4 py-2.5 text-[12.5px] font-bold transition-colors"
+                        style={
+                          isCateringPill
+                            ? {
+                                border: `1.5px solid ${EDITORIAL_ACCENT}`,
+                                background: isActive ? EDITORIAL_ACCENT : "transparent",
+                                color: isActive ? "#fff" : EDITORIAL_ACCENT,
+                              }
+                            : {
+                                border: "1.5px solid transparent",
+                                background: isActive ? EDITORIAL_INK : "transparent",
+                                color: isActive ? "#fff" : EDITORIAL_MUTED,
+                              }
+                        }
                       >
                         {cat.label}
                       </button>
@@ -494,51 +637,55 @@ function EditorialPreview() {
                 </div>
               </div>
 
-              <div className="mt-2.5 px-5 pb-6">
-                <h2 className="mb-3.5 text-right text-[13px] font-bold tracking-[0.4px]" style={{ color: EDITORIAL_MUTED }}>
-                  {gridSectionLabel}
-                </h2>
+              {isCateringMode ? (
+                <EditorialCateringLanding onSelectTier={(tierId) => router.push(`/catering/build?tier=${tierId}`)} />
+              ) : (
+                <div className="mt-2.5 px-5 pb-6">
+                  <h2 className="mb-3.5 text-right text-[13px] font-bold tracking-[0.4px]" style={{ color: EDITORIAL_MUTED }}>
+                    {gridSectionLabel}
+                  </h2>
 
-                {isLoading ? (
-                  <div className={isBestCategory ? "flex flex-col gap-8" : "grid grid-cols-2 gap-3.5"}>
-                    {(isBestCategory ? [1, 2, 3] : [1, 2, 3, 4]).map((i) => (
-                      <div
-                        key={i}
-                        className={cn("animate-pulse", isBestCategory ? "h-[280px] rounded-[24px]" : "aspect-square rounded-[14px]")}
-                        style={{ background: EDITORIAL_IMG_BG }}
-                      />
-                    ))}
-                  </div>
-                ) : gridItems.length === 0 ? (
-                  <div className="px-6 py-10 text-center text-[13px]" style={{ color: EDITORIAL_MUTED_FAINTER }}>
-                    لا توجد أصناف في هذا القسم حاليًا
-                  </div>
-                ) : isBestCategory ? (
-                  <div className="flex flex-col gap-8">
-                    {gridItems.map((item) => (
-                      <EditorialBestSellerCardP1
-                        key={item.id}
-                        item={item}
-                        isFlashed={flashId === item.id}
-                        onOpen={openProduct}
-                        onQuickAdd={quickAdd}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 gap-x-3.5 gap-y-5">
-                    {gridItems.map((item) => (
-                      <EditorialProductCard
-                        key={item.id}
-                        item={item}
-                        isFlashed={flashId === item.id}
-                        onOpen={openProduct}
-                        onQuickAdd={quickAdd}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
+                  {isLoading ? (
+                    <div className={isBestCategory ? "flex flex-col gap-8" : "grid grid-cols-2 gap-3.5"}>
+                      {(isBestCategory ? [1, 2, 3] : [1, 2, 3, 4]).map((i) => (
+                        <div
+                          key={i}
+                          className={cn("animate-pulse", isBestCategory ? "h-[280px] rounded-[24px]" : "aspect-square rounded-[14px]")}
+                          style={{ background: EDITORIAL_IMG_BG }}
+                        />
+                      ))}
+                    </div>
+                  ) : gridItems.length === 0 ? (
+                    <div className="px-6 py-10 text-center text-[13px]" style={{ color: EDITORIAL_MUTED_FAINTER }}>
+                      لا توجد أصناف في هذا القسم حاليًا
+                    </div>
+                  ) : isBestCategory ? (
+                    <div className="flex flex-col gap-8">
+                      {gridItems.map((item) => (
+                        <EditorialBestSellerCardP1
+                          key={item.id}
+                          item={item}
+                          isFlashed={flashId === item.id}
+                          onOpen={openProduct}
+                          onQuickAdd={quickAdd}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-x-3.5 gap-y-5">
+                      {gridItems.map((item) => (
+                        <EditorialProductCard
+                          key={item.id}
+                          item={item}
+                          isFlashed={flashId === item.id}
+                          onOpen={openProduct}
+                          onQuickAdd={quickAdd}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -822,7 +969,7 @@ function EditorialPreview() {
                 <button
                   key={cat.id}
                   type="button"
-                  onClick={() => jumpToCategory(cat.id)}
+                  onClick={() => selectCategory(cat.id)}
                   className="block w-full border-none bg-transparent py-3.5 text-right text-[15px] font-semibold"
                   style={{ color: "oklch(20% 0.01 280)", borderBottom: `1px solid ${EDITORIAL_BORDER}` }}
                 >

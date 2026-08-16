@@ -324,8 +324,8 @@ function EditorialPreview() {
   const uiCategories = useMemo<EditorialCategory[]>(
     () => [
       { id: EDITORIAL_BEST_ID, label: "الأكثر طلبًا" },
-      ...categories.filter((c: Category) => c.isVisible).map((c) => ({ id: c.id, label: c.label, dbCategories: c.dbCategories })),
       { id: EDITORIAL_CATERING_ID, label: "كاترينج المناسبات" },
+      ...categories.filter((c: Category) => c.isVisible).map((c) => ({ id: c.id, label: c.label, dbCategories: c.dbCategories })),
     ],
     [categories]
   )

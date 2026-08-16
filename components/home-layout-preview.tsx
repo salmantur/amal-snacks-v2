@@ -9,9 +9,11 @@ import { useCart, type MenuItem } from "@/components/cart-provider"
 import { PriceWithRiyalLogo } from "@/components/ui/price-with-riyal-logo"
 import { useBestSellersConfig } from "@/hooks/use-best-sellers-config"
 import { useCategories, type Category } from "@/hooks/use-categories"
+import { useCateringCardConfig } from "@/hooks/use-catering-card-config"
 import { useMenu } from "@/hooks/use-menu"
 import { getBestSellerCandidates } from "@/lib/best-sellers"
 import { CATERING_TIERS } from "@/lib/catering"
+import type { CateringCardColors } from "@/lib/catering-card-config"
 import { trapFocusOnTab } from "@/lib/dialog-focus"
 import { smartFilterMenuItems } from "@/lib/smart-search"
 import { cn } from "@/lib/utils"
@@ -115,7 +117,13 @@ function EditorialProductImage({ src, alt, className }: { src?: string; alt: str
 // in place of the regular product grid when the "كاترينج المناسبات" pill is
 // active - shares the editorial home's header/search/category-bar chrome above
 // it (see EditorialPreview), matching the same editorial ink/accent tokens.
-function EditorialCateringLanding({ onSelectTier }: { onSelectTier: (tierId: string) => void }) {
+function EditorialCateringLanding({
+  onSelectTier,
+  cardColors,
+}: {
+  onSelectTier: (tierId: string) => void
+  cardColors: CateringCardColors
+}) {
   return (
     <div className="mt-2.5 px-5 pb-10">
       <h2 className="mb-3.5 text-right text-[13px] font-bold tracking-[0.4px]" style={{ color: EDITORIAL_MUTED }}>
@@ -150,39 +158,51 @@ function EditorialCateringLanding({ onSelectTier }: { onSelectTier: (tierId: str
               key={tier.id}
               className="relative rounded-[20px] p-5"
               style={{
-                background: popular ? EDITORIAL_INK : "#fff",
-                border: popular ? "none" : `1px solid ${EDITORIAL_BORDER_STRONG}`,
+                background: popular ? cardColors.background_highlighted : cardColors.background,
+                border: popular ? "none" : `1px solid ${cardColors.border}`,
                 boxShadow: popular ? "0 16px 32px -20px rgba(20,15,10,0.35)" : "none",
               }}
             >
               {popular && (
                 <span
                   className="absolute -top-2.5 right-5 rounded-full px-2.5 py-1 text-[10.5px] font-extrabold text-white"
-                  style={{ background: EDITORIAL_ACCENT }}
+                  style={{ background: cardColors.accent }}
                 >
                   الأكثر طلبًا
                 </span>
               )}
-              <h3 className="text-[16px] font-extrabold" style={{ color: popular ? "#fff" : EDITORIAL_INK }}>
+              <h3
+                className="text-[16px] font-extrabold"
+                style={{ color: popular ? cardColors.text_highlighted : cardColors.text }}
+              >
                 {tier.label}
               </h3>
-              <p className="mt-0.5 text-[12px]" style={{ color: popular ? "rgba(255,255,255,.6)" : EDITORIAL_MUTED_SOFT }}>
+              <p
+                className="mt-0.5 text-[12px]"
+                style={{ color: popular ? cardColors.muted_text_highlighted : cardColors.muted_text }}
+              >
                 تكفي {tier.guestLabel ?? `${tier.guestMin}–${tier.guestMax} ضيف`}
               </p>
               <div className="mt-2.5 flex items-baseline gap-1.5">
-                <span className="text-[24px] font-black" style={{ color: popular ? "#fff" : EDITORIAL_INK }}>
+                <span
+                  className="text-[24px] font-black"
+                  style={{ color: popular ? cardColors.text_highlighted : cardColors.text }}
+                >
                   <PriceWithRiyalLogo value={tier.price.toLocaleString("ar-SA")} />
                 </span>
               </div>
-              <div className="my-3.5 h-px" style={{ background: popular ? "rgba(255,255,255,.15)" : EDITORIAL_BORDER }} />
+              <div
+                className="my-3.5 h-px"
+                style={{ background: popular ? "rgba(255,255,255,.15)" : cardColors.border }}
+              />
               <div className="flex flex-col gap-2">
                 {tier.features.map((feature) => (
                   <div
                     key={feature}
                     className="flex items-center gap-2 text-[12.5px]"
-                    style={{ color: popular ? "rgba(255,255,255,.8)" : EDITORIAL_MUTED_SOFT }}
+                    style={{ color: popular ? cardColors.muted_text_highlighted : cardColors.muted_text }}
                   >
-                    <Check className="h-3.5 w-3.5 flex-shrink-0" style={{ color: EDITORIAL_ACCENT }} />
+                    <Check className="h-3.5 w-3.5 flex-shrink-0" style={{ color: cardColors.accent }} />
                     <span>{feature}</span>
                   </div>
                 ))}
@@ -191,7 +211,7 @@ function EditorialCateringLanding({ onSelectTier }: { onSelectTier: (tierId: str
                 type="button"
                 onClick={() => onSelectTier(tier.id)}
                 className="mt-4 block h-[46px] w-full rounded-full border-none text-center text-[13.5px] font-extrabold"
-                style={{ background: popular ? EDITORIAL_ACCENT : EDITORIAL_INK, color: "#fff" }}
+                style={{ background: popular ? cardColors.accent : cardColors.background_highlighted, color: "#fff" }}
               >
                 اختر هذه الباقة
               </button>
@@ -306,6 +326,7 @@ function EditorialPreview() {
   const { menuItems, isLoading, error } = useMenu()
   const { categories } = useCategories()
   const { orderIds: bestSellerOrder } = useBestSellersConfig()
+  const { config: cateringCardColors } = useCateringCardConfig()
   const { items: cartItems, addItem, updateQuantity, removeItem, totalItems, totalPrice } = useCart()
 
   const [selectedCategory, setSelectedCategory] = useState<string>(
@@ -670,7 +691,10 @@ function EditorialPreview() {
 
               {isCateringMode ? (
                 <div key={EDITORIAL_CATERING_ID} className="animate-fade-in">
-                  <EditorialCateringLanding onSelectTier={(tierId) => router.push(`/catering/build?tier=${tierId}`)} />
+                  <EditorialCateringLanding
+                    onSelectTier={(tierId) => router.push(`/catering/build?tier=${tierId}`)}
+                    cardColors={cateringCardColors}
+                  />
                 </div>
               ) : (
                 <div key={selectedCategory} className="mt-2.5 px-5 pb-6 animate-fade-in">

@@ -28,14 +28,19 @@ const BestSellerCardEditor = dynamic(
   () => import("@/components/best-seller-card-editor").then((m) => ({ default: m.BestSellerCardEditor })),
   { loading: () => LOADING }
 )
+const CateringCardColorEditor = dynamic(
+  () => import("@/components/catering-card-color-editor").then((m) => ({ default: m.CateringCardColorEditor })),
+  { loading: () => LOADING }
+)
 
-type Section = "banner" | "colors" | "header" | "bestSeller"
+type Section = "banner" | "colors" | "header" | "bestSeller" | "cateringCards"
 
 const SECTIONS: { key: Section; label: string }[] = [
   { key: "banner", label: "البانر" },
   { key: "colors", label: "الألوان" },
   { key: "header", label: "الرأس والشعار" },
   { key: "bestSeller", label: "الأكثر طلبًا" },
+  { key: "cateringCards", label: "بطاقات الكاترينج" },
 ]
 
 export default function AppearancePage() {
@@ -50,7 +55,10 @@ export default function AppearancePage() {
 
   return (
     <div dir="rtl">
-      <AdminPageHeader title="المظهر" description="معاينة حية للبانر، الألوان، الرأس والشعار، وبطاقة الأكثر طلبًا" />
+      <AdminPageHeader
+        title="المظهر"
+        description="معاينة حية للبانر، الألوان، الرأس والشعار، بطاقة الأكثر طلبًا، وبطاقات باقات الكاترينج"
+      />
       <div className="mx-auto max-w-6xl p-4 md:p-6">
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
           <div className="order-2 space-y-4 lg:order-1">
@@ -90,6 +98,9 @@ export default function AppearancePage() {
             </div>
             <div className={section === "bestSeller" ? "" : "hidden"}>
               <BestSellerCardEditor onDraftChange={setBestSellerCard} />
+            </div>
+            <div className={section === "cateringCards" ? "" : "hidden"}>
+              <CateringCardColorEditor />
             </div>
           </div>
 

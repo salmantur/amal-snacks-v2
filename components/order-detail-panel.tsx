@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Printer } from "lucide-react"
+import { Printer, Download } from "lucide-react"
 import type { Order } from "@/lib/data"
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet"
 import { getTimeAgo } from "./order-card"
@@ -10,6 +10,7 @@ interface OrderDetailPanelProps {
   order: Order | null
   onOpenChange: (open: boolean) => void
   onPrint: (order: Order) => void
+  onInvoice: (order: Order) => void
   printing: boolean
   printError: string | null
   printerIp: string
@@ -25,6 +26,7 @@ export function OrderDetailPanel({
   order,
   onOpenChange,
   onPrint,
+  onInvoice,
   printing,
   printError,
   printerIp,
@@ -103,6 +105,15 @@ export function OrderDetailPanel({
           >
             <Printer className="h-4 w-4" />
             {printing ? "جاري الطباعة..." : "طباعة الآن"}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onInvoice(order)}
+            className="flex items-center justify-center gap-2 rounded-[9px] border border-admin-border bg-white p-[13px] text-sm font-semibold transition-colors hover:bg-admin-bg"
+          >
+            <Download className="h-4 w-4" />
+            تحميل الفاتورة
           </button>
 
           {printError ? (

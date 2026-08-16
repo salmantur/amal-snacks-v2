@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
-import { Check, ChevronLeft, ImageIcon, Loader2 } from "lucide-react"
+import { Check, ChevronLeft, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -13,7 +13,6 @@ import { PriceWithRiyalLogo } from "@/components/ui/price-with-riyal-logo"
 import { useDeliveryAreas } from "@/hooks/use-delivery-areas"
 import {
   CATERING_SWEETS,
-  CATERING_TIERS,
   getCateringDishImageUrl,
   getSweetAddonPrice,
   validateMainDishes,
@@ -24,7 +23,7 @@ import {
   type CateringTier,
 } from "@/lib/catering"
 
-type View = "landing" | "step1" | "step2" | "step3" | "success"
+type View = "step1" | "step2" | "step3" | "success"
 
 const STEP_LABELS = ["الباقة والأطباق", "تفاصيل المناسبة", "إتمام الطلب"]
 
@@ -52,57 +51,6 @@ function StepIndicator({ step }: { step: 1 | 2 | 3 }) {
           </div>
         )
       })}
-    </div>
-  )
-}
-
-function GalleryPlaceholder({ caption }: { caption: string }) {
-  return (
-    <div className="flex aspect-square flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-border bg-muted/40 p-4 text-center">
-      <ImageIcon className="h-8 w-8 text-muted-foreground/60" />
-      <p className="text-xs text-muted-foreground">{caption}</p>
-    </div>
-  )
-}
-
-function TierCard({ tier, onSelect }: { tier: CateringTier; onSelect: () => void }) {
-  const highlighted = tier.highlighted
-  return (
-    <div
-      className={`relative flex flex-col gap-4 rounded-3xl border p-6 ${
-        highlighted ? "border-transparent bg-foreground text-background shadow-xl" : "border-border bg-card text-foreground"
-      }`}
-    >
-      {highlighted && (
-        <span className="absolute -top-3 right-6 rounded-full bg-primary px-3 py-1 text-xs font-bold text-primary-foreground">
-          الأكثر طلبًا
-        </span>
-      )}
-      <div>
-        <h3 className="text-lg font-black">{tier.label}</h3>
-        <p className={`text-sm ${highlighted ? "text-background/70" : "text-muted-foreground"}`}>
-          تكفي {tier.guestLabel ?? `${tier.guestMin}–${tier.guestMax} ضيف`}
-        </p>
-      </div>
-      <p className="text-3xl font-black">
-        <PriceWithRiyalLogo value={tier.price.toLocaleString("ar-SA")} />
-      </p>
-      <ul className="flex flex-1 flex-col gap-2 text-sm">
-        {tier.features.map((feature) => (
-          <li key={feature} className="flex items-start gap-2">
-            <Check className={`mt-0.5 h-4 w-4 shrink-0 ${highlighted ? "text-primary" : "text-primary"}`} />
-            <span>{feature}</span>
-          </li>
-        ))}
-      </ul>
-      <Button
-        type="button"
-        onClick={onSelect}
-        className={`h-11 rounded-full font-bold ${highlighted ? "bg-primary text-primary-foreground hover:bg-primary/90" : ""}`}
-        variant={highlighted ? "default" : "outline"}
-      >
-        اختر هذه الباقة
-      </Button>
     </div>
   )
 }
@@ -200,24 +148,16 @@ const EMPTY_FORM: CateringFormState = {
   notes: "",
 }
 
-export function CateringFlow() {
+export function CateringBuilder({ tier }: { tier: CateringTier }) {
   const router = useRouter()
   const { areas: deliveryAreas } = useDeliveryAreas()
-  const [view, setView] = useState<View>("landing")
-  const [tier, setTier] = useState<CateringTier | null>(null)
+  const [view, setView] = useState<View>("step1")
   const [form, setForm] = useState<CateringFormState>(EMPTY_FORM)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [orderNumber, setOrderNumber] = useState<number | null>(null)
 
-  function selectTier(nextTier: CateringTier) {
-    setTier(nextTier)
-    setForm(EMPTY_FORM)
-    setView("step1")
-  }
-
   function toggleMainDish(name: string) {
-    if (!tier) return
     setForm((prev) => {
       const already = prev.mainDishes.includes(name)
       if (already) return { ...prev, mainDishes: prev.mainDishes.filter((d) => d !== name) }
@@ -227,7 +167,6 @@ export function CateringFlow() {
   }
 
   function toggleSideItem(name: string) {
-    if (!tier) return
     const { max } = tier.sideRule
     setForm((prev) => {
       const items = prev.sideSelection.items ?? []
@@ -238,20 +177,19 @@ export function CateringFlow() {
     })
   }
 
-  const mainDishError = tier ? validateMainDishes(tier, form.mainDishes) : null
-  const sidesError = tier ? validateSides(tier, form.sideSelection) : null
+  const mainDishError = validateMainDishes(tier, form.mainDishes)
+  const sidesError = validateSides(tier, form.sideSelection)
   const sweetError = validateSweet(form.sweet)
   const step1Valid = !mainDishError && !sidesError && !sweetError
 
   const step2Valid = Boolean(form.eventDate) && Boolean(form.deliveryTime) && Boolean(form.deliveryArea)
 
   const sweetAddonPrice = getSweetAddonPrice(form.sweet)
-  const total = tier ? tier.price + sweetAddonPrice : 0
+  const total = tier.price + sweetAddonPrice
 
   const sideSummaryNames = form.sideSelection.items ?? []
 
   async function handleSubmit() {
-    if (!tier) return
     setSubmitting(true)
     setSubmitError(null)
     try {
@@ -294,43 +232,9 @@ export function CateringFlow() {
         <p className="text-sm font-semibold text-muted-foreground">تجهيزات المناسبات والكاترينج</p>
       </header>
 
-      {view === "landing" && (
-        <div className="mx-auto max-w-5xl px-4 py-10">
-          <div className="flex flex-col items-center gap-5 text-center">
-            <span className="rounded-full bg-accent px-4 py-1.5 text-sm font-bold text-accent-foreground">كاترينج المناسبات</span>
-            <h1 className="text-3xl font-black leading-tight text-foreground sm:text-4xl">
-              تُحضّر بحب
-              <br />
-              لمناسباتك
-            </h1>
-            <p className="max-w-md text-muted-foreground">
-              باقات كاترينج جاهزة لأي مناسبة — اختر باقتك، خصص أطباقك، وسنتولى الباقي حتى تسليم الطلب.
-            </p>
-          </div>
-
-          <div className="mt-12">
-            <h2 className="mb-4 text-center text-lg font-bold text-foreground">من مناسباتنا</h2>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {[1, 2, 3, 4].map((i) => (
-                <GalleryPlaceholder key={i} caption="صورة حقيقية من إحدى مناسباتنا" />
-              ))}
-            </div>
-          </div>
-
-          <div className="mt-14">
-            <h2 className="mb-6 text-center text-2xl font-black text-foreground">اختر باقتك</h2>
-            <div className="grid gap-6 sm:grid-cols-3">
-              {CATERING_TIERS.map((t) => (
-                <TierCard key={t.id} tier={t} onSelect={() => selectTier(t)} />
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {tier && view === "step1" && (
+      {view === "step1" && (
         <div className="mx-auto max-w-2xl px-4 py-8">
-          <button type="button" onClick={() => setView("landing")} className="mb-4 flex items-center gap-1 text-sm font-semibold text-muted-foreground">
+          <button type="button" onClick={() => router.push("/catering")} className="mb-4 flex items-center gap-1 text-sm font-semibold text-muted-foreground">
             <ChevronLeft className="h-4 w-4 rotate-180" />
             رجوع
           </button>
@@ -392,7 +296,7 @@ export function CateringFlow() {
         </div>
       )}
 
-      {tier && view === "step2" && (
+      {view === "step2" && (
         <div className="mx-auto max-w-2xl px-4 py-8">
           <button type="button" onClick={() => setView("step1")} className="mb-4 flex items-center gap-1 text-sm font-semibold text-muted-foreground">
             <ChevronLeft className="h-4 w-4 rotate-180" />
@@ -489,7 +393,7 @@ export function CateringFlow() {
         </div>
       )}
 
-      {tier && view === "step3" && (
+      {view === "step3" && (
         <div className="mx-auto max-w-2xl px-4 py-8">
           <button type="button" onClick={() => setView("step2")} className="mb-4 flex items-center gap-1 text-sm font-semibold text-muted-foreground">
             <ChevronLeft className="h-4 w-4 rotate-180" />

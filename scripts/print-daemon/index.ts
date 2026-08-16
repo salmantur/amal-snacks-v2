@@ -20,7 +20,6 @@ import { createClient, type RealtimeChannel } from "@supabase/supabase-js"
 import { dbRowToOrder } from "@/lib/orders"
 import { buildTicketXml, sendTicketToPrinter } from "@/lib/print-ticket-server"
 import { normalizePrinterConfig } from "@/lib/printer-config"
-import { normalizeTelegramConfig, sendTelegramMessage } from "@/lib/telegram"
 import type { PrintMode, PrintDarkness } from "@/lib/print-ticket"
 
 loadEnv({ path: path.join(process.cwd(), "scripts/print-daemon/.env") })
@@ -49,14 +48,8 @@ async function resolvePrinterIp(): Promise<string> {
   return normalizePrinterConfig(data?.value).ip
 }
 
-async function alert(text: string): Promise<void> {
+function alert(text: string): void {
   console.error(text)
-  try {
-    const { data } = await supabase.from("app_settings").select("value").eq("key", "telegram_alerts").single()
-    await sendTelegramMessage(normalizeTelegramConfig(data?.value), text)
-  } catch (err) {
-    console.error("Failed to send Telegram alert", err)
-  }
 }
 
 async function printOrder(row: unknown): Promise<void> {
@@ -73,7 +66,7 @@ async function printOrder(row: unknown): Promise<void> {
     console.log(`Printed order #${order.orderNumber}`)
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
-    await alert(`⚠️ فشل طباعة الطلب #${order.orderNumber} تلقائياً\n${msg}`)
+    alert(`⚠️ فشل طباعة الطلب #${order.orderNumber} تلقائياً\n${msg}`)
   }
 }
 
@@ -93,7 +86,7 @@ function subscribe(): void {
       console.log(`Realtime status: ${status}`)
 
       if (status === "SUBSCRIBED") {
-        if (down) void alert("✅ طابعة المطبخ: عاد الاتصال بالنظام")
+        if (down) alert("✅ طابعة المطبخ: عاد الاتصال بالنظام")
         down = false
         reconnecting = false
         return
@@ -102,7 +95,7 @@ function subscribe(): void {
       if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
         if (!down) {
           down = true
-          void alert(`⚠️ طابعة المطبخ: انقطع الاتصال بالنظام (${status})`)
+          alert(`⚠️ طابعة المطبخ: انقطع الاتصال بالنظام (${status})`)
         }
         scheduleReconnect()
       }
@@ -125,7 +118,7 @@ setInterval(async () => {
     await supabase.from("app_settings").select("key").limit(1)
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
-    await alert(`⚠️ طابعة المطبخ: فشل فحص الاتصال الدوري\n${msg}`)
+    alert(`⚠️ طابعة المطبخ: فشل فحص الاتصال الدوري\n${msg}`)
   }
 }, HEARTBEAT_INTERVAL_MS)
 

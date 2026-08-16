@@ -29,7 +29,7 @@ There is no test suite in this repo (no test runner configured, no `*.test.*`/`*
 - `app/api/*` — Route Handlers act as the only backend (no separate server):
   - `api/menu` — public GET, cached (`revalidate = 30`).
   - `api/menu/chat` — rate-limited (20 req/min/IP) proxy to Google Gemini (`gemini-1.5-flash-latest`) for a menu chat assistant. Requires `GEMINI_API_KEY` (not in `.env.example`).
-  - `api/orders` — POST: validates with Zod and **re-prices every item server-side from the `menu` table**; never trusts client-submitted prices. Fires a best-effort Telegram notification after insert.
+  - `api/orders` — POST: validates with Zod and **re-prices every item server-side from the `menu` table**; never trusts client-submitted prices.
   - `api/vitals` — Web Vitals beacon receiver (just logs, no external sink).
 
   There used to be an `api/webhook/print` route here too: a Supabase DB-webhook receiver that auto-printed on every `orders` INSERT by pushing directly from Vercel to the printer's IP over the internet, which required forwarding a router port to the printer via a No-IP dynamic DNS hostname — with no authentication on the printer's own HTTP endpoint. That route has been removed. Auto-print on new orders can optionally be handled by `scripts/print-daemon/` (see its README), a standalone script meant to run on a device physically on the printer's LAN, subscribing to Supabase Realtime instead of being pushed to over the internet — not currently deployed (no always-on device on-site), kept for if/when one is added.
@@ -56,13 +56,13 @@ Reconstructed from usage across `lib/orders.ts`, `app/api/orders/route.ts`, `lib
 
 - **`menu`** — product catalog (`name`, `name_en`, `price`, `category`, `ingredients` — doubles as variant options in `label::price` form, `in_stock`, `is_featured`, `images`, `package_items`, etc.).
 - **`orders`** — `order_number`, `customer_name/phone/area`, `order_type` (`delivery`|`pickup`), `items` (jsonb), `subtotal`/`delivery_fee`/`total`, `status` (`pending`|`preparing`|`ready`|`delivered`), `scheduled_time`. Realtime-enabled; the admin dashboard's primary sync path is a `postgres_changes` subscription (`lib/orders.ts` `subscribeToOrders()`), with 60s polling as a fallback only.
-- **`app_settings`** — generic `key`/`value` (jsonb) store acting as a de-facto CMS for everything admin-configurable: discount config, Telegram alerts, delivery areas, banner config, best-seller config, order-schedule config, theme colors. `lib/delivery-areas.ts` has a `legacy_table`/`fallback` tier system implying an older dedicated delivery-areas table may still exist.
+- **`app_settings`** — generic `key`/`value` (jsonb) store acting as a de-facto CMS for everything admin-configurable: discount config, delivery areas, banner config, best-seller config, order-schedule config, theme colors. `lib/delivery-areas.ts` has a `legacy_table`/`fallback` tier system implying an older dedicated delivery-areas table may still exist.
 
 There is no customer/user table.
 
 ### Config-as-`app_settings` hook pattern
 
-Many `hooks/use-*-config.ts` files (`use-banner-config`, `use-best-sellers-config`, `use-delivery-areas`, `use-discount-config`, `use-order-schedule-config`, `use-telegram-config`, `use-theme-config`, etc.) all follow the same shape: client-side fetch of one row from `app_settings`, normalized into a typed config with `DEFAULT_*` fallbacks. When adding a new admin-editable setting, follow this existing pattern rather than creating a dedicated table.
+Many `hooks/use-*-config.ts` files (`use-banner-config`, `use-best-sellers-config`, `use-delivery-areas`, `use-discount-config`, `use-order-schedule-config`, `use-theme-config`, etc.) all follow the same shape: client-side fetch of one row from `app_settings`, normalized into a typed config with `DEFAULT_*` fallbacks. When adding a new admin-editable setting, follow this existing pattern rather than creating a dedicated table.
 
 ### Cart / state management
 

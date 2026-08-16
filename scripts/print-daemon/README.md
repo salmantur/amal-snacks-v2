@@ -29,10 +29,9 @@ dependency (`@napi-rs/canvas`) doesn't ship prebuilt binaries for 32-bit ARM.
    ```
    cp scripts/print-daemon/.env.example scripts/print-daemon/.env
    ```
-   The printer IP and Telegram alert settings are **not** set here — the
-   daemon reads them live from the `app_settings` table (`printer_config`,
-   `telegram_alerts`), same as the admin dashboard, so they stay in sync
-   with whatever staff configure in `/admin`.
+   The printer IP is **not** set here — the daemon reads it live from the
+   `app_settings` table (`printer_config`), same as the admin dashboard, so
+   it stays in sync with whatever staff configure in `/admin`.
 3. Install pm2 globally and start the daemon:
    ```
    npm install -g pm2
@@ -42,9 +41,9 @@ dependency (`@napi-rs/canvas`) doesn't ship prebuilt binaries for 32-bit ARM.
    ```
 4. Verify: place a test order and watch `pm2 logs amal-print-daemon`. You
    should see `Printed order #...`. If a print fails, or the connection to
-   Supabase drops for more than ~5 minutes, the daemon sends a Telegram
-   alert using the same bot/chat configured for order notifications
-   (`app_settings.telegram_alerts`), if enabled.
+   Supabase drops for more than ~5 minutes, the daemon logs a warning to
+   its own console/pm2 logs — check `pm2 logs amal-print-daemon` if prints
+   stop showing up.
 
 ## Once it's verified working
 

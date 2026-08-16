@@ -334,6 +334,15 @@ function EditorialPreview() {
     if (!uiCategories.some((c) => c.id === selectedCategory)) setSelectedCategory(EDITORIAL_BEST_ID)
   }, [uiCategories, selectedCategory])
 
+  // "/" and "/catering" are separate routes (see selectCategory below), so switching
+  // between them is a real navigation - without prefetching, every tap re-fetches that
+  // route's RSC payload from scratch, which is what actually made the transition feel
+  // laggy rather than smooth (the fade-in has nothing to animate until that arrives).
+  // Prefetching the other side up front means it's already cached by the time it's tapped.
+  useEffect(() => {
+    router.prefetch(isCateringMode ? "/" : "/catering")
+  }, [isCateringMode, router])
+
   // Category pills double as navigation once catering is involved: tapping the
   // catering pill leaves this page entirely (it's a real route so it can be
   // linked to directly), and tapping a normal pill while already on /catering

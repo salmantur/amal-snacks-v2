@@ -104,7 +104,7 @@ export const CATERING_TIERS: CateringTier[] = [
     mainDishCount: 3,
     mainDishPool: CATERING_MAIN_DISHES,
     sideRule: { pool: CATERING_SIDES_POOL, min: 2, max: 2 },
-    features: ["3 سخانات تختارها", "2 مقبلات او سلطات", "توصيل مجاني", "تكفي 15–20 ضيف"],
+    features: ["3 سخانات تختارها (3 لتر حجم السخان)", "2 مقبلات او سلطات", "توصيل مجاني", "تكفي 15–20 ضيف"],
     highlighted: false,
   },
   {
@@ -116,7 +116,7 @@ export const CATERING_TIERS: CateringTier[] = [
     mainDishCount: 4,
     mainDishPool: CATERING_MAIN_DISHES,
     sideRule: { pool: CATERING_SIDES_POOL, min: 2, max: 2 },
-    features: ["4 سخانات تختارها (5 لتر حجم السخان)", "2 مقبلات او سلطات", "توصيل مجاني", "تكفي 20–30 ضيف"],
+    features: ["4 سخانات تختارها (4 لتر حجم السخان)", "2 مقبلات او سلطات", "توصيل مجاني", "تكفي 20–30 ضيف"],
     highlighted: false,
   },
   {

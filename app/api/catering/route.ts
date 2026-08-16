@@ -2,7 +2,6 @@ import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { z } from "zod"
 import { getSupabaseConfig } from "@/lib/supabase/config"
-import { formatNewOrderTelegramMessage, normalizeTelegramConfig, sendTelegramMessage } from "@/lib/telegram"
 import {
   getCateringTier,
   getSweetAddonPrice,
@@ -139,38 +138,6 @@ export async function POST(req: Request) {
     if (insertError || !insertedOrder) {
       console.error("Failed to save catering order", insertError)
       return NextResponse.json({ error: "Failed to save order", details: insertError?.message ?? null }, { status: 500 })
-    }
-
-    const { data: settingsRows } = await supabase
-      .from("app_settings")
-      .select("key,value")
-      .in("key", ["telegram_alerts"])
-
-    const settingsMap = new Map<string, unknown>()
-    for (const row of (settingsRows ?? []) as { key?: string; value: unknown }[]) {
-      if (row.key) settingsMap.set(row.key, row.value)
-    }
-
-    try {
-      const telegramConfig = normalizeTelegramConfig(settingsMap.get("telegram_alerts"))
-      if (telegramConfig.enabled && telegramConfig.notifyOnNewOrder && telegramConfig.botToken && telegramConfig.chatId) {
-        const message = formatNewOrderTelegramMessage({
-          orderNumber: insertedOrder.order_number,
-          customerName: payload.customerName,
-          customerPhone: payload.customerPhone,
-          orderType: "delivery",
-          total,
-          subtotal,
-          deliveryFee,
-          itemsCount: items.length,
-          items: items.map((item) => ({ name: item.name, quantity: item.quantity, price: item.price, selectedIngredients: item.selectedIngredients })),
-          notes,
-          area: payload.deliveryArea,
-        })
-        void sendTelegramMessage(telegramConfig, message)
-      }
-    } catch (telegramError) {
-      console.error("Catering Telegram notification failed", telegramError)
     }
 
     return NextResponse.json({ id: insertedOrder.id, orderNumber: insertedOrder.order_number, total })

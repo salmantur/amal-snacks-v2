@@ -3,7 +3,7 @@
 import Image from "next/image"
 import dynamic from "next/dynamic"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { Check, ImageIcon } from "lucide-react"
+import { Check } from "lucide-react"
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from "react"
 import { useCart, type MenuItem } from "@/components/cart-provider"
 import { PriceWithRiyalLogo } from "@/components/ui/price-with-riyal-logo"
@@ -85,6 +85,13 @@ const EDITORIAL_IMG_BG = "oklch(93% 0.02 75)"
 const EDITORIAL_BEST_ID = "editorial_best"
 const EDITORIAL_CATERING_ID = "editorial_catering"
 
+const CATERING_GALLERY_PHOTOS = [
+  "/catering/gallery-1.jpg",
+  "/catering/gallery-2.jpg",
+  "/catering/gallery-3.jpg",
+  "/catering/gallery-4.jpg",
+]
+
 type EditorialCategory = { id: string; label: string; dbCategories?: string[] }
 
 function EditorialBagIcon() {
@@ -130,16 +137,9 @@ function EditorialCateringLanding({
         من مناسباتنا
       </h2>
       <div className="mb-8 grid grid-cols-2 gap-2.5">
-        {[1, 2, 3, 4].map((i) => (
-          <div
-            key={i}
-            className="flex aspect-square flex-col items-center justify-center gap-1.5 rounded-2xl border border-dashed p-3 text-center"
-            style={{ borderColor: EDITORIAL_BORDER_STRONG }}
-          >
-            <ImageIcon className="h-6 w-6" style={{ color: EDITORIAL_MUTED_FAINTER }} />
-            <span className="text-[10.5px]" style={{ color: EDITORIAL_MUTED_FAINTER }}>
-              صورة حقيقية من إحدى مناسباتنا
-            </span>
+        {CATERING_GALLERY_PHOTOS.map((src) => (
+          <div key={src} className="relative aspect-square overflow-hidden rounded-2xl">
+            <Image src={src} alt="صورة حقيقية من إحدى مناسباتنا" fill sizes="240px" className="object-cover" />
           </div>
         ))}
       </div>

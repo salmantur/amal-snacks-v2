@@ -4,7 +4,6 @@ import { z } from "zod"
 import { normalizeDiscountConfig, resolveDiscount } from "@/lib/discounts"
 import { fetchDeliveryAreasFromSupabase } from "@/lib/delivery-areas"
 import { getSupabaseConfig } from "@/lib/supabase/config"
-import { formatNewOrderTelegramMessage, normalizeTelegramConfig, sendTelegramMessage } from "@/lib/telegram"
 import { generateDeliveryDaySlots } from "@/lib/checkout-schedule"
 import { normalizeOrderScheduleConfig } from "@/lib/order-schedule-config"
 
@@ -186,7 +185,7 @@ export async function POST(req: Request) {
           const settingsPromise = supabase
             .from("app_settings")
             .select("key,value")
-            .in("key", ["discount_config", "telegram_alerts", "order_schedule"])
+            .in("key", ["discount_config", "order_schedule"])
           // Doesn't depend on menu/settings data - fetch it alongside them instead of as its
           // own awaited step afterward, so a delivery order isn't paying for a fourth
           // sequential round trip.
@@ -288,7 +287,6 @@ export async function POST(req: Request) {
           }
 
       const discountConfig = normalizeDiscountConfig(settingsMap.get("discount_config"))
-          const telegramConfig = normalizeTelegramConfig(settingsMap.get("telegram_alerts"))
           const discountResult = resolveDiscount({
                   config: discountConfig,
                   subtotal,
@@ -362,37 +360,6 @@ export async function POST(req: Request) {
                 },
                 { status: 500 }
                       )
-      }
-
-      // Best-effort notification: never block order creation if Telegram fails.
-      try {
-              if (telegramConfig.enabled && telegramConfig.notifyOnNewOrder && telegramConfig.botToken && telegramConfig.chatId) {
-                        const telegramMessage = formatNewOrderTelegramMessage({
-                                    orderNumber: insertedOrder.order_number,
-                                    customerName: payload.customerName,
-                                    customerPhone: payload.customerPhone,
-                                    orderType: payload.orderType,
-                                    total,
-                                    subtotal,
-                                    deliveryFee,
-                                    discountAmount: discountResult.totalDiscount,
-                                    discountCode: discountResult.codeApplied,
-                                    itemsCount: normalizedItems.length,
-                                    items: normalizedItems.map((item) => ({
-                                                  name: item.name,
-                                                  quantity: item.quantity,
-                                                  price: item.price,
-                                                  selectedIngredients: item.selectedIngredients,
-                                    })),
-                                    notes: payload.notes,
-                                    scheduledTime: payload.scheduledTime ?? null,
-                                    area: payload.customerArea,
-                        })
-                        void sendTelegramMessage(telegramConfig, telegramMessage)
-              }
-      } catch (telegramError) {
-              console.error("Telegram notification failed", telegramError)
-              // Ignore notification errors.
       }
 
       return NextResponse.json({

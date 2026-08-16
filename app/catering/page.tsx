@@ -3,7 +3,7 @@ import { unstable_cache } from "next/cache"
 import { SWRConfig } from "swr"
 import type { Metadata } from "next"
 import { HomeLayoutPreview } from "@/components/home-layout-preview"
-import { HomeSkeleton } from "@/components/home-skeleton"
+import { CateringSkeleton } from "@/components/catering-skeleton"
 import { fetchMenuItems } from "@/lib/fetch-menu"
 import { decodeMenuItems } from "@/lib/text"
 
@@ -34,7 +34,7 @@ async function CateringData() {
 
 export default function CateringPage() {
   return (
-    <Suspense fallback={<HomeSkeleton />}>
+    <Suspense fallback={<CateringSkeleton />}>
       <CateringData />
     </Suspense>
   )

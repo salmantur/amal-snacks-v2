@@ -8,6 +8,7 @@ import { printOrder } from "@/lib/print-order-client"
 import { usePrinterConfig } from "@/hooks/use-printer-config"
 import { OrderCard } from "@/components/order-card"
 import { OrderDetailPanel } from "@/components/order-detail-panel"
+import { InvoiceModal } from "@/components/invoice-modal"
 import { AdminMenuButton } from "./admin-shell"
 import { cn } from "@/lib/utils"
 import { DAY_NAMES, MONTH_NAMES, getSaudiDayDate, getSaudiNowParts, getDayLabel, getDateLabel } from "@/lib/checkout-schedule"
@@ -112,6 +113,7 @@ export default function AdminOrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [printingOrderId, setPrintingOrderId] = useState<string | null>(null)
   const [printError, setPrintError] = useState<string | null>(null)
+  const [invoiceOrder, setInvoiceOrder] = useState<Order | null>(null)
   const { config: printerConfig, saveConfig: savePrinterConfig } = usePrinterConfig()
 
   const [failedOrders, setFailedOrders] = useState<FailedOrder[]>([])
@@ -344,6 +346,7 @@ export default function AdminOrdersPage() {
                   order={order}
                   onOpen={setSelectedOrder}
                   onPrint={handlePrint}
+                  onInvoice={setInvoiceOrder}
                   printing={printingOrderId === order.id}
                 />
               ))}
@@ -358,11 +361,14 @@ export default function AdminOrdersPage() {
           if (!open) setSelectedOrder(null)
         }}
         onPrint={handlePrint}
+        onInvoice={setInvoiceOrder}
         printing={selectedOrder !== null && printingOrderId === selectedOrder.id}
         printError={printError}
         printerIp={printerConfig.ip}
         onSavePrinterIp={(ip) => void savePrinterConfig({ ip })}
       />
+
+      <InvoiceModal order={invoiceOrder} onClose={() => setInvoiceOrder(null)} />
     </>
   )
 }

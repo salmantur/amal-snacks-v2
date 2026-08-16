@@ -1,6 +1,6 @@
 "use client"
 
-import { Printer } from "lucide-react"
+import { Printer, Download } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { Order } from "@/lib/data"
 
@@ -8,6 +8,7 @@ interface OrderCardProps {
   order: Order
   onOpen: (order: Order) => void
   onPrint: (order: Order) => void
+  onInvoice: (order: Order) => void
   printing: boolean
 }
 
@@ -24,7 +25,7 @@ export function getTimeAgo(date: Date): string {
   return `منذ ${Math.floor(seconds / 86400)} يوم`
 }
 
-export function OrderCard({ order, onOpen, onPrint, printing }: OrderCardProps) {
+export function OrderCard({ order, onOpen, onPrint, onInvoice, printing }: OrderCardProps) {
   const type = TYPE_META[order.orderType]
   const isPickup = order.orderType === "pickup"
   const urgent = order.status === "pending"
@@ -87,6 +88,16 @@ export function OrderCard({ order, onOpen, onPrint, printing }: OrderCardProps) 
           className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-admin-border-soft bg-white p-[11px] text-[13.5px] font-semibold transition-colors hover:bg-admin-bg disabled:opacity-50"
         >
           <Printer className="h-[15px] w-[15px]" />
+        </button>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation()
+            onInvoice(order)
+          }}
+          className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-admin-border-soft bg-white p-[11px] text-[13.5px] font-semibold transition-colors hover:bg-admin-bg"
+        >
+          <Download className="h-[15px] w-[15px]" />
         </button>
       </div>
     </div>

@@ -32,8 +32,12 @@ const CateringCardColorEditor = dynamic(
   () => import("@/components/catering-card-color-editor").then((m) => ({ default: m.CateringCardColorEditor })),
   { loading: () => LOADING }
 )
+const CateringPhotosEditor = dynamic(
+  () => import("@/components/catering-photos-editor").then((m) => ({ default: m.CateringPhotosEditor })),
+  { loading: () => LOADING }
+)
 
-type Section = "banner" | "colors" | "header" | "bestSeller" | "cateringCards"
+type Section = "banner" | "colors" | "header" | "bestSeller" | "cateringCards" | "cateringPhotos"
 
 const SECTIONS: { key: Section; label: string }[] = [
   { key: "banner", label: "البانر" },
@@ -41,6 +45,7 @@ const SECTIONS: { key: Section; label: string }[] = [
   { key: "header", label: "الرأس والشعار" },
   { key: "bestSeller", label: "الأكثر طلبًا" },
   { key: "cateringCards", label: "بطاقات الكاترينج" },
+  { key: "cateringPhotos", label: "صور المناسبات" },
 ]
 
 export default function AppearancePage() {
@@ -101,6 +106,9 @@ export default function AppearancePage() {
             </div>
             <div className={section === "cateringCards" ? "" : "hidden"}>
               <CateringCardColorEditor />
+            </div>
+            <div className={section === "cateringPhotos" ? "" : "hidden"}>
+              <CateringPhotosEditor />
             </div>
           </div>
 

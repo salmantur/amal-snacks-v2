@@ -246,7 +246,7 @@ export function CateringBuilder({ tier }: { tier: CateringTier }) {
 
           <section className="mb-6">
             <h3 className="mb-1 text-sm font-bold text-foreground">
-              اختر {tier.mainDishCount} أطباق رئيسية ({form.mainDishes.length} من {tier.mainDishCount})
+              اختر {tier.mainDishCount} سخانات ({form.mainDishes.length} من {tier.mainDishCount})
             </h3>
             <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
               {tier.mainDishPool.map((dish) => (
@@ -414,7 +414,7 @@ export function CateringBuilder({ tier }: { tier: CateringTier }) {
 
             <dl className="space-y-2 text-sm">
               <div className="flex justify-between gap-4">
-                <dt className="text-muted-foreground">الأطباق الرئيسية</dt>
+                <dt className="text-muted-foreground">السخانات</dt>
                 <dd className="text-right font-medium text-foreground">{form.mainDishes.join("، ")}</dd>
               </div>
               <div className="flex justify-between gap-4">

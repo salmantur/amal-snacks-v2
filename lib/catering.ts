@@ -105,31 +105,31 @@ export const CATERING_TIERS: CateringTier[] = [
     mainDishCount: 3,
     mainDishPool: CATERING_MAIN_DISHES,
     sideRule: { pool: CATERING_SIDES_POOL, min: 2, max: 2 },
-    features: ["3 أطباق رئيسية تختارها", "أي مقبلين حسب اختيارك", "تكفي 10+ ضيوف"],
+    features: ["3 سخانات تختارها", "2 مقبلات او سلطات", "تكفي 10+ ضيوف"],
     highlighted: false,
   },
   {
     id: "tier1",
-    label: "الباقة الأولى",
+    label: "باقة الاجتماعات",
     guestMin: 15,
     guestMax: 20,
     price: 2240,
     mainDishCount: 4,
     mainDishPool: CATERING_MAIN_DISHES,
     sideRule: { pool: CATERING_SIDES_POOL, min: 2, max: 2 },
-    features: ["4 أطباق رئيسية تختارها", "أي مقبلين حسب اختيارك", "تكفي 15–20 ضيف"],
+    features: ["4 سخانات تختارها", "2 مقبلات او سلطات", "تكفي 15–20 ضيف"],
     highlighted: false,
   },
   {
     id: "tier2",
-    label: "الباقة الثانية",
+    label: "باقة المناسبات",
     guestMin: 30,
     guestMax: 40,
     price: 3190,
     mainDishCount: 5,
     mainDishPool: CATERING_MAIN_DISHES,
     sideRule: { pool: CATERING_SIDES_POOL, min: 2, max: 3 },
-    features: ["5 أطباق رئيسية تختارها", "2–3 مقبلات وسلطات حسب اختيارك", "تكفي 30–40 ضيف"],
+    features: ["5 سخانات تختارها", "2–3 مقبلات وسلطات حسب اختيارك", "تكفي 30–40 ضيف"],
     highlighted: true,
   },
 ]
@@ -149,7 +149,7 @@ function findDish(pool: CateringDish[], name: string): CateringDish | undefined 
 export function validateMainDishes(tier: CateringTier, selected: string[]): string | null {
   const unique = new Set(selected)
   if (unique.size !== selected.length) return "لا يمكن اختيار نفس الطبق أكثر من مرة"
-  if (selected.length !== tier.mainDishCount) return `يجب اختيار ${tier.mainDishCount} أطباق رئيسية بالضبط`
+  if (selected.length !== tier.mainDishCount) return `يجب اختيار ${tier.mainDishCount} سخانات بالضبط`
   if (!selected.every((name) => findDish(tier.mainDishPool, name))) return "أحد الأطباق المختارة غير متاح"
   return null
 }

@@ -319,6 +319,7 @@ function EditorialPreview() {
   const [drawerQty, setDrawerQty] = useState(1)
   const [drawerIngredients, setDrawerIngredients] = useState<string[]>([])
   const [flashId, setFlashId] = useState<string | null>(null)
+  const categoryPillRefs = useRef<Map<string, HTMLButtonElement>>(new Map())
 
   const uiCategories = useMemo<EditorialCategory[]>(
     () => [
@@ -353,6 +354,19 @@ function EditorialPreview() {
     },
     [isCateringMode, router]
   )
+
+  // Keeps the active pill smoothly scrolled into view, both when tapping a pill
+  // near the edge of the row and when a category is selected from elsewhere
+  // (the side menu, or the ?category= link from /catering) where the bar itself
+  // wasn't touched.
+  useEffect(() => {
+    const activeId = isCateringMode ? EDITORIAL_CATERING_ID : selectedCategory
+    categoryPillRefs.current.get(activeId)?.scrollIntoView({
+      behavior: "smooth",
+      inline: "center",
+      block: "nearest",
+    })
+  }, [selectedCategory, isCateringMode])
 
   const isSearching = !isCateringMode && searchQuery.trim().length > 0
   const searchResults = useMemo(
@@ -458,7 +472,11 @@ function EditorialPreview() {
   const menuDialogRef = useDialogA11y(menuOpen, setMenuOpen)
 
   return (
-    <div className="min-h-screen" dir="rtl" style={{ background: EDITORIAL_SURFACE }}>
+    // EditorialPreview backs both "/" and "/catering" (see app/catering/page.tsx) as
+    // separate route segments, so switching between them fully unmounts/remounts this
+    // component - animate-fade-in on the fresh mount smooths that swap (and the
+    // skeleton -> content swap on first load) instead of the content popping in instantly.
+    <div className="min-h-screen animate-fade-in" dir="rtl" style={{ background: EDITORIAL_SURFACE }}>
       <div className="mx-auto flex min-h-screen max-w-[430px] flex-col" style={{ background: EDITORIAL_SURFACE }}>
         <div
           className="fixed inset-x-0 top-0 z-40 mx-auto flex max-w-[430px] items-center justify-between px-5 pb-2.5 pt-[18px]"
@@ -605,13 +623,17 @@ function EditorialPreview() {
                 className="sticky z-[6] mt-1.5 py-2.5 backdrop-blur-[8px]"
                 style={{ top: 0, background: "oklch(98% 0.003 75 / 0.92)" }}
               >
-                <div className="flex gap-2 overflow-x-auto px-5 pb-0.5">
+                <div className="flex gap-2 overflow-x-auto scroll-smooth px-5 pb-0.5">
                   {uiCategories.map((cat) => {
                     const isCateringPill = cat.id === EDITORIAL_CATERING_ID
                     const isActive = isCateringMode ? isCateringPill : !isCateringPill && cat.id === selectedCategory
                     return (
                       <button
                         key={cat.id}
+                        ref={(el) => {
+                          if (el) categoryPillRefs.current.set(cat.id, el)
+                          else categoryPillRefs.current.delete(cat.id)
+                        }}
                         type="button"
                         onClick={() => selectCategory(cat.id)}
                         aria-pressed={isActive}
@@ -638,9 +660,11 @@ function EditorialPreview() {
               </div>
 
               {isCateringMode ? (
-                <EditorialCateringLanding onSelectTier={(tierId) => router.push(`/catering/build?tier=${tierId}`)} />
+                <div key={EDITORIAL_CATERING_ID} className="animate-fade-in">
+                  <EditorialCateringLanding onSelectTier={(tierId) => router.push(`/catering/build?tier=${tierId}`)} />
+                </div>
               ) : (
-                <div className="mt-2.5 px-5 pb-6">
+                <div key={selectedCategory} className="mt-2.5 px-5 pb-6 animate-fade-in">
                   <h2 className="mb-3.5 text-right text-[13px] font-bold tracking-[0.4px]" style={{ color: EDITORIAL_MUTED }}>
                     {gridSectionLabel}
                   </h2>

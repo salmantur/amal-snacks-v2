@@ -6,6 +6,7 @@ import type { CartItem, DeliveryInfo } from "@/components/cart-provider"
 import { TimePicker } from "@/components/time-picker"
 import { PriceWithRiyalLogo } from "@/components/ui/price-with-riyal-logo"
 import type { DeliveryArea } from "@/hooks/use-delivery-areas"
+import type { ServiceWindow } from "@/lib/order-schedule-config"
 
 const DF_ACCENT = "oklch(62% 0.19 8)"
 const DF_INK = "oklch(16% 0.01 280)"
@@ -40,6 +41,7 @@ export interface DeliveryFlowEditorialProps {
   onScheduleChange: (value: string | null) => void
   minimumLeadTimeMinutes: number
   closedDates: string[]
+  windows?: ServiceWindow[]
   schedulePickerOpenSignal: number
   onOpenSchedulePicker: () => void
   deliveryAccuracyText: string
@@ -641,6 +643,7 @@ export function DeliveryFlowEditorial(props: DeliveryFlowEditorialProps) {
                 minMinutes={props.minimumLeadTimeMinutes}
                 required={false}
                 closedDates={props.closedDates}
+                windows={props.windows}
                 openSignal={props.schedulePickerOpenSignal}
                 hideTrigger
               />

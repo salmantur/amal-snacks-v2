@@ -252,60 +252,6 @@ function normalizeText(value: string): string {
     .trim();
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function getEarliestDeliverySlot(minMinutes: number): string | null {
-  const now = new Date();
-  const saudiNow = new Date(
-    now.getTime() + (3 * 60 - now.getTimezoneOffset()) * 60000,
-  );
-  const earliest = new Date(saudiNow.getTime() + (minMinutes + 45) * 60 * 1000);
-  const OPEN_HOUR = 15;
-  const CLOSE_HOUR = 22;
-  const dayNames = [
-    "الأحد",
-    "الاثنين",
-    "الثلاثاء",
-    "الأربعاء",
-    "الخميس",
-    "الجمعة",
-    "السبت",
-  ];
-  const monthNames = [
-    "يناير",
-    "فبراير",
-    "مارس",
-    "أبريل",
-    "مايو",
-    "يونيو",
-    "يوليو",
-    "أغسطس",
-    "سبتمبر",
-    "أكتوبر",
-    "نوفمبر",
-    "ديسمبر",
-  ];
-
-  for (let i = 0; i < 7; i++) {
-    const day = new Date(saudiNow);
-    day.setDate(saudiNow.getDate() + i);
-    for (let hour = OPEN_HOUR; hour < CLOSE_HOUR; hour++) {
-      for (const min of [0, 30]) {
-        const slot = new Date(day);
-        slot.setHours(hour, min, 0, 0);
-        if (slot <= earliest) continue;
-
-        const dayLabel =
-          i === 0 ? "اليوم" : i === 1 ? "غدًا" : dayNames[day.getDay()];
-        const h12 = hour > 12 ? hour - 12 : hour;
-        const period = hour >= 12 ? "م" : "ص";
-        return `${dayLabel} ${day.getDate()} ${monthNames[day.getMonth()]} - ${h12}:${min === 0 ? "00" : "30"} ${period}`;
-      }
-    }
-  }
-
-  return null;
-}
-
 function normalizeMakingTimeMinutes(value: number): number {
   if (!value || value <= 0) return 0;
   // Backward compatibility: some old records stored "24" meaning 24 hours.
@@ -540,9 +486,10 @@ function CheckoutContent() {
   );
   const minimumLeadTimeMinutes = maxMakingTime + DELIVERY_BUFFER_MINUTES;
   const closedDates = orderScheduleConfig.closedDates;
+  const scheduleWindows = orderScheduleConfig.windows;
   const availableScheduleDays = useMemo(
-    () => generateDeliveryDaySlots(minimumLeadTimeMinutes, closedDates),
-    [closedDates, minimumLeadTimeMinutes],
+    () => generateDeliveryDaySlots(minimumLeadTimeMinutes, closedDates, scheduleWindows),
+    [closedDates, minimumLeadTimeMinutes, scheduleWindows],
   );
   const availableScheduleLabels = useMemo(
     () =>
@@ -1058,6 +1005,7 @@ function CheckoutContent() {
         onScheduleChange={handleScheduleChange}
         minimumLeadTimeMinutes={minimumLeadTimeMinutes}
         closedDates={closedDates}
+        windows={scheduleWindows}
         schedulePickerOpenSignal={schedulePickerOpenSignal}
         onOpenSchedulePicker={focusSchedulePicker}
         deliveryAccuracyText={deliveryAccuracyText}

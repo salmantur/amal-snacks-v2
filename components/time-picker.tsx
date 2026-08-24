@@ -5,13 +5,12 @@ import { ChevronDown, ChevronLeft, CalendarDays } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { trapFocusOnTab } from "@/lib/dialog-focus"
 import {
-  CLOSE_HOUR,
-  OPEN_HOUR,
   formatArabicDuration,
   generateDeliveryDaySlots,
   isSaudiDateClosed,
   isSaudiStoreOpenForOrders,
 } from "@/lib/checkout-schedule"
+import { DEFAULT_SERVICE_WINDOWS, type ServiceWindow } from "@/lib/order-schedule-config"
 
 interface TimePickerProps {
   value: string | null
@@ -19,6 +18,7 @@ interface TimePickerProps {
   minMinutes?: number
   required?: boolean
   closedDates?: string[]
+  windows?: ServiceWindow[]
   openSignal?: number
   /** Set when the trigger button is visually hidden and opened via `openSignal` from an
    *  external control instead - keeps the invisible button out of the tab order. */
@@ -31,6 +31,7 @@ export function TimePicker({
   minMinutes = 0,
   required = false,
   closedDates = [],
+  windows = DEFAULT_SERVICE_WINDOWS,
   openSignal = 0,
   hideTrigger = false,
 }: TimePickerProps) {
@@ -40,10 +41,21 @@ export function TimePicker({
   const dialogRef = useRef<HTMLDivElement | null>(null)
   const closeButtonRef = useRef<HTMLButtonElement | null>(null)
 
-  const days = useMemo(() => generateDeliveryDaySlots(minMinutes, closedDates), [closedDates, minMinutes])
+  const days = useMemo(
+    () => generateDeliveryDaySlots(minMinutes, closedDates, windows),
+    [closedDates, minMinutes, windows]
+  )
   const safeSelectedDayIdx = days.length === 0 ? 0 : Math.min(selectedDayIdx, days.length - 1)
   const isClosedToday = isSaudiDateClosed(new Date(), closedDates)
-  const isOpen = isSaudiStoreOpenForOrders(new Date(), closedDates)
+  const isOpen = isSaudiStoreOpenForOrders(new Date(), closedDates, windows)
+  const activeWindow = windows.find((w) => {
+    const hour = new Date().getUTCHours() + 3 // rough Saudi hour for display purposes only
+    return hour >= w.openHour && hour < w.closeHour
+  })
+  const hoursText = [...windows]
+    .sort((a, b) => a.openHour - b.openHour)
+    .map((w) => `${w.openHour > 12 ? w.openHour - 12 : w.openHour}${w.openHour >= 12 ? "م" : "ص"}-${w.closeHour > 12 ? w.closeHour - 12 : w.closeHour}${w.closeHour >= 12 ? "م" : "ص"}`)
+    .join("، ")
 
   useEffect(() => {
     if (openSignal <= 0) return
@@ -141,11 +153,11 @@ export function TimePicker({
           isOpen ? "text-green-600" : isClosedToday ? "text-red-500" : "text-orange-500"
         )}>
           <span className={cn("w-1.5 h-1.5 rounded-full", isOpen ? "bg-green-500" : isClosedToday ? "bg-red-500" : "bg-orange-400")} />
-          {isOpen
-            ? `متاح الآن - نغلق ${CLOSE_HOUR - 12}:00 م`
+          {isOpen && activeWindow
+            ? `متاح الآن (${activeWindow.label}) - نغلق ${activeWindow.closeHour > 12 ? activeWindow.closeHour - 12 : activeWindow.closeHour}:00 ${activeWindow.closeHour >= 12 ? "م" : "ص"}`
             : isClosedToday
             ? "اليوم مغلق لاستقبال الطلبات"
-            : `نفتح الساعة ${OPEN_HOUR - 12}:00 م`}
+            : `ساعات العمل: ${hoursText}`}
         </div>
       )}
 
@@ -182,7 +194,7 @@ export function TimePicker({
               </button>
               <div className="text-right">
                 <h3 id="time-picker-title" className="font-bold text-lg">اختر الموعد</h3>
-                <p className="text-xs text-gray-400">ساعات العمل {OPEN_HOUR - 12}:00 م - {CLOSE_HOUR - 12}:00 م</p>
+                <p className="text-xs text-gray-400">ساعات العمل {hoursText}</p>
               </div>
               <CalendarDays className="h-5 w-5 text-gray-300" />
             </div>

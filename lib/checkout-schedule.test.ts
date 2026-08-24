@@ -148,6 +148,43 @@ describe("generateDeliveryDaySlots", () => {
   })
 })
 
+describe("generateDeliveryDaySlots with multiple windows", () => {
+  const windows = [
+    { id: "breakfast", label: "فطور", openHour: 8, closeHour: 11, cutoff: { type: "nightBefore" as const, hour: 21 } },
+    { id: "lunch-dinner", label: "غداء وعشاء", openHour: 15, closeHour: 22, cutoff: { type: "leadMinutes" as const, minutes: 45 } },
+  ]
+
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it("excludes today's breakfast slots once the night-before cutoff has passed", () => {
+    // Saudi 08:00 on Jan 1 - the 21:00 cutoff for TODAY's breakfast was Dec 31 21:00, already past.
+    vi.setSystemTime(new Date(Date.UTC(2026, 0, 1, 5, 0, 0)))
+    const today = generateDeliveryDaySlots(0, [], windows)[0]
+    expect(today.slots[0]).toBe("3:00 م") // first slot is dinner, not breakfast
+  })
+
+  it("includes tomorrow's breakfast slots when ordered before the night-before cutoff", () => {
+    // Saudi 12:00 on Jan 1 - before the 21:00 cutoff for tomorrow's (Jan 2) breakfast.
+    vi.setSystemTime(new Date(Date.UTC(2026, 0, 1, 9, 0, 0)))
+    const tomorrow = generateDeliveryDaySlots(0, [], windows).find((d) => d.dayLabel === "غدًا")
+    expect(tomorrow?.slots[0]).toBe("8:00 ص")
+  })
+
+  it("excludes tomorrow's breakfast once the night-before cutoff for it has passed", () => {
+    // Saudi 22:00 on Jan 1 - after the 21:00 cutoff for tomorrow's (Jan 2) breakfast.
+    vi.setSystemTime(new Date(Date.UTC(2026, 0, 1, 19, 0, 0)))
+    const tomorrow = generateDeliveryDaySlots(0, [], windows).find((d) => d.dayLabel === "غدًا")
+    // Breakfast is gone, so the first slot for tomorrow is dinner.
+    expect(tomorrow?.slots[0]).toBe("3:00 م")
+  })
+})
+
 describe("getEarliestDeliverySlotLabel", () => {
   beforeEach(() => {
     vi.useFakeTimers()

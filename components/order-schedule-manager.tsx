@@ -165,7 +165,7 @@ export function OrderScheduleManager() {
                     className="w-full h-10 rounded-xl border border-admin-border-soft px-3 bg-white text-sm"
                   >
                     <option value="leadMinutes">قبل الموعد بمدة (دقائق)</option>
-                    <option value="nightBefore">مساء اليوم السابق</option>
+                    <option value="nightBefore">حتى ساعة محددة قبل الفترة</option>
                   </select>
                 </label>
 
@@ -185,7 +185,7 @@ export function OrderScheduleManager() {
                   </label>
                 ) : (
                   <label className="space-y-1">
-                    <span className="text-xs font-medium text-admin-muted">الساعة (مساءً)</span>
+                    <span className="text-xs font-medium text-admin-muted">آخر ساعة للطلب</span>
                     <select
                       value={window.cutoff.hour}
                       onChange={(e) =>
@@ -206,6 +206,8 @@ export function OrderScheduleManager() {
               <p className="text-xs text-admin-muted-2">
                 {window.cutoff.type === "leadMinutes"
                   ? `يجب أن يُطلب قبل الموعد بـ ${window.cutoff.minutes} دقيقة على الأقل (بالإضافة لوقت التحضير)`
+                  : window.cutoff.hour < 12
+                  ? `يجب أن يُطلب قبل الساعة ${hourLabel(window.cutoff.hour)} من فجر يوم التسليم نفسه`
                   : `يجب أن يُطلب قبل الساعة ${hourLabel(window.cutoff.hour)} من مساء اليوم السابق`}
               </p>
             </div>

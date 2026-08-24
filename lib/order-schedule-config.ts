@@ -23,8 +23,8 @@ export const DEFAULT_SERVICE_WINDOWS: ServiceWindow[] = [
     label: "فطور",
     openHour: 8,
     closeHour: 11,
-    // Must be ordered by 9pm the night before.
-    cutoff: { type: "nightBefore", hour: 21 },
+    // Must be ordered by 1am the same night (i.e. the early hours of delivery day).
+    cutoff: { type: "nightBefore", hour: 1 },
   },
   {
     id: "lunch-dinner",

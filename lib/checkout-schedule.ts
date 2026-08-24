@@ -138,12 +138,17 @@ function isSlotBookable(
     return slotInstant.getTime() > earliest.getTime()
   }
 
-  // "nightBefore": order must be placed by `cutoff.hour` Saudi time on the day
-  // before delivery (dayOffset - 1), and still needs at least the making-time.
+  // "nightBefore": order must be placed by `cutoff.hour` Saudi time on the
+  // overnight stretch before delivery, and still needs at least the making-time.
+  // A late-evening hour (e.g. 21 = 9pm) falls on the day before delivery
+  // (dayOffset - 1); an early-morning hour (e.g. 1 = 1am) is past midnight, so
+  // it falls on delivery day itself (dayOffset) even though it's still "the
+  // night before" in the everyday sense.
   const minPrepInstant = new Date(now.getTime() + minMinutes * 60 * 1000)
   if (slotInstant.getTime() <= minPrepInstant.getTime()) return false
 
-  const cutoffInstant = buildSaudiInstant(base, dayOffset - 1, window.cutoff.hour, 0)
+  const cutoffDayOffset = window.cutoff.hour < 12 ? dayOffset : dayOffset - 1
+  const cutoffInstant = buildSaudiInstant(base, cutoffDayOffset, window.cutoff.hour, 0)
   return now.getTime() <= cutoffInstant.getTime()
 }
 

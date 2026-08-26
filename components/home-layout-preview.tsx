@@ -459,6 +459,92 @@ function EditorialAddedPopup1a({ item, totalItems, totalPrice, closing, onClose,
   )
 }
 
+type FlyToCartFlight = {
+  id: number
+  image?: string
+  startRect: DOMRect
+}
+
+const FLY_TO_CART_DURATION_MS = 550
+const FLY_TO_CART_SIZE_PX = 44
+
+// Animates a clone of the added item's photo arcing from where it was added
+// (the quick-add button, or the drawer's product photo) to the header cart
+// icon - rAF-driven rather than a CSS transition so the arc height can scale
+// with the actual on-screen distance instead of being a fixed keyframe.
+function FlyingCartImage({
+  flight,
+  cartRef,
+  onDone,
+}: {
+  flight: FlyToCartFlight
+  cartRef: { current: HTMLButtonElement | null }
+  onDone: (id: number) => void
+}) {
+  const [pos, setPos] = useState(() => ({
+    x: flight.startRect.left + flight.startRect.width / 2,
+    y: flight.startRect.top + flight.startRect.height / 2,
+    scale: 1,
+    opacity: 1,
+  }))
+  useEffect(() => {
+    const cartRect = cartRef.current?.getBoundingClientRect()
+    if (!cartRect) {
+      onDone(flight.id)
+      return
+    }
+
+    const startX = flight.startRect.left + flight.startRect.width / 2
+    const startY = flight.startRect.top + flight.startRect.height / 2
+    const endX = cartRect.left + cartRect.width / 2
+    const endY = cartRect.top + cartRect.height / 2
+    const arcHeight = Math.min(120, Math.abs(endX - startX) * 0.5 + 40)
+
+    let rafId: number
+    let start: number | null = null
+
+    const tick = (now: number) => {
+      if (start === null) start = now
+      const t = Math.min(1, (now - start) / FLY_TO_CART_DURATION_MS)
+      const eased = 1 - Math.pow(1 - t, 3)
+      const x = startX + (endX - startX) * eased
+      const y = startY + (endY - startY) * eased - Math.sin(t * Math.PI) * arcHeight
+      const scale = 1 - 0.82 * eased
+      const opacity = t < 0.75 ? 1 : 1 - (t - 0.75) / 0.25
+
+      setPos({ x, y, scale, opacity })
+
+      if (t < 1) {
+        rafId = requestAnimationFrame(tick)
+      } else {
+        onDone(flight.id)
+      }
+    }
+
+    rafId = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(rafId)
+  }, [flight, cartRef, onDone])
+
+  return (
+    <div
+      className="pointer-events-none fixed z-[70] overflow-hidden rounded-full border-2 border-white shadow-[0_8px_20px_rgba(20,15,10,0.35)] motion-reduce:hidden"
+      style={{
+        left: pos.x - FLY_TO_CART_SIZE_PX / 2,
+        top: pos.y - FLY_TO_CART_SIZE_PX / 2,
+        width: FLY_TO_CART_SIZE_PX,
+        height: FLY_TO_CART_SIZE_PX,
+        transform: `scale(${pos.scale})`,
+        opacity: pos.opacity,
+        background: EDITORIAL_IMG_BG,
+      }}
+    >
+      {flight.image ? (
+        <Image src={flight.image} alt="" fill sizes={`${FLY_TO_CART_SIZE_PX}px`} className="object-cover" />
+      ) : null}
+    </div>
+  )
+}
+
 function EditorialPreview() {
   const router = useRouter()
   const pathname = usePathname()
@@ -487,6 +573,9 @@ function EditorialPreview() {
   const addedPopupTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const addedPopupExitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const categoryPillRefs = useRef<Map<string, HTMLButtonElement>>(new Map())
+  const cartIconRef = useRef<HTMLButtonElement | null>(null)
+  const drawerImageRef = useRef<HTMLDivElement | null>(null)
+  const [flyingItems, setFlyingItems] = useState<FlyToCartFlight[]>([])
 
   useEffect(() => {
     return () => {
@@ -643,15 +732,29 @@ function EditorialPreview() {
     [totalItems, totalPrice, closeAddedPopup]
   )
 
+  const removeFlyingItem = useCallback((id: number) => {
+    setFlyingItems((prev) => prev.filter((f) => f.id !== id))
+  }, [])
+
+  // Snapshots the origin element's position *before* triggering any state update that
+  // might unmount it (e.g. closing the drawer), so the flight always starts from where
+  // the item actually was on screen.
+  const launchFlyToCart = useCallback((image: string | undefined, originEl: Element | null) => {
+    if (!originEl) return
+    const startRect = originEl.getBoundingClientRect()
+    setFlyingItems((prev) => [...prev, { id: Date.now() + Math.random(), image, startRect }])
+  }, [])
+
   const quickAdd = useCallback(
     (item: MenuItem, e: MouseEvent) => {
       e.stopPropagation()
       addItem(item, 1)
       setFlashId(item.id)
       window.setTimeout(() => setFlashId((cur) => (cur === item.id ? null : cur)), 900)
+      launchFlyToCart(item.image, e.currentTarget)
       showAddedToCartPopup(item, 1)
     },
-    [addItem, showAddedToCartPopup]
+    [addItem, launchFlyToCart, showAddedToCartPopup]
   )
 
   const checkoutFromAddedPopup = useCallback(() => {
@@ -675,6 +778,7 @@ function EditorialPreview() {
     if (!selectedProduct) return
     const selectedLabels = drawerIngredients.map((raw) => parseVariantOption(raw, selectedProduct.price).label).filter(Boolean)
     const itemToAdd = { ...selectedProduct, price: drawerUnitPrice }
+    launchFlyToCart(itemToAdd.image, drawerImageRef.current)
     addItem(itemToAdd, drawerQty, selectedLabels.length > 0 ? selectedLabels : undefined)
     setDrawerOpen(false)
     showAddedToCartPopup(itemToAdd, drawerQty)
@@ -713,6 +817,7 @@ function EditorialPreview() {
           </span>
           {totalItems > 0 ? (
             <button
+              ref={cartIconRef}
               type="button"
               onClick={() => setCartOpen(true)}
               aria-label="فتح السلة"
@@ -734,6 +839,7 @@ function EditorialPreview() {
             </button>
           ) : (
             <button
+              ref={cartIconRef}
               type="button"
               onClick={() => setCartOpen(true)}
               aria-label="فتح السلة"
@@ -745,6 +851,10 @@ function EditorialPreview() {
             </button>
           )}
         </div>
+
+        {flyingItems.map((flight) => (
+          <FlyingCartImage key={flight.id} flight={flight} cartRef={cartIconRef} onDone={removeFlyingItem} />
+        ))}
 
         {addedPopup ? (
           <div className="pointer-events-none fixed inset-x-0 z-40 mx-auto max-w-[430px]" style={{ top: 78 }}>
@@ -968,6 +1078,7 @@ function EditorialPreview() {
             <div className="flex-1 overflow-y-auto">
               <div className="relative">
                 <div
+                  ref={drawerImageRef}
                   className="relative w-full"
                   style={{ aspectRatio: "1.3", background: EDITORIAL_IMG_BG }}
                 >

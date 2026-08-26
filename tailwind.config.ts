@@ -106,6 +106,11 @@ const config: Config = {
           '0%, 100%': { opacity: '1' },
           '50%': { opacity: '0.7' },
         },
+        'pop-in': {
+          '0%': { transform: 'scale(0.9) translateY(-6px)', opacity: '0' },
+          '60%': { transform: 'scale(1.02) translateY(0)', opacity: '1' },
+          '100%': { transform: 'scale(1) translateY(0)', opacity: '1' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
@@ -114,6 +119,7 @@ const config: Config = {
         'slide-down': 'slide-down 0.3s cubic-bezier(0.32, 0.72, 0, 1)',
         'fade-in': 'fade-in 0.2s ease-out',
         'pulse-soft': 'pulse-soft 2s ease-in-out infinite',
+        'pop-in': 'pop-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)',
       },
     },
   },

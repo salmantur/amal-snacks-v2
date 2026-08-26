@@ -125,6 +125,11 @@ const DEFAULT_DELIVERY_INFO: DeliveryInfo = {
   scheduledTime: null,
 }
 
+export interface LastAddedInfo {
+  item: MenuItem
+  quantity: number
+}
+
 interface CartContextType {
   items: CartItem[]
   addItem: (item: MenuItem, quantity?: number, selectedIngredients?: string[]) => void
@@ -135,6 +140,8 @@ interface CartContextType {
   totalPrice: number
   deliveryInfo: DeliveryInfo
   setDeliveryInfo: (info: DeliveryInfo) => void
+  /** The most recently added item, used to trigger the "added to cart" popover. */
+  lastAdded: LastAddedInfo | null
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined)
@@ -144,6 +151,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([])
   const [deliveryInfo, setDeliveryInfoState] = useState<DeliveryInfo>(DEFAULT_DELIVERY_INFO)
   const [storageReady, setStorageReady] = useState(false)
+  const [lastAdded, setLastAdded] = useState<LastAddedInfo | null>(null)
 
   useEffect(() => {
     if (isStorageStale()) {
@@ -186,6 +194,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
       return [...prev, { ...item, quantity, selectedIngredients, cartKey: key }]
     })
+    // Record a fresh object reference every call so the popover re-triggers
+    // even if the same item is added again in quick succession.
+    setLastAdded({ item, quantity })
   }, [])
 
   const removeItem = useCallback((cartKey: string) => {
@@ -232,8 +243,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
       totalPrice,
       deliveryInfo,
       setDeliveryInfo,
+      lastAdded,
     }),
-    [items, addItem, removeItem, updateQuantity, clearCart, totalItems, totalPrice, deliveryInfo, setDeliveryInfo]
+    [
+      items,
+      addItem,
+      removeItem,
+      updateQuantity,
+      clearCart,
+      totalItems,
+      totalPrice,
+      deliveryInfo,
+      setDeliveryInfo,
+      lastAdded,
+    ]
   )
 
   return (

@@ -6,6 +6,7 @@ import dynamic from "next/dynamic"
 import Image from "next/image"
 import Link from "next/link"
 import { useCart } from "@/components/cart-provider"
+import { AddedToCartPopover } from "@/components/added-to-cart-popover"
 import { useRouter } from "next/navigation"
 import { useMenu } from "@/hooks/use-menu"
 import { useCategories } from "@/hooks/use-categories"
@@ -223,6 +224,8 @@ export function Header({ configOverride }: { configOverride?: HeaderConfig } = {
               </span>
             )}
           </button>
+
+          <AddedToCartPopover onCheckout={() => setOrderModalOpen(true)} />
         </div>
       </header>
 

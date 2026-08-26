@@ -1,7 +1,7 @@
 import { act, renderHook, waitFor } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { useOrderScheduleConfig } from "@/hooks/use-order-schedule-config"
-import { DEFAULT_ORDER_SCHEDULE_CONFIG } from "@/lib/order-schedule-config"
+import { DEFAULT_ORDER_SCHEDULE_CONFIG, DEFAULT_SERVICE_WINDOWS } from "@/lib/order-schedule-config"
 
 const createClientMock = vi.fn()
 vi.mock("@/lib/supabase/client", () => ({
@@ -58,7 +58,7 @@ describe("useOrderScheduleConfig", () => {
     await waitFor(() => expect(result.current.loading).toBe(false))
 
     await act(async () => {
-      await result.current.saveConfig({ closedDates: ["2026-02-01", "2026-02-01"] })
+      await result.current.saveConfig({ closedDates: ["2026-02-01", "2026-02-01"], windows: DEFAULT_SERVICE_WINDOWS })
     })
 
     expect(result.current.config.closedDates).toEqual(["2026-02-01"])

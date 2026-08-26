@@ -1,3 +1,5 @@
+import { DEFAULT_SERVICE_WINDOWS, type ServiceWindow } from "@/lib/order-schedule-config"
+
 export interface DeliveryDaySlots {
   date: string
   dayLabel: string
@@ -6,6 +8,9 @@ export interface DeliveryDaySlots {
   isToday: boolean
 }
 
+// Kept for backward compatibility with any existing imports/tests - these now
+// only describe the default lunch/dinner window, not the whole schedule.
+// Prefer passing `windows` (from OrderScheduleConfig) explicitly instead.
 export const OPEN_HOUR = 15
 export const CLOSE_HOUR = 22
 export const BOOKING_WINDOW_DAYS = 30
@@ -89,9 +94,10 @@ export function formatArabicDuration(totalMinutes: number): string {
   return parts.join(" و ")
 }
 
-export function isSaudiStoreOpen(date = new Date()): boolean {
+/** True if `hour` (Saudi time) falls inside any of the given service windows. */
+export function isSaudiStoreOpen(date = new Date(), windows: ServiceWindow[] = DEFAULT_SERVICE_WINDOWS): boolean {
   const { hour } = getSaudiNowParts(date)
-  return hour >= OPEN_HOUR && hour < CLOSE_HOUR
+  return windows.some((w) => hour >= w.openHour && hour < w.closeHour)
 }
 
 export function getSaudiDateKey(date = new Date()): string {
@@ -104,32 +110,83 @@ export function isSaudiDateClosed(date = new Date(), closedDates: string[] = [])
   return new Set(closedDates).has(todayKey)
 }
 
-export function isSaudiStoreOpenForOrders(date = new Date(), closedDates: string[] = []): boolean {
+export function isSaudiStoreOpenForOrders(
+  date = new Date(),
+  closedDates: string[] = [],
+  windows: ServiceWindow[] = DEFAULT_SERVICE_WINDOWS
+): boolean {
   if (isSaudiDateClosed(date, closedDates)) return false
-  return isSaudiStoreOpen(date)
+  return isSaudiStoreOpen(date, windows)
 }
 
-export function generateDeliveryDaySlots(minMinutes: number, closedDates: string[] = []): DeliveryDaySlots[] {
+/** Whether a given (dayOffset, hour, minute) slot in `window` is still bookable right now. */
+function isSlotBookable(
+  base: SaudiNowParts,
+  dayOffset: number,
+  hour: number,
+  minute: number,
+  window: ServiceWindow,
+  minMinutes: number,
+  now: Date
+): boolean {
+  const slotInstant = buildSaudiInstant(base, dayOffset, hour, minute)
+
+  if (window.cutoff.type === "leadMinutes") {
+    // Kitchen making-time and the window's buffer stack, same as the original
+    // single-window behavior (now + minMinutes + cutoff.minutes).
+    const earliest = new Date(now.getTime() + (minMinutes + window.cutoff.minutes) * 60 * 1000)
+    return slotInstant.getTime() > earliest.getTime()
+  }
+
+  // "nightBefore": order must be placed by `cutoff.hour` Saudi time on the
+  // overnight stretch before delivery, and still needs at least the making-time.
+  // A late-evening hour (e.g. 21 = 9pm) falls on the day before delivery
+  // (dayOffset - 1); an early-morning hour (e.g. 1 = 1am) is past midnight, so
+  // it falls on delivery day itself (dayOffset) even though it's still "the
+  // night before" in the everyday sense.
+  const minPrepInstant = new Date(now.getTime() + minMinutes * 60 * 1000)
+  if (slotInstant.getTime() <= minPrepInstant.getTime()) return false
+
+  const cutoffDayOffset = window.cutoff.hour < 12 ? dayOffset : dayOffset - 1
+  const cutoffInstant = buildSaudiInstant(base, cutoffDayOffset, window.cutoff.hour, 0)
+  return now.getTime() <= cutoffInstant.getTime()
+}
+
+export function generateDeliveryDaySlots(
+  minMinutes: number,
+  closedDates: string[] = [],
+  windows: ServiceWindow[] = DEFAULT_SERVICE_WINDOWS
+): DeliveryDaySlots[] {
   const result: DeliveryDaySlots[] = []
   const base = getSaudiNowParts()
-  const earliest = new Date(Date.now() + (minMinutes + 45) * 60 * 1000)
+  const now = new Date()
   const closedDatesSet = new Set(closedDates)
 
   for (let dayOffset = 0; dayOffset < BOOKING_WINDOW_DAYS; dayOffset++) {
     const dateKey = formatDateKey(base.year, base.monthIndex, base.day + dayOffset)
     if (closedDatesSet.has(dateKey)) continue
 
-    const slots: string[] = []
+    // Collect (hour, minute) across all windows first so we can dedupe + sort
+    // before formatting - windows may be defined out of chronological order.
+    const slotTimes = new Map<number, { hour: number; minute: number }>()
 
-    for (let hour = OPEN_HOUR; hour < CLOSE_HOUR; hour++) {
-      for (const minute of SLOT_MINUTES) {
-        const slotInstant = buildSaudiInstant(base, dayOffset, hour, minute)
-        if (slotInstant.getTime() <= earliest.getTime()) continue
-        slots.push(formatSlot(hour, minute))
+    for (const window of windows) {
+      for (let hour = window.openHour; hour < window.closeHour; hour++) {
+        for (const minute of SLOT_MINUTES) {
+          if (!isSlotBookable(base, dayOffset, hour, minute, window, minMinutes, now)) continue
+          slotTimes.set(hour * 60 + minute, { hour, minute })
+        }
       }
     }
 
-    if (slots.length === 0) continue
+    if (slotTimes.size === 0) continue
+
+    const slots = Array.from(slotTimes.keys())
+      .sort((a, b) => a - b)
+      .map((key) => {
+        const { hour, minute } = slotTimes.get(key)!
+        return formatSlot(hour, minute)
+      })
 
     const dayDate = getSaudiDayDate(base, dayOffset)
     const dayLabel = getDayLabel(dayOffset, dayDate.getUTCDay())
@@ -147,8 +204,12 @@ export function generateDeliveryDaySlots(minMinutes: number, closedDates: string
   return result
 }
 
-export function getEarliestDeliverySlotLabel(minMinutes: number, closedDates: string[] = []): string | null {
-  const firstDay = generateDeliveryDaySlots(minMinutes, closedDates)[0]
+export function getEarliestDeliverySlotLabel(
+  minMinutes: number,
+  closedDates: string[] = [],
+  windows: ServiceWindow[] = DEFAULT_SERVICE_WINDOWS
+): string | null {
+  const firstDay = generateDeliveryDaySlots(minMinutes, closedDates, windows)[0]
   if (!firstDay || firstDay.slots.length === 0) return null
   return `${firstDay.dayLabel} ${firstDay.dateLabel} - ${firstDay.slots[0]}`
 }

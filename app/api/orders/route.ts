@@ -309,7 +309,7 @@ export async function POST(req: Request) {
                   }, 0)
                   const minimumLeadTimeMinutes = maxMakingTime + DELIVERY_BUFFER_MINUTES
                   const availableLabels = new Set(
-                            generateDeliveryDaySlots(minimumLeadTimeMinutes, orderScheduleConfig.closedDates).flatMap((day) =>
+                            generateDeliveryDaySlots(minimumLeadTimeMinutes, orderScheduleConfig.closedDates, orderScheduleConfig.windows).flatMap((day) =>
                                       day.slots.map((slot) => `${day.dayLabel} ${day.dateLabel} - ${slot}`)
                             )
                   )

@@ -110,6 +110,10 @@ const config: Config = {
           from: { opacity: '0', transform: 'translateY(-10px) scale(0.97)' },
           to: { opacity: '1', transform: 'translateY(0) scale(1)' },
         },
+        'drop-out': {
+          from: { opacity: '1', transform: 'translateY(0) scale(1)' },
+          to: { opacity: '0', transform: 'translateY(-8px) scale(0.96)' },
+        },
         'pop': {
           '0%': { transform: 'scale(0.6)' },
           '60%': { transform: 'scale(1.12)' },
@@ -128,6 +132,7 @@ const config: Config = {
         'fade-in': 'fade-in 0.2s ease-out',
         'pulse-soft': 'pulse-soft 2s ease-in-out infinite',
         'drop-in': 'drop-in 220ms cubic-bezier(0.32, 0.72, 0, 1) both',
+        'drop-out': 'drop-out 180ms cubic-bezier(0.32, 0.72, 0, 1) both',
         'pop': 'pop 320ms cubic-bezier(0.32, 0.72, 0, 1) both',
         'shrink-width': 'shrink-width 4s linear forwards',
       },

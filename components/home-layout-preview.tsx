@@ -86,6 +86,9 @@ const EDITORIAL_IMG_BG = "oklch(93% 0.02 75)"
 const EDITORIAL_BEST_ID = "editorial_best"
 const EDITORIAL_CATERING_ID = "editorial_catering"
 
+const AUTO_DISMISS_MS = 4000
+const EXIT_ANIMATION_MS = 180
+
 type EditorialCategory = { id: string; label: string; dbCategories?: string[] }
 
 function EditorialBagIcon() {
@@ -386,22 +389,26 @@ const EditorialBestSellerCardP1 = memo(function EditorialBestSellerCardP1({
   )
 })
 
-// "Added to cart" confirmation, anchored top-left under the header. Two variants ship
-// side by side behind ?cartpopup=1a|1b so both can be compared on the live site before
-// picking one; 1a mirrors the rounded-card language of the product cards above, 1b is a
-// hairline-border typographic treatment with no icon and no shadow.
+// "Added to cart" confirmation, anchored top-left under the header - mirrors the
+// rounded-card language of the product cards above. Plays a spring drop-in on mount and
+// a quick drop-out (via the `closing` prop) before the parent unmounts it, instead of
+// just disappearing.
 type AddedPopupProps = {
   item: MenuItem
   totalItems: number
   totalPrice: number
+  closing: boolean
   onClose: () => void
   onCheckout: () => void
 }
 
-function EditorialAddedPopup1a({ item, totalItems, totalPrice, onClose, onCheckout }: AddedPopupProps) {
+function EditorialAddedPopup1a({ item, totalItems, totalPrice, closing, onClose, onCheckout }: AddedPopupProps) {
   return (
     <div
-      className="pointer-events-auto absolute right-auto top-0 w-[210px] animate-drop-in rounded-[20px] border p-3.5"
+      className={cn(
+        "pointer-events-auto absolute right-auto top-0 w-[210px] rounded-[20px] border p-3.5",
+        closing ? "animate-drop-out" : "animate-drop-in"
+      )}
       style={{ left: 16, background: "#fff", borderColor: EDITORIAL_BORDER, boxShadow: "0 20px 44px -18px rgba(20,15,10,0.5)" }}
     >
       <div className="mb-2.5 flex items-center justify-between">
@@ -452,59 +459,6 @@ function EditorialAddedPopup1a({ item, totalItems, totalPrice, onClose, onChecko
   )
 }
 
-function EditorialAddedPopup1b({ item, totalItems, totalPrice, onClose, onCheckout }: AddedPopupProps) {
-  return (
-    <div
-      className="pointer-events-auto absolute top-0 w-[240px] animate-drop-in border"
-      style={{ left: 16, background: EDITORIAL_SURFACE, borderColor: EDITORIAL_INK }}
-    >
-      <div className="p-4 pb-3.5">
-        <div className="mb-2.5 flex items-center justify-between">
-          <span className="text-[10.5px] font-bold tracking-[0.06em]" style={{ color: EDITORIAL_MUTED_FAINTER }}>
-            أُضيف ✓
-          </span>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="إغلاق"
-            className="border-none bg-transparent p-0.5 text-[14px] leading-none"
-            style={{ color: EDITORIAL_MUTED_FAINTER }}
-          >
-            ×
-          </button>
-        </div>
-        <h3 className="font-serif-text m-0 mb-1 text-[24px] font-black leading-[1.15]" style={{ color: EDITORIAL_INK }}>
-          {item.name}
-        </h3>
-        <span className="mb-4 block text-[12.5px]" style={{ color: EDITORIAL_MUTED }}>
-          ١ × <PriceWithRiyalLogo value={item.price} />
-        </span>
-        <div className="flex items-baseline justify-between border-t pt-3" style={{ borderColor: EDITORIAL_BORDER_STRONG }}>
-          <span className="text-[11px]" style={{ color: EDITORIAL_MUTED }}>
-            الإجمالي · {totalItems} أصناف
-          </span>
-          <span className="text-[20px] font-black" style={{ color: EDITORIAL_INK }}>
-            {totalPrice}
-          </span>
-        </div>
-      </div>
-      <button
-        type="button"
-        onClick={onCheckout}
-        className="block w-full border-none border-t bg-transparent py-3 px-4 text-right text-[13px] font-bold transition-colors hover:text-white"
-        style={{ borderColor: EDITORIAL_INK, color: EDITORIAL_INK }}
-        onMouseEnter={(e) => (e.currentTarget.style.background = EDITORIAL_INK)}
-        onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-      >
-        إتمام الطلب ←
-      </button>
-      <div className="h-[2px] overflow-hidden" style={{ background: EDITORIAL_BORDER }}>
-        <div className="h-full animate-shrink-width" style={{ background: EDITORIAL_INK }} />
-      </div>
-    </div>
-  )
-}
-
 function EditorialPreview() {
   const router = useRouter()
   const pathname = usePathname()
@@ -529,17 +483,15 @@ function EditorialPreview() {
   const [drawerIngredients, setDrawerIngredients] = useState<string[]>([])
   const [flashId, setFlashId] = useState<string | null>(null)
   const [addedPopup, setAddedPopup] = useState<{ key: number; item: MenuItem; totalItems: number; totalPrice: number } | null>(null)
+  const [addedPopupClosing, setAddedPopupClosing] = useState(false)
   const addedPopupTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  // ?cartpopup=1b previews the minimal typographic variant; 1a (the default) is the
-  // rounded-card treatment that matches the product cards above. Query-param-gated the
-  // same way ?homeui= gates the other home layout previews, so both can be compared on
-  // the live site before one is picked as the permanent default.
-  const addedPopupVariant = searchParams.get("cartpopup") === "1b" ? "1b" : "1a"
+  const addedPopupExitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const categoryPillRefs = useRef<Map<string, HTMLButtonElement>>(new Map())
 
   useEffect(() => {
     return () => {
       if (addedPopupTimeoutRef.current) clearTimeout(addedPopupTimeoutRef.current)
+      if (addedPopupExitTimeoutRef.current) clearTimeout(addedPopupExitTimeoutRef.current)
     }
   }, [])
 
@@ -663,10 +615,33 @@ function EditorialPreview() {
     [router]
   )
 
+  // Plays the drop-out animation before unmounting instead of just disappearing.
   const closeAddedPopup = useCallback(() => {
+    if (addedPopupExitTimeoutRef.current) return
     if (addedPopupTimeoutRef.current) clearTimeout(addedPopupTimeoutRef.current)
-    setAddedPopup(null)
+    setAddedPopupClosing(true)
+    addedPopupExitTimeoutRef.current = setTimeout(() => {
+      setAddedPopup(null)
+      setAddedPopupClosing(false)
+      addedPopupExitTimeoutRef.current = null
+    }, EXIT_ANIMATION_MS)
   }, [])
+
+  // Shared by every add-to-cart entry point (quick-add and the product drawer) so the
+  // confirmation always shows, however the item was added.
+  const showAddedToCartPopup = useCallback(
+    (item: MenuItem, quantity: number) => {
+      if (addedPopupExitTimeoutRef.current) {
+        clearTimeout(addedPopupExitTimeoutRef.current)
+        addedPopupExitTimeoutRef.current = null
+      }
+      setAddedPopupClosing(false)
+      if (addedPopupTimeoutRef.current) clearTimeout(addedPopupTimeoutRef.current)
+      setAddedPopup({ key: Date.now(), item, totalItems: totalItems + quantity, totalPrice: totalPrice + item.price * quantity })
+      addedPopupTimeoutRef.current = setTimeout(closeAddedPopup, AUTO_DISMISS_MS)
+    },
+    [totalItems, totalPrice, closeAddedPopup]
+  )
 
   const quickAdd = useCallback(
     (item: MenuItem, e: MouseEvent) => {
@@ -674,12 +649,9 @@ function EditorialPreview() {
       addItem(item, 1)
       setFlashId(item.id)
       window.setTimeout(() => setFlashId((cur) => (cur === item.id ? null : cur)), 900)
-
-      if (addedPopupTimeoutRef.current) clearTimeout(addedPopupTimeoutRef.current)
-      setAddedPopup({ key: Date.now(), item, totalItems: totalItems + 1, totalPrice: totalPrice + item.price })
-      addedPopupTimeoutRef.current = setTimeout(() => setAddedPopup(null), 4000)
+      showAddedToCartPopup(item, 1)
     },
-    [addItem, totalItems, totalPrice]
+    [addItem, showAddedToCartPopup]
   )
 
   const checkoutFromAddedPopup = useCallback(() => {
@@ -702,12 +674,10 @@ function EditorialPreview() {
   const addFromDrawer = () => {
     if (!selectedProduct) return
     const selectedLabels = drawerIngredients.map((raw) => parseVariantOption(raw, selectedProduct.price).label).filter(Boolean)
-    addItem(
-      { ...selectedProduct, price: drawerUnitPrice },
-      drawerQty,
-      selectedLabels.length > 0 ? selectedLabels : undefined
-    )
+    const itemToAdd = { ...selectedProduct, price: drawerUnitPrice }
+    addItem(itemToAdd, drawerQty, selectedLabels.length > 0 ? selectedLabels : undefined)
     setDrawerOpen(false)
+    showAddedToCartPopup(itemToAdd, drawerQty)
   }
 
   const drawerTotal = selectedProduct ? drawerUnitPrice * drawerQty : 0
@@ -778,25 +748,15 @@ function EditorialPreview() {
 
         {addedPopup ? (
           <div className="pointer-events-none fixed inset-x-0 z-40 mx-auto max-w-[430px]" style={{ top: 78 }}>
-            {addedPopupVariant === "1b" ? (
-              <EditorialAddedPopup1b
-                key={addedPopup.key}
-                item={addedPopup.item}
-                totalItems={addedPopup.totalItems}
-                totalPrice={addedPopup.totalPrice}
-                onClose={closeAddedPopup}
-                onCheckout={checkoutFromAddedPopup}
-              />
-            ) : (
-              <EditorialAddedPopup1a
-                key={addedPopup.key}
-                item={addedPopup.item}
-                totalItems={addedPopup.totalItems}
-                totalPrice={addedPopup.totalPrice}
-                onClose={closeAddedPopup}
-                onCheckout={checkoutFromAddedPopup}
-              />
-            )}
+            <EditorialAddedPopup1a
+              key={addedPopup.key}
+              item={addedPopup.item}
+              totalItems={addedPopup.totalItems}
+              totalPrice={addedPopup.totalPrice}
+              closing={addedPopupClosing}
+              onClose={closeAddedPopup}
+              onCheckout={checkoutFromAddedPopup}
+            />
           </div>
         ) : null}
 

@@ -14,6 +14,7 @@ export const categories = [
     ],
   },
   { id: "heaters", label: "سخانات", dbCategories: ["heaters"] },
+  { id: "breakfast_packages", label: "باقات الإفطار", dbCategories: ["breakfast_packages"] },
   { id: "trays", label: "صواني تقديمات", dbCategories: ["trays"] },
   { id: "stuffed_dates", label: "تمر محشي", dbCategories: ["stuffed_dates"] },
   { id: "salads", label: "سلطات", dbCategories: ["salads"] },

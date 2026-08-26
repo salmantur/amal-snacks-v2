@@ -6,6 +6,7 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { Check, ImageIcon } from "lucide-react"
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from "react"
 import { useCart, type MenuItem } from "@/components/cart-provider"
+import { AddedToCartPopover } from "@/components/added-to-cart-popover"
 import { PriceWithRiyalLogo } from "@/components/ui/price-with-riyal-logo"
 import { useBestSellersConfig } from "@/hooks/use-best-sellers-config"
 import { useCategories, type Category } from "@/hooks/use-categories"
@@ -628,6 +629,8 @@ function EditorialPreview() {
               </span>
             </button>
           )}
+
+          <AddedToCartPopover onCheckout={() => router.push("/checkout")} />
         </div>
 
         <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ paddingTop: 76 }}>

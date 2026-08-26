@@ -7,6 +7,7 @@ import { useCart } from "@/components/cart-provider"
 import { PriceWithRiyalLogo } from "@/components/ui/price-with-riyal-logo"
 
 const AUTO_DISMISS_MS = 4500
+const EXIT_ANIMATION_MS = 180
 
 interface AddedToCartPopoverProps {
   /** Called when the user taps "إتمام الطلب" (continue to checkout). */
@@ -22,20 +23,43 @@ interface AddedToCartPopoverProps {
 export function AddedToCartPopover({ onCheckout, className }: AddedToCartPopoverProps) {
   const { lastAdded } = useCart()
   const [visible, setVisible] = useState(false)
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [closing, setClosing] = useState(false)
+  const autoDismissRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const exitRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const dismiss = () => {
+    if (exitRef.current) return
+    setClosing(true)
+    exitRef.current = setTimeout(() => {
+      setVisible(false)
+      setClosing(false)
+      exitRef.current = null
+    }, EXIT_ANIMATION_MS)
+  }
 
   useEffect(() => {
     if (!lastAdded) return
 
+    if (exitRef.current) {
+      clearTimeout(exitRef.current)
+      exitRef.current = null
+    }
+    setClosing(false)
     setVisible(true)
 
-    if (timerRef.current) clearTimeout(timerRef.current)
-    timerRef.current = setTimeout(() => setVisible(false), AUTO_DISMISS_MS)
+    if (autoDismissRef.current) clearTimeout(autoDismissRef.current)
+    autoDismissRef.current = setTimeout(dismiss, AUTO_DISMISS_MS)
 
     return () => {
-      if (timerRef.current) clearTimeout(timerRef.current)
+      if (autoDismissRef.current) clearTimeout(autoDismissRef.current)
     }
   }, [lastAdded])
+
+  useEffect(() => {
+    return () => {
+      if (exitRef.current) clearTimeout(exitRef.current)
+    }
+  }, [])
 
   if (!lastAdded || !visible) return null
 
@@ -46,8 +70,9 @@ export function AddedToCartPopover({ onCheckout, className }: AddedToCartPopover
       role="status"
       aria-live="polite"
       className={
-        "absolute end-4 top-full z-50 mt-2.5 w-[min(20rem,calc(100vw-2rem))] " +
-        "origin-top-left animate-pop-in motion-reduce:animate-none " +
+        "absolute end-4 top-full z-50 mt-2.5 w-[min(20rem,calc(100vw-2rem))] origin-top-left " +
+        (closing ? "animate-pop-out" : "animate-pop-in") +
+        " motion-reduce:animate-none " +
         (className ?? "")
       }
     >
@@ -59,7 +84,7 @@ export function AddedToCartPopover({ onCheckout, className }: AddedToCartPopover
         className="relative overflow-hidden rounded-2xl border border-black/5 bg-white shadow-[0_16px_40px_rgba(0,0,0,0.18)]"
       >
         <button
-          onClick={() => setVisible(false)}
+          onClick={dismiss}
           aria-label="إغلاق"
           className="absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-black/5 text-foreground/60 transition-colors hover:bg-black/10 active:scale-90"
         >
@@ -89,14 +114,14 @@ export function AddedToCartPopover({ onCheckout, className }: AddedToCartPopover
 
         <div className="flex gap-2 px-4 pb-4 pt-1">
           <button
-            onClick={() => setVisible(false)}
+            onClick={dismiss}
             className="flex-1 rounded-full border border-black/10 py-2.5 text-[12.5px] font-semibold text-foreground/70 transition-colors active:scale-95 hover:bg-black/5"
           >
             متابعة التسوق
           </button>
           <button
             onClick={() => {
-              setVisible(false)
+              dismiss()
               onCheckout()
             }}
             className="flex-1 rounded-full bg-primary py-2.5 text-[12.5px] font-bold text-primary-foreground transition-transform active:scale-95 hover:opacity-90"

@@ -111,6 +111,10 @@ const config: Config = {
           '60%': { transform: 'scale(1.02) translateY(0)', opacity: '1' },
           '100%': { transform: 'scale(1) translateY(0)', opacity: '1' },
         },
+        'pop-out': {
+          '0%': { transform: 'scale(1) translateY(0)', opacity: '1' },
+          '100%': { transform: 'scale(0.92) translateY(-4px)', opacity: '0' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
@@ -120,6 +124,7 @@ const config: Config = {
         'fade-in': 'fade-in 0.2s ease-out',
         'pulse-soft': 'pulse-soft 2s ease-in-out infinite',
         'pop-in': 'pop-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)',
+        'pop-out': 'pop-out 0.18s ease-in forwards',
       },
     },
   },

@@ -49,6 +49,7 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
   const isTray = product?.category === "trays"
   const isEidPackage = product?.category === "eid"
   const hasIngredients = (product?.ingredients?.length || 0) > 0
+  const hasPackageItems = (product?.packageItems?.length || 0) > 0
   const maxSelections = product?.limit || 0
 
   useEffect(() => {
@@ -210,6 +211,25 @@ export function ProductDrawer({ product, open, onClose }: ProductDrawerProps) {
               </div>
             )
           })()}
+
+          {hasPackageItems ? (
+            <div className="pb-4">
+              <h3 className="font-bold text-[#1e293b] mb-3 text-right">محتويات الباقة</h3>
+              <div className="rounded-xl border border-gray-200 divide-y divide-gray-100 overflow-hidden">
+                {product.packageItems?.map((pkg, i) => (
+                  <div key={`${pkg.label}-${i}`} className="flex items-center justify-between px-4 py-3">
+                    <span className="text-sm font-semibold text-[#1e293b] bg-gray-100 rounded-full px-2.5 py-0.5 flex-shrink-0">
+                      × {pkg.quantity}
+                    </span>
+                    <span className="flex-1 text-right text-[15px] text-[#1e293b] pr-3">{pkg.label}</span>
+                    {pkg.included === false ? null : (
+                      <Check className="h-4 w-4 flex-shrink-0 text-[var(--checkout-green)] mr-2" aria-hidden="true" />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
 
           {isTray ? (
             <div className="pb-4">

@@ -254,8 +254,6 @@ function normalizeText(value: string): string {
 
 function normalizeMakingTimeMinutes(value: number): number {
   if (!value || value <= 0) return 0;
-  // Backward compatibility: some old records stored "24" meaning 24 hours.
-  if (value === 24) return 24 * 60;
   return value;
 }
 

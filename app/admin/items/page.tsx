@@ -882,20 +882,26 @@ export default function ItemsPage() {
               </div>
 
 
-              {/* ── PACKAGE MODE (باقات العيد only) ── */}
-              {modalItem.category === "eid" && (
+              {/* ── PACKAGE MODE (available for any category) ── */}
+              {(() => {
+                const isEidPackage = modalItem.category === "eid"
+                return (
                 <div dir="rtl" className="border-2 border-yellow-300 bg-yellow-50 rounded-2xl p-4 space-y-4">
                   <div className="flex items-center gap-2">
-                    <span className="text-xl">🎁</span>
+                    {isEidPackage && <span className="text-xl">🎁</span>}
                     <p className="font-black text-base text-[#1e293b]">إعداد الباقة</p>
-                    <span className="text-xs bg-yellow-400 text-yellow-900 font-bold px-2 py-0.5 rounded-full mr-auto">باقة عيد</span>
+                    {isEidPackage && (
+                      <span className="text-xs bg-yellow-400 text-yellow-900 font-bold px-2 py-0.5 rounded-full mr-auto">باقة عيد</span>
+                    )}
                   </div>
 
                   {/* Hint */}
-                  <div className="bg-white rounded-xl p-3 text-xs text-admin-muted space-y-1">
-                    <p>• <strong>حد الاختيار</strong> أعلاه = عدد السخانات (4 أو 6)</p>
-                    <p>• أضف بلاتر الاجبان كـ "مشمول" أدناه</p>
-                  </div>
+                  {isEidPackage && (
+                    <div className="bg-white rounded-xl p-3 text-xs text-admin-muted space-y-1">
+                      <p>• <strong>حد الاختيار</strong> أعلاه = عدد السخانات (4 أو 6)</p>
+                      <p>• أضف بلاتر الاجبان كـ "مشمول" أدناه</p>
+                    </div>
+                  )}
 
                   {/* Current package items */}
                   {(modalItem.packageItems || []).length > 0 && (
@@ -956,7 +962,8 @@ export default function ItemsPage() {
                     >⭐ إضافة كـ "مشمول"</button>
                   </div>
                 </div>
-              )}
+                )
+              })()}
 
               <div style={{ height: "calc(2rem + env(safe-area-inset-bottom))" }} />
             </div>

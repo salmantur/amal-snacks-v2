@@ -386,6 +386,125 @@ const EditorialBestSellerCardP1 = memo(function EditorialBestSellerCardP1({
   )
 })
 
+// "Added to cart" confirmation, anchored top-left under the header. Two variants ship
+// side by side behind ?cartpopup=1a|1b so both can be compared on the live site before
+// picking one; 1a mirrors the rounded-card language of the product cards above, 1b is a
+// hairline-border typographic treatment with no icon and no shadow.
+type AddedPopupProps = {
+  item: MenuItem
+  totalItems: number
+  totalPrice: number
+  onClose: () => void
+  onCheckout: () => void
+}
+
+function EditorialAddedPopup1a({ item, totalItems, totalPrice, onClose, onCheckout }: AddedPopupProps) {
+  return (
+    <div
+      className="pointer-events-auto absolute right-auto top-0 w-[210px] animate-drop-in rounded-[20px] border p-3.5"
+      style={{ left: 16, background: "#fff", borderColor: EDITORIAL_BORDER, boxShadow: "0 20px 44px -18px rgba(20,15,10,0.5)" }}
+    >
+      <div className="mb-2.5 flex items-center justify-between">
+        <div className="flex items-center gap-1.5">
+          <span
+            className="flex h-[18px] w-[18px] animate-pop items-center justify-center rounded-full text-[10px] font-extrabold text-white"
+            style={{ background: "var(--checkout-green)" }}
+          >
+            ✓
+          </span>
+          <span className="text-[11.5px] font-extrabold" style={{ color: "var(--checkout-green)" }}>
+            أُضيف إلى السلة
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="إغلاق"
+          className="border-none bg-transparent p-0.5 text-[15px] leading-none"
+          style={{ color: EDITORIAL_MUTED_FAINTER }}
+        >
+          ×
+        </button>
+      </div>
+      <div className="mb-2.5 flex items-center gap-2.5 border-b pb-2.5" style={{ borderColor: EDITORIAL_BORDER }}>
+        <EditorialProductImage src={item.image} alt={item.name} className="h-10 w-10 flex-shrink-0 rounded-[13px]" />
+        <div className="min-w-0 flex-1">
+          <p className="m-0 truncate text-[13px] font-bold" style={{ color: EDITORIAL_INK }}>
+            {item.name}
+          </p>
+          <p className="m-0 text-[11.5px] font-semibold" style={{ color: EDITORIAL_MUTED_FAINTER }}>
+            <PriceWithRiyalLogo value={totalPrice} /> · {totalItems} أصناف
+          </p>
+        </div>
+      </div>
+      <button
+        type="button"
+        onClick={onCheckout}
+        className="h-[38px] w-full rounded-full border-none text-[12.5px] font-bold text-white transition-transform active:scale-[0.97]"
+        style={{ background: EDITORIAL_ACCENT }}
+      >
+        إتمام الطلب
+      </button>
+      <div className="mt-2.5 h-[3px] overflow-hidden rounded-full" style={{ background: EDITORIAL_BORDER }}>
+        <div className="h-full animate-shrink-width" style={{ background: EDITORIAL_ACCENT }} />
+      </div>
+    </div>
+  )
+}
+
+function EditorialAddedPopup1b({ item, totalItems, totalPrice, onClose, onCheckout }: AddedPopupProps) {
+  return (
+    <div
+      className="pointer-events-auto absolute top-0 w-[240px] animate-drop-in border"
+      style={{ left: 16, background: EDITORIAL_SURFACE, borderColor: EDITORIAL_INK }}
+    >
+      <div className="p-4 pb-3.5">
+        <div className="mb-2.5 flex items-center justify-between">
+          <span className="text-[10.5px] font-bold tracking-[0.06em]" style={{ color: EDITORIAL_MUTED_FAINTER }}>
+            أُضيف ✓
+          </span>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="إغلاق"
+            className="border-none bg-transparent p-0.5 text-[14px] leading-none"
+            style={{ color: EDITORIAL_MUTED_FAINTER }}
+          >
+            ×
+          </button>
+        </div>
+        <h3 className="font-serif-text m-0 mb-1 text-[24px] font-black leading-[1.15]" style={{ color: EDITORIAL_INK }}>
+          {item.name}
+        </h3>
+        <span className="mb-4 block text-[12.5px]" style={{ color: EDITORIAL_MUTED }}>
+          ١ × <PriceWithRiyalLogo value={item.price} />
+        </span>
+        <div className="flex items-baseline justify-between border-t pt-3" style={{ borderColor: EDITORIAL_BORDER_STRONG }}>
+          <span className="text-[11px]" style={{ color: EDITORIAL_MUTED }}>
+            الإجمالي · {totalItems} أصناف
+          </span>
+          <span className="text-[20px] font-black" style={{ color: EDITORIAL_INK }}>
+            {totalPrice}
+          </span>
+        </div>
+      </div>
+      <button
+        type="button"
+        onClick={onCheckout}
+        className="block w-full border-none border-t bg-transparent py-3 px-4 text-right text-[13px] font-bold transition-colors hover:text-white"
+        style={{ borderColor: EDITORIAL_INK, color: EDITORIAL_INK }}
+        onMouseEnter={(e) => (e.currentTarget.style.background = EDITORIAL_INK)}
+        onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+      >
+        إتمام الطلب ←
+      </button>
+      <div className="h-[2px] overflow-hidden" style={{ background: EDITORIAL_BORDER }}>
+        <div className="h-full animate-shrink-width" style={{ background: EDITORIAL_INK }} />
+      </div>
+    </div>
+  )
+}
+
 function EditorialPreview() {
   const router = useRouter()
   const pathname = usePathname()
@@ -409,7 +528,20 @@ function EditorialPreview() {
   const [drawerQty, setDrawerQty] = useState(1)
   const [drawerIngredients, setDrawerIngredients] = useState<string[]>([])
   const [flashId, setFlashId] = useState<string | null>(null)
+  const [addedPopup, setAddedPopup] = useState<{ key: number; item: MenuItem; totalItems: number; totalPrice: number } | null>(null)
+  const addedPopupTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // ?cartpopup=1b previews the minimal typographic variant; 1a (the default) is the
+  // rounded-card treatment that matches the product cards above. Query-param-gated the
+  // same way ?homeui= gates the other home layout previews, so both can be compared on
+  // the live site before one is picked as the permanent default.
+  const addedPopupVariant = searchParams.get("cartpopup") === "1b" ? "1b" : "1a"
   const categoryPillRefs = useRef<Map<string, HTMLButtonElement>>(new Map())
+
+  useEffect(() => {
+    return () => {
+      if (addedPopupTimeoutRef.current) clearTimeout(addedPopupTimeoutRef.current)
+    }
+  }, [])
 
   const uiCategories = useMemo<EditorialCategory[]>(
     () => [
@@ -531,15 +663,29 @@ function EditorialPreview() {
     [router]
   )
 
+  const closeAddedPopup = useCallback(() => {
+    if (addedPopupTimeoutRef.current) clearTimeout(addedPopupTimeoutRef.current)
+    setAddedPopup(null)
+  }, [])
+
   const quickAdd = useCallback(
     (item: MenuItem, e: MouseEvent) => {
       e.stopPropagation()
       addItem(item, 1)
       setFlashId(item.id)
       window.setTimeout(() => setFlashId((cur) => (cur === item.id ? null : cur)), 900)
+
+      if (addedPopupTimeoutRef.current) clearTimeout(addedPopupTimeoutRef.current)
+      setAddedPopup({ key: Date.now(), item, totalItems: totalItems + 1, totalPrice: totalPrice + item.price })
+      addedPopupTimeoutRef.current = setTimeout(() => setAddedPopup(null), 4000)
     },
-    [addItem]
+    [addItem, totalItems, totalPrice]
   )
+
+  const checkoutFromAddedPopup = useCallback(() => {
+    closeAddedPopup()
+    router.push("/checkout")
+  }, [closeAddedPopup, router])
 
   const toggleDrawerIngredient = (raw: string) => {
     if (drawerHasSingleVariant) {
@@ -629,6 +775,30 @@ function EditorialPreview() {
             </button>
           )}
         </div>
+
+        {addedPopup ? (
+          <div className="pointer-events-none fixed inset-x-0 z-40 mx-auto max-w-[430px]" style={{ top: 78 }}>
+            {addedPopupVariant === "1b" ? (
+              <EditorialAddedPopup1b
+                key={addedPopup.key}
+                item={addedPopup.item}
+                totalItems={addedPopup.totalItems}
+                totalPrice={addedPopup.totalPrice}
+                onClose={closeAddedPopup}
+                onCheckout={checkoutFromAddedPopup}
+              />
+            ) : (
+              <EditorialAddedPopup1a
+                key={addedPopup.key}
+                item={addedPopup.item}
+                totalItems={addedPopup.totalItems}
+                totalPrice={addedPopup.totalPrice}
+                onClose={closeAddedPopup}
+                onCheckout={checkoutFromAddedPopup}
+              />
+            )}
+          </div>
+        ) : null}
 
         <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ paddingTop: 76 }}>
           {error ? (
